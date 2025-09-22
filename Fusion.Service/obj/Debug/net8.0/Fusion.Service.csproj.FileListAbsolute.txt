@@ -1,0 +1,16 @@
+D:\SEP_DoAn\Fusion-BE\Fusion.Service\obj\Debug\net8.0\Fusion.Service.csproj.AssemblyReference.cache
+D:\SEP_DoAn\Fusion-BE\Fusion.Service\obj\Debug\net8.0\Fusion.Service.GeneratedMSBuildEditorConfig.editorconfig
+D:\SEP_DoAn\Fusion-BE\Fusion.Service\obj\Debug\net8.0\Fusion.Service.AssemblyInfoInputs.cache
+D:\SEP_DoAn\Fusion-BE\Fusion.Service\obj\Debug\net8.0\Fusion.Service.AssemblyInfo.cs
+D:\SEP_DoAn\Fusion-BE\Fusion.Service\obj\Debug\net8.0\Fusion.Service.csproj.CoreCompileInputs.cache
+D:\SEP_DoAn\Fusion-BE\Fusion.Service\obj\Debug\net8.0\Fusion.Service.sourcelink.json
+D:\SEP_DoAn\Fusion-BE\Fusion.Service\bin\Debug\net8.0\Fusion.Service.deps.json
+D:\SEP_DoAn\Fusion-BE\Fusion.Service\bin\Debug\net8.0\Fusion.Service.dll
+D:\SEP_DoAn\Fusion-BE\Fusion.Service\bin\Debug\net8.0\Fusion.Service.pdb
+D:\SEP_DoAn\Fusion-BE\Fusion.Service\bin\Debug\net8.0\Fusion.Repository.dll
+D:\SEP_DoAn\Fusion-BE\Fusion.Service\bin\Debug\net8.0\Fusion.Repository.pdb
+D:\SEP_DoAn\Fusion-BE\Fusion.Service\obj\Debug\net8.0\Fusion.S.A7FFA3C9.Up2Date
+D:\SEP_DoAn\Fusion-BE\Fusion.Service\obj\Debug\net8.0\Fusion.Service.dll
+D:\SEP_DoAn\Fusion-BE\Fusion.Service\obj\Debug\net8.0\refint\Fusion.Service.dll
+D:\SEP_DoAn\Fusion-BE\Fusion.Service\obj\Debug\net8.0\Fusion.Service.pdb
+D:\SEP_DoAn\Fusion-BE\Fusion.Service\obj\Debug\net8.0\ref\Fusion.Service.dll

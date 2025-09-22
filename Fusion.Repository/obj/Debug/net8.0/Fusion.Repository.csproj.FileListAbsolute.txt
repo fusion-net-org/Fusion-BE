@@ -1,0 +1,13 @@
+D:\SEP_DoAn\Fusion-BE\Fusion.Repository\obj\Debug\net8.0\Fusion.Repository.csproj.AssemblyReference.cache
+D:\SEP_DoAn\Fusion-BE\Fusion.Repository\obj\Debug\net8.0\Fusion.Repository.GeneratedMSBuildEditorConfig.editorconfig
+D:\SEP_DoAn\Fusion-BE\Fusion.Repository\obj\Debug\net8.0\Fusion.Repository.AssemblyInfoInputs.cache
+D:\SEP_DoAn\Fusion-BE\Fusion.Repository\obj\Debug\net8.0\Fusion.Repository.AssemblyInfo.cs
+D:\SEP_DoAn\Fusion-BE\Fusion.Repository\obj\Debug\net8.0\Fusion.Repository.csproj.CoreCompileInputs.cache
+D:\SEP_DoAn\Fusion-BE\Fusion.Repository\obj\Debug\net8.0\Fusion.Repository.sourcelink.json
+D:\SEP_DoAn\Fusion-BE\Fusion.Repository\bin\Debug\net8.0\Fusion.Repository.deps.json
+D:\SEP_DoAn\Fusion-BE\Fusion.Repository\bin\Debug\net8.0\Fusion.Repository.dll
+D:\SEP_DoAn\Fusion-BE\Fusion.Repository\bin\Debug\net8.0\Fusion.Repository.pdb
+D:\SEP_DoAn\Fusion-BE\Fusion.Repository\obj\Debug\net8.0\Fusion.Repository.dll
+D:\SEP_DoAn\Fusion-BE\Fusion.Repository\obj\Debug\net8.0\refint\Fusion.Repository.dll
+D:\SEP_DoAn\Fusion-BE\Fusion.Repository\obj\Debug\net8.0\Fusion.Repository.pdb
+D:\SEP_DoAn\Fusion-BE\Fusion.Repository\obj\Debug\net8.0\ref\Fusion.Repository.dll

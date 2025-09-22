@@ -1,4 +1,6 @@
 using Fusion.API;
+using Fusion.Repository;
+using Fusion.Service;
 using System.Net;
 
 var builder = WebApplication.CreateBuilder(args);
