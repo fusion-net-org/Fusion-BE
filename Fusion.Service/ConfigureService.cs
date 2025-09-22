@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Configuration;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,7 +12,7 @@ namespace Fusion.Service
     {
         public static IServiceCollection ConfigureServiceLayerService(this IServiceCollection services, IConfiguration configuration)
         {
-
+            return services;
         }
      }
 }

@@ -1,4 +1,4 @@
-﻿namespace Travelogue.Repository.Bases.Responses;
+﻿namespace Fusion.Repository.Bases.Responses;
 
 public class ResponseCodeConstants
 {

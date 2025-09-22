@@ -1,6 +1,7 @@
-﻿using System.Text.Json;
-using Travelogue.Repository.Bases.Exceptions;
-using Travelogue.Repository.Bases.Responses;
+﻿using Fusion.Repository.Bases.Exceptions;
+using Fusion.Service.Commons.BaseResponses;
+using System.Text.Json;
+using Fusion.Repository.Bases.Responses;
 
 namespace Travelogue.API.Middlewares;
 

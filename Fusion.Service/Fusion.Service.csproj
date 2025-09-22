@@ -8,8 +8,11 @@
 
   <ItemGroup>
     <Folder Include="BusinessModels\" />
-    <Folder Include="Commons\" />
     <Folder Include="Services\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Fusion.Repository\Fusion.Repository.csproj" />
   </ItemGroup>
 
 </Project>

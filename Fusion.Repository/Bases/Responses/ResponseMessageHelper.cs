@@ -1,4 +1,4 @@
-﻿namespace Travelogue.Repository.Bases.Responses;
+﻿namespace Fusion.Repository.Bases.Responses;
 public static class ResponseMessageHelper
 {
     public static string FormatMessage(this string template, params object[] args)

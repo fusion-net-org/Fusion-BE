@@ -7,15 +7,34 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="AuthMiddleware\**" />
+    <Compile Remove="Common\**" />
+    <Compile Remove="ExceptionMiddlewares\**" />
+    <Compile Remove="Extensions\**" />
+    <Content Remove="AuthMiddleware\**" />
+    <Content Remove="Common\**" />
+    <Content Remove="ExceptionMiddlewares\**" />
+    <Content Remove="Extensions\**" />
+    <EmbeddedResource Remove="AuthMiddleware\**" />
+    <EmbeddedResource Remove="Common\**" />
+    <EmbeddedResource Remove="ExceptionMiddlewares\**" />
+    <EmbeddedResource Remove="Extensions\**" />
+    <None Remove="AuthMiddleware\**" />
+    <None Remove="Common\**" />
+    <None Remove="ExceptionMiddlewares\**" />
+    <None Remove="Extensions\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="AuthMiddleware\" />
-    <Folder Include="Common\" />
     <Folder Include="Controllers\" />
-    <Folder Include="ExceptionMiddlewares\" />
-    <Folder Include="Extensions\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Fusion.Service\Fusion.Service.csproj" />
   </ItemGroup>
 
 </Project>

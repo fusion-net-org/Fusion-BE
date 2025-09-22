@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
-using Travelogue.Repository.Bases.Responses;
+using Fusion.Repository.Bases.Responses;
 
 namespace Fusion.Repository.Bases.Exceptions;
 
