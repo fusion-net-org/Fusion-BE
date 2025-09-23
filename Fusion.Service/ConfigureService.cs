@@ -1,10 +1,8 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Fusion.Service.Commons.Helpers;
+using Fusion.Service.IServices;
+using Fusion.Service.Services;
 using Microsoft.Extensions.Configuration;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Fusion.Service
 {
@@ -12,6 +10,12 @@ namespace Fusion.Service
     {
         public static IServiceCollection ConfigureServiceLayerService(this IServiceCollection services, IConfiguration configuration)
         {
+            // register autoMapper
+            services.AddAutoMapper(typeof(MappingProfile));
+
+            //register service entities
+            services.AddScoped<IAuthenService, AuthenService>();
+            services.AddScoped<IJwtService, JwtService>();
             return services;
         }
      }

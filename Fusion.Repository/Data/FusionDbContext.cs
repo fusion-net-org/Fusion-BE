@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿
 using Fusion.Repository.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -42,6 +41,7 @@ public partial class FusionDbContext : DbContext
 
     public virtual DbSet<TaskWorkflow> TaskWorkflows { get; set; }
 
+    public virtual DbSet<RefreshToken> RefreshTokens { get; set; }
     public virtual DbSet<Ticket> Tickets { get; set; }
 
     public virtual DbSet<TicketComment> TicketComments { get; set; }
@@ -254,6 +254,11 @@ public partial class FusionDbContext : DbContext
             entity.Property(e => e.CreateAt).HasDefaultValueSql("(sysutcdatetime())");
             entity.Property(e => e.Status).HasDefaultValue(true);
             entity.Property(e => e.UpdateAt).HasDefaultValueSql("(sysutcdatetime())");
+
+            entity.Property(e => e.PasswordHash)
+         .HasColumnType("varbinary(512)"); 
+            entity.Property(e => e.PasswordSalt)
+                  .HasColumnType("varbinary(128)"); 
         });
 
         modelBuilder.Entity<UserRole>(entity =>
@@ -298,6 +303,17 @@ public partial class FusionDbContext : DbContext
             entity.HasOne(d => d.ToStatus).WithMany(p => p.WorkflowTransitionToStatuses).HasConstraintName("FK_WorkflowTransitions_To");
 
             entity.HasOne(d => d.Workflow).WithMany(p => p.WorkflowTransitions).HasConstraintName("FK_WorkflowTransitions_Workflow");
+        });
+
+        modelBuilder.Entity<RefreshToken>(entity =>
+        {
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
+
+            entity.HasOne(d => d.User)
+                  .WithMany(p => p.RefreshTokens)
+                  .HasForeignKey(d => d.UserId)
+                  .HasConstraintName("FK_RefreshTokens_User");
         });
 
         OnModelCreatingPartial(modelBuilder);

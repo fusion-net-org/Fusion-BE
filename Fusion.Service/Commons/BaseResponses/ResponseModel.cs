@@ -4,13 +4,14 @@ namespace Fusion.Service.Commons.BaseResponses;
 
 public class ResponseModel<T>
 {
+    public bool Succeeded { get; set; } = false;
+    public int StatusCode { get; set; }
+    public string? Message { get; set; }
     public T? Data { get; set; }
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public object? AdditionalData { get; set; }
-    public string? Message { get; set; }
-    public bool Succeeded { get; set; } = false;
-    public int StatusCode { get; set; }
+
 
     public ResponseModel()
     {

@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "E:\\SEP_DoAn\\Fusion-BE\\Fusion.Repository\\Fusion.Repository.csproj": {}
+    "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Fusion.Repository.csproj": {}
   },
   "projects": {
-    "E:\\SEP_DoAn\\Fusion-BE\\Fusion.Repository\\Fusion.Repository.csproj": {
+    "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Fusion.Repository.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "E:\\SEP_DoAn\\Fusion-BE\\Fusion.Repository\\Fusion.Repository.csproj",
+        "projectUniqueName": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Fusion.Repository.csproj",
         "projectName": "Fusion.Repository",
-        "projectPath": "E:\\SEP_DoAn\\Fusion-BE\\Fusion.Repository\\Fusion.Repository.csproj",
-        "packagesPath": "C:\\Users\\Admin\\.nuget\\packages\\",
-        "outputPath": "E:\\SEP_DoAn\\Fusion-BE\\Fusion.Repository\\obj\\",
+        "projectPath": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Fusion.Repository.csproj",
+        "packagesPath": "C:\\Users\\CaoDung\\.nuget\\packages\\",
+        "outputPath": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\Admin\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\CaoDung\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -99,7 +99,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.302/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.304/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

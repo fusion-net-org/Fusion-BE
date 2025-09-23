@@ -1,46 +1,194 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "E:\\SEP_DoAn\\Fusion-BE\\",
+  "WorkspaceRootPath": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|e:\\sep_doan\\fusion-be\\fusion.repository\\configureservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|solutionrelative:fusion.repository\\configureservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{CD0B4A6E-6B0F-409A-A606-E2A3A71B0160}|Fusion.Service\\Fusion.Service.csproj|d:\\cn9\\sep490\\fusion\\fusion-be\\fusion.service\\services\\authenservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{CD0B4A6E-6B0F-409A-A606-E2A3A71B0160}|Fusion.Service\\Fusion.Service.csproj|solutionrelative:fusion.service\\services\\authenservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{D5EF1B12-5380-4CD6-A6E8-CB9121CE3086}|Fusion.API\\Fusion.API.csproj|e:\\sep_doan\\fusion-be\\fusion.api\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
-      "RelativeMoniker": "D:0:0:{D5EF1B12-5380-4CD6-A6E8-CB9121CE3086}|Fusion.API\\Fusion.API.csproj|solutionrelative:fusion.api\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+      "AbsoluteMoniker": "D:0:0:{D5EF1B12-5380-4CD6-A6E8-CB9121CE3086}|Fusion.API\\Fusion.API.csproj|d:\\cn9\\sep490\\fusion\\fusion-be\\fusion.api\\controllers\\authencontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D5EF1B12-5380-4CD6-A6E8-CB9121CE3086}|Fusion.API\\Fusion.API.csproj|solutionrelative:fusion.api\\controllers\\authencontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|e:\\sep_doan\\fusion-be\\fusion.repository\\data\\fusiondbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|solutionrelative:fusion.repository\\data\\fusiondbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{D5EF1B12-5380-4CD6-A6E8-CB9121CE3086}|Fusion.API\\Fusion.API.csproj|d:\\cn9\\sep490\\fusion\\fusion-be\\fusion.api\\middlewares\\customexceptionhandlermiddleware.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D5EF1B12-5380-4CD6-A6E8-CB9121CE3086}|Fusion.API\\Fusion.API.csproj|solutionrelative:fusion.api\\middlewares\\customexceptionhandlermiddleware.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{D5EF1B12-5380-4CD6-A6E8-CB9121CE3086}|Fusion.API\\Fusion.API.csproj|e:\\sep_doan\\fusion-be\\fusion.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{D5EF1B12-5380-4CD6-A6E8-CB9121CE3086}|Fusion.API\\Fusion.API.csproj|solutionrelative:fusion.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{CD0B4A6E-6B0F-409A-A606-E2A3A71B0160}|Fusion.Service\\Fusion.Service.csproj|d:\\cn9\\sep490\\fusion\\fusion-be\\fusion.service\\viewmodels\\users\\responses\\loginresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{CD0B4A6E-6B0F-409A-A606-E2A3A71B0160}|Fusion.Service\\Fusion.Service.csproj|solutionrelative:fusion.service\\viewmodels\\users\\responses\\loginresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{D5EF1B12-5380-4CD6-A6E8-CB9121CE3086}|Fusion.API\\Fusion.API.csproj|e:\\sep_doan\\fusion-be\\fusion.api\\configureservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{D5EF1B12-5380-4CD6-A6E8-CB9121CE3086}|Fusion.API\\Fusion.API.csproj|solutionrelative:fusion.api\\configureservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{CD0B4A6E-6B0F-409A-A606-E2A3A71B0160}|Fusion.Service\\Fusion.Service.csproj|d:\\cn9\\sep490\\fusion\\fusion-be\\fusion.service\\iservices\\iauthenservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{CD0B4A6E-6B0F-409A-A606-E2A3A71B0160}|Fusion.Service\\Fusion.Service.csproj|solutionrelative:fusion.service\\iservices\\iauthenservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{CD0B4A6E-6B0F-409A-A606-E2A3A71B0160}|Fusion.Service\\Fusion.Service.csproj|e:\\sep_doan\\fusion-be\\fusion.service\\configureservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{CD0B4A6E-6B0F-409A-A606-E2A3A71B0160}|Fusion.Service\\Fusion.Service.csproj|solutionrelative:fusion.service\\configureservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{CD0B4A6E-6B0F-409A-A606-E2A3A71B0160}|Fusion.Service\\Fusion.Service.csproj|d:\\cn9\\sep490\\fusion\\fusion-be\\fusion.service\\services\\jwtservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{CD0B4A6E-6B0F-409A-A606-E2A3A71B0160}|Fusion.Service\\Fusion.Service.csproj|solutionrelative:fusion.service\\services\\jwtservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|e:\\sep_doan\\fusion-be\\fusion.repository\\bases\\responses\\responsemessages.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{CD0B4A6E-6B0F-409A-A606-E2A3A71B0160}|Fusion.Service\\Fusion.Service.csproj|d:\\cn9\\sep490\\fusion\\fusion-be\\fusion.service\\commons\\baseresponses\\responsemodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{CD0B4A6E-6B0F-409A-A606-E2A3A71B0160}|Fusion.Service\\Fusion.Service.csproj|solutionrelative:fusion.service\\commons\\baseresponses\\responsemodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|d:\\cn9\\sep490\\fusion\\fusion-be\\fusion.repository\\bases\\responses\\responsemessages.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|solutionrelative:fusion.repository\\bases\\responses\\responsemessages.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|e:\\sep_doan\\fusion-be\\fusion.repository\\bases\\exceptions\\customexceptionfactory.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|d:\\cn9\\sep490\\fusion\\fusion-be\\fusion.repository\\bases\\responses\\responsemessagehelper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|solutionrelative:fusion.repository\\bases\\responses\\responsemessagehelper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|d:\\cn9\\sep490\\fusion\\fusion-be\\fusion.repository\\bases\\responses\\responsecodeconstants.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|solutionrelative:fusion.repository\\bases\\responses\\responsecodeconstants.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|d:\\cn9\\sep490\\fusion\\fusion-be\\fusion.repository\\repositories\\userrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|solutionrelative:fusion.repository\\repositories\\userrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|d:\\cn9\\sep490\\fusion\\fusion-be\\fusion.repository\\irepositories\\iuserrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|solutionrelative:fusion.repository\\irepositories\\iuserrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|d:\\cn9\\sep490\\fusion\\fusion-be\\fusion.repository\\bases\\exceptions\\customexceptionfactory.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|solutionrelative:fusion.repository\\bases\\exceptions\\customexceptionfactory.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|e:\\sep_doan\\fusion-be\\fusion.repository\\bases\\exceptions\\customexception.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{CD0B4A6E-6B0F-409A-A606-E2A3A71B0160}|Fusion.Service\\Fusion.Service.csproj|d:\\cn9\\sep490\\fusion\\fusion-be\\fusion.service\\viewmodels\\users\\validators\\loginrequestvalidator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{CD0B4A6E-6B0F-409A-A606-E2A3A71B0160}|Fusion.Service\\Fusion.Service.csproj|solutionrelative:fusion.service\\viewmodels\\users\\validators\\loginrequestvalidator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{CD0B4A6E-6B0F-409A-A606-E2A3A71B0160}|Fusion.Service\\Fusion.Service.csproj|d:\\cn9\\sep490\\fusion\\fusion-be\\fusion.service\\viewmodels\\users\\requests\\registerrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{CD0B4A6E-6B0F-409A-A606-E2A3A71B0160}|Fusion.Service\\Fusion.Service.csproj|solutionrelative:fusion.service\\viewmodels\\users\\requests\\registerrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{CD0B4A6E-6B0F-409A-A606-E2A3A71B0160}|Fusion.Service\\Fusion.Service.csproj|d:\\cn9\\sep490\\fusion\\fusion-be\\fusion.service\\viewmodels\\users\\requests\\loginrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{CD0B4A6E-6B0F-409A-A606-E2A3A71B0160}|Fusion.Service\\Fusion.Service.csproj|solutionrelative:fusion.service\\viewmodels\\users\\requests\\loginrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D5EF1B12-5380-4CD6-A6E8-CB9121CE3086}|Fusion.API\\Fusion.API.csproj|d:\\cn9\\sep490\\fusion\\fusion-be\\fusion.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D5EF1B12-5380-4CD6-A6E8-CB9121CE3086}|Fusion.API\\Fusion.API.csproj|solutionrelative:fusion.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D5EF1B12-5380-4CD6-A6E8-CB9121CE3086}|Fusion.API\\Fusion.API.csproj|d:\\cn9\\sep490\\fusion\\fusion-be\\fusion.api\\configureservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D5EF1B12-5380-4CD6-A6E8-CB9121CE3086}|Fusion.API\\Fusion.API.csproj|solutionrelative:fusion.api\\configureservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D5EF1B12-5380-4CD6-A6E8-CB9121CE3086}|Fusion.API\\Fusion.API.csproj|d:\\cn9\\sep490\\fusion\\fusion-be\\fusion.api\\fusion.api.http||{5703B403-55E7-4C63-8C88-A8F52C7A45C5}",
+      "RelativeMoniker": "D:0:0:{D5EF1B12-5380-4CD6-A6E8-CB9121CE3086}|Fusion.API\\Fusion.API.csproj|solutionrelative:fusion.api\\fusion.api.http||{5703B403-55E7-4C63-8C88-A8F52C7A45C5}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|d:\\cn9\\sep490\\fusion\\fusion-be\\fusion.repository\\bases\\exceptions\\customexception.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|solutionrelative:fusion.repository\\bases\\exceptions\\customexception.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{D5EF1B12-5380-4CD6-A6E8-CB9121CE3086}|Fusion.API\\Fusion.API.csproj|e:\\sep_doan\\fusion-be\\fusion.api\\dependencyinjection.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{D5EF1B12-5380-4CD6-A6E8-CB9121CE3086}|Fusion.API\\Fusion.API.csproj|solutionrelative:fusion.api\\dependencyinjection.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{CD0B4A6E-6B0F-409A-A606-E2A3A71B0160}|Fusion.Service\\Fusion.Service.csproj|d:\\cn9\\sep490\\fusion\\fusion-be\\fusion.service\\viewmodels\\users\\validators\\registerrequestvalidator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{CD0B4A6E-6B0F-409A-A606-E2A3A71B0160}|Fusion.Service\\Fusion.Service.csproj|solutionrelative:fusion.service\\viewmodels\\users\\validators\\registerrequestvalidator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|d:\\cn9\\sep490\\fusion\\fusion-be\\fusion.repository\\data\\fusiondbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|solutionrelative:fusion.repository\\data\\fusiondbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|d:\\cn9\\sep490\\fusion\\fusion-be\\fusion.repository\\configureservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|solutionrelative:fusion.repository\\configureservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{CD0B4A6E-6B0F-409A-A606-E2A3A71B0160}|Fusion.Service\\Fusion.Service.csproj|d:\\cn9\\sep490\\fusion\\fusion-be\\fusion.service\\configureservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{CD0B4A6E-6B0F-409A-A606-E2A3A71B0160}|Fusion.Service\\Fusion.Service.csproj|solutionrelative:fusion.service\\configureservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{CD0B4A6E-6B0F-409A-A606-E2A3A71B0160}|Fusion.Service\\Fusion.Service.csproj|d:\\cn9\\sep490\\fusion\\fusion-be\\fusion.service\\commons\\helpers\\mappingprofile.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{CD0B4A6E-6B0F-409A-A606-E2A3A71B0160}|Fusion.Service\\Fusion.Service.csproj|solutionrelative:fusion.service\\commons\\helpers\\mappingprofile.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D5EF1B12-5380-4CD6-A6E8-CB9121CE3086}|Fusion.API\\Fusion.API.csproj|d:\\cn9\\sep490\\fusion\\fusion-be\\fusion.api\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{D5EF1B12-5380-4CD6-A6E8-CB9121CE3086}|Fusion.API\\Fusion.API.csproj|solutionrelative:fusion.api\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Migrations\\20250923150923_InitialCreate.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Fusion.Repository\\Migrations\\20250923150923_InitialCreate.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|d:\\cn9\\sep490\\fusion\\fusion-be\\fusion.repository\\entities\\user.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|solutionrelative:fusion.repository\\entities\\user.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{CD0B4A6E-6B0F-409A-A606-E2A3A71B0160}|Fusion.Service\\Fusion.Service.csproj|d:\\cn9\\sep490\\fusion\\fusion-be\\fusion.service\\fusion.service.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{CD0B4A6E-6B0F-409A-A606-E2A3A71B0160}|Fusion.Service\\Fusion.Service.csproj|solutionrelative:fusion.service\\fusion.service.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|d:\\cn9\\sep490\\fusion\\fusion-be\\fusion.repository\\entities\\refreshtoken.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|solutionrelative:fusion.repository\\entities\\refreshtoken.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|d:\\cn9\\sep490\\fusion\\fusion-be\\fusion.repository\\data\\genericrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|solutionrelative:fusion.repository\\data\\genericrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|d:\\cn9\\sep490\\fusion\\fusion-be\\fusion.repository\\bases\\pagedresult.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|solutionrelative:fusion.repository\\bases\\pagedresult.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|d:\\cn9\\sep490\\fusion\\fusion-be\\fusion.repository\\data\\unitofwork.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|solutionrelative:fusion.repository\\data\\unitofwork.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|d:\\cn9\\sep490\\fusion\\fusion-be\\fusion.repository\\data\\iunitofwork.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|solutionrelative:fusion.repository\\data\\iunitofwork.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|d:\\cn9\\sep490\\fusion\\fusion-be\\fusion.repository\\data\\igenericrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|solutionrelative:fusion.repository\\data\\igenericrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|d:\\cn9\\sep490\\fusion\\fusion-be\\fusion.repository\\entities\\comment.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|solutionrelative:fusion.repository\\entities\\comment.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|d:\\cn9\\sep490\\fusion\\fusion-be\\fusion.repository\\entities\\ticketcomment.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|solutionrelative:fusion.repository\\entities\\ticketcomment.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|d:\\cn9\\sep490\\fusion\\fusion-be\\fusion.repository\\entities\\workflowtransition.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|solutionrelative:fusion.repository\\entities\\workflowtransition.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|d:\\cn9\\sep490\\fusion\\fusion-be\\fusion.repository\\entities\\functioninpage.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|solutionrelative:fusion.repository\\entities\\functioninpage.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{CD0B4A6E-6B0F-409A-A606-E2A3A71B0160}|Fusion.Service\\Fusion.Service.csproj|d:\\cn9\\sep490\\fusion\\fusion-be\\fusion.service\\iservices\\ijwtservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{CD0B4A6E-6B0F-409A-A606-E2A3A71B0160}|Fusion.Service\\Fusion.Service.csproj|solutionrelative:fusion.service\\iservices\\ijwtservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|d:\\cn9\\sep490\\fusion\\fusion-be\\fusion.repository\\fusion.repository.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|solutionrelative:fusion.repository\\fusion.repository.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|d:\\cn9\\sep490\\fusion\\fusion-be\\fusion.repository\\caching\\cacheservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|solutionrelative:fusion.repository\\caching\\cacheservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|d:\\cn9\\sep490\\fusion\\fusion-be\\fusion.repository\\caching\\cacheoptions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|solutionrelative:fusion.repository\\caching\\cacheoptions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|d:\\cn9\\sep490\\fusion\\fusion-be\\fusion.repository\\entities\\projectrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|solutionrelative:fusion.repository\\entities\\projectrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|d:\\cn9\\sep490\\fusion\\fusion-be\\fusion.repository\\entities\\project.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|solutionrelative:fusion.repository\\entities\\project.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|d:\\cn9\\sep490\\fusion\\fusion-be\\fusion.repository\\entities\\workflowstatus.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|solutionrelative:fusion.repository\\entities\\workflowstatus.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|d:\\cn9\\sep490\\fusion\\fusion-be\\fusion.repository\\entities\\userrole.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{246C1650-E7B3-4A5C-90CD-7640029024DB}|Fusion.Repository\\Fusion.Repository.csproj|solutionrelative:fusion.repository\\entities\\userrole.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -50,137 +198,622 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 3,
+          "SelectedChildIndex": 2,
           "Children": [
             {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "appsettings.json",
-              "DocumentMoniker": "E:\\SEP_DoAn\\Fusion-BE\\Fusion.API\\appsettings.json",
-              "RelativeDocumentMoniker": "Fusion.API\\appsettings.json",
-              "ToolTip": "E:\\SEP_DoAn\\Fusion-BE\\Fusion.API\\appsettings.json",
-              "RelativeToolTip": "Fusion.API\\appsettings.json",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2025-09-22T20:24:06.007Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "FusionDbContext.cs",
-              "DocumentMoniker": "E:\\SEP_DoAn\\Fusion-BE\\Fusion.Repository\\Data\\FusionDbContext.cs",
-              "RelativeDocumentMoniker": "Fusion.Repository\\Data\\FusionDbContext.cs",
-              "ToolTip": "E:\\SEP_DoAn\\Fusion-BE\\Fusion.Repository\\Data\\FusionDbContext.cs",
-              "RelativeToolTip": "Fusion.Repository\\Data\\FusionDbContext.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAADoAAAA5AAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-22T20:10:03.946Z",
-              "EditorCaption": ""
-            },
-            {
               "$type": "Bookmark",
-              "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
+              "Name": "ST:128:0:{1fc202d4-d401-403c-9834-5b218574bb67}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "LoginResponse.cs",
+              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Service\\ViewModels\\Users\\Responses\\LoginResponse.cs",
+              "RelativeDocumentMoniker": "Fusion.Service\\ViewModels\\Users\\Responses\\LoginResponse.cs",
+              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Service\\ViewModels\\Users\\Responses\\LoginResponse.cs",
+              "RelativeToolTip": "Fusion.Service\\ViewModels\\Users\\Responses\\LoginResponse.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAuwAQAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-23T16:22:31.366Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "ConfigureService.cs",
-              "DocumentMoniker": "E:\\SEP_DoAn\\Fusion-BE\\Fusion.Repository\\ConfigureService.cs",
-              "RelativeDocumentMoniker": "Fusion.Repository\\ConfigureService.cs",
-              "ToolTip": "E:\\SEP_DoAn\\Fusion-BE\\Fusion.Repository\\ConfigureService.cs",
-              "RelativeToolTip": "Fusion.Repository\\ConfigureService.cs",
-              "ViewState": "AgIAAAcAAAAAAAAAAAAmwBoAAAAAAAAAAAAAAA==",
+              "Title": "AuthenService.cs",
+              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Service\\Services\\AuthenService.cs",
+              "RelativeDocumentMoniker": "Fusion.Service\\Services\\AuthenService.cs",
+              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Service\\Services\\AuthenService.cs",
+              "RelativeToolTip": "Fusion.Service\\Services\\AuthenService.cs",
+              "ViewState": "AgIAAEkAAAAAAAAAAAAmwDQAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-21T20:50:45.622Z",
+              "WhenOpened": "2025-09-23T13:04:39.629Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 5,
-              "Title": "ConfigureService.cs",
-              "DocumentMoniker": "E:\\SEP_DoAn\\Fusion-BE\\Fusion.Service\\ConfigureService.cs",
-              "RelativeDocumentMoniker": "Fusion.Service\\ConfigureService.cs",
-              "ToolTip": "E:\\SEP_DoAn\\Fusion-BE\\Fusion.Service\\ConfigureService.cs",
-              "RelativeToolTip": "Fusion.Service\\ConfigureService.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABIAAAAAAAAAAAAAAA==",
+              "Title": "JwtService.cs",
+              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Service\\Services\\JwtService.cs",
+              "RelativeDocumentMoniker": "Fusion.Service\\Services\\JwtService.cs",
+              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Service\\Services\\JwtService.cs",
+              "RelativeToolTip": "Fusion.Service\\Services\\JwtService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAEQAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-21T20:50:41.682Z",
+              "WhenOpened": "2025-09-23T13:04:56.724Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "IAuthenService.cs",
+              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Service\\IServices\\IAuthenService.cs",
+              "RelativeDocumentMoniker": "Fusion.Service\\IServices\\IAuthenService.cs",
+              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Service\\IServices\\IAuthenService.cs",
+              "RelativeToolTip": "Fusion.Service\\IServices\\IAuthenService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-23T13:04:31.196Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "AuthenController.cs",
+              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.API\\Controllers\\AuthenController.cs",
+              "RelativeDocumentMoniker": "Fusion.API\\Controllers\\AuthenController.cs",
+              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.API\\Controllers\\AuthenController.cs",
+              "RelativeToolTip": "Fusion.API\\Controllers\\AuthenController.cs",
+              "ViewState": "AgIAAAsAAAAAAAAAAAAAwBwAAAAMAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-23T15:15:48.134Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "CustomExceptionHandlerMiddleware.cs",
+              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.API\\Middlewares\\CustomExceptionHandlerMiddleware.cs",
+              "RelativeDocumentMoniker": "Fusion.API\\Middlewares\\CustomExceptionHandlerMiddleware.cs",
+              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.API\\Middlewares\\CustomExceptionHandlerMiddleware.cs",
+              "RelativeToolTip": "Fusion.API\\Middlewares\\CustomExceptionHandlerMiddleware.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABQAAAAIAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-23T05:07:40.332Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "ResponseModel.cs",
+              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Service\\Commons\\BaseResponses\\ResponseModel.cs",
+              "RelativeDocumentMoniker": "Fusion.Service\\Commons\\BaseResponses\\ResponseModel.cs",
+              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Service\\Commons\\BaseResponses\\ResponseModel.cs",
+              "RelativeToolTip": "Fusion.Service\\Commons\\BaseResponses\\ResponseModel.cs",
+              "ViewState": "AgIAACIAAAAAAAAAAAAAADoAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-23T16:24:13.446Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "ResponseMessageHelper.cs",
+              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Bases\\Responses\\ResponseMessageHelper.cs",
+              "RelativeDocumentMoniker": "Fusion.Repository\\Bases\\Responses\\ResponseMessageHelper.cs",
+              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Bases\\Responses\\ResponseMessageHelper.cs",
+              "RelativeToolTip": "Fusion.Repository\\Bases\\Responses\\ResponseMessageHelper.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-23T05:07:06.983Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 9,
-              "Title": "DependencyInjection.cs",
-              "DocumentMoniker": "E:\\SEP_DoAn\\Fusion-BE\\Fusion.API\\DependencyInjection.cs",
-              "RelativeDocumentMoniker": "Fusion.API\\DependencyInjection.cs",
-              "ToolTip": "E:\\SEP_DoAn\\Fusion-BE\\Fusion.API\\DependencyInjection.cs",
-              "RelativeToolTip": "Fusion.API\\DependencyInjection.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAIAAAAkAAAAAAAAAA==",
+              "Title": "ResponseCodeConstants.cs",
+              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Bases\\Responses\\ResponseCodeConstants.cs",
+              "RelativeDocumentMoniker": "Fusion.Repository\\Bases\\Responses\\ResponseCodeConstants.cs",
+              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Bases\\Responses\\ResponseCodeConstants.cs",
+              "RelativeToolTip": "Fusion.Repository\\Bases\\Responses\\ResponseCodeConstants.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAQAAAAFAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-21T20:46:47.933Z"
+              "WhenOpened": "2025-09-23T05:07:02.344Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 7,
+              "Title": "ResponseMessages.cs",
+              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Bases\\Responses\\ResponseMessages.cs",
+              "RelativeDocumentMoniker": "Fusion.Repository\\Bases\\Responses\\ResponseMessages.cs",
+              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Bases\\Responses\\ResponseMessages.cs",
+              "RelativeToolTip": "Fusion.Repository\\Bases\\Responses\\ResponseMessages.cs",
+              "ViewState": "AgIAAAYAAAAAAAAAAAAAAAIAAAAUAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-22T12:47:29.574Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "UserRepository.cs",
+              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Repositories\\UserRepository.cs",
+              "RelativeDocumentMoniker": "Fusion.Repository\\Repositories\\UserRepository.cs",
+              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Repositories\\UserRepository.cs",
+              "RelativeToolTip": "Fusion.Repository\\Repositories\\UserRepository.cs",
+              "ViewState": "AgIAABQAAAAAAAAAAAD4vy8AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-23T09:35:28.96Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "IUserRepository.cs",
+              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\IRepositories\\IUserRepository.cs",
+              "RelativeDocumentMoniker": "Fusion.Repository\\IRepositories\\IUserRepository.cs",
+              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\IRepositories\\IUserRepository.cs",
+              "RelativeToolTip": "Fusion.Repository\\IRepositories\\IUserRepository.cs",
+              "ViewState": "AgIAAAMAAAAAAAAAAAAAAAsAAAA2AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-23T09:35:19.603Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "CustomExceptionFactory.cs",
+              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Bases\\Exceptions\\CustomExceptionFactory.cs",
+              "RelativeDocumentMoniker": "Fusion.Repository\\Bases\\Exceptions\\CustomExceptionFactory.cs",
+              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Bases\\Exceptions\\CustomExceptionFactory.cs",
+              "RelativeToolTip": "Fusion.Repository\\Bases\\Exceptions\\CustomExceptionFactory.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAuwAUAAAAUAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-21T20:39:02.971Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
+              "Title": "LoginRequestValidator.cs",
+              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Service\\ViewModels\\Users\\Validators\\LoginRequestValidator.cs",
+              "RelativeDocumentMoniker": "Fusion.Service\\ViewModels\\Users\\Validators\\LoginRequestValidator.cs",
+              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Service\\ViewModels\\Users\\Validators\\LoginRequestValidator.cs",
+              "RelativeToolTip": "Fusion.Service\\ViewModels\\Users\\Validators\\LoginRequestValidator.cs",
+              "ViewState": "AgIAAAQAAAAAAAAAAAAAwBIAAABlAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-23T13:13:53.155Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
+              "Title": "RegisterRequest.cs",
+              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Service\\ViewModels\\Users\\Requests\\RegisterRequest.cs",
+              "RelativeDocumentMoniker": "Fusion.Service\\ViewModels\\Users\\Requests\\RegisterRequest.cs",
+              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Service\\ViewModels\\Users\\Requests\\RegisterRequest.cs",
+              "RelativeToolTip": "Fusion.Service\\ViewModels\\Users\\Requests\\RegisterRequest.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-23T13:07:59.621Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 15,
+              "Title": "LoginRequest.cs",
+              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Service\\ViewModels\\Users\\Requests\\LoginRequest.cs",
+              "RelativeDocumentMoniker": "Fusion.Service\\ViewModels\\Users\\Requests\\LoginRequest.cs",
+              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Service\\ViewModels\\Users\\Requests\\LoginRequest.cs",
+              "RelativeToolTip": "Fusion.Service\\ViewModels\\Users\\Requests\\LoginRequest.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-23T13:08:21.213Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 16,
               "Title": "Program.cs",
-              "DocumentMoniker": "E:\\SEP_DoAn\\Fusion-BE\\Fusion.API\\Program.cs",
+              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.API\\Program.cs",
               "RelativeDocumentMoniker": "Fusion.API\\Program.cs",
-              "ToolTip": "E:\\SEP_DoAn\\Fusion-BE\\Fusion.API\\Program.cs",
+              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.API\\Program.cs",
               "RelativeToolTip": "Fusion.API\\Program.cs",
-              "ViewState": "AgIAAAMAAAAAAAAAAAAAACcAAAAVAAAAAAAAAA==",
+              "ViewState": "AgIAAAwAAAAAAAAAAAAAAB0AAAAhAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-09-21T20:42:11.341Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
-              "Title": "CustomExceptionFactory.cs",
-              "DocumentMoniker": "E:\\SEP_DoAn\\Fusion-BE\\Fusion.Repository\\Bases\\Exceptions\\CustomExceptionFactory.cs",
-              "RelativeDocumentMoniker": "Fusion.Repository\\Bases\\Exceptions\\CustomExceptionFactory.cs",
-              "ToolTip": "E:\\SEP_DoAn\\Fusion-BE\\Fusion.Repository\\Bases\\Exceptions\\CustomExceptionFactory.cs",
-              "RelativeToolTip": "Fusion.Repository\\Bases\\Exceptions\\CustomExceptionFactory.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABgAAAAjAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-21T20:39:02.971Z"
+              "DocumentIndex": 18,
+              "Title": "Fusion.API.http",
+              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.API\\Fusion.API.http",
+              "RelativeDocumentMoniker": "Fusion.API\\Fusion.API.http",
+              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.API\\Fusion.API.http",
+              "RelativeToolTip": "Fusion.API\\Fusion.API.http",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003502|",
+              "WhenOpened": "2025-09-23T13:55:22.254Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 8,
-              "Title": "CustomException.cs",
-              "DocumentMoniker": "E:\\SEP_DoAn\\Fusion-BE\\Fusion.Repository\\Bases\\Exceptions\\CustomException.cs",
-              "RelativeDocumentMoniker": "Fusion.Repository\\Bases\\Exceptions\\CustomException.cs",
-              "ToolTip": "E:\\SEP_DoAn\\Fusion-BE\\Fusion.Repository\\Bases\\Exceptions\\CustomException.cs",
-              "RelativeToolTip": "Fusion.Repository\\Bases\\Exceptions\\CustomException.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAUAAAAkAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-21T20:39:00.031Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 17,
               "Title": "ConfigureService.cs",
-              "DocumentMoniker": "E:\\SEP_DoAn\\Fusion-BE\\Fusion.API\\ConfigureService.cs",
+              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.API\\ConfigureService.cs",
               "RelativeDocumentMoniker": "Fusion.API\\ConfigureService.cs",
-              "ToolTip": "E:\\SEP_DoAn\\Fusion-BE\\Fusion.API\\ConfigureService.cs",
+              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.API\\ConfigureService.cs",
               "RelativeToolTip": "Fusion.API\\ConfigureService.cs",
-              "ViewState": "AgIAAAUAAAAAAAAAAAAAwAYAAABCAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABgAAAAwAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-09-21T20:37:27.331Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
-              "Title": "ResponseMessages.cs",
-              "DocumentMoniker": "E:\\SEP_DoAn\\Fusion-BE\\Fusion.Repository\\Bases\\Responses\\ResponseMessages.cs",
-              "RelativeDocumentMoniker": "Fusion.Repository\\Bases\\Responses\\ResponseMessages.cs",
-              "ToolTip": "E:\\SEP_DoAn\\Fusion-BE\\Fusion.Repository\\Bases\\Responses\\ResponseMessages.cs",
-              "RelativeToolTip": "Fusion.Repository\\Bases\\Responses\\ResponseMessages.cs",
+              "DocumentIndex": 19,
+              "Title": "CustomException.cs",
+              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Bases\\Exceptions\\CustomException.cs",
+              "RelativeDocumentMoniker": "Fusion.Repository\\Bases\\Exceptions\\CustomException.cs",
+              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Bases\\Exceptions\\CustomException.cs",
+              "RelativeToolTip": "Fusion.Repository\\Bases\\Exceptions\\CustomException.cs",
+              "ViewState": "AgIAAAQAAAAAAAAAAAA4wBAAAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-21T20:39:00.031Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 20,
+              "Title": "RegisterRequestValidator.cs",
+              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Service\\ViewModels\\Users\\Validators\\RegisterRequestValidator.cs",
+              "RelativeDocumentMoniker": "Fusion.Service\\ViewModels\\Users\\Validators\\RegisterRequestValidator.cs",
+              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Service\\ViewModels\\Users\\Validators\\RegisterRequestValidator.cs",
+              "RelativeToolTip": "Fusion.Service\\ViewModels\\Users\\Validators\\RegisterRequestValidator.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAEAAAAWAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-23T13:20:51.217Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 21,
+              "Title": "FusionDbContext.cs",
+              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Data\\FusionDbContext.cs",
+              "RelativeDocumentMoniker": "Fusion.Repository\\Data\\FusionDbContext.cs",
+              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Data\\FusionDbContext.cs",
+              "RelativeToolTip": "Fusion.Repository\\Data\\FusionDbContext.cs",
+              "ViewState": "AgIAAPIAAAAAAAAAAAAuwAQBAAA0AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-22T20:10:03.946Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 22,
+              "Title": "ConfigureService.cs",
+              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\ConfigureService.cs",
+              "RelativeDocumentMoniker": "Fusion.Repository\\ConfigureService.cs",
+              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\ConfigureService.cs",
+              "RelativeToolTip": "Fusion.Repository\\ConfigureService.cs",
+              "ViewState": "AgIAAAkAAAAAAAAAAAAAABgAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-21T20:50:45.622Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 24,
+              "Title": "MappingProfile.cs",
+              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Service\\Commons\\Helpers\\MappingProfile.cs",
+              "RelativeDocumentMoniker": "Fusion.Service\\Commons\\Helpers\\MappingProfile.cs",
+              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Service\\Commons\\Helpers\\MappingProfile.cs",
+              "RelativeToolTip": "Fusion.Service\\Commons\\Helpers\\MappingProfile.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABcAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-23T14:53:39.359Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 23,
+              "Title": "ConfigureService.cs",
+              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Service\\ConfigureService.cs",
+              "RelativeDocumentMoniker": "Fusion.Service\\ConfigureService.cs",
+              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Service\\ConfigureService.cs",
+              "RelativeToolTip": "Fusion.Service\\ConfigureService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA8AAAAfAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-21T20:50:41.682Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 25,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.API\\appsettings.json",
+              "RelativeDocumentMoniker": "Fusion.API\\appsettings.json",
+              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.API\\appsettings.json",
+              "RelativeToolTip": "Fusion.API\\appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABAAAAAmAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2025-09-23T03:21:25.049Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 27,
+              "Title": "User.cs",
+              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Entities\\User.cs",
+              "RelativeDocumentMoniker": "Fusion.Repository\\Entities\\User.cs",
+              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Entities\\User.cs",
+              "RelativeToolTip": "Fusion.Repository\\Entities\\User.cs",
+              "ViewState": "AgIAAAYAAAAAAAAAAAAAABEAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-23T03:24:27.432Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 26,
+              "Title": "20250923150923_InitialCreate.cs",
+              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Migrations\\20250923150923_InitialCreate.cs",
+              "RelativeDocumentMoniker": "Fusion.Repository\\Migrations\\20250923150923_InitialCreate.cs",
+              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Migrations\\20250923150923_InitialCreate.cs",
+              "RelativeToolTip": "Fusion.Repository\\Migrations\\20250923150923_InitialCreate.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-22T12:47:29.574Z"
+              "WhenOpened": "2025-09-23T15:09:23.778Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 28,
+              "Title": "Fusion.Service",
+              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Service\\Fusion.Service.csproj",
+              "RelativeDocumentMoniker": "Fusion.Service\\Fusion.Service.csproj",
+              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Service\\Fusion.Service.csproj",
+              "RelativeToolTip": "Fusion.Service\\Fusion.Service.csproj",
+              "ViewState": "AgIAAAMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2025-09-23T14:54:39.034Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 29,
+              "Title": "RefreshToken.cs",
+              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Entities\\RefreshToken.cs",
+              "RelativeDocumentMoniker": "Fusion.Repository\\Entities\\RefreshToken.cs",
+              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Entities\\RefreshToken.cs",
+              "RelativeToolTip": "Fusion.Repository\\Entities\\RefreshToken.cs",
+              "ViewState": "AgIAAAkAAAAAAAAAAAAIwCQAAAAzAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-23T13:56:39.565Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 30,
+              "Title": "GenericRepository.cs",
+              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Data\\GenericRepository.cs",
+              "RelativeDocumentMoniker": "Fusion.Repository\\Data\\GenericRepository.cs",
+              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Data\\GenericRepository.cs",
+              "RelativeToolTip": "Fusion.Repository\\Data\\GenericRepository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAA5AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-23T03:39:37.23Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 31,
+              "Title": "PagedResult.cs",
+              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Bases\\PagedResult.cs",
+              "RelativeDocumentMoniker": "Fusion.Repository\\Bases\\PagedResult.cs",
+              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Bases\\PagedResult.cs",
+              "RelativeToolTip": "Fusion.Repository\\Bases\\PagedResult.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-23T03:26:52.952Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 32,
+              "Title": "UnitOfWork.cs",
+              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Data\\UnitOfWork.cs",
+              "RelativeDocumentMoniker": "Fusion.Repository\\Data\\UnitOfWork.cs",
+              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Data\\UnitOfWork.cs",
+              "RelativeToolTip": "Fusion.Repository\\Data\\UnitOfWork.cs",
+              "ViewState": "AgIAAFgAAAAAAAAAAAAswGAAAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-23T03:38:49.106Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 33,
+              "Title": "IUnitOfWork.cs",
+              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Data\\IUnitOfWork.cs",
+              "RelativeDocumentMoniker": "Fusion.Repository\\Data\\IUnitOfWork.cs",
+              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Data\\IUnitOfWork.cs",
+              "RelativeToolTip": "Fusion.Repository\\Data\\IUnitOfWork.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-23T03:38:43.459Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 34,
+              "Title": "IGenericRepository.cs",
+              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Data\\IGenericRepository.cs",
+              "RelativeDocumentMoniker": "Fusion.Repository\\Data\\IGenericRepository.cs",
+              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Data\\IGenericRepository.cs",
+              "RelativeToolTip": "Fusion.Repository\\Data\\IGenericRepository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAuwAwAAAAfAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-23T03:39:11.875Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 35,
+              "Title": "Comment.cs",
+              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Entities\\Comment.cs",
+              "RelativeDocumentMoniker": "Fusion.Repository\\Entities\\Comment.cs",
+              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Entities\\Comment.cs",
+              "RelativeToolTip": "Fusion.Repository\\Entities\\Comment.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-23T07:26:12.272Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 36,
+              "Title": "TicketComment.cs",
+              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Entities\\TicketComment.cs",
+              "RelativeDocumentMoniker": "Fusion.Repository\\Entities\\TicketComment.cs",
+              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Entities\\TicketComment.cs",
+              "RelativeToolTip": "Fusion.Repository\\Entities\\TicketComment.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-23T13:54:57.808Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 37,
+              "Title": "WorkflowTransition.cs",
+              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Entities\\WorkflowTransition.cs",
+              "RelativeDocumentMoniker": "Fusion.Repository\\Entities\\WorkflowTransition.cs",
+              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Entities\\WorkflowTransition.cs",
+              "RelativeToolTip": "Fusion.Repository\\Entities\\WorkflowTransition.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-23T13:55:01.443Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 38,
+              "Title": "FunctionInPage.cs",
+              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Entities\\FunctionInPage.cs",
+              "RelativeDocumentMoniker": "Fusion.Repository\\Entities\\FunctionInPage.cs",
+              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Entities\\FunctionInPage.cs",
+              "RelativeToolTip": "Fusion.Repository\\Entities\\FunctionInPage.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-23T13:54:52.312Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 39,
+              "Title": "IJwtService.cs",
+              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Service\\IServices\\IJwtService.cs",
+              "RelativeDocumentMoniker": "Fusion.Service\\IServices\\IJwtService.cs",
+              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Service\\IServices\\IJwtService.cs",
+              "RelativeToolTip": "Fusion.Service\\IServices\\IJwtService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAABMAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-23T13:04:49.754Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 40,
+              "Title": "Fusion.Repository.csproj",
+              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Fusion.Repository.csproj",
+              "RelativeDocumentMoniker": "Fusion.Repository\\Fusion.Repository.csproj",
+              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Fusion.Repository.csproj",
+              "RelativeToolTip": "Fusion.Repository\\Fusion.Repository.csproj",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2025-09-23T08:30:49.071Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 41,
+              "Title": "CacheService.cs",
+              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Caching\\CacheService.cs",
+              "RelativeDocumentMoniker": "Fusion.Repository\\Caching\\CacheService.cs",
+              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Caching\\CacheService.cs",
+              "RelativeToolTip": "Fusion.Repository\\Caching\\CacheService.cs",
+              "ViewState": "AgIAACoAAAAAAAAAAAAewDMAAAA1AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-23T08:10:15.634Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 43,
+              "Title": "ProjectRequest.cs",
+              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Entities\\ProjectRequest.cs",
+              "RelativeDocumentMoniker": "Fusion.Repository\\Entities\\ProjectRequest.cs",
+              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Entities\\ProjectRequest.cs",
+              "RelativeToolTip": "Fusion.Repository\\Entities\\ProjectRequest.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-23T07:26:09.744Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 44,
+              "Title": "Project.cs",
+              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Entities\\Project.cs",
+              "RelativeDocumentMoniker": "Fusion.Repository\\Entities\\Project.cs",
+              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Entities\\Project.cs",
+              "RelativeToolTip": "Fusion.Repository\\Entities\\Project.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-23T07:26:10.64Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 42,
+              "Title": "CacheOptions.cs",
+              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Caching\\CacheOptions.cs",
+              "RelativeDocumentMoniker": "Fusion.Repository\\Caching\\CacheOptions.cs",
+              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Caching\\CacheOptions.cs",
+              "RelativeToolTip": "Fusion.Repository\\Caching\\CacheOptions.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-23T03:26:32.531Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 45,
+              "Title": "WorkflowStatus.cs",
+              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Entities\\WorkflowStatus.cs",
+              "RelativeDocumentMoniker": "Fusion.Repository\\Entities\\WorkflowStatus.cs",
+              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Entities\\WorkflowStatus.cs",
+              "RelativeToolTip": "Fusion.Repository\\Entities\\WorkflowStatus.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-23T07:26:15.051Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 46,
+              "Title": "UserRole.cs",
+              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Entities\\UserRole.cs",
+              "RelativeDocumentMoniker": "Fusion.Repository\\Entities\\UserRole.cs",
+              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Entities\\UserRole.cs",
+              "RelativeToolTip": "Fusion.Repository\\Entities\\UserRole.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-23T03:24:28.841Z",
+              "EditorCaption": ""
             }
           ]
         }
