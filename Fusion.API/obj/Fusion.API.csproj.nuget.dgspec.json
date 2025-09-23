@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "E:\\SEP_DoAn\\Fusion-BE\\Fusion.API\\Fusion.API.csproj": {}
+    "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.API\\Fusion.API.csproj": {}
   },
   "projects": {
-    "E:\\SEP_DoAn\\Fusion-BE\\Fusion.API\\Fusion.API.csproj": {
+    "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.API\\Fusion.API.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "E:\\SEP_DoAn\\Fusion-BE\\Fusion.API\\Fusion.API.csproj",
+        "projectUniqueName": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.API\\Fusion.API.csproj",
         "projectName": "Fusion.API",
-        "projectPath": "E:\\SEP_DoAn\\Fusion-BE\\Fusion.API\\Fusion.API.csproj",
-        "packagesPath": "C:\\Users\\Admin\\.nuget\\packages\\",
-        "outputPath": "E:\\SEP_DoAn\\Fusion-BE\\Fusion.API\\obj\\",
+        "projectPath": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.API\\Fusion.API.csproj",
+        "packagesPath": "C:\\Users\\CaoDung\\.nuget\\packages\\",
+        "outputPath": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.API\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\Admin\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\CaoDung\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -32,8 +32,8 @@
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
-              "E:\\SEP_DoAn\\Fusion-BE\\Fusion.Service\\Fusion.Service.csproj": {
-                "projectPath": "E:\\SEP_DoAn\\Fusion-BE\\Fusion.Service\\Fusion.Service.csproj"
+              "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Service\\Fusion.Service.csproj": {
+                "projectPath": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Service\\Fusion.Service.csproj"
               }
             }
           }
@@ -54,6 +54,14 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "dependencies": {
+            "FluentValidation.AspNetCore": {
+              "target": "Package",
+              "version": "[11.3.1, )"
+            },
+            "Microsoft.AspNetCore.Authentication.JwtBearer": {
+              "target": "Package",
+              "version": "[8.0.14, )"
+            },
             "Microsoft.EntityFrameworkCore.Design": {
               "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
               "suppressParent": "All",
@@ -63,6 +71,10 @@
             "Swashbuckle.AspNetCore": {
               "target": "Package",
               "version": "[6.6.2, )"
+            },
+            "System.IdentityModel.Tokens.Jwt": {
+              "target": "Package",
+              "version": "[8.14.0, )"
             }
           },
           "imports": [
@@ -84,24 +96,24 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.302/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.304/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
-    "E:\\SEP_DoAn\\Fusion-BE\\Fusion.Repository\\Fusion.Repository.csproj": {
+    "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Fusion.Repository.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "E:\\SEP_DoAn\\Fusion-BE\\Fusion.Repository\\Fusion.Repository.csproj",
+        "projectUniqueName": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Fusion.Repository.csproj",
         "projectName": "Fusion.Repository",
-        "projectPath": "E:\\SEP_DoAn\\Fusion-BE\\Fusion.Repository\\Fusion.Repository.csproj",
-        "packagesPath": "C:\\Users\\Admin\\.nuget\\packages\\",
-        "outputPath": "E:\\SEP_DoAn\\Fusion-BE\\Fusion.Repository\\obj\\",
+        "projectPath": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Fusion.Repository.csproj",
+        "packagesPath": "C:\\Users\\CaoDung\\.nuget\\packages\\",
+        "outputPath": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\Admin\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\CaoDung\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -183,24 +195,24 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.302/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.304/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
-    "E:\\SEP_DoAn\\Fusion-BE\\Fusion.Service\\Fusion.Service.csproj": {
+    "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Service\\Fusion.Service.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "E:\\SEP_DoAn\\Fusion-BE\\Fusion.Service\\Fusion.Service.csproj",
+        "projectUniqueName": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Service\\Fusion.Service.csproj",
         "projectName": "Fusion.Service",
-        "projectPath": "E:\\SEP_DoAn\\Fusion-BE\\Fusion.Service\\Fusion.Service.csproj",
-        "packagesPath": "C:\\Users\\Admin\\.nuget\\packages\\",
-        "outputPath": "E:\\SEP_DoAn\\Fusion-BE\\Fusion.Service\\obj\\",
+        "projectPath": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Service\\Fusion.Service.csproj",
+        "packagesPath": "C:\\Users\\CaoDung\\.nuget\\packages\\",
+        "outputPath": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Service\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\Admin\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\CaoDung\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -215,8 +227,8 @@
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
-              "E:\\SEP_DoAn\\Fusion-BE\\Fusion.Repository\\Fusion.Repository.csproj": {
-                "projectPath": "E:\\SEP_DoAn\\Fusion-BE\\Fusion.Repository\\Fusion.Repository.csproj"
+              "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Fusion.Repository.csproj": {
+                "projectPath": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Repository\\Fusion.Repository.csproj"
               }
             }
           }
@@ -236,6 +248,20 @@
       "frameworks": {
         "net8.0": {
           "targetAlias": "net8.0",
+          "dependencies": {
+            "AutoMapper": {
+              "target": "Package",
+              "version": "[12.0.0, )"
+            },
+            "AutoMapper.Extensions.Microsoft.DependencyInjection": {
+              "target": "Package",
+              "version": "[12.0.0, )"
+            },
+            "FluentValidation": {
+              "target": "Package",
+              "version": "[12.0.0, )"
+            }
+          },
           "imports": [
             "net461",
             "net462",
@@ -252,7 +278,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.302/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.304/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

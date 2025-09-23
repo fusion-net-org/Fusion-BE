@@ -611,6 +611,50 @@ namespace Fusion.Repository.Migrations
                     b.ToTable("ProjectTasks");
                 });
 
+            modelBuilder.Entity("Fusion.Repository.Entities.RefreshToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("(newid())");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("(sysutcdatetime())");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("expires_at");
+
+                    b.Property<string>("ReplacedByToken")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("replaced_by_token");
+
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("revoked_at");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("token");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("refresh_tokens");
+                });
+
             modelBuilder.Entity("Fusion.Repository.Entities.Role", b =>
                 {
                     b.Property<int>("Id")
@@ -975,10 +1019,15 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("bit")
                         .HasColumnName("is_system_admin");
 
-                    b.Property<string>("PasswordHash")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)")
+                    b.Property<byte[]>("PasswordHash")
+                        .IsRequired()
+                        .HasColumnType("varbinary(512)")
                         .HasColumnName("password_hash");
+
+                    b.Property<byte[]>("PasswordSalt")
+                        .IsRequired()
+                        .HasColumnType("varbinary(128)")
+                        .HasColumnName("password_salt");
 
                     b.Property<bool>("Status")
                         .ValueGeneratedOnAdd()
@@ -992,6 +1041,10 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("datetime2(3)")
                         .HasColumnName("update_at")
                         .HasDefaultValueSql("(sysutcdatetime())");
+
+                    b.Property<string>("UserName")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("userName");
 
                     b.HasKey("Id");
 
@@ -1319,6 +1372,18 @@ namespace Fusion.Repository.Migrations
                     b.Navigation("Sprint");
                 });
 
+            modelBuilder.Entity("Fusion.Repository.Entities.RefreshToken", b =>
+                {
+                    b.HasOne("Fusion.Repository.Entities.User", "User")
+                        .WithMany("RefreshTokens")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_RefreshTokens_User");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Fusion.Repository.Entities.Role", b =>
                 {
                     b.HasOne("Fusion.Repository.Entities.Company", "Company")
@@ -1595,6 +1660,8 @@ namespace Fusion.Repository.Migrations
                     b.Navigation("ProjectTasks");
 
                     b.Navigation("Projects");
+
+                    b.Navigation("RefreshTokens");
 
                     b.Navigation("TaskLogEvents");
 

@@ -1,5 +1,4 @@
 ﻿using Fusion.Repository.Bases.Exceptions;
-using Fusion.Service.Commons.BaseResponses;
 using System.Text.Json;
 using Fusion.Repository.Bases.Responses;
 
@@ -22,57 +21,71 @@ public class CustomExceptionHandlerMiddleware
         {
             await _next(context);
         }
+        catch (FluentValidation.ValidationException ex)
+        {
+            await HandleValidationExceptionAsync(context, ex);
+        }
         catch (CustomException ex)
         {
-            //_logger.LogError(ex, "Error occurred: {Message} at {StackTrace}", ex.ErrorMessage, ex.StackTrace);
-            Console.WriteLine($"Middleware Exception: {ex.GetType().Name} - {ex.Message}");
-
-            _logger.LogError(ex,
-               "Error occurred at {Path} | Message: {Message} | ClientIP: {ClientIP} | Timestamp: {Timestamp}",
-               context.Request.Path,
-               ex.Message,
-               context.Connection.RemoteIpAddress,
-               DateTime.UtcNow);
-
-            context.Response.StatusCode = ex.StatusCode;
-
-            await HandleExceptionAsync(context, ex);
-
+            await HandleCustomExceptionAsync(context, ex);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Middleware Exception: {ex.GetType().Name} - {ex.Message}");
-
-            _logger.LogError(ex,
-               "Error occurred at {Path} | Message: {Message} | ClientIP: {ClientIP} | Timestamp: {Timestamp}",
-               context.Request.Path,
-               ex.Message,
-               context.Connection.RemoteIpAddress,
-               DateTime.UtcNow);
-
-            context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-
-            await HandleExceptionAsync(context, new CustomException(
-                StatusCodes.Status500InternalServerError,
-                ResponseCodeConstants.INTERNAL_SERVER_ERROR,
-                ResponseMessages.INTERNAL_SERVER_ERROR,
-                ex.Message
-            ));
+            var internalError = CustomExceptionFactory.CreateInternalServerError(ex.Message);
+            await HandleCustomExceptionAsync(context, internalError);
         }
     }
 
-    private async Task HandleExceptionAsync(HttpContext context, CustomException ex)
+    private void LogError(HttpContext context, Exception ex, string? extra = null)
     {
-        // var response = new ResponseModel<object>(ex.StatusCode, null, null, ex.ErrorMessage?.ToString());
-        var response = ResponseModel<object>.ErrorResponseModel(
-            ex.StatusCode,
-            ex.ErrorMessage?.ToString() ?? "An unexpected error occurred.",
-            null
-        );
+        _logger.LogError(ex,
+            "Error at {Path} | Type: {Type} | Message: {Message} | ClientIP: {ClientIP} | Timestamp: {Timestamp} | Extra: {Extra}",
+            context.Request.Path,
+            ex.GetType().Name,
+            ex.Message,
+            context.Connection.RemoteIpAddress,
+            DateTime.UtcNow,
+            extra);
+    }
+
+    private async Task HandleValidationExceptionAsync(HttpContext context, FluentValidation.ValidationException ex)
+    {
+        var errors = ex.Errors
+            .GroupBy(e => e.PropertyName)
+            .ToDictionary(
+                g => g.Key,
+                g => g.Select(e => e.ErrorMessage).ToArray()
+            );
+
+        LogError(context, ex, JsonSerializer.Serialize(errors));
+
+        var response = new
+        {
+            statusCode = StatusCodes.Status400BadRequest,
+            message = ResponseMessages.INVALID_INPUT,
+            errors
+        };
+
+        context.Response.ContentType = "application/json";
+        context.Response.StatusCode = StatusCodes.Status400BadRequest;
+        await context.Response.WriteAsync(JsonSerializer.Serialize(response));
+    }
+
+
+    private async Task HandleCustomExceptionAsync(HttpContext context, CustomException ex)
+    {
+        LogError(context, ex);
+
+        var response = new
+        {
+            statusCode = ex.StatusCode,
+            errorCode = ex.ErrorCode,
+            message = ex.ErrorMessage?.ToString() ?? "An unexpected error occurred.",
+            detail = ex.DetailMessage
+        };
+
         context.Response.ContentType = "application/json";
         context.Response.StatusCode = ex.StatusCode;
-
-        var result = JsonSerializer.Serialize(response);
-        await context.Response.WriteAsync(result);
+        await context.Response.WriteAsync(JsonSerializer.Serialize(response));
     }
 }

@@ -1,12 +1,9 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Fusion.Repository.Data;
+using Fusion.Repository.IRepositories;
+using Fusion.Repository.Repositories;
 
 namespace Fusion.Repository
 {
@@ -14,8 +11,13 @@ namespace Fusion.Repository
     {
         public static IServiceCollection ConfigureRepositoryLayerService(this IServiceCollection services, IConfiguration configuration)
         {
+            // register connection database
             services.AddDatabase(configuration);
 
+
+            // register repositories entites
+            services.AddScoped<IUnitOfWork, UnitOfWork>();
+            services.AddScoped<IUserRepository, UserRepository>();
             return services;
         }
         public static void AddDatabase(this IServiceCollection services, IConfiguration configuration)

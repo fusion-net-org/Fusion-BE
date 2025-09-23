@@ -13,6 +13,9 @@ public partial class User
     [Column("id")]
     public Guid Id { get; set; }
 
+    [Column("userName")]
+    public string? UserName { get; set; }
+
     [Column("email")]
     [StringLength(320)]
     public string? Email { get; set; }
@@ -26,8 +29,10 @@ public partial class User
     public string? Gender { get; set; }
 
     [Column("password_hash")]
-    [StringLength(255)]
-    public string? PasswordHash { get; set; }
+    public byte[] PasswordHash { get; set; } = Array.Empty<byte>();
+
+    [Column("password_salt")]
+    public byte[] PasswordSalt { get; set; } = Array.Empty<byte>();
 
     [Column("google_sub")]
     [StringLength(128)]
@@ -88,4 +93,7 @@ public partial class User
 
     [InverseProperty("User")]
     public virtual ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
+
+    [InverseProperty("User")]
+    public virtual ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
 }

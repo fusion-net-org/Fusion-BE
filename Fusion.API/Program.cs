@@ -1,17 +1,20 @@
+using FluentValidation;
 using Fusion.API;
 using Fusion.Repository;
-using Fusion.Repository.Data;
 using Fusion.Service;
-using Microsoft.EntityFrameworkCore;
 using System.Net;
+using Travelogue.API.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-builder.Services.AddCors();
 builder.Services.AddControllers();
+
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
 #region Custom application service configuration
 
 System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls13;
@@ -32,17 +35,19 @@ builder.Services.Configure<RouteOptions>(options =>
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 
 
+
 var app = builder.Build();
 
+app.UseMiddleware<CustomExceptionHandlerMiddleware>();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
