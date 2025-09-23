@@ -1,5 +1,6 @@
 ﻿
 using AutoMapper;
+using Azure;
 using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Bases.Responses;
 using Fusion.Repository.Data;
@@ -28,7 +29,7 @@ public class AuthenService : IAuthenService
         _mapper = mapper;
         _jwtService = jwtService;
     }
-    public async Task<User> RegisterAsync(RegisterRequest request)
+    public async Task<ResponseModel<string>> RegisterAsync(RegisterRequest request)
     {
         //1.check request not null
         if (request == null)
@@ -54,7 +55,10 @@ public class AuthenService : IAuthenService
         await _unitOfWork.Repository<User>().AddAsync(user);
         await _unitOfWork.SaveChangesAsync();
 
-        return user;
+        return ResponseModel<string>.OkResponseModel(
+                        data: null ,
+                        message: "User registered successfully"
+);
     }
     public async Task<ResponseModel<LoginResponse>> LoginAsync(LoginRequest request)
     {

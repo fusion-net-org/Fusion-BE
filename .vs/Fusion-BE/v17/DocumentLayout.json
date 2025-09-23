@@ -7,6 +7,10 @@
       "RelativeMoniker": "D:0:0:{CD0B4A6E-6B0F-409A-A606-E2A3A71B0160}|Fusion.Service\\Fusion.Service.csproj|solutionrelative:fusion.service\\commons\\baseresponses\\responsemodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
+      "AbsoluteMoniker": "D:0:0:{CD0B4A6E-6B0F-409A-A606-E2A3A71B0160}|Fusion.Service\\Fusion.Service.csproj|d:\\cn9\\sep490\\fusion\\fusion-be\\fusion.service\\iservices\\iauthenservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{CD0B4A6E-6B0F-409A-A606-E2A3A71B0160}|Fusion.Service\\Fusion.Service.csproj|solutionrelative:fusion.service\\iservices\\iauthenservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{CD0B4A6E-6B0F-409A-A606-E2A3A71B0160}|Fusion.Service\\Fusion.Service.csproj|d:\\cn9\\sep490\\fusion\\fusion-be\\fusion.service\\services\\authenservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{CD0B4A6E-6B0F-409A-A606-E2A3A71B0160}|Fusion.Service\\Fusion.Service.csproj|solutionrelative:fusion.service\\services\\authenservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -21,10 +25,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{CD0B4A6E-6B0F-409A-A606-E2A3A71B0160}|Fusion.Service\\Fusion.Service.csproj|d:\\cn9\\sep490\\fusion\\fusion-be\\fusion.service\\viewmodels\\users\\responses\\loginresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{CD0B4A6E-6B0F-409A-A606-E2A3A71B0160}|Fusion.Service\\Fusion.Service.csproj|solutionrelative:fusion.service\\viewmodels\\users\\responses\\loginresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{CD0B4A6E-6B0F-409A-A606-E2A3A71B0160}|Fusion.Service\\Fusion.Service.csproj|d:\\cn9\\sep490\\fusion\\fusion-be\\fusion.service\\iservices\\iauthenservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{CD0B4A6E-6B0F-409A-A606-E2A3A71B0160}|Fusion.Service\\Fusion.Service.csproj|solutionrelative:fusion.service\\iservices\\iauthenservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{CD0B4A6E-6B0F-409A-A606-E2A3A71B0160}|Fusion.Service\\Fusion.Service.csproj|d:\\cn9\\sep490\\fusion\\fusion-be\\fusion.service\\services\\jwtservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -198,7 +198,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 6,
+          "SelectedChildIndex": 4,
           "Children": [
             {
               "$type": "Bookmark",
@@ -206,15 +206,54 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 2,
               "Title": "AuthenService.cs",
               "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Service\\Services\\AuthenService.cs",
               "RelativeDocumentMoniker": "Fusion.Service\\Services\\AuthenService.cs",
-              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Service\\Services\\AuthenService.cs*",
-              "RelativeToolTip": "Fusion.Service\\Services\\AuthenService.cs*",
-              "ViewState": "AgIAAE8AAAAAAAAAAAAmwGAAAAAcAAAAAAAAAA==",
+              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Service\\Services\\AuthenService.cs",
+              "RelativeToolTip": "Fusion.Service\\Services\\AuthenService.cs",
+              "ViewState": "AgIAABEAAAAAAAAAAAAUwBcAAAArAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-09-23T13:04:39.629Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "IAuthenService.cs",
+              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Service\\IServices\\IAuthenService.cs",
+              "RelativeDocumentMoniker": "Fusion.Service\\IServices\\IAuthenService.cs",
+              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Service\\IServices\\IAuthenService.cs",
+              "RelativeToolTip": "Fusion.Service\\IServices\\IAuthenService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAuwAkAAAAWAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-23T13:04:31.196Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "AuthenController.cs",
+              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.API\\Controllers\\AuthenController.cs",
+              "RelativeDocumentMoniker": "Fusion.API\\Controllers\\AuthenController.cs",
+              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.API\\Controllers\\AuthenController.cs",
+              "RelativeToolTip": "Fusion.API\\Controllers\\AuthenController.cs",
+              "ViewState": "AgIAAAsAAAAAAAAAAAAAwBwAAAAMAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-23T15:15:48.134Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "ResponseModel.cs",
+              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Service\\Commons\\BaseResponses\\ResponseModel.cs",
+              "RelativeDocumentMoniker": "Fusion.Service\\Commons\\BaseResponses\\ResponseModel.cs",
+              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Service\\Commons\\BaseResponses\\ResponseModel.cs",
+              "RelativeToolTip": "Fusion.Service\\Commons\\BaseResponses\\ResponseModel.cs",
+              "ViewState": "AgIAACIAAAAAAAAAAAAwwBgAAAAZAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-23T16:24:13.446Z",
               "EditorCaption": ""
             },
             {
@@ -232,33 +271,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "IAuthenService.cs",
-              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Service\\IServices\\IAuthenService.cs",
-              "RelativeDocumentMoniker": "Fusion.Service\\IServices\\IAuthenService.cs",
-              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Service\\IServices\\IAuthenService.cs",
-              "RelativeToolTip": "Fusion.Service\\IServices\\IAuthenService.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-23T13:04:31.196Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "AuthenController.cs",
-              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.API\\Controllers\\AuthenController.cs",
-              "RelativeDocumentMoniker": "Fusion.API\\Controllers\\AuthenController.cs",
-              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.API\\Controllers\\AuthenController.cs",
-              "RelativeToolTip": "Fusion.API\\Controllers\\AuthenController.cs",
-              "ViewState": "AgIAAAsAAAAAAAAAAAAAwBwAAAAMAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-23T15:15:48.134Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 4,
               "Title": "CustomExceptionHandlerMiddleware.cs",
               "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.API\\Middlewares\\CustomExceptionHandlerMiddleware.cs",
               "RelativeDocumentMoniker": "Fusion.API\\Middlewares\\CustomExceptionHandlerMiddleware.cs",
@@ -271,20 +284,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "ResponseModel.cs",
-              "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Service\\Commons\\BaseResponses\\ResponseModel.cs",
-              "RelativeDocumentMoniker": "Fusion.Service\\Commons\\BaseResponses\\ResponseModel.cs",
-              "ToolTip": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Service\\Commons\\BaseResponses\\ResponseModel.cs*",
-              "RelativeToolTip": "Fusion.Service\\Commons\\BaseResponses\\ResponseModel.cs*",
-              "ViewState": "AgIAAAkAAAAAAAAAAAAYwAcAAAAnAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-23T16:24:13.446Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 5,
               "Title": "LoginResponse.cs",
               "DocumentMoniker": "D:\\CN9\\SEP490\\Fusion\\Fusion-BE\\Fusion.Service\\ViewModels\\Users\\Responses\\LoginResponse.cs",
               "RelativeDocumentMoniker": "Fusion.Service\\ViewModels\\Users\\Responses\\LoginResponse.cs",

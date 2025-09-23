@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Fusion.API")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+5adf6cbecb264a56ec92fea9607b657bd96ece65")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c6ddca84a1d23eb489196c6dc5ffdde7b584b98f")]
 [assembly: System.Reflection.AssemblyProductAttribute("Fusion.API")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Fusion.API")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
