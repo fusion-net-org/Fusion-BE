@@ -11,5 +11,6 @@ namespace Fusion.Repository.IRepositories
         Task<User?> GetUserByIdAsync(Guid id);
         Task<User?> GetUserByEmailAsync(string email);
         Task<bool> CheckPassword(string password, byte[] passwordHash, byte[] passwordSalt);
+        Task<User?> GetUserByGoogleSubAsync(string googleSub);
     }
 }

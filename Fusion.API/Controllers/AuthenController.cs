@@ -4,7 +4,6 @@ using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.Users.Requests;
 using Fusion.Service.ViewModels.Users.Responses;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Fusion.API.Controllers
@@ -40,11 +39,16 @@ namespace Fusion.API.Controllers
                       message: "Login successfully"));
         }
 
-        [HttpPost("google-login")]
-        public IActionResult GoogleLogin(string returnUrl = "/")
+        [HttpPost("login-google")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<LoginResponse>))]
+        public async Task<IActionResult> GoogleLoginAsync([FromBody] GoogleLoginRequest request)
         {
-            var properties = new AuthenticationProperties { RedirectUri = Url.Action("GoogleResponse", new { returnUrl }) };
-            return Challenge(properties, "Google");
+            var result = await _authenService.GoogleLoginAsync(request);
+
+            return Ok(ResponseModel<LoginResponse>.OkResponseModel(
+                data: result,
+                message: "Login with Google successfully"
+            ));
         }
     }
 }
