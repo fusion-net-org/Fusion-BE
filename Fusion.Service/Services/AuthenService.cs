@@ -1,6 +1,7 @@
 ﻿
 using AutoMapper;
 using Azure;
+using Azure.Core;
 using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Bases.Responses;
 using Fusion.Repository.Data;
@@ -10,6 +11,7 @@ using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.Users.Requests;
 using Fusion.Service.ViewModels.Users.Responses;
+using Google.Apis.Auth;
 using System.Security.Cryptography;
 
 namespace Fusion.Service.Services;
@@ -96,5 +98,52 @@ public class AuthenService : IAuthenService
             RefreshToken = tokens.RefreshToken
         };
         return response;
+    }
+
+    public async Task<LoginResponse> GoogleLoginAsync(GoogleLoginRequest request)
+    {
+        if (request == null)
+            throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.INVALID_INPUT);
+
+        //Validate the token
+        GoogleJsonWebSignature.Payload payload;
+        try
+        {
+            payload = await GoogleJsonWebSignature.ValidateAsync(request.IdToken);
+        }
+        catch (Exception)
+        {
+            throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.INVALID_INPUT.FormatMessage("Google token invalid"));
+        }
+
+        // Check user existed
+        var user = await _userRepository.GetUserByGoogleSubAsync(payload.Subject);
+        if (user != null)
+        {
+            user.GoogleSub = payload.Subject;
+            await _unitOfWork.SaveChangesAsync();
+        }
+        else
+        {
+            // if not, create new user
+           user = new User
+            {
+                UserName = payload.Name ?? payload.Email,
+                Email = payload.Email,
+                GoogleSub = payload.Subject,
+                CreateAt = DateTime.UtcNow,
+            };
+
+            await _unitOfWork.Repository<User>().AddAsync(user);
+            await _unitOfWork.SaveChangesAsync();
+        }
+
+        var tokens = await _jwtService.GenerateTokensAsync(user);
+        return new LoginResponse
+        {
+            UserName = user.UserName,
+            AccessToken = tokens.AccessToken,
+            RefreshToken = tokens.RefreshToken
+        };
     }
 }

@@ -44,6 +44,12 @@ namespace Fusion.Repository.Repositories
             return await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
         }
 
+        public async Task<User?> GetUserByGoogleSubAsync(string googleSub)
+        {
+            return await _context.Users
+                         .FirstOrDefaultAsync(u => u.GoogleSub == googleSub);
+        }
+
         public Task<User?> GetUserByIdAsync(Guid id)
         {
             throw new NotImplementedException();
