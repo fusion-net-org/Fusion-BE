@@ -23,7 +23,7 @@ namespace Fusion.API.Controllers
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<bool>))]
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
-            // FluentValidation automatically validates the request
+            // FluentValidation automatically validates the request 
             var result = await _authenService.RegisterAsync(request);
             return Ok(ResponseModel<bool>.OkResponseModel(
                      data: result,
@@ -37,7 +37,7 @@ namespace Fusion.API.Controllers
             var result = await _authenService.LoginAsync(request);
             return Ok(ResponseModel<LoginResponse>.OkResponseModel(
                       data: result,
-                      message: "Login successfully" ));
+                      message: "Login successfully"));
         }
 
         [HttpPost("google-login")]

@@ -1,5 +1,6 @@
-﻿using System.Text.Json.Serialization;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
+using System.Text.Json.Serialization;
+
 namespace Fusion.Service.Commons.BaseResponses;
 
 public class ResponseModel<T>
@@ -45,7 +46,7 @@ public class ResponseModel<T>
         Message = message;
     }
 
-    // OK Response
+    //OK Response
     public static ResponseModel<T> OkResponseModel(T? data, object? additionalData = null, string? message = null)
     {
         return new ResponseModel<T>(StatusCodes.Status200OK, data, message);

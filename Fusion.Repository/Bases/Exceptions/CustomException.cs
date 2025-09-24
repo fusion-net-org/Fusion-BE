@@ -8,7 +8,7 @@ public class CustomException : Exception
     public object? DetailMessage { get; }
 
     public CustomException(int statusCode, string errorCode, string? message = null, string? detailMessage = null)
-            : base(detailMessage)
+           : base(detailMessage)
     {
         StatusCode = statusCode;
         ErrorCode = errorCode;
