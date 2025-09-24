@@ -1,5 +1,6 @@
-using FluentValidation;
+﻿using FluentValidation;
 using Fusion.API;
+using Fusion.API.Auth;
 using Fusion.Repository;
 using Fusion.Service;
 using System.Net;
@@ -14,6 +15,15 @@ builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+/*builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("Member.AssignRole", p => p.RequireAssertion(ctx =>
+    {
+        // Ở Presentation bạn có thể đọc CompanyContext từ middleware
+        // ví dụ minh hoạ: cho phép nếu có claim "perm:Member.AssignRole"
+        return ctx.User.HasClaim("perm", "Member.AssignRole") || ctx.User.IsInRole("SystemAdmin");
+    }));
+});*/
 
 #region Custom application service configuration
 
@@ -37,7 +47,7 @@ builder.Services.Configure<RouteOptions>(options =>
 
 
 var app = builder.Build();
-
+app.UseMiddleware<CompanyContextMiddleware>();
 app.UseMiddleware<CustomExceptionHandlerMiddleware>();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

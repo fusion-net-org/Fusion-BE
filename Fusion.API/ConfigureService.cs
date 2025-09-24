@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using FluentValidation.AspNetCore;
+using Fusion.API.Auth;
 using Fusion.Service.ViewModels.Users.Validators;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -21,7 +22,6 @@ namespace Fusion.API
 
             // 2.Auto validation middleware
             services.AddFluentValidationAutoValidation();
-
             // 3. Client-side adapters if needed
             services.AddFluentValidationClientsideAdapters();
             return services;
