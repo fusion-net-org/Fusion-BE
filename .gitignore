@@ -408,6 +408,8 @@ FodyWeavers.xsd
 
 ### VisualStudio Patch ###
 # Additional files built by Visual Studio
+Fusion.API/appsettings.json
+Fusion.API/appsettings.*.json
 appsettings.json
 appsettings.*.json
 *.secrets.json
