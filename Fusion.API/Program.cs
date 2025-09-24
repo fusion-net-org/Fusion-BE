@@ -15,7 +15,7 @@ builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-/*builder.Services.AddAuthorization(options =>
+/*   builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("Member.AssignRole", p => p.RequireAssertion(ctx =>
     {
