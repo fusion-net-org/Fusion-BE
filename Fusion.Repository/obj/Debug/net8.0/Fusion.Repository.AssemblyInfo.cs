@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Fusion.Repository")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+2ecb90ec6e2dc986830a41e3d27b83b172ff9b92")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f1c10adb78a7f8665ca22a262970aee537ca4b13")]
 [assembly: System.Reflection.AssemblyProductAttribute("Fusion.Repository")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Fusion.Repository")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

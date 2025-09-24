@@ -408,3 +408,9 @@ D:\CN9\SEP490\Fusion\Fusion-BE\Fusion.API\bin\Debug\net8.0\AutoMapper.dll
 D:\CN9\SEP490\Fusion\Fusion-BE\Fusion.API\bin\Debug\net8.0\AutoMapper.Extensions.Microsoft.DependencyInjection.dll
 D:\CN9\SEP490\Fusion\Fusion-BE\Fusion.API\bin\Debug\net8.0\FluentValidation.AspNetCore.dll
 D:\CN9\SEP490\Fusion\Fusion-BE\Fusion.API\bin\Debug\net8.0\FluentValidation.DependencyInjectionExtensions.dll
+E:\SEP_DoAn\Fusion-BE\Fusion.API\bin\Debug\net8.0\AutoMapper.dll
+E:\SEP_DoAn\Fusion-BE\Fusion.API\bin\Debug\net8.0\AutoMapper.Extensions.Microsoft.DependencyInjection.dll
+E:\SEP_DoAn\Fusion-BE\Fusion.API\bin\Debug\net8.0\FluentValidation.dll
+E:\SEP_DoAn\Fusion-BE\Fusion.API\bin\Debug\net8.0\FluentValidation.AspNetCore.dll
+E:\SEP_DoAn\Fusion-BE\Fusion.API\bin\Debug\net8.0\FluentValidation.DependencyInjectionExtensions.dll
+E:\SEP_DoAn\Fusion-BE\Fusion.API\bin\Debug\net8.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll

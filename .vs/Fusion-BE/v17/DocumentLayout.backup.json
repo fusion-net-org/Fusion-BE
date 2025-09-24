@@ -58,8 +58,12 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 1,
           "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
+            },
             {
               "$type": "Document",
               "DocumentIndex": 0,
@@ -68,7 +72,7 @@
               "RelativeDocumentMoniker": "Fusion.Repository\\Repositories\\UserRepository.cs",
               "ToolTip": "E:\\SEP_DoAn\\Fusion-BE\\Fusion.Repository\\Repositories\\UserRepository.cs",
               "RelativeToolTip": "Fusion.Repository\\Repositories\\UserRepository.cs",
-              "ViewState": "AgIAABMAAAAAAAAAAAAQwAAAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-09-23T20:05:11.012Z",
               "EditorCaption": ""
@@ -83,8 +87,7 @@
               "RelativeToolTip": "Fusion.API\\Controllers\\AuthenController.cs",
               "ViewState": "AgIAAAgAAAAAAAAAAAAmwBQAAAAxAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-23T20:03:34.269Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-09-23T20:03:34.269Z"
             },
             {
               "$type": "Document",
@@ -96,8 +99,7 @@
               "RelativeToolTip": "Fusion.API\\appsettings.json",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAAZAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2025-09-22T20:24:06.007Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-09-22T20:24:06.007Z"
             },
             {
               "$type": "Document",
@@ -112,10 +114,6 @@
               "WhenOpened": "2025-09-22T20:10:03.946Z"
             },
             {
-              "$type": "Bookmark",
-              "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
-            },
-            {
               "$type": "Document",
               "DocumentIndex": 3,
               "Title": "FusionDbContextModelSnapshot.cs",
@@ -125,8 +123,7 @@
               "RelativeToolTip": "Fusion.Repository\\Migrations\\FusionDbContextModelSnapshot.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-22T21:02:05.303Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-09-22T21:02:05.303Z"
             },
             {
               "$type": "Document",
