@@ -1,6 +1,6 @@
 ﻿namespace Fusion.Repository.Bases.Responses;
 
-public class ResponseCodeConstants
+public static class ResponseCodeConstants
 {
     public const string NOT_FOUND = "NotFound";
     public const string SUCCESS = "Success";

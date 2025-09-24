@@ -33,6 +33,7 @@ public static class CustomExceptionFactory
             detailMessage
         );
     }
+
     public static CustomException CreateForbiddenError()
     {
         return new CustomException(
