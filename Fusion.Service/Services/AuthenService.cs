@@ -29,7 +29,7 @@ public class AuthenService : IAuthenService
         _mapper = mapper;
         _jwtService = jwtService;
     }
-    public async Task<ResponseModel<string>> RegisterAsync(RegisterRequest request)
+    public async Task<bool> RegisterAsync(RegisterRequest request)
     {
         //1.check request not null
         if (request == null)
@@ -55,12 +55,9 @@ public class AuthenService : IAuthenService
         await _unitOfWork.Repository<User>().AddAsync(user);
         await _unitOfWork.SaveChangesAsync();
 
-        return ResponseModel<string>.OkResponseModel(
-                        data: null ,
-                        message: "User registered successfully"
-);
+        return true;
     }
-    public async Task<ResponseModel<LoginResponse>> LoginAsync(LoginRequest request)
+    public async Task<LoginResponse> LoginAsync(LoginRequest request)
     {
         // 1. validate input
         if (request == null)
@@ -98,9 +95,6 @@ public class AuthenService : IAuthenService
             AccessToken = tokens.AccessToken,
             RefreshToken = tokens.RefreshToken
         };
-        return ResponseModel<LoginResponse>.OkResponseModel(
-                message: "Login successfully",
-                data: response
-               );
+        return response;
     }
 }
