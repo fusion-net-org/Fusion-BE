@@ -1,6 +1,7 @@
 ﻿using FluentValidation;
 using FluentValidation.AspNetCore;
 using Fusion.API.Auth;
+using Fusion.Repository.Repositories;
 using Fusion.Service.ViewModels.Users.Validators;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -15,11 +16,11 @@ namespace Fusion.API
         {
             services.AddAuthenJwt(configuration);
             services.ConfigCors();
-
+            services.AddScoped<IPermissionQuery, PermissionQuery>();
             // --- FluentValidation ---
             // 1. Register all validators in the assembly containing RegisterRequestValidator
             services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
-
+            services.AddMemoryCache();
             // 2.Auto validation middleware
             services.AddFluentValidationAutoValidation();
             // 3. Client-side adapters if needed
