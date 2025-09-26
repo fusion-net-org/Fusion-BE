@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <Folder Include="BusinessModels\" />
+    <Folder Include="Commons\NewFolder\" />
   </ItemGroup>
 
   <ItemGroup>
