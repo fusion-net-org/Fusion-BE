@@ -1,5 +1,6 @@
-using FluentValidation;
+﻿using FluentValidation;
 using Fusion.API;
+using Fusion.API.Auth;
 using Fusion.API.Middlewares;
 using Fusion.Repository;
 using Fusion.Service;
@@ -12,39 +13,17 @@ var builder = WebApplication.CreateBuilder(args);
 
 
 builder.Services.AddEndpointsApiExplorer();
-
-builder.Services.AddSwaggerGen(c =>
+builder.Services.AddSwaggerGen();
+/*   builder.Services.AddAuthorization(options =>
 {
-    c.SwaggerDoc("v1", new() { Title = "Fusion API", Version = "v1" });
-
-    c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    options.AddPolicy("Member.AssignRole", p => p.RequireAssertion(ctx =>
     {
-        Name = "Authorization",
-        Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
-        Scheme = "Bearer",
-        BearerFormat = "JWT",
-        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
-        Description = "Bearer eyJhbGciOi...**",
-    });
-
-    c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
-    {
-        {
-            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
-            {
-                Reference = new Microsoft.OpenApi.Models.OpenApiReference
-                {
-                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            new string[] {}
-        }
-    });
-});
-
-builder.Services.Configure<MailSettings>(builder.Configuration.GetSection("MailSettings"));
-
+        // Ở Presentation bạn có thể đọc CompanyContext từ middleware
+        // ví dụ minh hoạ: cho phép nếu có claim "perm:Member.AssignRole"
+        return ctx.User.HasClaim("perm", "Member.AssignRole") || ctx.User.IsInRole("SystemAdmin");
+    }));
+});*/
+builder.Services.AddMemoryCache();
 #region Custom application service configuration
 
 System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls13;
@@ -63,7 +42,7 @@ builder.Services.ConfigureApiLayerServices(builder.Configuration);
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 
 var app = builder.Build();
-
+app.UseMiddleware<CompanyContextMiddleware>();
 app.UseMiddleware<CustomExceptionHandlerMiddleware>();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

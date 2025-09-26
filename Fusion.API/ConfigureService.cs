@@ -2,6 +2,8 @@
 using System.Text.RegularExpressions;
 using FluentValidation;
 using FluentValidation.AspNetCore;
+using Fusion.API.Auth;
+using Fusion.Repository.Repositories;
 using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.ViewModels.Users.Validators;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -18,6 +20,7 @@ namespace Fusion.API
             services.AddAuthenJwt(configuration);
             services.AddSwaggerWithJwt();
             services.ConfigCors();
+            services.AddScoped<IPermissionQuery, PermissionQuery>();
 
             // --- Controllers 一 Validation Response --
             services.AddControllers()
@@ -44,6 +47,8 @@ namespace Fusion.API
             // --- FluentValidation ---
             services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
             services.AddFluentValidationAutoValidation();
+            // 3. Client-side adapters if needed
+            services.AddFluentValidationClientsideAdapters();
             services.AddFluentValidationClientsideAdapters();
 
             return services;

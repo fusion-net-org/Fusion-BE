@@ -1,0 +1,11 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Fusion.Service.BusinessModels
+{
+    public record RoleIdsRequest(System.Collections.Generic.List<int> RoleIds);
+
+}
