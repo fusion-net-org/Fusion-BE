@@ -1,10 +1,11 @@
-﻿using FluentValidation;
+﻿using System.Text;
+using System.Text.RegularExpressions;
+using FluentValidation;
 using FluentValidation.AspNetCore;
+using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.ViewModels.Users.Validators;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
-using System.Text;
-using System.Text.RegularExpressions;
 
 namespace Fusion.API
 {
@@ -24,6 +25,7 @@ namespace Fusion.API
 
             // 3. Client-side adapters if needed
             services.AddFluentValidationClientsideAdapters();
+
             return services;
         }
         public static void ConfigCors(this IServiceCollection services)

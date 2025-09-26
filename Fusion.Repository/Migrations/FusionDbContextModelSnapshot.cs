@@ -56,7 +56,7 @@ namespace Fusion.Repository.Migrations
 
                     b.HasIndex("TaskId");
 
-                    b.ToTable("Comments");
+                    b.ToTable("Comments", (string)null);
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.Company", b =>
@@ -77,6 +77,11 @@ namespace Fusion.Repository.Migrations
                     b.Property<string>("Detail")
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("detail");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("email");
 
                     b.Property<string>("ImageCompany")
                         .HasMaxLength(500)
@@ -108,7 +113,7 @@ namespace Fusion.Repository.Migrations
 
                     b.HasIndex("OwnerUserId");
 
-                    b.ToTable("Companies");
+                    b.ToTable("Companies", (string)null);
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.CompanyFriendship", b =>
@@ -171,7 +176,7 @@ namespace Fusion.Repository.Migrations
                         .IsUnique()
                         .HasFilter("([status] IN ('pending', 'accepted'))");
 
-                    b.ToTable("CompanyFriendships");
+                    b.ToTable("CompanyFriendships", (string)null);
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.CompanyMember", b =>
@@ -212,7 +217,7 @@ namespace Fusion.Repository.Migrations
                         .IsUnique()
                         .HasFilter("([company_id] IS NOT NULL AND [user_id] IS NOT NULL)");
 
-                    b.ToTable("CompanyMembers");
+                    b.ToTable("CompanyMembers", (string)null);
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.FunctionInPage", b =>
@@ -245,7 +250,7 @@ namespace Fusion.Repository.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("FunctionInPages");
+                    b.ToTable("FunctionInPages", (string)null);
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.Notification", b =>
@@ -307,7 +312,7 @@ namespace Fusion.Repository.Migrations
                     b.HasIndex(new[] { "UserId" }, "IX_Notifications_User_Unread")
                         .HasFilter("([is_read]=(0))");
 
-                    b.ToTable("Notifications");
+                    b.ToTable("Notifications", (string)null);
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.Project", b =>
@@ -397,7 +402,7 @@ namespace Fusion.Repository.Migrations
                         .IsUnique()
                         .HasFilter("[project_request_id] IS NOT NULL");
 
-                    b.ToTable("Projects");
+                    b.ToTable("Projects", (string)null);
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.ProjectMember", b =>
@@ -440,7 +445,7 @@ namespace Fusion.Repository.Migrations
                         .IsUnique()
                         .HasFilter("([project_id] IS NOT NULL AND [user_id] IS NOT NULL)");
 
-                    b.ToTable("ProjectMembers");
+                    b.ToTable("ProjectMembers", (string)null);
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.ProjectRequest", b =>
@@ -521,7 +526,7 @@ namespace Fusion.Repository.Migrations
                         .IsUnique()
                         .HasFilter("[converted_project_id] IS NOT NULL");
 
-                    b.ToTable("ProjectRequests");
+                    b.ToTable("ProjectRequests", (string)null);
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.ProjectTask", b =>
@@ -608,7 +613,7 @@ namespace Fusion.Repository.Migrations
 
                     b.HasIndex("SprintId");
 
-                    b.ToTable("ProjectTasks");
+                    b.ToTable("ProjectTasks", (string)null);
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.RefreshToken", b =>
@@ -652,7 +657,7 @@ namespace Fusion.Repository.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("refresh_tokens");
+                    b.ToTable("refresh_tokens", (string)null);
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.Role", b =>
@@ -683,7 +688,7 @@ namespace Fusion.Repository.Migrations
                         .IsUnique()
                         .HasFilter("([company_id] IS NOT NULL AND [role_name] IS NOT NULL)");
 
-                    b.ToTable("Roles");
+                    b.ToTable("Roles", (string)null);
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.RolePermission", b =>
@@ -723,7 +728,7 @@ namespace Fusion.Repository.Migrations
                         .IsUnique()
                         .HasFilter("([company_id] IS NOT NULL AND [role_id] IS NOT NULL AND [function_id] IS NOT NULL)");
 
-                    b.ToTable("RolePermissions");
+                    b.ToTable("RolePermissions", (string)null);
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.Sprint", b =>
@@ -760,7 +765,7 @@ namespace Fusion.Repository.Migrations
 
                     b.HasIndex("ProjectId");
 
-                    b.ToTable("Sprints");
+                    b.ToTable("Sprints", (string)null);
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.TaskLogEvent", b =>
@@ -815,7 +820,7 @@ namespace Fusion.Repository.Migrations
 
                     b.HasIndex("TaskId");
 
-                    b.ToTable("TaskLogEvent");
+                    b.ToTable("TaskLogEvent", (string)null);
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.TaskWorkflow", b =>
@@ -846,7 +851,7 @@ namespace Fusion.Repository.Migrations
 
                     b.HasIndex("WorkflowStatusId");
 
-                    b.ToTable("TaskWorkflow");
+                    b.ToTable("TaskWorkflow", (string)null);
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.Ticket", b =>
@@ -934,7 +939,7 @@ namespace Fusion.Repository.Migrations
 
                     b.HasIndex("SubmittedBy");
 
-                    b.ToTable("Tickets");
+                    b.ToTable("Tickets", (string)null);
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.TicketComment", b =>
@@ -977,7 +982,7 @@ namespace Fusion.Repository.Migrations
 
                     b.HasIndex("TicketId");
 
-                    b.ToTable("TicketComments");
+                    b.ToTable("TicketComments", (string)null);
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.User", b =>
@@ -1056,7 +1061,7 @@ namespace Fusion.Repository.Migrations
                         .IsUnique()
                         .HasFilter("([email] IS NOT NULL)");
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.UserRole", b =>
@@ -1083,7 +1088,7 @@ namespace Fusion.Repository.Migrations
                         .IsUnique()
                         .HasFilter("([user_id] IS NOT NULL AND [role_id] IS NOT NULL)");
 
-                    b.ToTable("UserRoles");
+                    b.ToTable("UserRoles", (string)null);
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.Workflow", b =>
@@ -1111,7 +1116,7 @@ namespace Fusion.Repository.Migrations
 
                     b.HasIndex("CompanyId");
 
-                    b.ToTable("Workflows");
+                    b.ToTable("Workflows", (string)null);
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.WorkflowStatus", b =>
@@ -1154,7 +1159,7 @@ namespace Fusion.Repository.Migrations
                         .IsUnique()
                         .HasFilter("([workflow_id] IS NOT NULL AND [name] IS NOT NULL)");
 
-                    b.ToTable("WorkflowStatus");
+                    b.ToTable("WorkflowStatus", (string)null);
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.WorkflowTransition", b =>
@@ -1188,7 +1193,7 @@ namespace Fusion.Repository.Migrations
                         .IsUnique()
                         .HasFilter("([workflow_id] IS NOT NULL AND [from_status_id] IS NOT NULL AND [to_status_id] IS NOT NULL)");
 
-                    b.ToTable("WorkflowTransitions");
+                    b.ToTable("WorkflowTransitions", (string)null);
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.Comment", b =>

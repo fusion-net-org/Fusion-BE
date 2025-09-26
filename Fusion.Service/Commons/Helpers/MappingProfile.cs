@@ -3,6 +3,7 @@
 using AutoMapper;
 using Fusion.Repository.Entities;
 using Fusion.Service.ViewModels.Users.Requests;
+using Fusion.Service.ViewModels.Users.Responses;
 
 namespace Fusion.Service.Commons.Helpers;
 
@@ -18,6 +19,7 @@ public class MappingProfile : Profile
                .ForMember(dest => dest.CreateAt, opt => opt.MapFrom(src => DateTime.UtcNow))
                .ForMember(dest => dest.UpdateAt, opt => opt.MapFrom(src => DateTime.UtcNow))
                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => true));
-
+        //Partner
+        CreateMap<CompanyFriendshipResponse,CompanyFriendship>().ReverseMap();
     }
 }

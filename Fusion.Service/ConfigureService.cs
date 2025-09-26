@@ -16,6 +16,11 @@ namespace Fusion.Service
             //register service entities
             services.AddScoped<IAuthenService, AuthenService>();
             services.AddScoped<IJwtService, JwtService>();
+            services.AddScoped<IMailService, MailService>();
+            //partner
+            services.AddScoped<ICompanyFriendshipService,CompanyFriendshipService>();
+            //company
+            services.AddScoped<ICompanyService, CompanyService>();
             return services;
         }
      }
