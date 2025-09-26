@@ -1,12 +1,12 @@
-﻿using FluentValidation;
+﻿using System.Text;
+using System.Text.RegularExpressions;
+using FluentValidation;
 using FluentValidation.AspNetCore;
 using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.ViewModels.Users.Validators;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
-using System.Text;
-using System.Text.RegularExpressions;
 
 namespace Fusion.API
 {
@@ -45,7 +45,6 @@ namespace Fusion.API
             services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
             services.AddFluentValidationAutoValidation();
             services.AddFluentValidationClientsideAdapters();
-
 
             return services;
         }

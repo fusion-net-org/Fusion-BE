@@ -42,4 +42,14 @@ public static class CustomExceptionFactory
             "Forbidden access!"
         );
     }
+    public static CustomException CreateUnauthorizedError(string? detailMessage = null)
+    {
+        return new CustomException(
+            StatusCodes.Status401Unauthorized,
+            ResponseCodeConstants.UNAUTHORIZED,
+            "Unauthorized access!",
+            detailMessage
+        );
+    }
+
 }

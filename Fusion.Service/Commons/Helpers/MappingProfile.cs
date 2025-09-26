@@ -1,4 +1,3 @@
-﻿
 
 using AutoMapper;
 using Fusion.Repository.Entities;
@@ -19,6 +18,8 @@ public class MappingProfile : Profile
                .ForMember(dest => dest.CreateAt, opt => opt.MapFrom(src => DateTime.UtcNow))
                .ForMember(dest => dest.UpdateAt, opt => opt.MapFrom(src => DateTime.UtcNow))
                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => true));
+        //Partner
+        CreateMap<CompanyFriendshipResponse,CompanyFriendship>().ReverseMap();
 
         CreateMap<User, UserPageResponse>();
     }
