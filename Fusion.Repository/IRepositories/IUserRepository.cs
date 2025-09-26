@@ -1,5 +1,7 @@
 ﻿
 
+using Fusion.Repository.Bases.Page;
+using Fusion.Repository.Bases.Page.User;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 
@@ -7,10 +9,11 @@ namespace Fusion.Repository.IRepositories
 {
     public interface IUserRepository : IGenericRepository<User>
     {
-        Task<bool> CheckEmailExistAsync(string email);
-        Task<User?> GetUserByIdAsync(Guid id);
-        Task<User?> GetUserByEmailAsync(string email);
-        Task<bool> CheckPassword(string password, byte[] passwordHash, byte[] passwordSalt);
-        Task<User?> GetUserByGoogleSubAsync(string googleSub);
+        Task<PagedResult<User>> GetPagedUsersAsync(UserPagedRequest request, CancellationToken cancellationToken = default);
+        Task<User?> GetUserByIdAsync(Guid id, CancellationToken cancellationToken = default);
+        Task<User?> GetUserByEmailAsync(string email, CancellationToken cancellationToken = default);
+        Task<User?> GetUserByGoogleSubAsync(string googleSub, CancellationToken cancellationToken = default);
+        Task<bool> CheckEmailExistAsync(string email, CancellationToken cancellationToken = default);
+
     }
 }

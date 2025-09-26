@@ -1,7 +1,9 @@
 ﻿using FluentValidation;
 using FluentValidation.AspNetCore;
+using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.ViewModels.Users.Validators;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -12,18 +14,39 @@ namespace Fusion.API
     {
         public static IServiceCollection ConfigureApiLayerServices(this IServiceCollection services, IConfiguration configuration)
         {
+            // --- JWT / Swagger / CORS ---
             services.AddAuthenJwt(configuration);
+            services.AddSwaggerWithJwt();
             services.ConfigCors();
 
+            // --- Controllers 一 Validation Response --
+            services.AddControllers()
+                .ConfigureApiBehaviorOptions(options =>
+                {
+                    options.InvalidModelStateResponseFactory = context =>
+                    {
+                        var errors = context.ModelState
+                            .Where(kvp => kvp.Value.Errors.Count > 0)
+                            .ToDictionary(
+                                kvp => kvp.Key,
+                                kvp => kvp.Value.Errors.Select(e => e.ErrorMessage).ToArray()
+                            );
+
+                        var response = ResponseModel<object>.Error(
+                            statusCode: StatusCodes.Status400BadRequest,
+                            message: "Validation failed",
+                            additionalData: errors
+                        );
+
+                        return new BadRequestObjectResult(response);
+                    };
+                });
             // --- FluentValidation ---
-            // 1. Register all validators in the assembly containing RegisterRequestValidator
             services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
-
-            // 2.Auto validation middleware
             services.AddFluentValidationAutoValidation();
-
-            // 3. Client-side adapters if needed
             services.AddFluentValidationClientsideAdapters();
+
+
             return services;
         }
         public static void ConfigCors(this IServiceCollection services)
@@ -72,6 +95,12 @@ namespace Fusion.API
                         ClockSkew = TimeSpan.Zero
                     };
                 });
+        }
+
+        // Set up Swagger to use JWT authentication
+        public static void AddSwaggerWithJwt(this IServiceCollection services)
+        {
+           
         }
         public class CamelCaseParameterTransformer : IOutboundParameterTransformer
         {
