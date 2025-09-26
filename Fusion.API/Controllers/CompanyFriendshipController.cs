@@ -37,7 +37,7 @@ namespace Fusion.API.Controllers
 
             if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
             {
-                return Unauthorized(ResponseModel<string>.ErrorResponseModel(
+                return Unauthorized(ResponseModel<string>.Error(
                     StatusCodes.Status401Unauthorized,
                     "Don't find token!"));
             }
@@ -46,7 +46,7 @@ namespace Fusion.API.Controllers
 
             var result = await _companyFriendshipService.InviteCompanyFriendship((Guid)CompanyAID, inviteCompanyRequest.CompanyBID, userId);
 
-            return Ok(ResponseModel<CompanyFriendshipResponse>.OkResponseModel(
+            return Ok(ResponseModel<CompanyFriendshipResponse>.Ok(
                 data: result,
                 message: ResponseMessageHelper.FormatMessage(ResponseMessages.INVITE_SUCESS, $"company friendship")));
         }

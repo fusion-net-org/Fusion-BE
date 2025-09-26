@@ -4,7 +4,6 @@ using Fusion.API.Middlewares;
 using Fusion.Repository;
 using Fusion.Service;
 using Fusion.Service.Commons.BaseResponses;
-using Travelogue.API.Middlewares;
 using System.Net;
 
 var builder = WebApplication.CreateBuilder(args);

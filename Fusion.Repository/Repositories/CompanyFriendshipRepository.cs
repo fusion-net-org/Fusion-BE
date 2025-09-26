@@ -25,7 +25,7 @@ namespace Fusion.Repository.Repositories
                 throw new CustomException(
                     statusCode: StatusCodes.Status404NotFound,
                     errorCode: "COMPANY_NOT_FOUND",
-                    message: $"Company with id {companyBId} does not exist"
+                    errorMessage: $"Company with id {companyBId} does not exist"
                 );
             }
             var friendship = new CompanyFriendship
