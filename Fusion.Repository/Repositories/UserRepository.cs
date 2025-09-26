@@ -1,12 +1,12 @@
 ﻿
-
-using Fusion.Repository.Bases;
+using Fusion.Repository.Bases.Page;
+using Fusion.Repository.Bases.Page.User;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.IRepositories;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Cryptography;
-using System.Text;
+
+
 
 namespace Fusion.Repository.Repositories
 {
@@ -18,41 +18,43 @@ namespace Fusion.Repository.Repositories
             _context = context;
         }
 
-        public async Task<bool> CheckEmailExistAsync(string email)
+        public async Task<User?> GetUserByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            return await _context.Users.AnyAsync(u => u.Email == email);
+            return await _dbSet.FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
         }
+        public async Task<User?> GetUserByEmailAsync(string email, CancellationToken cancellationToken = default)
+        {
+            return await _context.Users.FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
+        }
+        public async Task<User?> GetUserByGoogleSubAsync(string googleSub, CancellationToken cancellationToken = default)
+        {
+            return await _context.Users.FirstOrDefaultAsync(u => u.GoogleSub == googleSub, cancellationToken);
+        }
+        public async Task<bool> CheckEmailExistAsync(string email, CancellationToken cancellationToken = default)
+        {
+            return await _context.Users.AnyAsync(u => u.Email == email, cancellationToken);
+        }
+        public async Task<PagedResult<User>> GetPagedUsersAsync(UserPagedRequest request, CancellationToken cancellationToken = default)
+        {
+            var query = _dbSet.AsQueryable();
 
-        public async Task<bool> CheckPassword(string password, byte[] passwordHash, byte[] passwordSalt)
-        {
-            using var hmac = new HMACSHA512(passwordSalt);
-            var computedHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(password));
-            return await Task.FromResult(computedHash.SequenceEqual(passwordHash));
-        }
-        public Task<IEnumerable<User>> GetAllAsync(CancellationToken cancellationToken = default)
-        {
-            throw new NotImplementedException();
-        }
+            // search
+            if (!string.IsNullOrWhiteSpace(request.Email))
+            {
+                query = query.Where(u => (u.Email ?? "").Contains(request.Email));
+            }
 
-        public Task<PagedResult<User>> GetPagedAsync(int pageNumber, int pageSize, CancellationToken cancellationToken = default)
-        {
-            throw new NotImplementedException();
-        }
+            if (!string.IsNullOrWhiteSpace(request.Company))
+            {
+                query = query.Where(u =>
+                    u.CompanyMembers.Any(cm =>
+                        cm.Company != null &&
+                        (cm.Company.Name ?? "").Contains(request.Company))
+                );
+            }
 
-        public async Task<User?> GetUserByEmailAsync(string email)
-        {
-            return await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
-        }
-
-        public async Task<User?> GetUserByGoogleSubAsync(string googleSub)
-        {
-            return await _context.Users
-                         .FirstOrDefaultAsync(u => u.GoogleSub == googleSub);
-        }
-
-        public Task<User?> GetUserByIdAsync(Guid id)
-        {
-            throw new NotImplementedException();
+            // dùng extension để phân trang + sort
+            return await query.ToPagedResultAsync(request, cancellationToken);
         }
     }
 }

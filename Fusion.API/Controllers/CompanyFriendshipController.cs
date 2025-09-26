@@ -1,0 +1,141 @@
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using Fusion.Repository.Bases.Exceptions;
+using Fusion.Repository.Bases.Responses;
+using Fusion.Service.Commons.BaseResponses;
+using Fusion.Service.IServices;
+using Fusion.Service.ViewModels.Users.Requests;
+using Fusion.Service.ViewModels.Users.Responses;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+
+namespace Fusion.API.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    [Authorize]
+    public class CompanyFriendshipController : ControllerBase
+    {
+        private readonly ICompanyFriendshipService _companyFriendshipService;
+        private readonly ICompanyService _companyService;
+        public CompanyFriendshipController(ICompanyFriendshipService companyFriendshipService, ICompanyService companyService)
+        {
+            _companyFriendshipService = companyFriendshipService;
+            _companyService = companyService;
+        }
+
+        /// <summary>
+        /// Get company partnerships by status
+        /// </summary>
+        [HttpGet("{status}")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<List<CompanyFriendshipResponse>>))]
+        public async Task<IActionResult> GetPartnerByStatus(string status)
+        {
+            var result = await _companyFriendshipService.GetCompanyFriendshipByStatus(status);
+
+            var response = result.Select(r => new CompanyFriendshipResponse
+            {
+                Id = r.Id,
+                CompanyAId = r.CompanyAId,
+                CompanyBId = r.CompanyBId,
+                RequesterId = r.RequesterId,
+                Status = r.Status,
+                CreatedAt = r.CreatedAt
+            }).ToList();
+
+            return Ok(ResponseModel<List<CompanyFriendshipResponse>>.Ok(
+                data: response,
+                message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "partnership by status")));
+        }
+
+        /// <summary>
+        /// Get company friendships by Owner User ID
+        /// </summary>
+        [HttpGet("owner")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<List<CompanyFriendshipResponse>>))]
+        public async Task<IActionResult> GetCompanyFriendshipByOwnerUserID()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(ResponseModel<string>.Error(
+                    StatusCodes.Status401Unauthorized,
+                    "Don't find token!"));
+            }
+
+            var result = await _companyFriendshipService.GetCompanyFriendshipByOwnerUserID(userId);
+
+            var response = result.Select(r => new CompanyFriendshipResponse
+            {
+                Id = r.Id,
+                CompanyAId = r.CompanyAId,
+                CompanyBId = r.CompanyBId,
+                RequesterId = r.RequesterId,
+                Status = r.Status,
+                CreatedAt = r.CreatedAt
+            }).ToList();
+
+            return Ok(ResponseModel<List<CompanyFriendshipResponse>>.Ok(
+                data: response,
+                message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "company friendships by owner user")));
+        }
+
+
+        /// <summary>
+        /// Invite company partnership
+        /// </summary>
+        [HttpPost("invite")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<CompanyFriendshipResponse>))]
+        public async Task<IActionResult> InviteCompanyFriendship([FromBody] InviteCompanyRequest inviteCompanyRequest)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(ResponseModel<string>.Error(
+                    StatusCodes.Status401Unauthorized,
+                    "Don't find token!"));
+            }
+
+            var CompanyAID = await _companyService.GetCompanyIdByUserId(userId);
+
+            var result = await _companyFriendshipService.InviteCompanyFriendship((Guid)CompanyAID, inviteCompanyRequest.CompanyBID, userId);
+
+            return Ok(ResponseModel<CompanyFriendshipResponse>.Ok(
+                data: result,
+                message: ResponseMessageHelper.FormatMessage(ResponseMessages.INVITE_SUCESS, $"company friendship")));
+        }
+
+
+        /// <summary>
+        /// Accept company partnership
+        /// </summary>
+        [HttpGet("accept/{id:long}")]
+        [AllowAnonymous] // để công ty B có thể click link trong mail
+        public async Task<IActionResult> AcceptCompanyFriendship(long id)
+        {
+            var result = await _companyFriendshipService.AcceptCompanyFriendship(id);
+            return Ok(ResponseModel<CompanyFriendshipResponse>.Ok(
+                data: result,
+                message: "Friendship accepted successfully"));
+        }
+
+        /// <summary>
+        /// Cancel company partnership
+        /// </summary>
+        [HttpGet("cancel/{id:long}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> CancelCompanyFriendship(long id)
+        {
+            var result = await _companyFriendshipService.CancelCompanyFriendship(id);
+            return Ok(ResponseModel<CompanyFriendshipResponse>.Ok(
+                data: result,
+                message: "Friendship rejected successfully"));
+        }
+
+
+    }
+}
+

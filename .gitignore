@@ -13,7 +13,6 @@ Fusion.Api/appsettings.*.json
 secrets.json
 
 # Ignore Entity Framework Core Migrations folder which contains
-Fusion.Repository/Migrations/
 # User-specific files
 *.rsuser
 *.suo
