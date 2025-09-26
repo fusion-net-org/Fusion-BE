@@ -19,7 +19,7 @@ namespace Fusion.API
             services.AddSwaggerWithJwt();
             services.ConfigCors();
 
-            // --- Controllers 一 Validation Response ---
+            // --- Controllers 一 Validation Response --
             services.AddControllers()
                 .ConfigureApiBehaviorOptions(options =>
                 {
