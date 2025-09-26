@@ -8,12 +8,12 @@ public static class ResponseMessages
     public const string EXISTED = "{0} already exists.";
     public const string BE_USED = "This item is currently in use.";
     public const string DUPLICATE = "{0} is duplicated.";
-    // public const string INTERNAL_SERVER_ERROR = "Internal server error!";
     public const string INTERNAL_SERVER_ERROR = "An error occurred.";
     public const string INVALID_INPUT = "Invalid input data!";
     public const string UNAUTHORIZED = "Unauthorized access!";
+    public const string FORBIDDEN = "Forbidden access!";
     public const string LOGIN_REQUIRED = "Please sign in again!";
-    public const string BADREQUEST = "Bad request!";
+    public const string BAD_REQUEST = "Bad request!";
     public const string ERROR = "Error!";
     public const string HIGHLIGHTED_EVENT_LIMIT = "The number of featured events has reached the limit.";
 
@@ -26,5 +26,4 @@ public static class ResponseMessages
     public const string UPLOAD_SUCCESS = "Uploaded {0} successfully!";
     public const string SUBMIT_SUCCESS = "Submitted {0} successfully!";
     public const string SAVE_SUCCESS = "Saved {0} successfully!";
-
 }

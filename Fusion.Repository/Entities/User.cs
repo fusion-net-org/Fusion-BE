@@ -16,6 +16,9 @@ public partial class User
     [Column("userName")]
     public string? UserName { get; set; }
 
+    [Column("avatar")]
+    public string? Avatar { get; set; }
+
     [Column("email")]
     [StringLength(320)]
     public string? Email { get; set; }

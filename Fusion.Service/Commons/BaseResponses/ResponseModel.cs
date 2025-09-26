@@ -1,60 +1,40 @@
-﻿using Microsoft.AspNetCore.Http;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
-namespace Fusion.Service.Commons.BaseResponses;
-
-public class ResponseModel<T>
+namespace Fusion.Service.Commons.BaseResponses
 {
-    public bool Succeeded { get; set; } = false;
-    public int StatusCode { get; set; }
-    public string? Message { get; set; }
-    public T? Data { get; set; }
-
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public object? AdditionalData { get; set; }
-
-
-    public ResponseModel()
+    public class ResponseModel<T>
     {
+        public bool Succeeded { get; set; } = false;
+        public int StatusCode { get; set; }
+        public string? Message { get; set; }
+        public T? Data { get; set; }
 
-    }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public object? AdditionalData { get; set; }
 
-    // Full properties
-    public ResponseModel(int statusCode, T? data = default, object? additionalData = null, string? message = null)
-    {
-        StatusCode = statusCode;
-        Succeeded = true;
-        Data = data;
-        AdditionalData = additionalData;
-        Message = message;
-    }
+        // OK response
+        public static ResponseModel<T> Ok(T data, string? message = "")
+        {
+            return new ResponseModel<T>
+            {
+                Succeeded = true,
+                StatusCode = 200,
+                Message = message,
+                Data = data
+            };
+        }
 
-    // Without additionalData prop
-    public ResponseModel(int statusCode, T? data = default, string? message = null)
-    {
-        StatusCode = statusCode;
-        Succeeded = true;
-        Data = data;
-        Message = message;
-    }
-
-    public ResponseModel(int statusCode, T? data = default, bool succeeded = false, string? message = null)
-    {
-        StatusCode = statusCode;
-        Succeeded = false;
-        Data = data;
-        Message = message;
-    }
-
-    //OK Response
-    public static ResponseModel<T> OkResponseModel(T? data, object? additionalData = null, string? message = null)
-    {
-        return new ResponseModel<T>(StatusCodes.Status200OK, data, message);
-    }
-
-    // Error Response
-    public static ResponseModel<T> ErrorResponseModel(int statusCode, string message, object? additionalData = null)
-    {
-        return new ResponseModel<T>(statusCode, default, false, message);
+        // Error response
+        public static ResponseModel<T> Error(int statusCode, string message, object? additionalData = null)
+        {
+            return new ResponseModel<T>
+            {
+                Succeeded = false,
+                StatusCode = statusCode,
+                Message = message,
+                Data = default,
+                AdditionalData = additionalData
+            };
+        }
     }
 }
