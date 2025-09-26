@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using AutoMapper;
+using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.IRepositories;
@@ -11,6 +12,7 @@ using Fusion.Repository.Repositories;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.Users.Requests;
 using Fusion.Service.ViewModels.Users.Responses;
+using Microsoft.AspNetCore.Http;
 
 namespace Fusion.Service.Services
 {
@@ -31,8 +33,31 @@ namespace Fusion.Service.Services
             _companyRepository = companyRepository;
         }
 
+        public async Task<CompanyFriendshipResponse> AcceptCompanyFriendship(long id)
+        {
+            var entity = await _companyFriendshipRepository.AcceptCompanyFriendship(id);
+            return _mapper.Map<CompanyFriendshipResponse>(entity);
+        }
+
+        public async Task<CompanyFriendshipResponse> CancelCompanyFriendship(long id)
+        {
+            var entity = await _companyFriendshipRepository.CancelCompanyFriendship(id);
+            return _mapper.Map<CompanyFriendshipResponse>(entity);
+        }
+
+        public async Task<List<CompanyFriendship>> GetCompanyFriendshipByOwnerUserID(Guid ownerUserID)
+        {
+            return await _companyFriendshipRepository.GetCompanyFriendshipByOwnerUserID(ownerUserID);
+        }
+
+        public async Task<List<CompanyFriendship>> GetCompanyFriendshipByStatus(string status)
+        {
+            return await _companyFriendshipRepository.GetCompanyFriendshipByStatus(status);
+        }
+
         public async Task<CompanyFriendshipResponse> InviteCompanyFriendship(Guid companyAId, Guid companyBId, Guid requesterId)
         {
+
             var entity = await _companyFriendshipRepository.InviteCompanyFriendship(
                companyAId,
                companyBId,
@@ -49,7 +74,14 @@ namespace Fusion.Service.Services
             {
                 ToEmail = emailCompanyB,
                 Subject = "Yêu cầu kết bạn từ công ty khác",
-                Body = $"Công ty {nameCompanyA} đã gửi lời mời hợp tác. Vui lòng vào chọn Approve/Reject."
+                Body = $@"
+        <p>Công ty <b>{nameCompanyA}</b> đã gửi lời mời hợp tác.</p>
+        <p>Vui lòng chọn một hành động:</p>
+        <a href='https://localhost:7160/api/CompanyFriendship/accept/{entity.Id}' 
+           style='background-color:green;color:white;padding:10px 15px;text-decoration:none;border-radius:5px;margin-right:10px;'>Approve</a>
+        <a href='https://localhost:7160/api/CompanyFriendship/cancel/{entity.Id}' 
+           style='background-color:red;color:white;padding:10px 15px;text-decoration:none;border-radius:5px;'>Reject</a>
+         ",
             });
 
             return _mapper.Map<CompanyFriendshipResponse>(entity);
