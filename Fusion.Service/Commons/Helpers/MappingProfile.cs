@@ -1,4 +1,3 @@
-﻿
 
 using AutoMapper;
 using Fusion.Repository.Entities;
@@ -21,5 +20,7 @@ public class MappingProfile : Profile
                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => true));
         //Partner
         CreateMap<CompanyFriendshipResponse,CompanyFriendship>().ReverseMap();
+
+        CreateMap<User, UserPageResponse>();
     }
 }

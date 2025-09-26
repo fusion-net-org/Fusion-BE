@@ -1,91 +1,104 @@
-﻿using Fusion.Repository.Bases.Exceptions;
+﻿using FluentValidation;
+using Fusion.Repository.Bases.Exceptions;
+using Fusion.Service.Commons.BaseResponses;
 using System.Text.Json;
-using Fusion.Repository.Bases.Responses;
 
-namespace Travelogue.API.Middlewares;
-
-public class CustomExceptionHandlerMiddleware
+namespace Fusion.API.Middlewares
 {
-    private readonly RequestDelegate _next;
-    private readonly ILogger<CustomExceptionHandlerMiddleware> _logger;
-
-    public CustomExceptionHandlerMiddleware(RequestDelegate next, ILogger<CustomExceptionHandlerMiddleware> logger)
+    public class CustomExceptionHandlerMiddleware
     {
-        _next = next;
-        _logger = logger;
-    }
+        private readonly RequestDelegate _next;
+        private readonly ILogger<CustomExceptionHandlerMiddleware> _logger;
 
-    public async Task Invoke(HttpContext context)
-    {
-        try
+        public CustomExceptionHandlerMiddleware(RequestDelegate next, ILogger<CustomExceptionHandlerMiddleware> logger)
         {
-            await _next(context);
+            _next = next;
+            _logger = logger;
         }
-        catch (FluentValidation.ValidationException ex)
-        {
-            await HandleValidationExceptionAsync(context, ex);
-        }
-        catch (CustomException ex)
-        {
-            await HandleCustomExceptionAsync(context, ex);
-        }
-        catch (Exception ex)
-        {
-            var internalError = CustomExceptionFactory.CreateInternalServerError(ex.Message);
-            await HandleCustomExceptionAsync(context, internalError);
-        }
-    }
 
-    private void LogError(HttpContext context, Exception ex, string? extra = null)
-    {
-        _logger.LogError(ex,
-            "Error at {Path} | Type: {Type} | Message: {Message} | ClientIP: {ClientIP} | Timestamp: {Timestamp} | Extra: {Extra}",
-            context.Request.Path,
-            ex.GetType().Name,
-            ex.Message,
-            context.Connection.RemoteIpAddress,
-            DateTime.UtcNow,
-            extra);
-    }
+        public async Task Invoke(HttpContext context)
+        {
+            try
+            {
+                await _next(context);
+            }
+            catch (ValidationException ex)
+            {
+                if (context.Response.HasStarted)
+                {
+                    LogError(context, ex, ex.Errors);
+                    throw;
+                }
 
-    private async Task HandleValidationExceptionAsync(HttpContext context, FluentValidation.ValidationException ex)
-    {
-        var errors = ex.Errors
-            .GroupBy(e => e.PropertyName)
-            .ToDictionary(
-                g => g.Key,
-                g => g.Select(e => e.ErrorMessage).ToArray()
+                await HandleValidationExceptionAsync(context, ex);
+            }
+            catch (CustomException ex)
+            {
+                if (context.Response.HasStarted)
+                {
+                    LogError(context, ex);
+                    throw;
+                }
+
+                await HandleCustomExceptionAsync(context, ex);
+            }
+            catch (Exception ex)
+            {
+                if (context.Response.HasStarted)
+                {
+                    LogError(context, ex);
+                    throw;
+                }
+
+                var internalError = CustomExceptionFactory.CreateInternalServerError(ex.Message);
+                await HandleCustomExceptionAsync(context, internalError);
+            }
+        }
+
+        private void LogError(HttpContext context, Exception ex, object? extra = null)
+        {
+            _logger.LogError(ex,
+                "Error at {Path} | Type: {Type} | Message: {Message} | ClientIP: {ClientIP} | Timestamp: {Timestamp} | Extra: {Extra}",
+                context.Request.Path,
+                ex.GetType().Name,
+                ex.Message,
+                context.Connection.RemoteIpAddress,
+                DateTime.UtcNow,
+                extra);
+        }
+
+        private async Task HandleValidationExceptionAsync(HttpContext context, ValidationException ex)
+        {
+            LogError(context, ex, ex.Errors);
+
+            var errors = ex.Errors
+                .GroupBy(e => e.PropertyName)
+                .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray());
+
+            var response = ResponseModel<object>.Error(
+                statusCode: StatusCodes.Status400BadRequest,
+                message: "Validation failed",
+                additionalData: errors
             );
 
-        LogError(context, ex, JsonSerializer.Serialize(errors));
+            context.Response.ContentType = "application/json";
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            await context.Response.WriteAsJsonAsync(response);
+        }
 
-        var response = new
+        private async Task HandleCustomExceptionAsync(HttpContext context, CustomException ex)
         {
-            statusCode = StatusCodes.Status400BadRequest,
-            message = ResponseMessages.INVALID_INPUT,
-            errors
-        };
+            LogError(context, ex);
 
-        context.Response.ContentType = "application/json";
-        context.Response.StatusCode = StatusCodes.Status400BadRequest;
-        await context.Response.WriteAsync(JsonSerializer.Serialize(response));
-    }
+            var response = ResponseModel<object>.Error(
+                statusCode: ex.StatusCode,
+                message: ex.ErrorMessage,
+                additionalData: ex.DetailMessage
+            );
 
-
-    private async Task HandleCustomExceptionAsync(HttpContext context, CustomException ex)
-    {
-        LogError(context, ex);
-
-        var response = new
-        {
-            statusCode = ex.StatusCode,
-            errorCode = ex.ErrorCode,
-            message = ex.ErrorMessage?.ToString() ?? "An unexpected error occurred.",
-            detail = ex.DetailMessage
-        };
-
-        context.Response.ContentType = "application/json";
-        context.Response.StatusCode = ex.StatusCode;
-        await context.Response.WriteAsync(JsonSerializer.Serialize(response));
+            context.Response.ContentType = "application/json";
+            context.Response.StatusCode = ex.StatusCode;
+            await context.Response.WriteAsJsonAsync(response);
+        }
     }
 }

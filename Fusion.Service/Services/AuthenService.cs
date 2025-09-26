@@ -1,13 +1,10 @@
 ﻿
 using AutoMapper;
-using Azure;
-using Azure.Core;
 using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Bases.Responses;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.IRepositories;
-using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.Users.Requests;
 using Fusion.Service.ViewModels.Users.Responses;
@@ -31,7 +28,7 @@ public class AuthenService : IAuthenService
         _mapper = mapper;
         _jwtService = jwtService;
     }
-    public async Task<bool> RegisterAsync(RegisterRequest request)
+    public async Task<bool> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken = default)
     {
         //1.check request not null
         if (request == null)
@@ -39,7 +36,7 @@ public class AuthenService : IAuthenService
                 CreateBadRequestError(ResponseMessages.INVALID_INPUT);
 
         // 2. check email exist
-        if (_userRepository.CheckEmailExistAsync(request.Email).Result)
+        if (await _userRepository.CheckEmailExistAsync(request.Email, cancellationToken))
             throw CustomExceptionFactory.
                 CreateBadRequestError(ResponseMessages.EXISTED.FormatMessage("Email"));
 
@@ -53,13 +50,14 @@ public class AuthenService : IAuthenService
 
         user.PasswordSalt = passwordSalt;
         user.PasswordHash = passwordHash;
+        user.CreateAt = DateTime.UtcNow;
 
-        await _unitOfWork.Repository<User>().AddAsync(user);
-        await _unitOfWork.SaveChangesAsync();
+        await _unitOfWork.Repository<User>().AddAsync(user, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return true;
     }
-    public async Task<LoginResponse> LoginAsync(LoginRequest request)
+    public async Task<LoginResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken)
     {
         // 1. validate input
         if (request == null)
@@ -67,7 +65,7 @@ public class AuthenService : IAuthenService
                 CreateBadRequestError(ResponseMessages.INVALID_INPUT);
 
         // 2. check email exist
-        var user = await _userRepository.GetUserByEmailAsync(request.Email);
+        var user = await _userRepository.GetUserByEmailAsync(request.Email, cancellationToken);
         if (user == null)
             throw CustomExceptionFactory.
                 CreateBadRequestError(ResponseMessages.INVALID_INPUT.FormatMessage("Email incorrect!"));
@@ -99,8 +97,7 @@ public class AuthenService : IAuthenService
         };
         return response;
     }
-
-    public async Task<LoginResponse> GoogleLoginAsync(GoogleLoginRequest request)
+    public async Task<LoginResponse> GoogleLoginAsync(GoogleLoginRequest request, CancellationToken cancellationToken = default)
     {
         if (request == null)
             throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.INVALID_INPUT);
@@ -117,7 +114,7 @@ public class AuthenService : IAuthenService
         }
 
         // Check user existed
-        var user = await _userRepository.GetUserByGoogleSubAsync(payload.Subject);
+        var user = await _userRepository.GetUserByGoogleSubAsync(payload.Subject, cancellationToken);
         if (user != null)
         {
             user.GoogleSub = payload.Subject;
@@ -126,7 +123,7 @@ public class AuthenService : IAuthenService
         else
         {
             // if not, create new user
-           user = new User
+            user = new User
             {
                 UserName = payload.Name ?? payload.Email,
                 Email = payload.Email,
@@ -134,8 +131,8 @@ public class AuthenService : IAuthenService
                 CreateAt = DateTime.UtcNow,
             };
 
-            await _unitOfWork.Repository<User>().AddAsync(user);
-            await _unitOfWork.SaveChangesAsync();
+            await _unitOfWork.Repository<User>().AddAsync(user, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
 
         var tokens = await _jwtService.GenerateTokensAsync(user);

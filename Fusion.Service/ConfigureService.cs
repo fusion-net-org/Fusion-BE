@@ -15,6 +15,7 @@ namespace Fusion.Service
 
             //register service entities
             services.AddScoped<IAuthenService, AuthenService>();
+            services.AddScoped<IUserService, UserService>();
             services.AddScoped<IJwtService, JwtService>();
             services.AddScoped<IMailService, MailService>();
             //partner
