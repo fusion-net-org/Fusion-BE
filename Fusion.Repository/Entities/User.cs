@@ -23,6 +23,10 @@ public partial class User
     [StringLength(320)]
     public string? Email { get; set; }
 
+    [Column("phone")]
+    [StringLength(20)]
+    public string? Phone { get; set; }
+
     [Column("address")]
     public string? Address { get; set; }
 

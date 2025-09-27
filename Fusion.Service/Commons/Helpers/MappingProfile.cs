@@ -20,6 +20,15 @@ public class MappingProfile : Profile
                .ForMember(dest => dest.UpdateAt, opt => opt.MapFrom(src => DateTime.UtcNow))
                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => true));
 
-        CreateMap<User, UserPageResponse>();
+        CreateMap<UpdateSelfUserRequest, User>()
+               .ForMember(dest => dest.Avatar, opt => opt.Ignore())
+               .ForMember(dest => dest.UpdateAt, opt => opt.MapFrom(src => DateTime.UtcNow))
+               .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
+
+        CreateMap<User, AdminUserResponse>();
+        CreateMap<User, CompanyUserResponse>();
+        CreateMap<User, SelfUserResponse>();
+
+
     }
 }

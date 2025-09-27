@@ -1033,6 +1033,11 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("varbinary(128)")
                         .HasColumnName("password_salt");
 
+                    b.Property<string>("Phone")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("phone");
+
                     b.Property<bool>("Status")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")

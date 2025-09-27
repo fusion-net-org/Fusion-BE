@@ -17,6 +17,10 @@ namespace Fusion.Service
             services.AddScoped<IAuthenService, AuthenService>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IJwtService, JwtService>();
+
+            // register other services
+            services.AddScoped<ICurrentService, CurrentService>();
+            services.AddScoped<ICloudinaryService, CloudinaryService>();
             return services;
         }
      }
