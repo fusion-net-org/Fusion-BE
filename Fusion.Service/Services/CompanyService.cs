@@ -80,7 +80,7 @@ namespace Fusion.Service.Services
                     ResponseMessages.NOT_FOUND.FormatMessage("Companies"));
 
             var list = new PagedResult<CompanyResponse>
-            {
+        {
                 Items = _mapper.Map<List<CompanyResponse>>(result.Items),
                 TotalCount = result.TotalCount,
                 PageNumber = result.PageNumber,
