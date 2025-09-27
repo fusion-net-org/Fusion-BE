@@ -104,8 +104,45 @@ namespace Fusion.API
         // Set up Swagger to use JWT authentication
         public static void AddSwaggerWithJwt(this IServiceCollection services)
         {
-           
-        }
+            services.AddSwaggerGen(c =>
+            {
+                // Thông tin API
+                c.SwaggerDoc("v1", new OpenApiInfo
+                {
+                    Title = "Fusion API",
+                    Version = "v1",
+                    Description = "API documentation with JWT authentication"
+                });
+
+                // Cấu hình JWT Bearer
+                var securityScheme = new OpenApiSecurityScheme
+                {
+                    Name = "Authorization",
+                    Description = "Enter 'Bearer' [space] and then your valid JWT token.",
+                    In = ParameterLocation.Header,
+                    Type = SecuritySchemeType.Http,
+                    Scheme = "bearer",
+                    BearerFormat = "JWT",
+                    Reference = new OpenApiReference
+                    {
+                        Type = ReferenceType.SecurityScheme,
+                        Id = "Bearer"
+                    }
+                };
+
+                c.AddSecurityDefinition("Bearer", securityScheme);
+
+                var securityRequirement = new OpenApiSecurityRequirement
+            {
+                {
+                    securityScheme,
+                    Array.Empty<string>()
+                }
+            };
+
+                c.AddSecurityRequirement(securityRequirement);
+            });
+    }
         public class CamelCaseParameterTransformer : IOutboundParameterTransformer
         {
             public string? TransformOutbound(object? value)

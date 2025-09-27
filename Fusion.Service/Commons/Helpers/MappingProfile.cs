@@ -21,6 +21,15 @@ public class MappingProfile : Profile
         //Partner
         CreateMap<CompanyFriendshipResponse,CompanyFriendship>().ReverseMap();
 
-        CreateMap<User, UserPageResponse>();
+        CreateMap<UpdateSelfUserRequest, User>()
+               .ForMember(dest => dest.Avatar, opt => opt.Ignore())
+               .ForMember(dest => dest.UpdateAt, opt => opt.MapFrom(src => DateTime.UtcNow))
+               .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
+
+        CreateMap<User, AdminUserResponse>();
+        CreateMap<User, CompanyUserResponse>();
+        CreateMap<User, SelfUserResponse>();
+
+
     }
 }

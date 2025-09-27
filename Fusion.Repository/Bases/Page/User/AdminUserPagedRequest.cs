@@ -2,7 +2,7 @@
 
 namespace Fusion.Repository.Bases.Page.User
 {
-    public class UserPagedRequest : PagedRequest
+    public class AdminUserPagedRequest : PagedRequest
     {
         public string? Email { get; set; }
         public string? Company { get; set; }

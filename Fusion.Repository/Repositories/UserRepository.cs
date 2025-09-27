@@ -34,7 +34,7 @@ namespace Fusion.Repository.Repositories
         {
             return await _context.Users.AnyAsync(u => u.Email == email, cancellationToken);
         }
-        public async Task<PagedResult<User>> GetPagedUsersAsync(UserPagedRequest request, CancellationToken cancellationToken = default)
+        public async Task<PagedResult<User>> GetPagedAdminUsersAsync(AdminUserPagedRequest request, CancellationToken cancellationToken = default)
         {
             var query = _dbSet.AsQueryable();
 
@@ -53,6 +53,18 @@ namespace Fusion.Repository.Repositories
                 );
             }
 
+            // dùng extension để phân trang + sort
+            return await query.ToPagedResultAsync(request, cancellationToken);
+        }
+        public async Task<PagedResult<User>> GetPagedCompanyUsersAsync(CompanyUserPagedRequest request, CancellationToken cancellationToken = default)
+        {
+            var query = _dbSet.AsQueryable();
+
+            // search
+            if (!string.IsNullOrWhiteSpace(request.Email))
+            {
+                query = query.Where(u => (u.Email ?? "").Contains(request.Email));
+            }
             // dùng extension để phân trang + sort
             return await query.ToPagedResultAsync(request, cancellationToken);
         }
