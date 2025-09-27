@@ -40,16 +40,16 @@ namespace Fusion.API.Controllers
         [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(ResponseModel<CompanyResponse>))]
         public async Task<IActionResult> CreateCompany(CompanyRequest request, CancellationToken cancellationToken)
         {
-            //var emailClaim = User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email || c.Type == ClaimTypes.Email || c.Type == "email");
-            //var email = emailClaim?.Value; if (email == null)
-            //{
-            //    return Unauthorized(ResponseModel<CompanyResponse>.Error(
-            //        statusCode: StatusCodes.Status401Unauthorized,
-            //        message: "Unauthorized: User identity not found"
-            //    ));
-            //}
+            var emailClaim = User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email || c.Type == ClaimTypes.Email || c.Type == "email");
+            var email = emailClaim?.Value; if (email == null)
+            {
+                return Unauthorized(ResponseModel<CompanyResponse>.Error(
+                    statusCode: StatusCodes.Status401Unauthorized,
+                    message: "Unauthorized: User identity not found"
+                ));
+            }
 
-            var result = await _companyService.CreateCompanyAsync(request, "minh04122003@gmail.com", cancellationToken);
+            var result = await _companyService.CreateCompanyAsync(request, email, cancellationToken);
 
             return Ok(ResponseModel<CompanyResponse>.Ok(
                 data: result,
@@ -70,16 +70,16 @@ namespace Fusion.API.Controllers
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<CompanyResponse>))]
         public async Task<IActionResult> Update(Guid id, CompanyRequest request, CancellationToken cancellationToken)
         {
-            //var emailClaim = User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email || c.Type == ClaimTypes.Email || c.Type == "email");
-            //var email = emailClaim?.Value; if (email == null)
-            //{
-            //    return Unauthorized(ResponseModel<CompanyResponse>.Error(
-            //        statusCode: StatusCodes.Status401Unauthorized,
-            //        message: "Unauthorized: User identity not found"
-            //    ));
-            //}
+            var emailClaim = User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email || c.Type == ClaimTypes.Email || c.Type == "email");
+            var email = emailClaim?.Value; if (email == null)
+            {
+                return Unauthorized(ResponseModel<CompanyResponse>.Error(
+                    statusCode: StatusCodes.Status401Unauthorized,
+                    message: "Unauthorized: User identity not found"
+                ));
+            }
 
-            var result = await _companyService.UpdateCompanyAsync(id, request, "minh04122003@gmail.com", cancellationToken);
+            var result = await _companyService.UpdateCompanyAsync(id, request, email, cancellationToken);
             return Ok(ResponseModel<CompanyResponse>.Ok(
                 data: result,
                 message: "Update company successfully"));
@@ -89,16 +89,16 @@ namespace Fusion.API.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
         {
-            //var emailClaim = User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email || c.Type == ClaimTypes.Email || c.Type == "email");
-            //var email = emailClaim?.Value; if (email == null)
-            //{
-            //    return Unauthorized(ResponseModel<CompanyResponse>.Error(
-            //        statusCode: StatusCodes.Status401Unauthorized,
-            //        message: "Unauthorized: User identity not found"
-            //    ));
-            //}
+            var emailClaim = User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email || c.Type == ClaimTypes.Email || c.Type == "email");
+            var email = emailClaim?.Value; if (email == null)
+            {
+                return Unauthorized(ResponseModel<CompanyResponse>.Error(
+                    statusCode: StatusCodes.Status401Unauthorized,
+                    message: "Unauthorized: User identity not found"
+                ));
+            }
 
-            var result = await _companyService.DeleteCompanyAsync(id, "minh04122003@gmail.com", cancellationToken);
+            var result = await _companyService.DeleteCompanyAsync(id, email, cancellationToken);
             return Ok(ResponseModel<bool>.Ok(
                 data: result,
                 message: "Delete company successfully"));

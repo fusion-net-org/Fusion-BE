@@ -8,6 +8,8 @@ namespace Fusion.Service.ViewModels.Companies.Responses
 {
     public class CompanyResponse
     {
+        public Guid Id { get; set; }
+
         public string? Name { get; set; }
 
         public Guid? OwnerUserId { get; set; }
@@ -15,6 +17,8 @@ namespace Fusion.Service.ViewModels.Companies.Responses
         public string? OwnerUserName { get; set; }
 
         public string? TaxCode { get; set; }
+
+        public string? Email { get; set; }
 
         public string? Detail { get; set; }
 

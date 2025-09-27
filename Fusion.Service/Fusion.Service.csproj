@@ -7,8 +7,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Commons\NewFolder\**" />
+    <EmbeddedResource Remove="Commons\NewFolder\**" />
+    <None Remove="Commons\NewFolder\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Folder Include="BusinessModels\" />
-    <Folder Include="Commons\NewFolder\" />
   </ItemGroup>
 
   <ItemGroup>
