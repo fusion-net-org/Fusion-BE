@@ -3,13 +3,16 @@ using Fusion.Repository.Bases.Page.User;
 using Fusion.Repository.Entities;
 using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.IServices;
+using Fusion.Service.ViewModels.Users.Requests;
 using Fusion.Service.ViewModels.Users.Responses;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Fusion.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class UserController : ControllerBase
     {
         private readonly IUserService _userService;
@@ -29,14 +32,44 @@ namespace Fusion.API.Controllers
                 message: "Get user successfully"));
         }
 
-        [HttpGet("paged")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PagedResult<UserPageResponse>>))]
-        public async Task<IActionResult> GetPaged([FromQuery] UserPagedRequest request, CancellationToken cancellationToken)
+        [HttpGet("paged-admin")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PagedResult<AdminUserResponse>>))]
+        public async Task<IActionResult> GetUserAdminPaged([FromQuery] AdminUserPagedRequest request, CancellationToken cancellationToken)
         {
-            var result = await _userService.GetPagedUsersAsync(request, cancellationToken);
-            return Ok(ResponseModel<PagedResult<UserPageResponse>>.Ok(
+            var result = await _userService.GetPagedAdminUsersAsync(request, cancellationToken);
+            return Ok(ResponseModel<PagedResult<AdminUserResponse>>.Ok(
                 data: result,
                 message: "Get paged users successfully"));
         }
+
+        [HttpGet("self-user")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<SelfUserResponse>))]
+        public async Task<IActionResult> GetSelfUser(CancellationToken cancellationToken)
+        {
+            var result = await _userService.GetSelfUserAsync(cancellationToken);
+            return Ok(ResponseModel<SelfUserResponse>.Ok(
+                data: result,
+                message: "Get self user successfully"));
+        }
+
+        [HttpPut("self-user")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<SelfUserResponse>))]
+        public async Task<IActionResult> UpdateSelfUser([FromForm]UpdateSelfUserRequest request, CancellationToken cancellationToken)
+        {
+            var result = await _userService.UpdateSelfUserAsync(request, cancellationToken);
+            return Ok(ResponseModel<SelfUserResponse>.Ok(
+                data: result,
+                message: "Update self user successfully"));
+        }
+
+        //[HttpGet("paged-company")]
+        //[ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PagedResult<CompanyUserResponse>>))]
+        //public async Task<IActionResult> GetUserCompanyPaged([FromQuery] AdminUserPagedRequest request, CancellationToken cancellationToken)
+        //{
+        //    var result = await _userService.GetPagedAdminUsersAsync(request, cancellationToken);
+        //    return Ok(ResponseModel<PagedResult<AdminUserResponse>>.Ok(
+        //        data: result,
+        //        message: "Get paged users successfully"));
+        //}
     }
 }

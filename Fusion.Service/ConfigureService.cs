@@ -19,6 +19,15 @@ namespace Fusion.Service
             services.AddScoped<ICloudinaryService, CloudinaryService>();
             services.AddScoped<ICompanyService, CompanyService>();
             services.AddScoped<IJwtService, JwtService>();
+
+            // register other services
+            services.AddScoped<ICurrentService, CurrentService>();
+            services.AddScoped<ICloudinaryService, CloudinaryService>();
+            services.AddScoped<IMailService, MailService>();
+            //partner
+            services.AddScoped<ICompanyFriendshipService,CompanyFriendshipService>();
+            //company
+            services.AddScoped<ICompanyService, CompanyService>();
             return services;
         }
      }

@@ -15,6 +15,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Fusion.Repository.Entities;
+using Fusion.Repository.IRepositories;
+using Fusion.Service.IServices;
 
 namespace Fusion.Service.Services
 {
@@ -46,7 +49,7 @@ namespace Fusion.Service.Services
 
 
             //check tax-code có tồn tại duy nhất hay không (trong hệ thống)
-            var company_existed = await _unitOfWork.companyRepository.FindAsync(c => c.TaxCode ==  request.TaxCode);
+            var company_existed = await _unitOfWork.companyRepository.FindAsync(c => c.TaxCode == request.TaxCode);
             if (company_existed != null)
                 throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.EXISTED.FormatMessage("Tax-code is existed in the system"));
 
@@ -86,6 +89,11 @@ namespace Fusion.Service.Services
             return list;
         }
 
+        public async Task<Guid?> GetCompanyIdByUserId(Guid userId)
+        {
+            return await _unitOfWork.companyRepository.GetCompanyIdByUserId(userId);
+        }
+
         public async Task<CompanyResponse> GetCompanyByIdAsync(Guid companyId, CancellationToken cancellationToken = default)
         {
             var company = await _unitOfWork.companyRepository.FindAsync(c => c.Id == companyId);
@@ -93,6 +101,11 @@ namespace Fusion.Service.Services
                 throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Company"));
 
             return _mapper.Map<CompanyResponse>(company);
+
+        }
+        public async Task<string> GetCompanyNameByGuid(Guid company)
+        {
+            return await _unitOfWork.companyRepository.GetCompanyNameByGuid(company);
         }
 
         public async Task<CompanyResponse> UpdateCompanyAsync(Guid companyId, CompanyRequest request, string Email, CancellationToken cancellationToken = default)
@@ -120,8 +133,12 @@ namespace Fusion.Service.Services
 
             return _mapper.Map<CompanyResponse>(company);
         }
+        public async Task<string> GetMailCompanyByGuid(Guid company)
+        {
+            return await _unitOfWork.companyRepository.GetMailCompanyByGuid(company);
+        }
 
-        public async Task<bool> DeleteCompanyAsync(Guid companyId, string Email,CancellationToken cancellationToken = default)
+        public async Task<bool> DeleteCompanyAsync(Guid companyId, string Email, CancellationToken cancellationToken = default)
         {
             var user = await _unitOfWork.userRepository.GetUserByEmailAsync(Email, cancellationToken);
             if (user == null)

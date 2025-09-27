@@ -7,11 +7,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Fusion.Repository.Entities;
 
 namespace Fusion.Service.IServices
 {
     public interface ICompanyService
     {
+        Task<string> GetMailCompanyByGuid(Guid company);
+        Task<string> GetCompanyNameByGuid(Guid company);
+        Task<Guid?> GetCompanyIdByUserId(Guid userId);
+
         Task<PagedResult<CompanyResponse>> GetPagedCompaniesAsync(CompanyPagedSearchRequest request, CancellationToken cancellationToken = default);
         Task<CompanyResponse> CreateCompanyAsync(CompanyRequest request, string Email, CancellationToken cancellationToken = default);
         Task<CompanyResponse> GetCompanyByIdAsync(Guid companyId, CancellationToken cancellationToken = default);

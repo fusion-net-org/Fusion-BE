@@ -36,9 +36,14 @@ public class JwtService : IJwtService
         var claims = new List<Claim>
         {
             new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new Claim(JwtRegisteredClaimNames.Email, user.Email ?? string.Empty),
-            new Claim("isAdmin", user.IsSystemAdmin.ToString())
         };
+
+        if (user.IsSystemAdmin)
+        {
+            claims.Add(new Claim("isAdmin", "true"));
+        }
 
 
         var accessToken = new JwtSecurityToken(

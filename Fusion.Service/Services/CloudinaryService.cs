@@ -16,9 +16,9 @@ public class CloudinaryService : ICloudinaryService
 
     public CloudinaryService(IConfiguration configuration)
     {
-        var cloudName = configuration["Cloudinary:Cloudname"];
-        var apiKey = configuration["Cloudinary:ApiKey"];
-        var apiSecret = configuration["Cloudinary:ApiSecret"];
+        var cloudName = configuration["CloudinarySettings:Cloudname"];
+        var apiKey = configuration["CloudinarySettings:ApiKey"];
+        var apiSecret = configuration["CloudinarySettings:ApiSecret"];
 
         if (string.IsNullOrWhiteSpace(cloudName) ||
             string.IsNullOrWhiteSpace(apiKey) ||

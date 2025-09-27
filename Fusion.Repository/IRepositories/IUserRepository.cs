@@ -9,7 +9,8 @@ namespace Fusion.Repository.IRepositories
 {
     public interface IUserRepository : IGenericRepository<User>
     {
-        Task<PagedResult<User>> GetPagedUsersAsync(UserPagedRequest request, CancellationToken cancellationToken = default);
+        Task<PagedResult<User>> GetPagedAdminUsersAsync(AdminUserPagedRequest request, CancellationToken cancellationToken = default);
+        Task<PagedResult<User>> GetPagedCompanyUsersAsync(CompanyUserPagedRequest request, CancellationToken cancellationToken = default);
         Task<User?> GetUserByIdAsync(Guid id, CancellationToken cancellationToken = default);
         Task<User?> GetUserByEmailAsync(string email, CancellationToken cancellationToken = default);
         Task<User?> GetUserByGoogleSubAsync(string googleSub, CancellationToken cancellationToken = default);
