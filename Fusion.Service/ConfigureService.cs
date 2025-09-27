@@ -16,6 +16,8 @@ namespace Fusion.Service
             //register service entities
             services.AddScoped<IAuthenService, AuthenService>();
             services.AddScoped<IUserService, UserService>();
+            services.AddScoped<ICloudinaryService, CloudinaryService>();
+            services.AddScoped<ICompanyService, CompanyService>();
             services.AddScoped<IJwtService, JwtService>();
             return services;
         }

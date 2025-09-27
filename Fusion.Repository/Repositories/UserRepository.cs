@@ -13,6 +13,7 @@ namespace Fusion.Repository.Repositories
     public class UserRepository : GenericRepository<User>, IUserRepository
     {
         private readonly FusionDbContext _context;
+
         public UserRepository(FusionDbContext context) : base(context)
         {
             _context = context;

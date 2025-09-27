@@ -18,6 +18,7 @@ namespace Fusion.Repository
             // register repositories entites
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<ICompanyRepository, CompanyRepository>();
             return services;
         }
         public static void AddDatabase(this IServiceCollection services, IConfiguration configuration)

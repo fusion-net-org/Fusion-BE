@@ -42,6 +42,7 @@ namespace Fusion.API
                     };
                 });
             // --- FluentValidation ---
+            // Add both RegisterRequestValidator and CompanyValidator from their respective assemblies
             services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
             services.AddFluentValidationAutoValidation();
             services.AddFluentValidationClientsideAdapters();

@@ -50,7 +50,7 @@ public class AuthenService : IAuthenService
 
         user.PasswordSalt = passwordSalt;
         user.PasswordHash = passwordHash;
-        user.CreateAt = DateTime.UtcNow;
+        user.CreateAt = DateTime.UtcNow.AddHours(7);
 
         await _unitOfWork.Repository<User>().AddAsync(user, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
