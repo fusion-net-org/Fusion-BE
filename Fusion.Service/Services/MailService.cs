@@ -1,12 +1,12 @@
 ﻿using System.Net.Mail;
 using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.IServices;
-using Fusion.Service.ViewModels.Users.Requests;
 using Microsoft.Extensions.Options;
 using MimeKit;
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using MimeKit.Utils;
+using Fusion.Service.ViewModels.Companies.Email;
 
 namespace Fusion.Service.Services
 {

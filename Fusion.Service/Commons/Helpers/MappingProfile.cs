@@ -1,6 +1,7 @@
 
 using AutoMapper;
 using Fusion.Repository.Entities;
+using Fusion.Service.ViewModels.Companies.Responses;
 using Fusion.Service.ViewModels.Users.Requests;
 using Fusion.Service.ViewModels.Users.Responses;
 
@@ -21,6 +22,15 @@ public class MappingProfile : Profile
         //Partner
         CreateMap<CompanyFriendshipResponse,CompanyFriendship>().ReverseMap();
 
-        CreateMap<User, UserPageResponse>();
+        CreateMap<UpdateSelfUserRequest, User>()
+               .ForMember(dest => dest.Avatar, opt => opt.Ignore())
+               .ForMember(dest => dest.UpdateAt, opt => opt.MapFrom(src => DateTime.UtcNow))
+               .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
+
+        CreateMap<User, AdminUserResponse>();
+        CreateMap<User, CompanyUserResponse>();
+        CreateMap<User, SelfUserResponse>();
+
+
     }
 }

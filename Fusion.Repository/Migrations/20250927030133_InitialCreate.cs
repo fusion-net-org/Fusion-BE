@@ -35,6 +35,7 @@ namespace Fusion.Repository.Migrations
                     userName = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     avatar = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     email = table.Column<string>(type: "nvarchar(320)", maxLength: 320, nullable: true),
+                    phone = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
                     address = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     gender = table.Column<string>(type: "varchar(10)", unicode: false, maxLength: 10, nullable: true),
                     password_hash = table.Column<byte[]>(type: "varbinary(512)", nullable: false),

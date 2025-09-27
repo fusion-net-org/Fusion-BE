@@ -413,3 +413,5 @@ appsettings.json
 appsettings.*.json
 *.secrets.json
 # End of https://www.toptal.com/developers/gitignore/api/visualstudio
+/Fusion.Repository/Migrations/20250927020639_InitialCreate.cs
+/Fusion.Repository/Migrations/20250927020639_InitialCreate.Designer.cs

@@ -31,12 +31,7 @@ System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | S
 builder.Services.ConfigureRepositoryLayerService(builder.Configuration);
 builder.Services.ConfigureServiceLayerService(builder.Configuration);
 builder.Services.ConfigureApiLayerServices(builder.Configuration);
-
-
-//builder.Services.Configure<RouteOptions>(options =>
-//{
-//    options.LowercaseUrls = true;
-//});
+builder.Services.AddHttpContextAccessor();
 
 #endregion End of custom application service configuration
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

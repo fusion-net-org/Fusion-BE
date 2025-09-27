@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using AutoMapper.Internal;
-using Fusion.Service.ViewModels.Users.Requests;
+using Fusion.Service.ViewModels.Companies.Email;
 
 namespace Fusion.Service.IServices
 {
