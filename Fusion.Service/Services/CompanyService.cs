@@ -30,7 +30,7 @@ namespace Fusion.Service.Services
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<CompanyResponse> CreateCompanyAsync(CreateCompanyRequest request, string Email, CancellationToken cancellationToken = default)
+        public async Task<CompanyResponse> CreateCompanyAsync(CompanyRequest request, string Email, CancellationToken cancellationToken = default)
         {
             if (request == null)
                 throw CustomExceptionFactory.CreateBadRequestError(
@@ -84,6 +84,58 @@ namespace Fusion.Service.Services
                 PageSize = result.PageSize
             };
             return list;
+        }
+
+        public async Task<CompanyResponse> GetCompanyByIdAsync(Guid companyId, CancellationToken cancellationToken = default)
+        {
+            var company = await _unitOfWork.companyRepository.FindAsync(c => c.Id == companyId);
+            if (company == null)
+                throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Company"));
+
+            return _mapper.Map<CompanyResponse>(company);
+        }
+
+        public async Task<CompanyResponse> UpdateCompanyAsync(Guid companyId, CompanyRequest request, string Email, CancellationToken cancellationToken = default)
+        {
+            if (request == null)
+                throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.INVALID_INPUT);
+
+            var user = await _unitOfWork.userRepository.GetUserByEmailAsync(Email, cancellationToken);
+            if (user == null)
+                throw CustomExceptionFactory.
+                    CreateBadRequestError(ResponseMessages.INVALID_INPUT.FormatMessage("Email incorrect!"));
+
+            var company = await _unitOfWork.companyRepository.FindAsync(c => c.Id == companyId && c.OwnerUserId == user.Id);
+            if (company == null)
+                throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Company"));
+
+            company.Name = request.Name ?? company.Name;
+            company.TaxCode = request.TaxCode ?? company.TaxCode;
+            company.Detail = request.Detail ?? company.Detail;
+            company.UpdateAt = DateTime.UtcNow.AddHours(7);
+            //company.ImageCompany (chưa test cái cloud nên handle sau)
+
+            _unitOfWork.companyRepository.Update(company);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            return _mapper.Map<CompanyResponse>(company);
+        }
+
+        public async Task<bool> DeleteCompanyAsync(Guid companyId, string Email,CancellationToken cancellationToken = default)
+        {
+            var user = await _unitOfWork.userRepository.GetUserByEmailAsync(Email, cancellationToken);
+            if (user == null)
+                throw CustomExceptionFactory.
+                    CreateBadRequestError(ResponseMessages.INVALID_INPUT.FormatMessage("Email incorrect!"));
+
+            var company = await _unitOfWork.companyRepository.FindAsync(c => c.Id == companyId && user.Id == c.OwnerUserId);
+            if (company == null)
+                throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Company"));
+
+            _unitOfWork.companyRepository.Remove(company);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            return true;
         }
     }
 }

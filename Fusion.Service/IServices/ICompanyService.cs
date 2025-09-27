@@ -13,7 +13,9 @@ namespace Fusion.Service.IServices
     public interface ICompanyService
     {
         Task<PagedResult<CompanyResponse>> GetPagedCompaniesAsync(CompanyPagedSearchRequest request, CancellationToken cancellationToken = default);
-
-        Task<CompanyResponse> CreateCompanyAsync(CreateCompanyRequest request, string Email, CancellationToken cancellationToken = default);
+        Task<CompanyResponse> CreateCompanyAsync(CompanyRequest request, string Email, CancellationToken cancellationToken = default);
+        Task<CompanyResponse> GetCompanyByIdAsync(Guid companyId, CancellationToken cancellationToken = default);
+        Task<CompanyResponse> UpdateCompanyAsync(Guid companyId, CompanyRequest request, string Email, CancellationToken cancellationToken = default);
+        Task<bool> DeleteCompanyAsync(Guid companyId, string Email, CancellationToken cancellationToken = default);
     }
 }

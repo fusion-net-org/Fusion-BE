@@ -4,9 +4,9 @@ using Fusion.Service.ViewModels.Companies.Requests;
 
 namespace Fusion.Service.ViewModels.Companies.Validators
 {
-    public class CreateCompanyValidator : AbstractValidator<CreateCompanyRequest>
+    public class CompanyValidator : AbstractValidator<CompanyRequest>
     {
-        public CreateCompanyValidator()
+        public CompanyValidator()
         {
             RuleFor(x => x.Name)
                 .NotEmpty().WithMessage("Company name must not be empty!")

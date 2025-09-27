@@ -28,6 +28,6 @@ public class MappingProfile : Profile
         CreateMap<Company, CompanyResponse>()
             .ForMember(dest => dest.OwnerUserName, otp => otp.MapFrom(src => src.OwnerUser.UserName)).ReverseMap();
 
-        CreateMap<CreateCompanyRequest, Company>().ReverseMap();
+        CreateMap<CompanyRequest, Company>().ReverseMap();
     }
 }

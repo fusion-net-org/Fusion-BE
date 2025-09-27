@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Fusion.Service.ViewModels.Companies.Requests
 {
-    public class CreateCompanyRequest
+    public class CompanyRequest
     {
         public string? Name { get; set; }
         public string? TaxCode { get; set; }

@@ -40,7 +40,7 @@ namespace Fusion.Repository.Data
             await _dbSet.AddAsync(entity, cancellationToken);
             return entity;
         }
-        public void Romve(T entity)
+        public void Remove(T entity)
         {
             _dbSet.Remove(entity);
         }
