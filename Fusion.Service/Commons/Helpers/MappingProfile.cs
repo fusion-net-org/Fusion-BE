@@ -21,7 +21,7 @@ public class MappingProfile : Profile
                .ForMember(dest => dest.UpdateAt, opt => opt.MapFrom(src => DateTime.UtcNow))
                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => true));
         //Partner
-        CreateMap<CompanyFriendshipResponse,CompanyFriendship>().ReverseMap();
+        CreateMap<CompanyFriendshipResponse, CompanyFriendship>().ReverseMap();
 
         CreateMap<UpdateSelfUserRequest, User>()
                .ForMember(dest => dest.Avatar, opt => opt.Ignore())
@@ -36,6 +36,8 @@ public class MappingProfile : Profile
         CreateMap<Company, CompanyResponse>()
             .ForMember(dest => dest.OwnerUserName, otp => otp.MapFrom(src => src.OwnerUser.UserName)).ReverseMap();
 
-        CreateMap<CompanyRequest, Company>().ReverseMap();
+        CreateMap<CompanyRequest, Company>()
+            .ForAllMembers(opt =>
+                            opt.Condition((src, dest, srcMember) => srcMember != null));
     }
 }

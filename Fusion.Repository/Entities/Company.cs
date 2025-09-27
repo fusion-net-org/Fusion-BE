@@ -42,6 +42,9 @@ public partial class Company
     [Precision(3)]
     public DateTime UpdateAt { get; set; }
 
+    [Column("is_deleted")]
+    public bool? IsDeleted { get; set; }
+
     [InverseProperty("CompanyA")]
     public virtual ICollection<CompanyFriendship> CompanyFriendshipCompanyAs { get; set; } = new List<CompanyFriendship>();
 
