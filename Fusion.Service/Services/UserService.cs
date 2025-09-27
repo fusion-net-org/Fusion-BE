@@ -9,6 +9,7 @@ using Fusion.Repository.Entities;
 using Fusion.Repository.IRepositories;
 using Fusion.Service.Commons.Helpers;
 using Fusion.Service.IServices;
+using Fusion.Service.ViewModels.Companies.Responses;
 using Fusion.Service.ViewModels.Users.Requests;
 using Fusion.Service.ViewModels.Users.Responses;
 

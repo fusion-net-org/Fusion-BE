@@ -24,6 +24,7 @@ namespace Fusion.Repository
 
             //company
             services.AddScoped<ICompanyRepository,CompanyRepository>();
+            services.AddScoped<IPermissionQuery, PermissionQuery>();
             return services;
         }
         public static void AddDatabase(this IServiceCollection services, IConfiguration configuration)

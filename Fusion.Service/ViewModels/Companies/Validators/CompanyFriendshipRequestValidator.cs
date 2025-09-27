@@ -1,7 +1,7 @@
 ﻿using FluentValidation;
-using Fusion.Service.ViewModels.Users.Requests;
+using Fusion.Service.ViewModels.Companies.Requests;
 
-namespace Fusion.Service.ViewModels.Users.Validators
+namespace Fusion.Service.ViewModels.Companies.Validators
 {
     public class CompanyFriendshipRequestValidator : AbstractValidator<CompanyFriendshipRequest>
     {

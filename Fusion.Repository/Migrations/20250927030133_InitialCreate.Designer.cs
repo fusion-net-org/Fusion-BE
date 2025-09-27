@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Fusion.Repository.Migrations
 {
     [DbContext(typeof(FusionDbContext))]
-    [Migration("20250926204430_InitialCreate")]
+    [Migration("20250927030133_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -1040,6 +1040,11 @@ namespace Fusion.Repository.Migrations
                         .IsRequired()
                         .HasColumnType("varbinary(128)")
                         .HasColumnName("password_salt");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("phone");
 
                     b.Property<bool>("Status")
                         .ValueGeneratedOnAdd()

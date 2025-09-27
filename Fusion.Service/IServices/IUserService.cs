@@ -2,6 +2,7 @@
 using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.User;
 using Fusion.Repository.Entities;
+using Fusion.Service.ViewModels.Companies.Responses;
 using Fusion.Service.ViewModels.Users.Requests;
 using Fusion.Service.ViewModels.Users.Responses;
 
