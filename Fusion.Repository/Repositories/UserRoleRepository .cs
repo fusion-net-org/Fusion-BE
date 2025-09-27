@@ -1,11 +1,7 @@
 ﻿using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+
 
 namespace Fusion.Repository.Repositories
 {
