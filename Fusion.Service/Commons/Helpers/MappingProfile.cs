@@ -1,6 +1,7 @@
 
 using AutoMapper;
 using Fusion.Repository.Entities;
+using Fusion.Service.ViewModels.Companies.Requests;
 using Fusion.Service.ViewModels.Companies.Responses;
 using Fusion.Service.ViewModels.Users.Requests;
 using Fusion.Service.ViewModels.Users.Responses;
@@ -31,6 +32,10 @@ public class MappingProfile : Profile
         CreateMap<User, CompanyUserResponse>();
         CreateMap<User, SelfUserResponse>();
 
+        //----------------------------     entity: Company ---------------------------------------------
+        CreateMap<Company, CompanyResponse>()
+            .ForMember(dest => dest.OwnerUserName, otp => otp.MapFrom(src => src.OwnerUser.UserName)).ReverseMap();
 
+        CreateMap<CompanyRequest, Company>().ReverseMap();
     }
 }
