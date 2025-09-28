@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Fusion.Repository.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class AddIsDeleteInTicket : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -63,7 +63,8 @@ namespace Fusion.Repository.Migrations
                     detail = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     image_company = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     create_at = table.Column<DateTime>(type: "datetime2(3)", precision: 3, nullable: false, defaultValueSql: "(sysutcdatetime())"),
-                    update_at = table.Column<DateTime>(type: "datetime2(3)", precision: 3, nullable: false, defaultValueSql: "(sysutcdatetime())")
+                    update_at = table.Column<DateTime>(type: "datetime2(3)", precision: 3, nullable: false, defaultValueSql: "(sysutcdatetime())"),
+                    is_deleted = table.Column<bool>(type: "bit", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -450,6 +451,7 @@ namespace Fusion.Repository.Migrations
                     submitted_by = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     is_billable = table.Column<bool>(type: "bit", nullable: false),
                     budget = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    is_deleted = table.Column<bool>(type: "bit", nullable: true),
                     resolved_at = table.Column<DateTime>(type: "datetime2(3)", precision: 3, nullable: true),
                     closed_at = table.Column<DateTime>(type: "datetime2(3)", precision: 3, nullable: true),
                     created_at = table.Column<DateTime>(type: "datetime2(3)", precision: 3, nullable: false, defaultValueSql: "(sysutcdatetime())"),

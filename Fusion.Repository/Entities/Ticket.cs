@@ -47,7 +47,10 @@ public partial class Ticket
     [Column("budget", TypeName = "decimal(18, 2)")]
     public decimal? Budget { get; set; }
 
-    [Column("resolved_at")]
+	[Column("is_deleted")]
+	public bool? IsDeleted { get; set; }
+
+	[Column("resolved_at")]
     [Precision(3)]
     public DateTime? ResolvedAt { get; set; }
 
