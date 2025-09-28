@@ -1,4 +1,6 @@
-﻿using Fusion.Service.Commons.Helpers;
+﻿using Fusion.Repository.IRepositories;
+using Fusion.Repository.Repositories;
+using Fusion.Service.Commons.Helpers;
 using Fusion.Service.IServices;
 using Fusion.Service.Services;
 using Microsoft.Extensions.Configuration;
@@ -28,7 +30,9 @@ namespace Fusion.Service
             services.AddScoped<ICompanyFriendshipService,CompanyFriendshipService>();
             //company
             services.AddScoped<ICompanyService, CompanyService>();
-            return services;
+			//ticket
+			services.AddScoped<ITicketService, TicketService>();
+			return services;
         }
      }
 }

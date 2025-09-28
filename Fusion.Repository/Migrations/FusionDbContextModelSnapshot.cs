@@ -890,6 +890,10 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("bit")
                         .HasColumnName("is_billable");
 
+                    b.Property<bool?>("IsDeleted")
+                        .HasColumnType("bit")
+                        .HasColumnName("is_deleted");
+
                     b.Property<bool>("IsHighestUrgen")
                         .HasColumnType("bit")
                         .HasColumnName("is_highest_urgen");
