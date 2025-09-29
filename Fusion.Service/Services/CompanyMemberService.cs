@@ -38,9 +38,9 @@ namespace Fusion.Service.Services
             _mapper = mapper;
         }
 
-        public async Task<bool?> InviteMemberToCompany(string inviterEmail, Guid inviteeMemberId, Guid companyId, CancellationToken token)
+        public async Task<bool?> InviteMemberToCompany(string inviterEmail, Guid inviteeMemberId, Guid companyId, CancellationToken cancellationToken)
         {
-            var check_member = await _companyMemberRepository.InviteMemberToCompany(inviterEmail, inviteeMemberId, companyId, token);
+            var check_member = await _companyMemberRepository.InviteMemberToCompany(inviterEmail, inviteeMemberId, companyId, cancellationToken);
 
             if (check_member is not true)
                 return check_member;
@@ -59,7 +59,7 @@ namespace Fusion.Service.Services
                     CompanyId = company.Id,
                     InviteeMemberId = inviteeMemberId
                 },
-                TimeSpan.FromMinutes(10), token);
+                TimeSpan.FromMinutes(10), cancellationToken);
 
             var inviteUrl = $"https://localhost:7160/api/companymember/join?tokenConfirm={inviteToken}"; // hoặc token thật
             var emailBody = MailUtils.InviteMemberToCompany(
@@ -79,16 +79,16 @@ namespace Fusion.Service.Services
             return true;
         }
 
-        public async Task<CompanyMemberResponse?> JoinMemberToCompany(string tokenConfirm, CancellationToken token = default)
+        public async Task<CompanyMemberResponse?> JoinMemberToCompany(string tokenConfirm, CancellationToken cancellationToken = default)
         {
-            var cacheKey = $"company_invite:{token}";
-            var data = await _cacheService.GetAsync<InviteMemberRequest>(cacheKey, token);
+            var cacheKey = $"company_invite:{tokenConfirm}";
+            var data = await _cacheService.GetAsync<InviteMemberRequest>(cacheKey, cancellationToken);
 
             if (data is null)
                 throw CustomExceptionFactory.
                    CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Token is invalid or expired"));
 
-            var result = await _companyMemberRepository.JoinMemberToCompany(data.InviteeMemberId, data.CompanyId, token);
+            var result = await _companyMemberRepository.JoinMemberToCompany(data.InviteeMemberId, data.CompanyId, cancellationToken);
             return _mapper.Map<CompanyMemberResponse>(result);
         }
     }

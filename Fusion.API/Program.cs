@@ -25,6 +25,13 @@ builder.Services.AddSwaggerGen();
     }));
 });*/
 builder.Services.AddMemoryCache();
+
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = "localhost:6379";
+    options.InstanceName = "Fusion_";
+});
+
 #region Custom application service configuration
 
 System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls13;

@@ -4,6 +4,7 @@ using Fusion.Repository.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Travelogue.Repository.Caching;
 
 namespace Fusion.Repository
@@ -16,7 +17,6 @@ namespace Fusion.Repository
             services.AddDatabase(configuration);
 
             //cache
-            services.AddDistributedMemoryCache(); // cung cấp IDistributedCache
             services.AddScoped<ICacheService, CacheService>();
 
             // register repositories entites
