@@ -48,12 +48,9 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.MemberId, opt => opt.MapFrom(src => src.UserId))
             .ForMember(dest => dest.CompanyName, opt => opt.MapFrom(src => src.Company!.Name))
             .ForMember(dest => dest.MemberName, opt => opt.MapFrom(src => src.User!.UserName));
+
+        //----------------------------     entity: Ticket ---------------------------------------------
+        CreateMap<Ticket, TicketResponse>().ReverseMap();
+        CreateMap<TicketRequest, Ticket>().ReverseMap();
     }
-
-		//----------------------------     entity: Ticket ---------------------------------------------
-		CreateMap<Ticket, TicketResponse>().ReverseMap();
-
-		CreateMap<TicketRequest, Ticket>().ReverseMap();
-
-	}
 }
