@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Fusion.Repository.Migrations
 {
     [DbContext(typeof(FusionDbContext))]
-    [Migration("20250927071849_AddIsDeletedToCompany")]
-    partial class AddIsDeletedToCompany
+    [Migration("20250928091940_AddIsDeleteInTicket")]
+    partial class AddIsDeleteInTicket
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -892,6 +892,10 @@ namespace Fusion.Repository.Migrations
                     b.Property<bool>("IsBillable")
                         .HasColumnType("bit")
                         .HasColumnName("is_billable");
+
+                    b.Property<bool?>("IsDeleted")
+                        .HasColumnType("bit")
+                        .HasColumnName("is_deleted");
 
                     b.Property<bool>("IsHighestUrgen")
                         .HasColumnType("bit")

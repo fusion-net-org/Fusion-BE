@@ -3,6 +3,8 @@ using AutoMapper;
 using Fusion.Repository.Entities;
 using Fusion.Service.ViewModels.Companies.Requests;
 using Fusion.Service.ViewModels.Companies.Responses;
+using Fusion.Service.ViewModels.Tickets.Requests;
+using Fusion.Service.ViewModels.Tickets.Responses;
 using Fusion.Service.ViewModels.Users.Requests;
 using Fusion.Service.ViewModels.Users.Responses;
 
@@ -47,4 +49,11 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.CompanyName, opt => opt.MapFrom(src => src.Company!.Name))
             .ForMember(dest => dest.MemberName, opt => opt.MapFrom(src => src.User!.UserName));
     }
+
+		//----------------------------     entity: Ticket ---------------------------------------------
+		CreateMap<Ticket, TicketResponse>().ReverseMap();
+
+		CreateMap<TicketRequest, Ticket>().ReverseMap();
+
+	}
 }
