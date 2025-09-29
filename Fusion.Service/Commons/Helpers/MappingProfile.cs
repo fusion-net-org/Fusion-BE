@@ -22,7 +22,8 @@ public class MappingProfile : Profile
                .ForMember(dest => dest.CreateAt, opt => opt.MapFrom(src => DateTime.UtcNow))
                .ForMember(dest => dest.UpdateAt, opt => opt.MapFrom(src => DateTime.UtcNow))
                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => true));
-        //Partner
+
+        //----------------------------     Partner  ---------------------------------------------
         CreateMap<CompanyFriendshipResponse, CompanyFriendship>().ReverseMap();
 
         CreateMap<UpdateSelfUserRequest, User>()
@@ -42,10 +43,14 @@ public class MappingProfile : Profile
             .ForAllMembers(opt =>
                             opt.Condition((src, dest, srcMember) => srcMember != null));
 
-		//----------------------------     entity: Ticket ---------------------------------------------
-		CreateMap<Ticket, TicketResponse>().ReverseMap();
+        //----------------------------     entity: CompanyMember ---------------------------------------------
+        CreateMap<CompanyMember, CompanyMemberResponse>()
+            .ForMember(dest => dest.MemberId, opt => opt.MapFrom(src => src.UserId))
+            .ForMember(dest => dest.CompanyName, opt => opt.MapFrom(src => src.Company!.Name))
+            .ForMember(dest => dest.MemberName, opt => opt.MapFrom(src => src.User!.UserName));
 
-		CreateMap<TicketRequest, Ticket>().ReverseMap();
-
-	}
+        //----------------------------     entity: Ticket ---------------------------------------------
+        CreateMap<Ticket, TicketResponse>().ReverseMap();
+        CreateMap<TicketRequest, Ticket>().ReverseMap();
+    }
 }

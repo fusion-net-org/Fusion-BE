@@ -5,6 +5,7 @@ using Fusion.API.Middlewares;
 using Fusion.Repository;
 using Fusion.Service;
 using Fusion.Service.Commons.BaseResponses;
+using Microsoft.Extensions.Configuration;
 using System.Net;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -24,6 +25,13 @@ builder.Services.AddSwaggerGen();
     }));
 });*/
 builder.Services.AddMemoryCache();
+
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = "localhost:6379";
+    options.InstanceName = "Fusion_";
+});
+
 #region Custom application service configuration
 
 System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls13;
@@ -32,6 +40,9 @@ builder.Services.ConfigureRepositoryLayerService(builder.Configuration);
 builder.Services.ConfigureServiceLayerService(builder.Configuration);
 builder.Services.ConfigureApiLayerServices(builder.Configuration);
 builder.Services.AddHttpContextAccessor();
+
+builder.Services.Configure<MailSettings>(builder.Configuration.GetSection("MailSettings"));
+
 
 #endregion End of custom application service configuration
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
