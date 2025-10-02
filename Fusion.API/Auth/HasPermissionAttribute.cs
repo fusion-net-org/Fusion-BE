@@ -5,11 +5,7 @@ namespace Fusion.API.Auth
 {
     public class HasPermissionAttribute : AuthorizeAttribute
     {
-        private const string POLICY_PREFIX = "perm:";
-
-        public HasPermissionAttribute(string code)
-        {
-            Policy = $"{POLICY_PREFIX}{code}";
-        }
+        private const string PREFIX = "perm:";
+        public HasPermissionAttribute(string code) => Policy = PREFIX + code;
     }
 }

@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Fusion.Repository.Migrations
 {
     [DbContext(typeof(FusionDbContext))]
-    [Migration("20250926204430_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20250928091940_AddIsDeleteInTicket")]
+    partial class AddIsDeleteInTicket
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -90,6 +90,10 @@ namespace Fusion.Repository.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)")
                         .HasColumnName("image_company");
+
+                    b.Property<bool?>("IsDeleted")
+                        .HasColumnType("bit")
+                        .HasColumnName("is_deleted");
 
                     b.Property<string>("Name")
                         .HasMaxLength(200)
@@ -889,6 +893,10 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("bit")
                         .HasColumnName("is_billable");
 
+                    b.Property<bool?>("IsDeleted")
+                        .HasColumnType("bit")
+                        .HasColumnName("is_deleted");
+
                     b.Property<bool>("IsHighestUrgen")
                         .HasColumnType("bit")
                         .HasColumnName("is_highest_urgen");
@@ -1040,6 +1048,11 @@ namespace Fusion.Repository.Migrations
                         .IsRequired()
                         .HasColumnType("varbinary(128)")
                         .HasColumnName("password_salt");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("phone");
 
                     b.Property<bool>("Status")
                         .ValueGeneratedOnAdd()

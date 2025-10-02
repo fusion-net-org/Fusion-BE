@@ -1,6 +1,6 @@
 ﻿using Fusion.Repository.Entities;
+using Fusion.Service.ViewModels.Companies.Responses;
 using Fusion.Service.ViewModels.Users.Requests;
-using Fusion.Service.ViewModels.Users.Responses;
 
 namespace Fusion.Service.IServices
 {

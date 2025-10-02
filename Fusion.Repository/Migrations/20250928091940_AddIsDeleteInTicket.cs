@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Fusion.Repository.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class AddIsDeleteInTicket : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -35,6 +35,7 @@ namespace Fusion.Repository.Migrations
                     userName = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     avatar = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     email = table.Column<string>(type: "nvarchar(320)", maxLength: 320, nullable: true),
+                    phone = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
                     address = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     gender = table.Column<string>(type: "varchar(10)", unicode: false, maxLength: 10, nullable: true),
                     password_hash = table.Column<byte[]>(type: "varbinary(512)", nullable: false),
@@ -62,7 +63,8 @@ namespace Fusion.Repository.Migrations
                     detail = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     image_company = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     create_at = table.Column<DateTime>(type: "datetime2(3)", precision: 3, nullable: false, defaultValueSql: "(sysutcdatetime())"),
-                    update_at = table.Column<DateTime>(type: "datetime2(3)", precision: 3, nullable: false, defaultValueSql: "(sysutcdatetime())")
+                    update_at = table.Column<DateTime>(type: "datetime2(3)", precision: 3, nullable: false, defaultValueSql: "(sysutcdatetime())"),
+                    is_deleted = table.Column<bool>(type: "bit", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -449,6 +451,7 @@ namespace Fusion.Repository.Migrations
                     submitted_by = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     is_billable = table.Column<bool>(type: "bit", nullable: false),
                     budget = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    is_deleted = table.Column<bool>(type: "bit", nullable: true),
                     resolved_at = table.Column<DateTime>(type: "datetime2(3)", precision: 3, nullable: true),
                     closed_at = table.Column<DateTime>(type: "datetime2(3)", precision: 3, nullable: true),
                     created_at = table.Column<DateTime>(type: "datetime2(3)", precision: 3, nullable: false, defaultValueSql: "(sysutcdatetime())"),

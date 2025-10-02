@@ -42,7 +42,7 @@ namespace Fusion.API.Middlewares
 
                 await HandleCustomExceptionAsync(context, ex);
             }
-            catch (Exception ex)
+           catch (Exception ex)
             {
                 if (context.Response.HasStarted)
                 {

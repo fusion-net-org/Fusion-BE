@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 
-namespace Fusion.Service.ViewModels.Users.Requests
+namespace Fusion.Service.ViewModels.Companies.Email
 {
     public class MailRequest
     {

@@ -1,4 +1,6 @@
 ﻿
+using Fusion.Repository.IRepositories;
+using Fusion.Repository.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
@@ -7,10 +9,32 @@ namespace Fusion.Repository.Data;
 
 public class UnitOfWork : IUnitOfWork
 {
+
     private readonly FusionDbContext _context;
     private IDbContextTransaction? _currentTransaction;
+
+    //Khai báo chung
+    private ICompanyRepository _companyRepository;
+    private UserRepository _userRepository;
+   
     private readonly Dictionary<Type, object> _repositories = new();
     private readonly ILogger<UnitOfWork> _logger;
+
+    public ICompanyRepository companyRepository
+    {
+        get
+        {
+            return _companyRepository ??= new CompanyRepository(_context);
+        }
+    }
+
+    public IUserRepository userRepository
+    {
+        get
+        {
+            return _userRepository ??= new UserRepository(_context);
+        }
+    }
 
     public UnitOfWork(FusionDbContext context, ILogger<UnitOfWork> logger)
     {
@@ -27,7 +51,7 @@ public class UnitOfWork : IUnitOfWork
         }
         return (IGenericRepository<T>)_repositories[type];
     }
-     public async Task BeginTransactionAsync(CancellationToken cancellationToken = default)
+    public async Task BeginTransactionAsync(CancellationToken cancellationToken = default)
     {
         if (_currentTransaction != null) return;
         _currentTransaction = await _context.Database.BeginTransactionAsync(cancellationToken);
@@ -99,6 +123,6 @@ public class UnitOfWork : IUnitOfWork
     public void Dispose()
     {
         _context.Dispose();
-       _currentTransaction?.Dispose();
+        _currentTransaction?.Dispose();
     }
 }

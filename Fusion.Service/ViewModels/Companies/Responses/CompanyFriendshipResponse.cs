@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Fusion.Service.ViewModels.Users.Responses
+namespace Fusion.Service.ViewModels.Companies.Responses
 {
     public class CompanyFriendshipResponse
     {

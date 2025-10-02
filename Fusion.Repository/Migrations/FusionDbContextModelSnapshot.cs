@@ -88,6 +88,10 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("nvarchar(500)")
                         .HasColumnName("image_company");
 
+                    b.Property<bool?>("IsDeleted")
+                        .HasColumnType("bit")
+                        .HasColumnName("is_deleted");
+
                     b.Property<string>("Name")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)")
@@ -886,6 +890,10 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("bit")
                         .HasColumnName("is_billable");
 
+                    b.Property<bool?>("IsDeleted")
+                        .HasColumnType("bit")
+                        .HasColumnName("is_deleted");
+
                     b.Property<bool>("IsHighestUrgen")
                         .HasColumnType("bit")
                         .HasColumnName("is_highest_urgen");
@@ -1037,6 +1045,11 @@ namespace Fusion.Repository.Migrations
                         .IsRequired()
                         .HasColumnType("varbinary(128)")
                         .HasColumnName("password_salt");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("phone");
 
                     b.Property<bool>("Status")
                         .ValueGeneratedOnAdd()
