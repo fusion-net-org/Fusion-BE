@@ -31,7 +31,7 @@ namespace Fusion.Repository.Repositories
                 join f in _db.FunctionInPages on rp.FunctionId equals f.Id
                 // ---- Quan trọng: dùng IsAccess thay vì IsAllowed; nếu nullable thì so sánh == true
                 where (rp.IsAccess == true) 
-                select f.PageCode
+                select f.FunctionCode
             )
             .Distinct()
             .ToListAsync(ct);
