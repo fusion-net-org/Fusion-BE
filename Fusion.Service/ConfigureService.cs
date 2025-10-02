@@ -12,6 +12,8 @@ namespace Fusion.Service
         {
             // register autoMapper
             services.AddAutoMapper(typeof(MappingProfile));
+            services.AddScoped<IRoleAdminService, RoleAdminService>();
+            services.AddScoped<IMemberRoleService, MemberRoleService>();
 
             //register service entities
             services.AddScoped<IAuthenService, AuthenService>();

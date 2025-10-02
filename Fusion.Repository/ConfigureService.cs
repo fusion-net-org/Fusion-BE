@@ -21,6 +21,8 @@ namespace Fusion.Repository
 
             //partner
             services.AddScoped<ICompanyFriendshipRepository, CompanyFriendshipRepository>();
+            services.AddScoped<IRoleAdminRepository, RoleAdminRepository>();
+            services.AddScoped<IUserRoleRepository, UserRoleRepository>();
 
             //company
             services.AddScoped<ICompanyRepository,CompanyRepository>();
