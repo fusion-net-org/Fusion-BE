@@ -25,6 +25,13 @@ public partial class Comment
     [Precision(3)]
     public DateTime CreateAt { get; set; }
 
+    [Column("update_at")]
+    [Precision(3)]
+    public DateTime UpdateAt { get; set; }
+
+    [Column("status")]
+    public string? Status { get; set; }
+
     [ForeignKey("AuthorUserId")]
     [InverseProperty("Comments")]
     public virtual User? AuthorUser { get; set; }
