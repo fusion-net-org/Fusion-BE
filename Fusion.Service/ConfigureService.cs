@@ -32,9 +32,13 @@ namespace Fusion.Service
             //company
             services.AddScoped<ICompanyService, CompanyService>();
             services.AddScoped<ICompanyMemberService, CompanyMemberService>();
-            return services;
+
 			//ticket
 			services.AddScoped<ITicketService, TicketService>();
+
+            //project request
+            services.AddScoped<IProjectRequestService , ProjectRequestService>();
+
 			return services;
         }
      }

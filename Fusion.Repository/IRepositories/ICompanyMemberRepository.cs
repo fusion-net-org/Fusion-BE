@@ -10,8 +10,10 @@ namespace Fusion.Repository.IRepositories
 {
     public interface ICompanyMemberRepository : IGenericRepository<CompanyMember>
     {
-        Task<bool?> InviteMemberToCompany(string inviterEmail, Guid inviteeMemberId, Guid companyId, CancellationToken token);
+        Task<bool?> InviteMemberToCompany(string inviterEmail, Guid inviteeMemberId, Guid companyId, CancellationToken token = default);
 
-        Task<CompanyMember?> JoinMemberToCompany(Guid inviteeMemberId, Guid companyId, CancellationToken token);
+        Task<CompanyMember?> JoinMemberToCompany(Guid inviteeMemberId, Guid companyId, CancellationToken token = default);
+
+        Task<CompanyMember?> AddCompanyMemberAsync(CompanyMember companyMember, CancellationToken token = default);
     }
 }
