@@ -32,6 +32,8 @@ builder.Services.AddStackExchangeRedisCache(options =>
     options.InstanceName = "Fusion_";
 });
 
+builder.Services.Configure<MailSettings>(builder.Configuration.GetSection("MailSettings"));
+
 #region Custom application service configuration
 
 System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls13;
