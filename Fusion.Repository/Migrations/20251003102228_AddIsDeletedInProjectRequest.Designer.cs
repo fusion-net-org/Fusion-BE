@@ -4,6 +4,7 @@ using Fusion.Repository.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Fusion.Repository.Migrations
 {
     [DbContext(typeof(FusionDbContext))]
-    partial class FusionDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251003102228_AddIsDeletedInProjectRequest")]
+    partial class AddIsDeletedInProjectRequest
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -46,18 +49,9 @@ namespace Fusion.Repository.Migrations
                         .HasColumnName("create_at")
                         .HasDefaultValueSql("(sysutcdatetime())");
 
-                    b.Property<string>("Status")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("status");
-
                     b.Property<Guid?>("TaskId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("task_id");
-
-                    b.Property<DateTime>("UpdateAt")
-                        .HasPrecision(3)
-                        .HasColumnType("datetime2(3)")
-                        .HasColumnName("update_at");
 
                     b.HasKey("Id");
 
@@ -554,7 +548,7 @@ namespace Fusion.Repository.Migrations
                         .HasColumnName("id")
                         .HasDefaultValueSql("(newid())");
 
-                    b.Property<DateTime?>("CreateAt")
+                    b.Property<DateTime>("CreateAt")
                         .ValueGeneratedOnAdd()
                         .HasPrecision(3)
                         .HasColumnType("datetime2(3)")
@@ -606,10 +600,6 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("sprint_id");
 
-                    b.Property<string>("Status")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("status");
-
                     b.Property<string>("Title")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)")
@@ -620,11 +610,6 @@ namespace Fusion.Repository.Migrations
                         .IsUnicode(false)
                         .HasColumnType("varchar(20)")
                         .HasColumnName("type");
-
-                    b.Property<DateTime?>("UpdateAt")
-                        .HasPrecision(3)
-                        .HasColumnType("datetime2(3)")
-                        .HasColumnName("update_at");
 
                     b.Property<DateTime?>("WithdrawnAt")
                         .HasPrecision(3)

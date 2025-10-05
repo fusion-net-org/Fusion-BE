@@ -10,12 +10,12 @@ using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.Entities;
 using Fusion.Repository.IRepositories;
+using Fusion.Repository.Repositories;
+using Fusion.Service.Commons.Helpers; // import extension
 using Fusion.Service.IServices;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.Companies.Requests;
 using Fusion.Service.ViewModels.Companies.Responses;
-using Fusion.Service.Commons.Helpers; // import extension
-
 using Fusion.Service.ViewModels.Companies.Validators;
 using Fusion.Service.ViewModels.Users.Responses;
 using System;
@@ -33,15 +33,17 @@ namespace Fusion.Service.Services
         private readonly ICompanyRepository _companyRepository;
         private readonly ICloudinaryService _cloudinaryService;
         private readonly IUserRepository _userRepository;
+        private readonly ICompanyMemberRepository _companyMemberRepository;
         private readonly IValidator<CompanyRequest> _validator;
 
         public CompanyService(IMapper mapper, ICompanyRepository companyRepository, ICloudinaryService cloudinaryService
-            , IUserRepository userRepository, IValidator<CompanyRequest> validator)
+            , IUserRepository userRepository, ICompanyMemberRepository companyMemberRepository, IValidator<CompanyRequest> validator)
         {
             _mapper = mapper;
             _companyRepository = companyRepository;
             _cloudinaryService = cloudinaryService;
             _userRepository = userRepository;
+            _companyMemberRepository = companyMemberRepository;
             _validator = validator;
         }
 
@@ -71,13 +73,28 @@ namespace Fusion.Service.Services
 
             var company_email_existed = await _companyRepository.GetCompanyByEmail(request.Email);
             if (company_email_existed != null)
-                throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.EXISTED.FormatMessage("Company Email is existed in the system"));
+                throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.EXISTED.FormatMessage("Company Email"), "Company Email is existed in the system");
 
             var image_company = await _cloudinaryService.UploadImageAsync(request.ImageCompany, "Company", cancellationToken);
 
             var company = _mapper.Map<Company>(request);
 
             var newCompany = await _companyRepository.AddCompanyAsync(user, image_company, company, cancellationToken);
+
+            if(newCompany == null)
+                throw CustomExceptionFactory.CreateInternalServerError(ResponseMessages.INTERNAL_SERVER_ERROR.FormatMessage("Add Company fail"));
+
+            var newMember = await _companyMemberRepository.AddCompanyMemberAsync(new CompanyMember
+            {
+                CompanyId = newCompany.Id,
+                UserId = user.Id,
+                Status = true,
+                JoinedAt = DateTime.UtcNow.AddHours(7),
+            }, cancellationToken);
+
+            if (newMember == null)
+                throw CustomExceptionFactory.CreateInternalServerError(ResponseMessages.INTERNAL_SERVER_ERROR.FormatMessage("Add new member fail"));
+
             return _mapper.Map<CompanyResponse>(newCompany);
 
         }

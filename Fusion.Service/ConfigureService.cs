@@ -41,7 +41,11 @@ namespace Fusion.Service
 
             //comment
             services.AddScoped<ICommentService, CommentService>();
-            return services;
+
+            //project request
+            services.AddScoped<IProjectRequestService , ProjectRequestService>();
+
+			return services;
         }
      }
 }

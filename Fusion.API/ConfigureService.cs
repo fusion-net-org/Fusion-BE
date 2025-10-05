@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 
 namespace Fusion.API
@@ -52,7 +53,11 @@ namespace Fusion.API
 
                          return new BadRequestObjectResult(response);
                      };
-                 });
+                 })
+                 .AddJsonOptions(options =>
+                 {
+                     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+                 }); ;
             // --- FluentValidation (vẫn enable) ---
             services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
             services.AddFluentValidationAutoValidation();

@@ -43,6 +43,10 @@ namespace Fusion.Repository
 
             //comment
             services.AddScoped<ICommentRepository, CommentRepository>();
+
+            //project request
+            services.AddScoped<IProjectRequestRepository, ProjectRequestRepository>();
+
             return services;
         }
         public static void AddDatabase(this IServiceCollection services, IConfiguration configuration)
