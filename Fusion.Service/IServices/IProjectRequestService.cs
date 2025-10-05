@@ -22,5 +22,9 @@ namespace Fusion.Service.IServices
         Task<ProjectRequestResponse?> GetProjectRequestByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
         Task<bool> DeleteProjectRequestAsync(Guid id, CancellationToken cancellationToken = default);
+
+        Task<ProjectRequestResponse> AcceptProjectRequestAsync(Guid requestId, string executorEmail, CancellationToken cancellationToken = default);
+
+        Task<ProjectRequestRejectResponse> RejectProjectRequestAsync(Guid requestId, string executorEmail, string reason, CancellationToken cancellationToken = default);
     }
 }

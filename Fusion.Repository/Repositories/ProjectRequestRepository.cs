@@ -43,8 +43,11 @@ namespace Fusion.Repository.Repositories
                 throw CustomExceptionFactory.CreateBadRequestError(
                     ResponseMessages.INVALID_INPUT.FormatMessage("Invalid Company"), "Executor company cannot be the same as requester company");
 
-            var isFriendShip = await _context.CompanyFriendships.SingleOrDefaultAsync(v => v.CompanyAId == companyRequester.CompanyId
-                                                                                        && v.CompanyBId == request.ExecutorCompanyId, cancellationToken);
+            var isFriendShip = await _context.CompanyFriendships.SingleOrDefaultAsync(v =>
+                    (v.CompanyAId == companyRequester.CompanyId && v.CompanyBId == request.ExecutorCompanyId) ||
+                    (v.CompanyAId == request.ExecutorCompanyId && v.CompanyBId == companyRequester.CompanyId),
+                    cancellationToken);
+
             if (isFriendShip == null)
                 throw CustomExceptionFactory.
                        CreateBadRequestError(ResponseMessages.INVALID_INPUT.FormatMessage("Invalid Company"), "Company friendship not found between requester and executor");
@@ -73,6 +76,7 @@ namespace Fusion.Repository.Repositories
             request.CreateAt = DateTime.UtcNow.AddHours(7);
             request.IsDeleted = false;
             request.ConvertedProjectId = null;
+            request.Code = code;
 
             var projectRequest = await _context.ProjectRequests.AddAsync(request, cancellationToken);
             await _context.SaveChangesAsync(cancellationToken);
@@ -130,11 +134,11 @@ namespace Fusion.Repository.Repositories
             if (existingRequest.RequesterCompanyId != companyRequester.CompanyId)
                 throw CustomExceptionFactory.CreateBadRequestError("You are not allowed to update this project request");
 
-            // Rule: chỉ được update khi đang Pending
-            if (existingRequest.Status != ProjectRequestStatusEnum.Pending.ToString())
-                throw CustomExceptionFactory.CreateBadRequestError(
-                    ResponseMessages.INVALID_INPUT.FormatMessage("Invalid Status"),
-                    "Only Pending requests can be updated");
+            //// Rule: chỉ được update khi đang Pending
+            //if (existingRequest.Status != ProjectRequestStatusEnum.Pending.ToString())
+            //    throw CustomExceptionFactory.CreateBadRequestError(
+            //        ResponseMessages.INVALID_INPUT.FormatMessage("Invalid Status"),
+            //        "Only Pending requests can be updated");
 
             // Update các field cho phép sửa
             if (!string.IsNullOrEmpty(request.Name))
@@ -151,6 +155,9 @@ namespace Fusion.Repository.Repositories
 
             if (request.EndDate.HasValue)
                 existingRequest.EndDate = request.EndDate;
+
+            if (!string.IsNullOrEmpty(request.Status))
+                existingRequest.Status = request.Status;
 
             if (request.ExecutorCompanyId.HasValue && request.ExecutorCompanyId != existingRequest.ExecutorCompanyId)
             {
@@ -241,6 +248,98 @@ namespace Fusion.Repository.Repositories
                     ResponseMessages.NOT_FOUND.FormatMessage("ProjectRequest not found"));
 
             return projectRequest;
+        }
+
+        public async Task<ProjectRequest> AcceptProjectRequestAsync(Guid requestId, string executorEmail ,CancellationToken cancellationToken = default)
+        {
+
+            var request = await _context.ProjectRequests
+                .Include(x => x.ExecutorCompany)
+                .Include(x => x.RequesterCompany)
+                .Include(x => x.CreatedByNavigation)
+                .Include(x => x.Project)
+                .SingleOrDefaultAsync(x => x.Id == requestId && x.IsDeleted == false, cancellationToken);
+
+            if (request == null)
+                throw CustomExceptionFactory.CreateNotFoundError(
+                    ResponseMessages.NOT_FOUND.FormatMessage("Project request not found"));
+
+            if (request.Status != ProjectRequestStatusEnum.Pending.ToString())
+                throw CustomExceptionFactory.CreateBadRequestError("Request has already been processed");
+
+            var executor = await _context.Users.SingleOrDefaultAsync(x => x.Email == executorEmail, cancellationToken);
+
+            if (executor == null)
+                throw CustomExceptionFactory.CreateNotFoundError(
+                     ResponseMessages.NOT_FOUND.FormatMessage("User not found"));
+
+            var executorMember = await _context.CompanyMembers.SingleOrDefaultAsync(x => x.UserId == executor.Id && x.CompanyId == request.ExecutorCompanyId, cancellationToken); 
+            if (executorMember == null)
+                throw CustomExceptionFactory.CreateNotFoundError(
+                     ResponseMessages.NOT_FOUND.FormatMessage($"User not belong to {request.ExecutorCompany.Name}"));
+
+            //Cập nhật trạng thái
+            request.Status = ProjectRequestStatusEnum.Accepted.ToString();
+            request.UpdateAt = DateTime.UtcNow.AddHours(7);
+
+            var project = new Project
+            {
+                Id = Guid.NewGuid(),
+                ProjectRequestId = request.Id,
+                Name = request.Name,
+                Description = request.Description,
+                StartDate = request.StartDate,
+                EndDate = request.EndDate,
+                CreateAt = DateTime.UtcNow.AddHours(7),
+                CompanyHiredId = request.ExecutorCompanyId,
+                CompanyId = request.RequesterCompanyId,
+                IsHired = true,
+                Status = "Open",
+                CreatedBy = request.CreatedBy,
+                Code = request.Code
+            };
+
+            await _context.Projects.AddAsync(project, cancellationToken);
+            request.ConvertedProjectId = project.Id;
+
+            await _context.SaveChangesAsync(cancellationToken);
+
+            return request;
+        }
+
+        public async Task<bool> RejectProjectRequestAsync(Guid requestId, string executorEmail, CancellationToken cancellationToken = default)
+        {
+            var request = await _context.ProjectRequests
+                .Include(x => x.ExecutorCompany)
+                .Include(x => x.RequesterCompany)
+                .SingleOrDefaultAsync(x => x.Id == requestId && x.IsDeleted == false, cancellationToken);
+
+            if (request == null)
+                throw CustomExceptionFactory.CreateNotFoundError(
+                    ResponseMessages.NOT_FOUND.FormatMessage("Project request not found"));
+
+            if (request.Status != ProjectRequestStatusEnum.Pending.ToString())
+                throw CustomExceptionFactory.CreateBadRequestError("Request has already been processed");
+
+            var executor = await _context.Users.SingleOrDefaultAsync(x => x.Email == executorEmail, cancellationToken);
+            if (executor == null)
+                throw CustomExceptionFactory.CreateNotFoundError(
+                     ResponseMessages.NOT_FOUND.FormatMessage("User not found"));
+
+            var executorMember = await _context.CompanyMembers
+                .SingleOrDefaultAsync(x => x.UserId == executor.Id && x.CompanyId == request.ExecutorCompanyId, cancellationToken);
+
+            if (executorMember == null)
+                throw CustomExceptionFactory.CreateNotFoundError(
+                     ResponseMessages.NOT_FOUND.FormatMessage($"User not belong to {request.ExecutorCompany.Name}"));
+
+            // ✅ Cập nhật trạng thái Reject
+            request.Status = ProjectRequestStatusEnum.Rejected.ToString();
+            request.UpdateAt = DateTime.UtcNow.AddHours(7);
+
+            await _context.SaveChangesAsync(cancellationToken);
+
+            return true;
         }
     }
 }

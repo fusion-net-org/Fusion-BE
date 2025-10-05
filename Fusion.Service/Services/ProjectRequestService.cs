@@ -4,6 +4,7 @@ using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.ProjectRequest;
 using Fusion.Repository.Bases.Responses;
 using Fusion.Repository.Entities;
+using Fusion.Repository.Enums;
 using Fusion.Repository.IRepositories;
 using Fusion.Repository.Repositories;
 using Fusion.Service.Commons.Helpers;
@@ -30,6 +31,12 @@ namespace Fusion.Service.Services
             _mapper = mapper;
         }
 
+        public async Task<ProjectRequestResponse> AcceptProjectRequestAsync(Guid requestId, string executorEmail, CancellationToken cancellationToken = default)
+        {
+            var result = await _projectRequestRepository.AcceptProjectRequestAsync(requestId, executorEmail, cancellationToken);
+            return _mapper.Map<ProjectRequestResponse>(result);
+        }
+
         public async Task<ProjectRequestResponse> AddProjectRequestAsync(CreateProjectRequestRequest request, string vendorEmail, CancellationToken cancellationToken)
         {
             var projectRequest = _mapper.Map<ProjectRequest>(request);
@@ -48,6 +55,24 @@ namespace Fusion.Service.Services
         {
             var result = await _projectRequestRepository.GetProjectRequestByIdAsync(id, cancellationToken);
             return _mapper?.Map<ProjectRequestResponse?>(result);
+        }
+
+        public async Task<ProjectRequestRejectResponse> RejectProjectRequestAsync(Guid requestId, string executorEmail, string reason, CancellationToken cancellationToken = default)
+        {
+            var result = await _projectRequestRepository.RejectProjectRequestAsync(requestId, executorEmail, cancellationToken);
+
+            if (!result)
+                throw CustomExceptionFactory.CreateBadRequestError(
+                    ResponseMessages.FAILED.FormatMessage("Reject project request failed"));
+
+            return new ProjectRequestRejectResponse
+            {
+                Reason = reason,
+                RejectedAt = DateTime.UtcNow.AddHours(7),
+                RejectedBy = executorEmail,
+                RequestId = requestId,
+                Status = ProjectRequestStatusEnum.Rejected.ToString(),
+            };
         }
 
         public async Task<PagedResult<ProjectRequestResponse>> SearchProjectRequestAsync(ProjectRequestSearchRequest filter, Guid userCompanyId, CancellationToken cancellationToken = default)
