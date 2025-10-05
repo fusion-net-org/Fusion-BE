@@ -1,8 +1,12 @@
 
 using AutoMapper;
 using Fusion.Repository.Entities;
+using Fusion.Service.ViewModels.Comment.Request;
+using Fusion.Service.ViewModels.Comment.Response;
 using Fusion.Service.ViewModels.Companies.Requests;
 using Fusion.Service.ViewModels.Companies.Responses;
+using Fusion.Service.ViewModels.Task.Request;
+using Fusion.Service.ViewModels.Task.Response;
 using Fusion.Service.ViewModels.Projects.Requests;
 using Fusion.Service.ViewModels.Projects.Responses;
 using Fusion.Service.ViewModels.Tickets.Requests;
@@ -54,6 +58,17 @@ public class MappingProfile : Profile
         //----------------------------     entity: Ticket ---------------------------------------------
         CreateMap<Ticket, TicketResponse>().ReverseMap();
         CreateMap<TicketRequest, Ticket>().ReverseMap();
+
+
+        //----------------------------     entity: Task ---------------------------------------------
+        CreateMap<ProjectTask, ProjectTaskResponse>().ReverseMap();
+        CreateMap<ProjectTaskRequest, ProjectTask>()
+            .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
+
+
+        //----------------------------     entity: Comment ---------------------------------------------
+        CreateMap<Comment, CommentResponse>().ReverseMap();
+        CreateMap<CommentRequest, Comment>().ReverseMap();
 
         //----------------------------     entity: Project Request ---------------------------------------------
         CreateMap<CreateProjectRequestRequest, ProjectRequest>()

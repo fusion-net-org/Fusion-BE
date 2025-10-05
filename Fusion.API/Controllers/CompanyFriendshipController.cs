@@ -12,7 +12,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Fusion.API.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/partners")]
     [ApiController]
     [Authorize]
     public class CompanyFriendshipController : ControllerBase

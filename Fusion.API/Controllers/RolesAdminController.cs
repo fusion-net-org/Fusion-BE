@@ -1,4 +1,5 @@
-﻿using Fusion.Repository.Data;
+﻿using Fusion.Repository.Bases.Responses;
+using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.Repositories;
 using Fusion.Service.Commons.BaseResponses;
@@ -19,11 +20,20 @@ namespace Fusion.API.Controllers
 
         // Quyền dành cho admin công ty
         [HttpPost]
-        public async Task<ActionResult<object>> Create(Guid companyId, [FromBody] CreateRoleDto dto, CancellationToken ct)
+        public async Task<IActionResult> Create(Guid companyId, [FromBody] CreateRoleDto dto, CancellationToken ct)
         {
             var id = await _service.CreateAsync(companyId, dto, ct);
-            return CreatedAtAction(nameof(GetById), new { companyId, roleId = id }, new { id });
+
+            return CreatedAtAction(
+                nameof(GetById),
+                new { companyId, roleId = id },
+                ResponseModel<object>.Ok(
+                    data: new { id },
+                    message: ResponseMessageHelper.FormatMessage(ResponseMessages.SAVE_SUCCESS, "Tạo role thành công")
+                )
+            );
         }
+
         [HttpGet("{roleId:int}")]
         public async Task<ActionResult<RoleDetailVm>> GetById(Guid companyId, int roleId, CancellationToken ct)
         {

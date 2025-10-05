@@ -38,6 +38,12 @@ namespace Fusion.Repository
             services.AddScoped<ICompanyMemberRepository, CompanyMemberRepository>();
             services.AddScoped<IPermissionQuery, PermissionQuery>();
 
+            //task
+            services.AddScoped<ITaskRepository, TaskRepository>();
+
+            //comment
+            services.AddScoped<ICommentRepository, CommentRepository>();
+
             //project request
             services.AddScoped<IProjectRequestRepository, ProjectRequestRepository>();
 
