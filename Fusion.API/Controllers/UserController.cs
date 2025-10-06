@@ -1,5 +1,6 @@
 ﻿using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.User;
+using Fusion.Repository.Bases.Responses;
 using Fusion.Repository.Entities;
 using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.IServices;
@@ -29,17 +30,19 @@ namespace Fusion.API.Controllers
             var user = await _userService.GetByIdAsync(id, cancellationToken);
             return Ok(ResponseModel<User>.Ok(
                 data: user,
-                message: "Get user successfully"));
+                message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "Sefl user")  
+                ));
         }
 
         [HttpGet("paged-admin")]
+        [Authorize(Roles = "Admin")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PagedResult<AdminUserResponse>>))]
-        public async Task<IActionResult> GetUserAdminPaged([FromQuery] AdminUserPagedRequest request, CancellationToken cancellationToken)
+        public async Task<IActionResult> GetUserAdminPaged([FromQuery] AdminUserPagedSearch request, CancellationToken cancellationToken)
         {
             var result = await _userService.GetPagedAdminUsersAsync(request, cancellationToken);
             return Ok(ResponseModel<PagedResult<AdminUserResponse>>.Ok(
                 data: result,
-                message: "Get paged users successfully"));
+                message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "List users for admin")));
         }
 
         [HttpGet("self-user")]
@@ -49,7 +52,8 @@ namespace Fusion.API.Controllers
             var result = await _userService.GetSelfUserAsync(cancellationToken);
             return Ok(ResponseModel<SelfUserResponse>.Ok(
                 data: result,
-                message: "Get self user successfully"));
+                message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "Self user")
+                ));
         }
 
         [HttpPut("self-user")]
@@ -59,7 +63,8 @@ namespace Fusion.API.Controllers
             var result = await _userService.UpdateSelfUserAsync(request, cancellationToken);
             return Ok(ResponseModel<SelfUserResponse>.Ok(
                 data: result,
-                message: "Update self user successfully"));
+                message: ResponseMessageHelper.FormatMessage(ResponseMessages.UPDATE_SUCCESS, "Sefl user")
+                ));
         }
 
         //[HttpGet("paged-company")]

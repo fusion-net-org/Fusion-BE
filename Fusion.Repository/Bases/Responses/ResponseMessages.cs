@@ -2,6 +2,7 @@
 
 public static class ResponseMessages
 {
+    public const string LOGIN_SUCCESS = "Login successful!";
     public const string NOT_FOUND = "{0} not found.";
     public const string SUCCESS = "Success!";
     public const string FAILED = "Failure!";
@@ -27,4 +28,10 @@ public static class ResponseMessages
     public const string UPLOAD_SUCCESS = "Uploaded {0} successfully!";
     public const string SUBMIT_SUCCESS = "Submitted {0} successfully!";
     public const string SAVE_SUCCESS = "Saved {0} successfully!";
+
+    // Token
+    public const string CLEANUP_TOKEN_SUCCESS = "Clean token successfully!";
+    public const string REVOKE_TOKEN_SUCCESS = "Revoke token successfully!";
+    public const string REFRESH_TOKEN_SUCCESS = "Refresh token successfully!";
+
 }

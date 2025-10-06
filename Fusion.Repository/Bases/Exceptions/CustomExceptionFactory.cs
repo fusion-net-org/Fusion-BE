@@ -34,12 +34,13 @@ public static class CustomExceptionFactory
         );
     }
 
-    public static CustomException CreateForbiddenError()
+    public static CustomException CreateForbiddenError(string message, string? detailMessage = null)
     {
         return new CustomException(
             StatusCodes.Status403Forbidden,
             ResponseCodeConstants.FORBIDDEN,
-            "Forbidden access!"
+            message,
+            detailMessage
         );
     }
     public static CustomException CreateUnauthorizedError(string? detailMessage = null)

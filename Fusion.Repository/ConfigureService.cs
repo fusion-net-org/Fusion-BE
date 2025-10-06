@@ -35,6 +35,18 @@ namespace Fusion.Repository
             services.AddScoped<ICompanyRepository,CompanyRepository>();
             services.AddScoped<ICompanyMemberRepository, CompanyMemberRepository>();
             services.AddScoped<IPermissionQuery, PermissionQuery>();
+
+            //subscriptionpackage
+            services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
+
+            // transaction payment
+            services.AddScoped<ITransactionPaymentRepository, TransactionPaymentRepository>();
+
+            //usersubscrption
+            services.AddScoped<IUserSubscriptionRepository, UserSubscriptionRepository>();
+
+            //refresh token
+            services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();  
             return services;
         }
         public static void AddDatabase(this IServiceCollection services, IConfiguration configuration)

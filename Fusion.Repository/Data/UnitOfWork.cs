@@ -1,5 +1,4 @@
-﻿
-using Fusion.Repository.IRepositories;
+﻿using Fusion.Repository.IRepositories;
 using Fusion.Repository.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;

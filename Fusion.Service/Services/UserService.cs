@@ -48,7 +48,7 @@ public class UserService : IUserService
         return user;
     }
 
-    public async Task<PagedResult<CompanyUserResponse>> GetPagedCompanyUsersAsync(CompanyUserPagedRequest request, CancellationToken cancellationToken)
+    public async Task<PagedResult<CompanyUserResponse>> GetPagedCompanyUsersAsync(CompanyUserPagedSearch request, CancellationToken cancellationToken)
     {
         if (request == null)
             throw CustomExceptionFactory.CreateBadRequestError(
@@ -70,7 +70,7 @@ public class UserService : IUserService
         return list;
     }
 
-    public async Task<PagedResult<AdminUserResponse>> GetPagedAdminUsersAsync(AdminUserPagedRequest request, CancellationToken cancellationToken)
+    public async Task<PagedResult<AdminUserResponse>> GetPagedAdminUsersAsync(AdminUserPagedSearch request, CancellationToken cancellationToken)
     {
         if (request == null)
             throw CustomExceptionFactory.CreateBadRequestError(
