@@ -74,7 +74,7 @@ namespace Fusion.Repository.Repositories
                 throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Task"));
 
             if (existingTask.CreatedBy != userId)
-                throw CustomExceptionFactory.CreateForbiddenError();
+                throw CustomExceptionFactory.CreateForbiddenError(ResponseMessages.FORBIDDEN);
 
             var project = await _context.Projects.FirstOrDefaultAsync(x => x.Id == task.ProjectId);
             if (project == null)
@@ -114,7 +114,7 @@ namespace Fusion.Repository.Repositories
                 throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Task"));
 
             if (existingTask.CreatedBy != userId)
-                throw CustomExceptionFactory.CreateForbiddenError();
+                throw CustomExceptionFactory.CreateForbiddenError(ResponseMessages.FORBIDDEN);
 
             existingTask.Status = status;
             existingTask.UpdateAt = DateTime.UtcNow.AddHours(7);

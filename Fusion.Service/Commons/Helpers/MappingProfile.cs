@@ -15,6 +15,8 @@ using Fusion.Service.ViewModels.TransactionPayment.Requests;
 using Fusion.Service.ViewModels.Users.Requests;
 using Fusion.Service.ViewModels.Users.Responses;
 using Fusion.Service.ViewModels.UserSubscription.Requests;
+using Fusion.Service.ViewModels.SubscriptionPackage.Requests;
+using Fusion.Service.ViewModels.SubscriptionPackage.Responses;
 
 namespace Fusion.Service.Commons.Helpers;
 
