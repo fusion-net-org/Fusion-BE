@@ -29,7 +29,7 @@ namespace Fusion.Repository
             services.AddScoped<ICompanyFriendshipRepository, CompanyFriendshipRepository>();
             services.AddScoped<IRoleAdminRepository, RoleAdminRepository>();
             services.AddScoped<IUserRoleRepository, UserRoleRepository>();
-
+            services.AddScoped<ISprintRepository, SprintRepository>();
             //ticket
             services.AddScoped<ITicketRepository, TicketRepository>();
 
