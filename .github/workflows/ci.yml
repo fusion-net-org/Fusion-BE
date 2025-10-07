@@ -23,7 +23,9 @@ jobs:
       DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
       DOTNET_NOLOGO: true
       DOTNET_CLI_TELEMETRY_OPTOUT: 1
-
+      JWT__Key: "lkfjwlkejf123019kflkwefjwlk193333jcwesverhgerrwcq425432"
+      JWT__Issuer: "Fusion.Issuer"
+      JWT__Audience: "Fusion.Audience"
     steps:
       - uses: actions/checkout@v4
 
