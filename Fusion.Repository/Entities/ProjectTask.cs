@@ -71,7 +71,10 @@ public partial class ProjectTask
     [Column("update_at")]
     [Precision(3)]
     public DateTime? UpdateAt { get; set; }
-
+    [Column("order_in_sprint")]
+    public int? OrderInSprint { get; set; }
+    [Column("is_deleted")]
+    public bool IsDeleted { get; set; }
     [InverseProperty("Task")]
     public virtual ICollection<Comment> Comments { get; set; } = new List<Comment>();
 

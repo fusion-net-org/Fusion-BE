@@ -31,6 +31,7 @@ namespace Fusion.Service
             services.AddScoped<IPayOSService, PayOSService>();
 
 
+            services.AddScoped<ISprintService, SprintService>();
             //register service entities
             services.AddScoped<IAuthenService, AuthenService>();
             services.AddScoped<IUserService, UserService>();
