@@ -1,39 +1,36 @@
-name: CI
+name: CI (smoke + unit-if-any)
 
 on:
   pull_request:
     branches: [ main, develop ]
-    paths-ignore:
-      - '**/*.md'
-      - '.github/ISSUE_TEMPLATE/**'
   push:
-    branches: [ main, develop ] 
+    branches: [ main, develop ]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build-test:
+  ci:
     runs-on: ubuntu-latest
-
+    timeout-minutes: 25
     env:
-      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
-      DOTNET_NOLOGO: true
-      # Đặt lại 2 biến này cho đúng repo :
       SOLUTION_FILE: Fusion-BE.sln
       WEB_PROJECT: Fusion.API/Fusion.API.csproj
-      HEALTH_URL: http://localhost:7160/health
+      ASPNETCORE_URLS: http://127.0.0.1:7160
+      HEALTH_URL: http://127.0.0.1:7160/health
+      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+      DOTNET_NOLOGO: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: 1
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+      # Dùng v3 để né lỗi "Dependencies lock file..."
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: |
-            8.0.x
+          dotnet-version: 8.0.x
 
       - name: Restore
         run: dotnet restore $SOLUTION_FILE
@@ -41,36 +38,48 @@ jobs:
       - name: Build
         run: dotnet build $SOLUTION_FILE -c Release --no-restore
 
-      - name: Test
+      # Chỉ chạy test khi repo có test project
+      - name: Run unit tests (if any)
+        if: ${{ hashFiles('**/*.Tests.csproj', '**/*Tests.csproj') != '' }}
         run: dotnet test $SOLUTION_FILE -c Release --no-build --logger "trx;LogFileName=test_results.trx"
 
-      # --- Smoke test: khởi chạy web và ping /health ---
       - name: Publish web
         run: dotnet publish $WEB_PROJECT -c Release -o out
 
       - name: Run web in background
         run: |
-          ASPNETCORE_URLS=http://localhost:7160 dotnet out/*.dll &
+          # chạy đúng DLL entry, ghi log lại
+          dotnet out/Fusion.API.dll > app.log 2>&1 &
           echo $! > web.pid
+          sleep 2
+          if ! ps -p $(cat web.pid) >/dev/null; then
+            echo "App crashed during startup ↴"
+            tail -n 200 app.log
+            exit 1
+          fi
 
       - name: Wait for health
         run: |
-          for i in {1..30}; do
+          for i in {1..60}; do
             if curl -fsS "$HEALTH_URL" >/dev/null; then
               echo "Healthy!"; exit 0
             fi
+            if ! ps -p $(cat web.pid) >/dev/null; then
+              echo "Process died while waiting ↴"
+              tail -n 200 app.log
+              exit 1
+            fi
             sleep 2
           done
-          echo "Health check failed"; exit 1
+          echo "Health check failed after 120s ↴"
+          tail -n 200 app.log
+          exit 1
 
       - name: Stop web
-        if: always()
+        if: ${{ always() }}
         run: |
           if [ -f web.pid ]; then kill $(cat web.pid) || true; fi
 
       - name: Upload test report (optional)
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results
-          path: '**/test_results.trx'
+        if: ${{ always() && (hashFiles('**/*.Tests.csproj','**/*Tests.csproj') != '') }}
+        uses:
