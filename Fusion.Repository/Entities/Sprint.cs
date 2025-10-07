@@ -1,8 +1,9 @@
-﻿using System;
+﻿using Fusion.Repository.Enums;
+using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.EntityFrameworkCore;
 
 namespace Fusion.Repository.Entities;
 
@@ -20,15 +21,30 @@ public partial class Sprint
     public string? Name { get; set; }
 
     [Column("start_date")]
-    public DateOnly? StartDate { get; set; }
+    public DateTime? StartDate { get; set; }
 
     [Column("end_date")]
-    public DateOnly? EndDate { get; set; }
+    public DateTime? EndDate { get; set; }
 
     [Column("color")]
     [StringLength(20)]
     public string? Color { get; set; }
+    //============================================
+    [Column("goal")]
+    public string? Goal { get; set; }
+    [Column("created_by")]
+    public Guid? CreatedBy { get; set; }
 
+
+    [Column("created_at"), Precision(3)]
+    public DateTime? CreatedAt { get; set; }
+    [Column("status")]
+    public SprintStatus Status { get; set; }
+    [Column("is_deleted")]
+    public bool IsDeleted { get; set; }
+    [Column("update_at"), Precision(3)]
+    public DateTime? UpdateAt { get; set; }
+    //============================================
     [ForeignKey("ProjectId")]
     [InverseProperty("Sprints")]
     public virtual Project? Project { get; set; }
