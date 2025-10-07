@@ -32,6 +32,8 @@ builder.Services.AddStackExchangeRedisCache(options =>
     options.InstanceName = "Fusion_";
 });
 
+builder.Services.Configure<MailSettings>(builder.Configuration.GetSection("MailSettings"));
+
 #region Custom application service configuration
 
 System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls13;
@@ -48,8 +50,9 @@ builder.Services.Configure<MailSettings>(builder.Configuration.GetSection("MailS
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 
 var app = builder.Build();
-app.UseMiddleware<CompanyContextMiddleware>();
 app.UseMiddleware<CustomExceptionHandlerMiddleware>();
+
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -61,9 +64,13 @@ if (app.Environment.IsDevelopment())
     });
 }
 app.UseHttpsRedirection();
-
 app.UseAuthentication();
+app.UseMiddleware<CompanyContextMiddleware>();
 app.UseAuthorization();
+
+app.UseHttpsRedirection();
+
+
 
 app.MapControllers();
 

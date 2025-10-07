@@ -1,12 +1,18 @@
 ﻿using FluentValidation;
 using FluentValidation.AspNetCore;
+using Fusion.API.Auth;
+using Fusion.API.Context;
+using Fusion.Repository.Repositories;
 using Fusion.Service.Commons.BaseResponses;
+using Fusion.Service.Services;
 using Fusion.Service.ViewModels.Users.Validators;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 
 namespace Fusion.API
@@ -19,8 +25,14 @@ namespace Fusion.API
             services.AddAuthenJwt(configuration);
             services.AddSwaggerWithJwt();
             services.ConfigCors();
-
-            // --- Controllers 一 Validation Response ----
+            services.AddScoped<IPermissionQuery, PermissionQuery>();
+            services.AddScoped<IPermissionCache, NoopPermissionCache>();
+            services.AddSingleton<IAuthorizationPolicyProvider, DynamicPermissionPolicyProvider>();
+            services.AddScoped<IAuthorizationHandler, PermissionHandler>();
+            services.AddHttpContextAccessor();
+            services.AddSingleton<IAuthorizationHandler, PermissionHandler>();
+            services.AddSingleton<IAuthorizationPolicyProvider, DynamicPermissionPolicyProvider>();
+            // --- Controllers 一 Validation Response --
             services.AddControllers()
                  .ConfigureApiBehaviorOptions(options =>
                  {
@@ -41,7 +53,11 @@ namespace Fusion.API
 
                          return new BadRequestObjectResult(response);
                      };
-                 });
+                 })
+                 .AddJsonOptions(options =>
+                 {
+                     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+                 }); ;
             // --- FluentValidation (vẫn enable) ---
             services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
             services.AddFluentValidationAutoValidation();

@@ -1,11 +1,14 @@
 
 using AutoMapper;
 using Fusion.Repository.Entities;
-using Fusion.Service.Services;
+using Fusion.Service.ViewModels.Comment.Request;
+using Fusion.Service.ViewModels.Comment.Response;
 using Fusion.Service.ViewModels.Companies.Requests;
 using Fusion.Service.ViewModels.Companies.Responses;
-using Fusion.Service.ViewModels.SubscriptionPackage.Requests;
-using Fusion.Service.ViewModels.SubscriptionPackage.Responses;
+using Fusion.Service.ViewModels.Task.Request;
+using Fusion.Service.ViewModels.Task.Response;
+using Fusion.Service.ViewModels.Projects.Requests;
+using Fusion.Service.ViewModels.Projects.Responses;
 using Fusion.Service.ViewModels.Tickets.Requests;
 using Fusion.Service.ViewModels.Tickets.Responses;
 using Fusion.Service.ViewModels.TransactionPayment.Requests;
@@ -78,5 +81,40 @@ public class MappingProfile : Profile
         #region User Subscrption
 
         #endregion
+
+
+        //----------------------------     entity: Task ---------------------------------------------
+        CreateMap<ProjectTask, ProjectTaskResponse>().ReverseMap();
+        CreateMap<ProjectTaskRequest, ProjectTask>()
+            .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
+
+
+        //----------------------------     entity: Comment ---------------------------------------------
+        CreateMap<Comment, CommentResponse>().ReverseMap();
+        CreateMap<CommentRequest, Comment>().ReverseMap();
+
+        //----------------------------     entity: Project Request ---------------------------------------------
+        CreateMap<CreateProjectRequestRequest, ProjectRequest>()
+            .ForMember(dest => dest.Status, opt => 
+            opt.MapFrom(src => src.Status.HasValue ? src.Status.Value.ToString() : null));
+
+        CreateMap<UpdateProjectRequestRequest, ProjectRequest>()
+            .ForMember(dest => dest.Status, opt =>
+            opt.MapFrom(src => src.Status.HasValue ? src.Status.Value.ToString() : null));
+
+        CreateMap<ProjectRequest, ProjectRequestResponse>()
+            .ForMember(dest => dest.RequesterCompanyName,
+                    opt => opt.MapFrom(src => src.RequesterCompany != null ? src.RequesterCompany.Name : null))
+            .ForMember(dest => dest.ExecutorCompanyName,
+                    opt => opt.MapFrom(src => src.ExecutorCompany != null ? src.ExecutorCompany.Name : null))
+            .ForMember(dest => dest.CreatedName,
+                    opt => opt.MapFrom(src => src.CreatedByNavigation != null ? src.CreatedByNavigation.UserName : null))
+            .ForMember(dest => dest.ProjectName,
+                    opt => opt.MapFrom(src => src.Name)) // Name trong ProjectRequest map sang ProjectName
+            .ForMember(dest => dest.ConvertedProjectId,
+                    opt => opt.MapFrom(src => src.Project != null ? src.Project.Id : (Guid?)null))
+            .ReverseMap();
+            
+
     }
 }

@@ -4,6 +4,7 @@ using Fusion.Repository.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Fusion.Repository.Migrations
 {
     [DbContext(typeof(FusionDbContext))]
-    partial class FusionDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251004091857_Add_Field_Status_Table_Comment")]
+    partial class Add_Field_Status_Table_Comment
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -53,11 +56,6 @@ namespace Fusion.Repository.Migrations
                     b.Property<Guid?>("TaskId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("task_id");
-
-                    b.Property<DateTime>("UpdateAt")
-                        .HasPrecision(3)
-                        .HasColumnType("datetime2(3)")
-                        .HasColumnName("update_at");
 
                     b.HasKey("Id");
 
@@ -501,10 +499,6 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("executor_company_id");
 
-                    b.Property<bool?>("IsDeleted")
-                        .HasColumnType("bit")
-                        .HasColumnName("is_deleted");
-
                     b.Property<string>("Name")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)")
@@ -794,51 +788,6 @@ namespace Fusion.Repository.Migrations
                     b.ToTable("Sprints");
                 });
 
-            modelBuilder.Entity("Fusion.Repository.Entities.SubscriptionPackage", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("(newid())");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("create_at");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasMaxLength(250)
-                        .HasColumnType("nvarchar(250)")
-                        .HasColumnName("description");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)")
-                        .HasColumnName("name");
-
-                    b.Property<decimal>("Price")
-                        .HasColumnType("decimal(18,2)")
-                        .HasColumnName("price");
-
-                    b.Property<int>("QuotaCompany")
-                        .HasColumnType("int")
-                        .HasColumnName("quota_company");
-
-                    b.Property<int>("QuotaProject")
-                        .HasColumnType("int")
-                        .HasColumnName("quota_project");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("update_at");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("SubscriptionPackages");
-                });
-
             modelBuilder.Entity("Fusion.Repository.Entities.TaskLogEvent", b =>
                 {
                     b.Property<long>("Id")
@@ -1060,59 +1009,6 @@ namespace Fusion.Repository.Migrations
                     b.ToTable("TicketComments");
                 });
 
-            modelBuilder.Entity("Fusion.Repository.Entities.TransactionPayment", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("(newid())");
-
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(18,2)")
-                        .HasColumnName("amount");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("created_at");
-
-                    b.Property<Guid>("PackageId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("package_id");
-
-                    b.Property<string>("PaymentMethod")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasColumnName("payment_method");
-
-                    b.Property<string>("Status")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasColumnName("status");
-
-                    b.Property<string>("TransactionCode")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasColumnName("transaction_code");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("updated_at");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("user_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PackageId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("TransactionPayments");
-                });
-
             modelBuilder.Entity("Fusion.Repository.Entities.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1226,59 +1122,6 @@ namespace Fusion.Repository.Migrations
                         .HasFilter("([user_id] IS NOT NULL AND [role_id] IS NOT NULL)");
 
                     b.ToTable("UserRoles");
-                });
-
-            modelBuilder.Entity("Fusion.Repository.Entities.UserSubscription", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("(newid())");
-
-                    b.Property<DateTime?>("ExpiryDate")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("expiry_date");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit")
-                        .HasColumnName("is_active");
-
-                    b.Property<Guid>("PackageId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("package_id");
-
-                    b.Property<DateTime>("PurchaseDate")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("purchase_date");
-
-                    b.Property<int>("QuotaCompanyAdded")
-                        .HasColumnType("int")
-                        .HasColumnName("quota_company_added");
-
-                    b.Property<int>("QuotaCompanyRemaining")
-                        .HasColumnType("int")
-                        .HasColumnName("quota_company_remaining");
-
-                    b.Property<int>("QuotaProjectAdded")
-                        .HasColumnType("int")
-                        .HasColumnName("quota_project_added");
-
-                    b.Property<int>("QuotaProjectRemaining")
-                        .HasColumnType("int")
-                        .HasColumnName("quota_project_remaining");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("user_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PackageId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("UserSubscriptions");
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.Workflow", b =>
@@ -1705,27 +1548,6 @@ namespace Fusion.Repository.Migrations
                     b.Navigation("Ticket");
                 });
 
-            modelBuilder.Entity("Fusion.Repository.Entities.TransactionPayment", b =>
-                {
-                    b.HasOne("Fusion.Repository.Entities.SubscriptionPackage", "SubscriptionPackage")
-                        .WithMany("TransactionPayments")
-                        .HasForeignKey("PackageId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("FK_TransactionPayments_SubscriptionPackage");
-
-                    b.HasOne("Fusion.Repository.Entities.User", "User")
-                        .WithMany("TransactionPayments")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("FK_TransactionPayments_User");
-
-                    b.Navigation("SubscriptionPackage");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("Fusion.Repository.Entities.UserRole", b =>
                 {
                     b.HasOne("Fusion.Repository.Entities.Role", "Role")
@@ -1739,27 +1561,6 @@ namespace Fusion.Repository.Migrations
                         .HasConstraintName("FK_UserRoles_User");
 
                     b.Navigation("Role");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Fusion.Repository.Entities.UserSubscription", b =>
-                {
-                    b.HasOne("Fusion.Repository.Entities.SubscriptionPackage", "SubscriptionPackage")
-                        .WithMany("UserSubscriptions")
-                        .HasForeignKey("PackageId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("FK_UserSubscriptions_SubscriptionPackage");
-
-                    b.HasOne("Fusion.Repository.Entities.User", "User")
-                        .WithMany("UserSubscriptions")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("FK_UserSubscriptions_User");
-
-                    b.Navigation("SubscriptionPackage");
 
                     b.Navigation("User");
                 });
@@ -1873,13 +1674,6 @@ namespace Fusion.Repository.Migrations
                     b.Navigation("ProjectTasks");
                 });
 
-            modelBuilder.Entity("Fusion.Repository.Entities.SubscriptionPackage", b =>
-                {
-                    b.Navigation("TransactionPayments");
-
-                    b.Navigation("UserSubscriptions");
-                });
-
             modelBuilder.Entity("Fusion.Repository.Entities.Ticket", b =>
                 {
                     b.Navigation("TicketComments");
@@ -1915,11 +1709,7 @@ namespace Fusion.Repository.Migrations
 
                     b.Navigation("Tickets");
 
-                    b.Navigation("TransactionPayments");
-
                     b.Navigation("UserRoles");
-
-                    b.Navigation("UserSubscriptions");
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.Workflow", b =>

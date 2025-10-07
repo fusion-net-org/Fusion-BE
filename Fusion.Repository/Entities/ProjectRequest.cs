@@ -52,6 +52,9 @@ public partial class ProjectRequest
     [Precision(3)]
     public DateTime UpdateAt { get; set; }
 
+    [Column("is_deleted")]
+    public bool? IsDeleted { get; set; }
+
     [Column("converted_project_id")]
     public Guid? ConvertedProjectId { get; set; }
 

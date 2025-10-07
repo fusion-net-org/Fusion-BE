@@ -43,6 +43,8 @@ namespace Fusion.API.Auth
                     codes = await permQuery.GetEffectivePermissionsAsync(cid, userId, ctx.RequestAborted);
                     cache.Set(key, codes, TimeSpan.FromMinutes(10));
                 }
+                Console.WriteLine($"[DEBUG] User {userId} in company {cid} has permissions: {string.Join(",", codes)}");
+
                 foreach (var code in codes!) cc.Permissions.Add(code);
             }
 

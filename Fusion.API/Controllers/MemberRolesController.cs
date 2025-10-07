@@ -1,6 +1,8 @@
-﻿using Fusion.Service.BusinessModels;
+﻿using Fusion.API.Auth;
+using Fusion.Repository.Bases.Responses;
+using Fusion.Service.BusinessModels;
+using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.Services;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Threading;
@@ -17,37 +19,65 @@ namespace Fusion.API.Controllers
 
         // GET: lấy danh sách role của member trong 1 company
         [HttpGet]
-        [Authorize(Policy = "Member.AssignRole")] // hoặc [HasPermission("Member.AssignRole")]
+        [HasPermission("Member.AssignRole")]
         public async Task<IActionResult> Get(Guid companyId, Guid userId, CancellationToken ct)
-            => Ok(await _service.GetAsync(companyId, userId, ct));
+        {
+            var roles = await _service.GetAsync(companyId, userId, ct);
+            return Ok(ResponseModel<object>.Ok(
+                data: roles,
+                message: ResponseMessageHelper.FormatMessage(ResponseMessages.SUCCESS, "Lấy danh sách roles thành công")
+            ));
+        }
 
         // POST: gán thêm các role (idempotent)
         [HttpPost]
-        [Authorize(Policy = "Member.AssignRole")]
         public async Task<IActionResult> Add(Guid companyId, Guid userId, [FromBody] RoleIdsRequest req, CancellationToken ct)
         {
-            if (req?.RoleIds == null) return BadRequest("roleIds is required.");
+            if (req?.RoleIds == null)
+            {
+                return BadRequest(ResponseModel<object>.Error(
+                    statusCode: StatusCodes.Status400BadRequest,
+                    message: "roleIds is required"
+                ));
+            }
+
             await _service.AddAsync(companyId, userId, new RoleIdsDto(req.RoleIds), ct);
-            return NoContent();
+
+            return Ok(ResponseModel<bool>.Ok(
+                data: true,
+                message: ResponseMessageHelper.FormatMessage(ResponseMessages.SAVE_SUCCESS, "Gán role thành công")
+            ));
         }
 
         // PUT: thay thế toàn bộ role (set cứng)
         [HttpPut]
-        [Authorize(Policy = "Member.AssignRole")]
         public async Task<IActionResult> Replace(Guid companyId, Guid userId, [FromBody] RoleIdsRequest req, CancellationToken ct)
         {
-            if (req?.RoleIds == null) return BadRequest("roleIds is required.");
+            if (req?.RoleIds == null)
+            {
+                return BadRequest(ResponseModel<object>.Error(
+                    statusCode: StatusCodes.Status400BadRequest,
+                    message: "roleIds is required"
+                ));
+            }
+
             await _service.ReplaceAsync(companyId, userId, new RoleIdsDto(req.RoleIds), ct);
-            return NoContent(); // hoặc return Ok(await _service.GetAsync(companyId, userId, ct));
+
+            return Ok(ResponseModel<object>.Ok(
+                data: true,
+                message: ResponseMessageHelper.FormatMessage(ResponseMessages.SAVE_SUCCESS, "Cập nhật roles thành công")
+            ));
         }
 
         // DELETE: gỡ 1 role
         [HttpDelete("{roleId:int}")]
-        [Authorize(Policy = "Member.AssignRole")]
         public async Task<IActionResult> Remove(Guid companyId, Guid userId, int roleId, CancellationToken ct)
         {
             await _service.RemoveAsync(companyId, userId, roleId, ct);
-            return NoContent();
+            return Ok(ResponseModel<bool>.Ok(
+                data: true,
+                message: ResponseMessageHelper.FormatMessage(ResponseMessages.DELETE_SUCCESS, "Gỡ role thành công")
+            ));
         }
     }
 }

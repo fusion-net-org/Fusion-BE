@@ -15,6 +15,8 @@ namespace Fusion.Service
         {
             // register autoMapper
             services.AddAutoMapper(typeof(MappingProfile));
+            services.AddScoped<IRoleAdminService, RoleAdminService>();
+            services.AddScoped<IMemberRoleService, MemberRoleService>();
 
             //payOs
             services.AddScoped<PayOS>(sp =>
@@ -44,6 +46,10 @@ namespace Fusion.Service
             //company
             services.AddScoped<ICompanyService, CompanyService>();
             services.AddScoped<ICompanyMemberService, CompanyMemberService>();
+
+            //task
+            services.AddScoped<ITaskService, TaskService>();
+
 			//ticket
 			services.AddScoped<ITicketService, TicketService>();
             //Subscription package
