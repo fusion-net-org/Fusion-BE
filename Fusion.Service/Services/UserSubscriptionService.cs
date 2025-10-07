@@ -51,24 +51,14 @@ namespace Fusion.Service.Services
             return entity;
         }
 
-        public async Task<int> GetAllQuotaComapnyRemainingHasActiveAsync(Guid userId, CancellationToken cancellationToken = default)
+        public async Task DecreaseCompanyQuotaAsync(Guid userId, CancellationToken cancellationToken = default)
         {
-            if(userId == null)
-            {
-                throw CustomExceptionFactory.CreateNotFoundError(
-                              ResponseMessages.NOT_FOUND.FormatMessage("Users"));
-            }
-            return await _repository.GetAllQuotaComapnyRemainingHasActiveAsync(userId, cancellationToken);
+            await _repository.DecreaseCompanyQuotaAsync(userId, cancellationToken);
         }
 
-        public async Task<int> GetAllQuotaProjectRemainingHasActiveAsync(Guid userId, CancellationToken cancellationToken = default)
+        public async Task DecreaseProjectQuotaAsync(Guid userId, CancellationToken cancellationToken = default)
         {
-            if (userId == null)
-            {
-                throw CustomExceptionFactory.CreateNotFoundError(
-                              ResponseMessages.NOT_FOUND.FormatMessage("Users"));
-            }
-            return await _repository.GetAllQuotaProjectRemainingHasActiveAsync(userId, cancellationToken);
+            await _repository.DecreaseProjectQuotaAsync(userId, cancellationToken);
         }
 
         public async Task<PagedResult<UserSubscriptionResponse>> GetAllUserSubscrptionByUserIdAsync(PagedRequest request, CancellationToken cancellationToken = default)

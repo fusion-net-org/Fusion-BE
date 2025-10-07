@@ -1,4 +1,5 @@
 ﻿
+using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
@@ -15,16 +16,39 @@ namespace Fusion.Repository.Repositories
             _context = context;
         }
 
-        public async Task<int> GetAllQuotaComapnyRemainingHasActiveAsync(Guid userId, CancellationToken cancellationToken = default)
-            => await _context.UserSubscriptions
-            .Where(x => x.UserId == userId && x.IsActive)
-            .SumAsync(x => x.QuotaProjectRemaining, cancellationToken);
+        public async Task DecreaseCompanyQuotaAsync(Guid userId, CancellationToken cancellationToken = default)
+        {
+            var subscriptions = await _context.UserSubscriptions
+                               .Where(x => x.UserId == userId && x.IsActive && x.QuotaCompanyRemaining > 0)
+                               .OrderBy(x => x.ExpiryDate)
+                               .ToListAsync(cancellationToken);
 
-        public async Task<int> GetAllQuotaProjectRemainingHasActiveAsync(Guid userId, CancellationToken cancellationToken = default)
-           => await _context.UserSubscriptions
-            .Where(x => x.UserId == userId && x.IsActive)
-            .SumAsync(x => x.QuotaCompanyRemaining, cancellationToken);
+            if (!subscriptions.Any())
+                throw CustomExceptionFactory.CreateBadRequestError("You have no remaining company quota.");
 
+            var targetSub = subscriptions.First();
+            targetSub.QuotaCompanyRemaining -= 1;
+
+            _context.UserSubscriptions.Update(targetSub);
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+
+        public async Task DecreaseProjectQuotaAsync(Guid userId, CancellationToken cancellationToken = default)
+        {
+            var subscriptions = await _context.UserSubscriptions
+                               .Where(x => x.UserId == userId && x.IsActive && x.QuotaProjectRemaining > 0)
+                               .OrderBy(x => x.ExpiryDate)
+                               .ToListAsync(cancellationToken);
+
+            if (!subscriptions.Any())
+                throw CustomExceptionFactory.CreateBadRequestError("You have no remaining project quota.");
+
+            var targetSub = subscriptions.First();
+            targetSub.QuotaProjectRemaining -= 1;
+
+            _context.UserSubscriptions.Update(targetSub);
+            await _context.SaveChangesAsync(cancellationToken);
+        }
         public async Task<PagedResult<UserSubscription>> GetPagedSubscriptionsByUserIdAsync(Guid userId, PagedRequest request, CancellationToken cancellationToken = default)
         {
             var query = _context.UserSubscriptions
