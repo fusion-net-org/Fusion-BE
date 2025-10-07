@@ -13,7 +13,11 @@ var builder = WebApplication.CreateBuilder(args);
 
 
 var isCi = builder.Configuration.GetValue<bool>("CI"); // GitHub Actions tự set CI=true
-
+if (isCi)
+{
+    var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
+    builder.WebHost.UseUrls($"http://127.0.0.1:{port}");
+}
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 /*   builder.Services.AddAuthorization(options =>
@@ -27,18 +31,12 @@ builder.Services.AddSwaggerGen();
 });*/
 builder.Services.AddMemoryCache();
 
-if (!isCi)
+builder.Services.AddStackExchangeRedisCache(o =>
 {
-    builder.Services.AddStackExchangeRedisCache(o =>
-    {
-        o.Configuration = "localhost:6379";
-        o.InstanceName = "Fusion_";
-    });
-}
-else
-{
-    builder.Services.AddDistributedMemoryCache();
-}
+    o.Configuration = "localhost:6379";
+    o.InstanceName = "Fusion_";
+});
+
 
 builder.Services.AddHealthChecks();
 
