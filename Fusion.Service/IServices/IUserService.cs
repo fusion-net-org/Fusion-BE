@@ -12,10 +12,10 @@ public interface IUserService
 {
     Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<PagedResult<CompanyUserResponse>> GetPagedCompanyUsersAsync(
-            CompanyUserPagedRequest request,
+            CompanyUserPagedSearch request,
             CancellationToken cancellationToken = default);
     Task<PagedResult<AdminUserResponse>> GetPagedAdminUsersAsync(
-        AdminUserPagedRequest request,
+        AdminUserPagedSearch request,
         CancellationToken cancellationToken = default);
 
     Task<SelfUserResponse?> GetSelfUserAsync(CancellationToken cancellationToken = default);

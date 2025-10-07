@@ -15,14 +15,9 @@ namespace Fusion.Repository.Data
             _dbSet = context.Set<T>();
         }
 
-        //public Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate)
-        //{
-        //    return Task.FromResult(_dbSet.Where(predicate).AsEnumerable());
-        //}
-
-        public async Task<T?> FindAsync(Expression<Func<T, bool>> predicate)
+        public async Task<T?> FindAsync(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default)
         {
-            return await _dbSet.FirstOrDefaultAsync(predicate);
+            return await _dbSet.FirstOrDefaultAsync(predicate, cancellationToken);
         }
 
         public IQueryable<T> GetAll()

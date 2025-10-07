@@ -5,6 +5,7 @@ using Fusion.Service.IServices;
 using Fusion.Service.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Net.payOS;
 
 namespace Fusion.Service
 {
@@ -16,6 +17,19 @@ namespace Fusion.Service
             services.AddAutoMapper(typeof(MappingProfile));
             services.AddScoped<IRoleAdminService, RoleAdminService>();
             services.AddScoped<IMemberRoleService, MemberRoleService>();
+
+            //payOs
+            services.AddScoped<PayOS>(sp =>
+            {
+                var config = configuration.GetSection("PayOS");
+                var clientId = config["ClientId"];
+                var apiKey = config["ApiKey"];
+                var checksumKey = config["ChecksumKey"];
+
+                return new PayOS(clientId, apiKey, checksumKey);
+            });
+            services.AddScoped<IPayOSService, PayOSService>();
+
 
             //register service entities
             services.AddScoped<IAuthenService, AuthenService>();
@@ -38,12 +52,14 @@ namespace Fusion.Service
 
 			//ticket
 			services.AddScoped<ITicketService, TicketService>();
-
-            //comment
-            services.AddScoped<ICommentService, CommentService>();
-
-            //project request
-            services.AddScoped<IProjectRequestService , ProjectRequestService>();
+            //Subscription package
+            services.AddScoped<ISubscriptionPackageService, SubscriptionPackageService>();
+            //transaction payment
+            services.AddScoped<ITransactionPaymentService, TransactionPaymentService>();
+            //refesh token
+            services.AddScoped<IRefreshTokenService, RefreshTokenService>();
+            //user subscrption
+            services.AddScoped<IUserSubscriptionService, UserSubscriptionService>();
 
 			return services;
         }

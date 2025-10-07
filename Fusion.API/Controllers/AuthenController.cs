@@ -13,6 +13,7 @@ namespace Fusion.API.Controllers
     public class AuthenController : ControllerBase
     {
         private readonly IAuthenService _authenService;
+
         public AuthenController(IAuthenService authenService)
         {
             _authenService = authenService;
@@ -36,7 +37,7 @@ namespace Fusion.API.Controllers
             var result = await _authenService.LoginAsync(request, cancellationToken);
             return Ok(ResponseModel<LoginResponse>.Ok(
                       data: result,
-                      message: "Login successfully"));
+                      message: ResponseMessageHelper.FormatMessage(ResponseMessages.LOGIN_SUCCESS)));
         }
 
         [HttpPost("login-google")]
@@ -47,8 +48,16 @@ namespace Fusion.API.Controllers
 
             return Ok(ResponseModel<LoginResponse>.Ok(
                 data: result,
-                message: "Login with Google successfully"
-            ));
+                message: ResponseMessageHelper.FormatMessage(ResponseMessages.LOGIN_SUCCESS)));
         }
+
+   
+        //[HttpPost("logout")]
+        //[Authorize]
+        //public async Task<IActionResult> Logout([FromBody] RefreshTokenRequest request)
+        //{
+        //    await _authenServices.LogoutAsync(request.RefreshToken);
+        //    return Ok();
+        //}
     }
 }
