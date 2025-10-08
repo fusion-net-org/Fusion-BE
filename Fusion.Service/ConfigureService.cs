@@ -45,7 +45,19 @@ namespace Fusion.Service
             //project request
             services.AddScoped<IProjectRequestService , ProjectRequestService>();
 
-			return services;
+            //Subscription package
+            services.AddScoped<ISubscriptionPackageService, SubscriptionPackageService>();
+
+            //transaction payment
+            services.AddScoped<ITransactionPaymentService, TransactionPaymentService>();
+
+            //refesh token
+            services.AddScoped<IRefreshTokenService, RefreshTokenService>();
+
+            //user subscrption
+            services.AddScoped<IUserSubscriptionService, UserSubscriptionService>();
+
+            return services;
         }
      }
 }

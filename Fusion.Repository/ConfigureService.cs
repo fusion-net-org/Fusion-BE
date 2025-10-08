@@ -47,6 +47,18 @@ namespace Fusion.Repository
             //project request
             services.AddScoped<IProjectRequestRepository, ProjectRequestRepository>();
 
+            //subscriptionpackage
+            services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
+
+            // transaction payment
+            services.AddScoped<ITransactionPaymentRepository, TransactionPaymentRepository>();
+
+            //usersubscrption
+            services.AddScoped<IUserSubscriptionRepository, UserSubscriptionRepository>();
+
+            //refresh token
+            services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+
             return services;
         }
         public static void AddDatabase(this IServiceCollection services, IConfiguration configuration)
