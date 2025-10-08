@@ -75,11 +75,12 @@ namespace Fusion.Service.Services
             if (company_email_existed != null)
                 throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.EXISTED.FormatMessage("Company Email"), "Company Email is existed in the system");
 
-            var image_company = await _cloudinaryService.UploadImageAsync(request.ImageCompany, "Company", cancellationToken);
+            var image_company = await _cloudinaryService.UploadImageAsync(request.ImageCompany, "CompanyBanner", cancellationToken);
+            var avatar_company = await _cloudinaryService.UploadImageAsync(request.AvatarCompany, "CompanyAvatar", cancellationToken);
 
             var company = _mapper.Map<Company>(request);
 
-            var newCompany = await _companyRepository.AddCompanyAsync(user, image_company, company, cancellationToken);
+            var newCompany = await _companyRepository.AddCompanyAsync(user, image_company, avatar_company, company, cancellationToken);
 
             if(newCompany == null)
                 throw CustomExceptionFactory.CreateInternalServerError(ResponseMessages.INTERNAL_SERVER_ERROR.FormatMessage("Add Company fail"));
@@ -180,19 +181,30 @@ namespace Fusion.Service.Services
             }
 
             var image_company = "";
+            var avatar_company = "";
 
             if (request.ImageCompany != null && request.ImageCompany.Length > 0)
             {
                 await _cloudinaryService.DeleteImageAsync(_cloudinaryService.ExtractPublicIdFromUrl(company.ImageCompany), cancellationToken);
-                image_company = await _cloudinaryService.UploadImageAsync(request.ImageCompany, "Company", cancellationToken);
+                image_company = await _cloudinaryService.UploadImageAsync(request.ImageCompany, "CompanyBanner", cancellationToken);
             }
             else
             {
                 image_company = company.ImageCompany;
             }
-                #endregion
 
-                var result = await _companyRepository.UpdateCompanyAsync(image_company, companyId, _mapper.Map<Company>(request), cancellationToken);
+            if (request.AvatarCompany != null && request.AvatarCompany.Length > 0)
+            {
+                await _cloudinaryService.DeleteImageAsync(_cloudinaryService.ExtractPublicIdFromUrl(company.AvatarCompany), cancellationToken);
+                avatar_company = await _cloudinaryService.UploadImageAsync(request.AvatarCompany, "CompanyAvatar", cancellationToken);
+            }
+            else
+            {
+                avatar_company = company.AvatarCompany;
+            }
+            #endregion
+
+            var result = await _companyRepository.UpdateCompanyAsync(image_company, avatar_company, companyId, _mapper.Map<Company>(request), cancellationToken);
 
             return _mapper.Map<CompanyResponse>(result);
         }

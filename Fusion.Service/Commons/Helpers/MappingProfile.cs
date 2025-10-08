@@ -43,7 +43,17 @@ public class MappingProfile : Profile
 
         //----------------------------     entity: Company ---------------------------------------------
         CreateMap<Company, CompanyResponse>()
-            .ForMember(dest => dest.OwnerUserName, otp => otp.MapFrom(src => src.OwnerUser.UserName)).ReverseMap();
+            .ForMember(dest => dest.OwnerUserName, otp => otp.MapFrom(src => src.OwnerUser.UserName))
+            .ForMember(dest => dest.ListMembers, opt => opt.MapFrom(src => src.CompanyMembers))
+            .ForMember(dest => dest.TotalProject, opt => opt.MapFrom(
+                        src => src.ProjectCompanies.Count + src.ProjectCompanyHireds.Count
+                        ))
+            .ForMember(dest => dest.ListProjects, opt => opt.MapFrom(
+                        src => src.ProjectCompanies.Concat(src.ProjectCompanyHireds)
+                        ))
+            .ForMember(dest => dest.TotalMember, opt => opt.MapFrom(
+                        src => src.CompanyMembers.Count))
+            .ReverseMap();
 
         CreateMap<CompanyRequest, Company>()
             .ForAllMembers(opt =>
@@ -72,7 +82,7 @@ public class MappingProfile : Profile
 
         //----------------------------     entity: Project Request ---------------------------------------------
         CreateMap<CreateProjectRequestRequest, ProjectRequest>()
-            .ForMember(dest => dest.Status, opt => 
+            .ForMember(dest => dest.Status, opt =>
             opt.MapFrom(src => src.Status.HasValue ? src.Status.Value.ToString() : null));
 
         CreateMap<UpdateProjectRequestRequest, ProjectRequest>()
@@ -91,7 +101,10 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.ConvertedProjectId,
                     opt => opt.MapFrom(src => src.Project != null ? src.Project.Id : (Guid?)null))
             .ReverseMap();
-            
+
+        //----------------------------     entity: Project  ---------------------------------------------
+        CreateMap<Project, ProjectResponse>();
+
 
     }
 }

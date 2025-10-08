@@ -17,8 +17,8 @@ namespace Fusion.Repository.IRepositories
         Task<Company?> GetCompanyByTaxCode(string taxcode);
         Task<Company?> GetCompanyByEmail(string email);
         Task<Company?> GetCompanyByIdAsync(Guid Id);
-        Task<Company?> AddCompanyAsync(User user, string image_company, Company new_company, CancellationToken cancellationToken = default);
-        Task<Company?> UpdateCompanyAsync(string image_company, Guid companyId, Company update_company, CancellationToken cancellationToken = default);
+        Task<Company?> AddCompanyAsync(User user, string image_company, string avatar_company, Company new_company, CancellationToken cancellationToken = default);
+        Task<Company?> UpdateCompanyAsync(string image_company, string avatar_company, Guid companyId, Company update_company, CancellationToken cancellationToken = default);
         Task<bool?> DeleteCompanyAsync(Company company, CancellationToken cancellationToken = default);
         Task<string> GetMailCompanyByGuid(Guid company);
         Task<string> GetCompanyNameByGuid(Guid company);
