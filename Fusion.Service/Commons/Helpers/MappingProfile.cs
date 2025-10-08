@@ -13,6 +13,8 @@ using Fusion.Service.ViewModels.Tickets.Requests;
 using Fusion.Service.ViewModels.Tickets.Responses;
 using Fusion.Service.ViewModels.Users.Requests;
 using Fusion.Service.ViewModels.Users.Responses;
+using Fusion.Service.ViewModels.SubscriptionPackage.Responses;
+using Fusion.Service.ViewModels.SubscriptionPackage.Requests;
 
 namespace Fusion.Service.Commons.Helpers;
 
@@ -91,7 +93,20 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.ConvertedProjectId,
                     opt => opt.MapFrom(src => src.Project != null ? src.Project.Id : (Guid?)null))
             .ReverseMap();
-            
 
+        //--------------------------- entity: Transaction Payment ---------------------------------------------
+        CreateMap<SubscriptionRequest, SubscriptionPackage>()
+        .ForMember(dest => dest.Id, opt => opt.Ignore());
+
+        CreateMap<SubscriptionPackage, SubscriptionAdminResponse>();
+        CreateMap<SubscriptionPackage, SubscriptionResponse>();
+
+        //--------------------------- entity: SubscriptionPackage ---------------------------------------------
+        CreateMap<SubscriptionRequest, SubscriptionPackage>()
+          .ForMember(dest => dest.Id, opt => opt.Ignore());
+
+        CreateMap<SubscriptionPackage, SubscriptionAdminResponse>();
+        CreateMap<SubscriptionPackage, SubscriptionResponse>();
     }
+
 }
