@@ -29,7 +29,7 @@ namespace Fusion.API.Controllers
             var user = await _userService.GetByIdAsync(id, cancellationToken);
             return Ok(ResponseModel<SelfUserResponse>.Ok(
                 data: user,
-                message: "Get user successfully."));
+                message: "Get user successfully!"));
         }
 
         [HttpGet("paged-admin")]
