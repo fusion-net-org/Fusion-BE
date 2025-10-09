@@ -14,7 +14,7 @@ namespace Fusion.Service.IServices
         Task<CommentResponse> CreateCommentAsync(CommentRequest comment, Guid UserId);
         Task<CommentResponse?> GetCommentByIdAsync(long id);
         Task<IEnumerable<CommentResponse>> GetAllCommentsAsync();
-        Task<CommentResponse?> UpdateCommentAsync(CommentRequest comment, Guid userId);
+        Task<CommentResponse?> UpdateCommentAsync(CommentRequestUpdate comment, Guid userId);
         Task<bool> DeleteCommentAsync(long id);
     }
 }

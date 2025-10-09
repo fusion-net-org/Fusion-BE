@@ -53,7 +53,7 @@ namespace Fusion.Service.Services
             return _mapper.Map<CommentResponse?>(entity);
         }
 
-        public async Task<CommentResponse?> UpdateCommentAsync(CommentRequest comment, Guid userId)
+        public async Task<CommentResponse?> UpdateCommentAsync(CommentRequestUpdate comment, Guid userId)
         {
             var entity = _mapper.Map<Comment>(comment);
             var updated = await _commentRepository.UpdateCommentAsync(entity, userId);

@@ -81,6 +81,8 @@ public class MappingProfile : Profile
         //----------------------------     entity: Comment ---------------------------------------------
         CreateMap<Comment, CommentResponse>().ReverseMap();
         CreateMap<CommentRequest, Comment>().ReverseMap();
+        CreateMap<CommentRequestUpdate, Comment>()
+            .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
 
         //----------------------------     entity: Project Request ---------------------------------------------
         CreateMap<CreateProjectRequestRequest, ProjectRequest>()
