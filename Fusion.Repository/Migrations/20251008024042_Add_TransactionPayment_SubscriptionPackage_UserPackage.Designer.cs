@@ -4,6 +4,7 @@ using Fusion.Repository.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Fusion.Repository.Migrations
 {
     [DbContext(typeof(FusionDbContext))]
-    partial class FusionDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251008024042_Add_TransactionPayment_SubscriptionPackage_UserPackage")]
+    partial class Add_TransactionPayment_SubscriptionPackage_UserPackage
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -75,11 +78,6 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("id")
                         .HasDefaultValueSql("(newid())");
-
-                    b.Property<string>("AvatarCompany")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)")
-                        .HasColumnName("avatar_company");
 
                     b.Property<DateTime>("CreateAt")
                         .ValueGeneratedOnAdd()
@@ -588,14 +586,6 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("bit")
                         .HasColumnName("is_backlog");
 
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit")
-                        .HasColumnName("is_deleted");
-
-                    b.Property<int?>("OrderInSprint")
-                        .HasColumnType("int")
-                        .HasColumnName("order_in_sprint");
-
                     b.Property<int?>("Point")
                         .HasColumnType("int")
                         .HasColumnName("point");
@@ -783,26 +773,9 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("nvarchar(20)")
                         .HasColumnName("color");
 
-                    b.Property<DateTime?>("CreatedAt")
-                        .HasPrecision(3)
-                        .HasColumnType("datetime2(3)")
-                        .HasColumnName("created_at");
-
-                    b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("created_by");
-
-                    b.Property<DateTime?>("EndDate")
-                        .HasColumnType("datetime2")
+                    b.Property<DateOnly?>("EndDate")
+                        .HasColumnType("date")
                         .HasColumnName("end_date");
-
-                    b.Property<string>("Goal")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("goal");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit")
-                        .HasColumnName("is_deleted");
 
                     b.Property<string>("Name")
                         .HasMaxLength(200)
@@ -813,18 +786,9 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("project_id");
 
-                    b.Property<DateTime?>("StartDate")
-                        .HasColumnType("datetime2")
+                    b.Property<DateOnly?>("StartDate")
+                        .HasColumnType("date")
                         .HasColumnName("start_date");
-
-                    b.Property<byte>("Status")
-                        .HasColumnType("tinyint")
-                        .HasColumnName("status");
-
-                    b.Property<DateTime?>("UpdateAt")
-                        .HasPrecision(3)
-                        .HasColumnType("datetime2(3)")
-                        .HasColumnName("update_at");
 
                     b.HasKey("Id");
 

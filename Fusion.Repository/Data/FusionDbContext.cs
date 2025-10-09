@@ -55,7 +55,9 @@ public partial class FusionDbContext : DbContext
     public virtual DbSet<WorkflowStatus> WorkflowStatuses { get; set; }
 
     public virtual DbSet<WorkflowTransition> WorkflowTransitions { get; set; }
-
+    public virtual DbSet<SubscriptionPackage> SubscriptionPackages { get; set; }
+    public virtual DbSet<UserSubscription> UserSubscriptions { get; set; }
+    public virtual DbSet<TransactionPayment> TransactionPayments { get; set; }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Comment>(entity =>
@@ -314,6 +316,66 @@ public partial class FusionDbContext : DbContext
                   .WithMany(p => p.RefreshTokens)
                   .HasForeignKey(d => d.UserId)
                   .HasConstraintName("FK_RefreshTokens_User");
+        });
+
+
+        modelBuilder.Entity<SubscriptionPackage>(entity =>
+        {
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Price).IsRequired().HasColumnType("decimal(18,2)");
+            entity.Property(e => e.Description).IsRequired().HasMaxLength(250);
+
+            entity.HasMany(e => e.UserSubscriptions)
+                  .WithOne(e => e.SubscriptionPackage)
+                  .HasForeignKey(e => e.PackageId)
+                  .HasConstraintName("FK_UserSubscriptions_SubscriptionPackage");
+
+            entity.HasMany(e => e.TransactionPayments)
+                  .WithOne(e => e.SubscriptionPackage)
+                  .HasForeignKey(e => e.PackageId)
+                  .HasConstraintName("FK_TransactionPayments_SubscriptionPackage");
+        });
+
+
+        modelBuilder.Entity<UserSubscription>(entity =>
+        {
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.PurchaseDate).IsRequired();
+            entity.Property(e => e.QuotaCompanyAdded).IsRequired();
+            entity.Property(e => e.QuotaProjectAdded).IsRequired();
+            entity.Property(e => e.QuotaCompanyRemaining).IsRequired();
+            entity.Property(e => e.QuotaProjectRemaining).IsRequired();
+
+            entity.HasOne(e => e.User)
+                  .WithMany(e => e.UserSubscriptions)
+                  .HasForeignKey(e => e.UserId)
+                  .HasConstraintName("FK_UserSubscriptions_User");
+
+            entity.HasOne(e => e.SubscriptionPackage)
+                  .WithMany(e => e.UserSubscriptions)
+                  .HasForeignKey(e => e.PackageId)
+                  .HasConstraintName("FK_UserSubscriptions_SubscriptionPackage");
+        });
+
+
+        modelBuilder.Entity<TransactionPayment>(entity =>
+        {
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Amount).IsRequired().HasColumnType("decimal(18,2)");
+            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.Property(e => e.PaymentMethod).HasMaxLength(50);
+            entity.Property(e => e.Status).HasMaxLength(50);
+
+            entity.HasOne(e => e.User)
+                  .WithMany(e => e.TransactionPayments)
+                  .HasForeignKey(e => e.UserId)
+                  .HasConstraintName("FK_TransactionPayments_User");
+
+            entity.HasOne(e => e.SubscriptionPackage)
+                  .WithMany(e => e.TransactionPayments)
+                  .HasForeignKey(e => e.PackageId)
+                  .HasConstraintName("FK_TransactionPayments_SubscriptionPackage");
         });
 
         OnModelCreatingPartial(modelBuilder);
