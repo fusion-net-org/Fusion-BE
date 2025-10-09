@@ -66,6 +66,7 @@ public class AuthenService : IAuthenService
 
         // 2. check email exist
         var user = await _userRepository.GetUserByEmailAsync(request.Email, cancellationToken);
+      
         if (user == null)
             throw CustomExceptionFactory.
                 CreateBadRequestError(ResponseMessages.INVALID_INPUT.FormatMessage("Email incorrect!"));

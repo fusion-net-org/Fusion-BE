@@ -11,7 +11,7 @@ public static class CustomExceptionFactory
             StatusCodes.Status500InternalServerError,
             ResponseCodeConstants.INTERNAL_SERVER_ERROR,
             ResponseMessages.INTERNAL_SERVER_ERROR,
-            detailMessage
+            detailMessage: detailMessage
         );
     }
 
@@ -20,7 +20,8 @@ public static class CustomExceptionFactory
         return new CustomException(
             StatusCodes.Status404NotFound,
             ResponseCodeConstants.NOT_FOUND,
-            ResponseMessages.NOT_FOUND.Replace("{0}", objectName)
+            ResponseMessages.NOT_FOUND.Replace("{0}", objectName),
+             detailMessage: $"{objectName} was not found"
         );
     }
 
@@ -30,7 +31,7 @@ public static class CustomExceptionFactory
             StatusCodes.Status400BadRequest,
             ResponseCodeConstants.BAD_REQUEST,
             message,
-            detailMessage
+            detailMessage : detailMessage
         );
     }
 
