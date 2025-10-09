@@ -31,7 +31,7 @@ public class MappingProfile : Profile
                .ForMember(dest => dest.UpdateAt, opt => opt.MapFrom(src => DateTime.UtcNow))
                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => true));
 
-        //----------------------------     Partner  ---------------------------------------------
+        //----------------------------     entity: Partner  ---------------------------------------------
         CreateMap<CompanyFriendshipResponse, CompanyFriendship>().ReverseMap();
 
         CreateMap<UpdateSelfUserRequest, User>()
