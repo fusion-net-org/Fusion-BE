@@ -31,7 +31,7 @@ public class MappingProfile : Profile
                .ForMember(dest => dest.UpdateAt, opt => opt.MapFrom(src => DateTime.UtcNow))
                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => true));
 
-        //----------------------------     Partner  ---------------------------------------------
+        //----------------------------     entity: Partner  ---------------------------------------------
         CreateMap<CompanyFriendshipResponse, CompanyFriendship>().ReverseMap();
 
         CreateMap<UpdateSelfUserRequest, User>()
@@ -45,7 +45,17 @@ public class MappingProfile : Profile
 
         //----------------------------     entity: Company ---------------------------------------------
         CreateMap<Company, CompanyResponse>()
-            .ForMember(dest => dest.OwnerUserName, otp => otp.MapFrom(src => src.OwnerUser.UserName)).ReverseMap();
+            .ForMember(dest => dest.OwnerUserName, otp => otp.MapFrom(src => src.OwnerUser.UserName))
+            .ForMember(dest => dest.ListMembers, opt => opt.MapFrom(src => src.CompanyMembers))
+            .ForMember(dest => dest.TotalProject, opt => opt.MapFrom(
+                        src => src.ProjectCompanies.Count + src.ProjectCompanyHireds.Count
+                        ))
+            .ForMember(dest => dest.ListProjects, opt => opt.MapFrom(
+                        src => src.ProjectCompanies.Concat(src.ProjectCompanyHireds)
+                        ))
+            .ForMember(dest => dest.TotalMember, opt => opt.MapFrom(
+                        src => src.CompanyMembers.Count))
+            .ReverseMap();
 
         CreateMap<CompanyRequest, Company>()
             .ForAllMembers(opt =>
@@ -74,7 +84,7 @@ public class MappingProfile : Profile
 
         //----------------------------     entity: Project Request ---------------------------------------------
         CreateMap<CreateProjectRequestRequest, ProjectRequest>()
-            .ForMember(dest => dest.Status, opt => 
+            .ForMember(dest => dest.Status, opt =>
             opt.MapFrom(src => src.Status.HasValue ? src.Status.Value.ToString() : null));
 
         CreateMap<UpdateProjectRequestRequest, ProjectRequest>()
@@ -100,6 +110,10 @@ public class MappingProfile : Profile
 
         CreateMap<SubscriptionPackage, SubscriptionAdminResponse>();
         CreateMap<SubscriptionPackage, SubscriptionResponse>();
+
+        //----------------------------     entity: Project  ---------------------------------------------
+        CreateMap<Project, ProjectResponse>();
+
 
         //--------------------------- entity: SubscriptionPackage ---------------------------------------------
         CreateMap<SubscriptionRequest, SubscriptionPackage>()

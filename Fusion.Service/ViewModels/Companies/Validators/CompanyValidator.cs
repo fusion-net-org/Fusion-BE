@@ -24,6 +24,9 @@ namespace Fusion.Service.ViewModels.Companies.Validators
                 RuleFor(x => x.ImageCompany)
                     .NotEmpty().WithMessage("Company Image must not be empty!");
 
+                RuleFor(x => x.AvatarCompany)
+                   .NotEmpty().WithMessage("Company Avatar must not be empty!");
+
                 RuleFor(x => x.Email)
                    .NotEmpty().WithMessage("Email must not be empty!")
                    .EmailAddress().WithMessage("Invalid email format!")

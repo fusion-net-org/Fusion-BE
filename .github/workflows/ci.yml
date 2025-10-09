@@ -1,0 +1,102 @@
+name: CI (smoke + unit-if-any)
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+  push:
+    branches: [ main, develop ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      SOLUTION_FILE: Fusion-BE.sln
+      WEB_PROJECT: Fusion.API/Fusion.API.csproj
+      PORT: 5000
+      HEALTH_URL: http://127.0.0.1:5000/health
+      CI: "true"                          # để Program.cs nhận CI=true
+      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+      DOTNET_NOLOGO: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: 1
+      JWT__Key: "lkfjwlkejf123019kflkwefjwlk193333jcwesverhgerrwcq425432"
+      JWT__Issuer: "Fusion.Issuer"
+      JWT__Audience: "Fusion.Audience"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore $SOLUTION_FILE
+
+      - name: Build
+        run: dotnet build $SOLUTION_FILE -c Release --no-restore
+
+      - name: Run unit tests (if any)
+        if: ${{ hashFiles('**/*.Tests.csproj','**/*Tests.csproj') != '' }}
+        run: dotnet test $SOLUTION_FILE -c Release --no-build --logger "trx;LogFileName=test_results.trx"
+
+      - name: Publish web
+        run: dotnet publish $WEB_PROJECT -c Release -o out
+
+      # Tìm đúng entry DLL để chạy (tránh out/*.dll chạy nhầm)
+      - name: Detect entry dll
+        run: |
+          ENTRY=$(ls out/*API.dll out/*Web*.dll out/*Server*.dll out/*Host*.dll 2>/dev/null | head -n1 || true)
+          if [ -z "$ENTRY" ]; then
+            echo "Cannot find entry dll in ./out"
+            ls -la out
+            exit 1
+          fi
+          echo "ENTRY=$ENTRY" >> $GITHUB_ENV
+
+      - name: Run web in background
+        run: |
+          dotnet "$ENTRY" --urls "http://127.0.0.1:${PORT}" > app.log 2>&1 &
+          echo $! > web.pid
+          sleep 2
+          if ! ps -p $(cat web.pid) >/dev/null; then
+            echo "App crashed during startup ↴"
+            tail -n +1 app.log
+            exit 1
+          fi
+          # xác nhận đã bind port
+          ss -ltnp | grep ":${PORT}" || true
+
+      - name: Wait for health
+        run: |
+          for i in {1..60}; do
+            if curl -fsS "$HEALTH_URL" >/dev/null; then
+              echo "Healthy!"; exit 0
+            fi
+            if ! ps -p $(cat web.pid) >/dev/null; then
+              echo "Process died while waiting ↴"
+              tail -n +1 app.log
+              exit 1
+            fi
+            sleep 2
+          done
+          echo "Health check failed after 120s ↴"
+          tail -n +1 app.log
+          exit 1
+
+      - name: Stop web
+        if: always()
+        run: |
+          if [ -f web.pid ] ; then kill $(cat web.pid) || true ; fi
+
+      - name: Upload test report (optional)
+        if: ${{ always() && (hashFiles('**/*.Tests.csproj','**/*Tests.csproj') != '') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: '**/*.trx'
+          if-no-files-found: ignore

@@ -12,7 +12,12 @@ var builder = WebApplication.CreateBuilder(args);
 
 
 
-
+var isCi = builder.Configuration.GetValue<bool>("CI"); // GitHub Actions tự set CI=true
+if (isCi)
+{
+    var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
+    builder.WebHost.UseUrls($"http://127.0.0.1:{port}");
+}
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 /*   builder.Services.AddAuthorization(options =>
@@ -26,17 +31,17 @@ builder.Services.AddSwaggerGen();
 });*/
 builder.Services.AddMemoryCache();
 
-builder.Services.AddStackExchangeRedisCache(options =>
+builder.Services.AddStackExchangeRedisCache(o =>
 {
-    options.Configuration = "localhost:6379";
-    options.InstanceName = "Fusion_";
+    o.Configuration = "localhost:6379";
+    o.InstanceName = "Fusion_";
 });
 
-builder.Services.Configure<MailSettings>(builder.Configuration.GetSection("MailSettings"));
+
+builder.Services.AddHealthChecks();
 
 #region Custom application service configuration
 
-System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls13;
 
 builder.Services.ConfigureRepositoryLayerService(builder.Configuration);
 builder.Services.ConfigureServiceLayerService(builder.Configuration);
@@ -50,6 +55,7 @@ builder.Services.Configure<MailSettings>(builder.Configuration.GetSection("MailS
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 
 var app = builder.Build();
+app.MapHealthChecks("/health");
 app.UseMiddleware<CustomExceptionHandlerMiddleware>();
 
 
@@ -59,12 +65,14 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-app.UseHttpsRedirection();
+if (!isCi)
+{
+    app.UseHttpsRedirection();
+}
 app.UseAuthentication();
 app.UseMiddleware<CompanyContextMiddleware>();
 app.UseAuthorization();
 
-app.UseHttpsRedirection();
 
 
 

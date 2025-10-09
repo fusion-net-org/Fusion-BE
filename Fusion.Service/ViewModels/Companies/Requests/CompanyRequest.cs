@@ -14,5 +14,6 @@ namespace Fusion.Service.ViewModels.Companies.Requests
         public string? Detail { get; set; }
         public string? Email { get; set; }
         public IFormFile? ImageCompany { get; set; }
+        public IFormFile? AvatarCompany { get; set; }
     }
 }

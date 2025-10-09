@@ -27,6 +27,8 @@ namespace Fusion.Repository.Repositories
             var query = _dbSet
                 .Include(x => x.CompanyMembers)
                 .Include(x => x.OwnerUser)
+                .Include(x => x.ProjectCompanies)
+                .Include(c => c.ProjectCompanyHireds)
                 .AsQueryable();
 
             // search
@@ -43,9 +45,10 @@ namespace Fusion.Repository.Repositories
             return await query.ToPagedResultAsync(request, cancellationToken);
         }
 
-        public async Task<Company?> AddCompanyAsync(User user, string image_company, Company new_company, CancellationToken cancellationToken)
+        public async Task<Company?> AddCompanyAsync(User user, string image_company, string avatar_company, Company new_company, CancellationToken cancellationToken)
         {
             new_company.ImageCompany = image_company;
+            new_company.AvatarCompany = avatar_company;
             new_company.OwnerUserId = user.Id;
             new_company.IsDeleted = false;
             new_company.CreateAt = DateTime.UtcNow.AddHours(7);
@@ -55,7 +58,7 @@ namespace Fusion.Repository.Repositories
             return company.Entity;
         }
 
-        public async Task<Company?> UpdateCompanyAsync(string image_company, Guid companyId, Company update_company, CancellationToken cancellationToken = default)
+        public async Task<Company?> UpdateCompanyAsync(string image_company, string avatar_company, Guid companyId, Company update_company, CancellationToken cancellationToken = default)
         {
             var existed_company = await _context.Companies.FindAsync(companyId);
 
@@ -64,6 +67,7 @@ namespace Fusion.Repository.Repositories
             existed_company.Detail = update_company.Detail ?? existed_company.Detail;
             existed_company.Email = update_company.Email ?? existed_company.Email;
             existed_company.ImageCompany = image_company;
+            existed_company.AvatarCompany = avatar_company;
             existed_company.UpdateAt = DateTime.UtcNow.AddHours(7);
 
             var company = _context.Companies.Update(existed_company);
