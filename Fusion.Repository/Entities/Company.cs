@@ -34,6 +34,10 @@ public partial class Company
     [StringLength(500)]
     public string? ImageCompany { get; set; }
 
+    [Column("avatar_company")]
+    [StringLength(500)]
+    public string? AvatarCompany { get; set; }
+
     [Column("create_at")]
     [Precision(3)]
     public DateTime CreateAt { get; set; }
