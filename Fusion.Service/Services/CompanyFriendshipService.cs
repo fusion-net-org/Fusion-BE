@@ -78,9 +78,9 @@ namespace Fusion.Service.Services
                 Body = $@"
         <p>Công ty <b>{nameCompanyA}</b> đã gửi lời mời hợp tác.</p>
         <p>Vui lòng chọn một hành động:</p>
-        <a href='https://localhost:7160/api/CompanyFriendship/accept/{entity.Id}' 
+        <a href='https://localhost:7160/api/partners/accept/{entity.Id}' 
            style='background-color:green;color:white;padding:10px 15px;text-decoration:none;border-radius:5px;margin-right:10px;'>Approve</a>
-        <a href='https://localhost:7160/api/CompanyFriendship/cancel/{entity.Id}' 
+        <a href='https://localhost:7160/api/partners/cancel/{entity.Id}' 
            style='background-color:red;color:white;padding:10px 15px;text-decoration:none;border-radius:5px;'>Reject</a>
          ",
             });
