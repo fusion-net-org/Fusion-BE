@@ -17,6 +17,7 @@ namespace Fusion.Repository.Repositories
         Task<RoleDetailVm?> GetByIdAsync(Guid companyId, int roleId, CancellationToken ct = default);
         Task<int> CreateAsync(Guid companyId, CreateRoleDto dto, CancellationToken ct = default);
         Task<bool> ExistsNameAsync(Guid companyId, string name, CancellationToken ct = default);
+        Task<List<RoleDetailVm>> GetAllAsync(Guid companyId, CancellationToken ct = default);
     }
 
     public class RoleAdminRepository : IRoleAdminRepository
@@ -60,6 +61,14 @@ namespace Fusion.Repository.Repositories
                 .Where(r => r.CompanyId == companyId && r.Id == roleId)
                 .Select(r => new RoleDetailVm(r.Id, r.RoleName, r.Description))
                 .FirstOrDefaultAsync(ct);
+        }
+        public Task<List<RoleDetailVm>> GetAllAsync(Guid companyId, CancellationToken ct = default)
+        {
+            return _db.Roles.AsNoTracking()
+                .Where(r => r.CompanyId == companyId)
+                .OrderBy(r => r.RoleName)
+                .Select(r => new RoleDetailVm(r.Id, r.RoleName, r.Description))
+                .ToListAsync(ct);
         }
     }
 }
