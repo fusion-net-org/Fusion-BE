@@ -13,7 +13,7 @@ namespace Fusion.Repository.IRepositories
 {
     public interface ICompanyRepository : IGenericRepository<Company>
     {
-        Task<PagedResult<Company>> GetPagedCompaniesAsync(CompanyPagedSearchRequest request, CancellationToken cancellationToken = default);
+        Task<PagedResult<Company>> GetPagedCompaniesAsync(string userMail, CompanyPagedSearchRequest request, CancellationToken cancellationToken = default);
         Task<Company?> GetCompanyByTaxCode(string taxcode);
         Task<Company?> GetCompanyByEmail(string email);
         Task<Company?> GetCompanyByIdAsync(Guid Id);

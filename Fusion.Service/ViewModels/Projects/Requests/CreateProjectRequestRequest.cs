@@ -14,6 +14,8 @@ namespace Fusion.Service.ViewModels.Projects.Requests
     {
         public Guid? ExecutorCompanyId { get; set; }
 
+        public Guid? RequesterCompanyId { get; set; }
+
         public string? Name { get; set; }
 
         public string? Description { get; set; }

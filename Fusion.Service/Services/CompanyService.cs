@@ -100,13 +100,13 @@ namespace Fusion.Service.Services
 
         }
 
-        public async Task<PagedResult<CompanyResponse>> GetPagedCompaniesAsync(CompanyPagedSearchRequest request, CancellationToken cancellationToken = default)
+        public async Task<PagedResult<CompanyResponse>> GetPagedCompaniesAsync(string userMail,CompanyPagedSearchRequest request, CancellationToken cancellationToken = default)
         {
             if (request == null)
                 throw CustomExceptionFactory.CreateBadRequestError(
                     ResponseMessages.INVALID_INPUT);
 
-            var result = await _companyRepository.GetPagedCompaniesAsync(request, cancellationToken);
+            var result = await _companyRepository.GetPagedCompaniesAsync(userMail, request, cancellationToken);
 
             if (result == null || result.Items.Count == 0)
                 throw CustomExceptionFactory.CreateNotFoundError(

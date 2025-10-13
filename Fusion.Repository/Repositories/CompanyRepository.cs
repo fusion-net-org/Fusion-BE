@@ -5,6 +5,7 @@ using Fusion.Repository.Bases.Page.User;
 using Fusion.Repository.Data;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
+using Fusion.Repository.Enums;
 using Fusion.Repository.IRepositories;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.Design;
@@ -22,7 +23,7 @@ namespace Fusion.Repository.Repositories
             _context = context;
         }
 
-        public async Task<PagedResult<Company>> GetPagedCompaniesAsync(CompanyPagedSearchRequest request, CancellationToken cancellationToken = default)
+        public async Task<PagedResult<Company>> GetPagedCompaniesAsync(string userMail, CompanyPagedSearchRequest request, CancellationToken cancellationToken = default)
         {
             var query = _dbSet
                 .Include(x => x.CompanyMembers)
@@ -31,15 +32,74 @@ namespace Fusion.Repository.Repositories
                 .Include(c => c.ProjectCompanyHireds)
                 .AsQueryable();
 
-            // search
-            if (!string.IsNullOrWhiteSpace(request.Name))
+            if (request.RelationShipEnums.HasValue)
             {
-                query = query.Where(u => (u.Name ?? "").Contains(request.Name));
+                switch (request.RelationShipEnums.Value)
+                {
+                    case ProjectSearchRelationShipEnums.Owner:
+                        // User là chủ sở hữu công ty
+                        query = query.Where(c => c.OwnerUser.Email == userMail);
+                        break;
+
+                    case ProjectSearchRelationShipEnums.OwnerMember:
+                        // User là chủ sở hữu hoặc thành viên công ty
+                        query = query.Where(c =>
+                            c.OwnerUser.Email == userMail ||
+                            c.CompanyMembers.Any(m => m.User.Email == userMail));
+                        break;
+                }
+            }
+            else
+            {
+                query = query.Where(c =>
+                        c.OwnerUser.Email == userMail ||
+                        c.CompanyMembers.Any(m => m.User.Email == userMail));
             }
 
-            if (!string.IsNullOrWhiteSpace(request.TaxCode))
+
+            // search
+            if (!string.IsNullOrWhiteSpace(request.Keyword))
             {
-                query = query.Where(u => (u.TaxCode ?? "").Contains(request.TaxCode));
+                var keyword = request.Keyword.Trim().ToLower();
+                query = query.Where(u =>
+                    (u.Name ?? "").ToLower().Contains(keyword) ||
+                    (u.TaxCode ?? "").ToLower().Contains(keyword));
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.OwnerUserName))
+            {
+                query = query.Where(u => (u.OwnerUser.UserName ?? "").Contains(request.OwnerUserName));
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.Detail))
+            {
+                query = query.Where(u => (u.Detail ?? "").Contains(request.Detail));
+            }
+
+            if (request.TotalProject.HasValue)
+            {
+                if (request.SortDescending)
+                {
+                    query = query.Where(u => u.ProjectCompanies.Count + u.ProjectCompanyHireds.Count <= request.TotalProject);
+                }
+                else
+                {
+                    query = query.Where(u => u.ProjectCompanies.Count + u.ProjectCompanyHireds.Count >= request.TotalProject);
+
+                }
+            }
+
+            if (request.TotalMember.HasValue)
+            {
+                if (request.SortDescending)
+                {
+                    query = query.Where(u => u.CompanyMembers.Count <= request.TotalMember);
+                }
+                else
+                {
+                    query = query.Where(u => u.CompanyMembers.Count >= request.TotalMember);
+
+                }
             }
 
             return await query.ToPagedResultAsync(request, cancellationToken);
@@ -126,6 +186,6 @@ namespace Fusion.Repository.Repositories
             return await _context.Companies.Include(x => x.OwnerUser).SingleOrDefaultAsync(x => x.Id == Id);
         }
 
-        
+
     }
 }
