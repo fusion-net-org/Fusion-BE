@@ -44,7 +44,6 @@ namespace Fusion.API.Controllers
                 ));
         }
 
-        [Authorize(Roles = "User")]
         [HttpGet("GetSubscriptionForCustomer")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<List<SubscriptionResponse>?>))]
         public async Task<IActionResult> GetSubscriptionForCustomer(CancellationToken cancellationToken)

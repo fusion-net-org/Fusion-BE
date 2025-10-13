@@ -2,6 +2,7 @@
 
 using AutoMapper;
 using Fusion.Repository.Bases.Exceptions;
+using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Responses;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
@@ -11,6 +12,8 @@ using Fusion.Service.Commons.Helpers;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.TransactionPayment.Requests;
 using Fusion.Service.ViewModels.TransactionPayment.Responses;
+using Fusion.Service.ViewModels.Users.Responses;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace Fusion.Service.Services;
 
@@ -110,7 +113,11 @@ public class TransactionPaymentService : ITransactionPaymentService
 
         return response;
     }
-       
+
+    public async Task<PagedResult<TransactionPaymentResponse>> GetAllTransactionAsync(CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
+    }
     public Task UpdateTransactionAsync(Guid id)
     {
         throw new NotImplementedException();
