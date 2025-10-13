@@ -5,16 +5,18 @@ using Fusion.Service.ViewModels.Comment.Request;
 using Fusion.Service.ViewModels.Comment.Response;
 using Fusion.Service.ViewModels.Companies.Requests;
 using Fusion.Service.ViewModels.Companies.Responses;
-using Fusion.Service.ViewModels.Task.Request;
-using Fusion.Service.ViewModels.Task.Response;
 using Fusion.Service.ViewModels.Projects.Requests;
 using Fusion.Service.ViewModels.Projects.Responses;
+using Fusion.Service.ViewModels.SubscriptionPackage.Requests;
+using Fusion.Service.ViewModels.SubscriptionPackage.Responses;
+using Fusion.Service.ViewModels.Task.Request;
+using Fusion.Service.ViewModels.Task.Response;
 using Fusion.Service.ViewModels.Tickets.Requests;
 using Fusion.Service.ViewModels.Tickets.Responses;
+using Fusion.Service.ViewModels.TransactionPayment.Requests;
 using Fusion.Service.ViewModels.Users.Requests;
 using Fusion.Service.ViewModels.Users.Responses;
-using Fusion.Service.ViewModels.SubscriptionPackage.Responses;
-using Fusion.Service.ViewModels.SubscriptionPackage.Requests;
+using Fusion.Service.ViewModels.UserSubscription.Responses;
 
 namespace Fusion.Service.Commons.Helpers;
 
@@ -105,11 +107,15 @@ public class MappingProfile : Profile
             .ReverseMap();
 
         //--------------------------- entity: Transaction Payment ---------------------------------------------
-        CreateMap<SubscriptionRequest, SubscriptionPackage>()
-        .ForMember(dest => dest.Id, opt => opt.Ignore());
+        CreateMap<CreateTransactionRequest, TransactionPayment>()
+            .ForMember(dest => dest.Id, opt => opt.Ignore())
+            .ForMember(dest => dest.TransactionCode, opt => opt.Ignore())
+            .ForMember(dest => dest.UserId, opt => opt.Ignore())
+            .ForMember(dest => dest.Amount, opt => opt.Ignore())
+            .ForMember(dest => dest.Status, opt => opt.Ignore())
+            .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+            .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore());
 
-        CreateMap<SubscriptionPackage, SubscriptionAdminResponse>();
-        CreateMap<SubscriptionPackage, SubscriptionResponse>();
 
         //----------------------------     entity: Project  ---------------------------------------------
         CreateMap<Project, ProjectResponse>();
@@ -121,6 +127,9 @@ public class MappingProfile : Profile
 
         CreateMap<SubscriptionPackage, SubscriptionAdminResponse>();
         CreateMap<SubscriptionPackage, SubscriptionResponse>();
+
+        //------------------------ entity: User Subscrption --------------------
+        CreateMap<UserSubscription, UserSubscriptionResponse>();
     }
 
 }

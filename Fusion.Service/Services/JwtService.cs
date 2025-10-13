@@ -42,7 +42,7 @@ public class JwtService : IJwtService
 
         if (user.IsSystemAdmin)
         {
-            claims.Add(new Claim("isAdmin", "true"));
+            claims.Add(new Claim(ClaimTypes.Role, "Admin"));
         }
 
 
@@ -61,7 +61,7 @@ public class JwtService : IJwtService
         {
             UserId = user.Id,
             Token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
-            ExpiresAt = DateTime.UtcNow.AddDays(int.Parse(jwtSettings["RefreshTokenExpiresInMinutes"]!)),
+            ExpiresAt = DateTime.UtcNow.AddMinutes(int.Parse(jwtSettings["RefreshTokenExpiresInMinutes"]!)),
             CreatedAt = DateTime.UtcNow
         };
 
