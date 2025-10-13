@@ -42,6 +42,8 @@ namespace Fusion.API.Controllers
                data: role,
                message: "Get role successfully"));
         }
+
+        [HttpGet]
         public async Task<IActionResult> GetAllAsync(Guid companyId, CancellationToken ct = default)
         {
             var role = await _service.GetAllAsync(companyId, ct);

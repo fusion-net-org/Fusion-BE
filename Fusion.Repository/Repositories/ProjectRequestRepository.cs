@@ -28,11 +28,12 @@ namespace Fusion.Repository.Repositories
                 throw CustomExceptionFactory.
                     CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Vendor not found"));
 
-            var companyRequester = await _context.CompanyMembers.SingleOrDefaultAsync(v => v.UserId == vendor.Id, cancellationToken);
+            var companyRequester = await _context.CompanyMembers.FirstOrDefaultAsync(v => v.UserId == vendor.Id && v.CompanyId == request.RequesterCompanyId, cancellationToken);
 
             if (companyRequester == null)
-                throw CustomExceptionFactory.
-                    CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Company Vendor not found"));
+                throw CustomExceptionFactory.CreateBadRequestError(
+                    ResponseMessages.INVALID_INPUT.FormatMessage("Invalid requester company"),
+                    "Vendor is not a member of the requested company");
 
             var companyExecutor = await _context.Companies.SingleOrDefaultAsync(e => e.Id == request.ExecutorCompanyId, cancellationToken);
             if (companyExecutor == null)

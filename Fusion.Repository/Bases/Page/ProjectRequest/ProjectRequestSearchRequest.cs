@@ -9,19 +9,16 @@ namespace Fusion.Repository.Bases.Page.ProjectRequest
 {
     public class ProjectRequestSearchRequest : PagedRequest
     {
-        public string? Keyword { get; set; }   // search cả Name + Code
-        public ProjectRequestStatusEnum? Status { get; set; }    // Pending, Accepted, Rejected
+        public string? Keyword { get; set; } 
+        public ProjectRequestStatusEnum? Status { get; set; }    
 
-        // 🔀 Vai trò xem
         public ProjectRequestViewMode ViewMode { get; set; }
 
-        // 📅 Date filters (gom vào DateRange)
         public DateRange<DateOnly>? StartDate { get; set; }
         public DateRange<DateOnly>? EndDate { get; set; }
 
-        // ↕️ Sorting
-        public string SortField { get; set; } = "CreateAt";   // Name, Code, StartDate, EndDate, CreateAt
-        public string SortDirection { get; set; } = "desc";   // asc | desc
+        public string SortField { get; set; } = "CreateAt";   
+        public string SortDirection { get; set; } = "desc";
 
     }
 
