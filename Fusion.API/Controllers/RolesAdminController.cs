@@ -5,7 +5,7 @@ using Fusion.Repository.Repositories;
 using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+
 
 namespace Fusion.API.Controllers
 {
