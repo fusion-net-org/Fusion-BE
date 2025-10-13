@@ -6,7 +6,6 @@ using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System;
 
 namespace Fusion.API.Controllers
 {
