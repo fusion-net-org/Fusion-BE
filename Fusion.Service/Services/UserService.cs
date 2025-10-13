@@ -33,7 +33,7 @@ public class UserService : IUserService
         _currentService = currentService;
     }
 
-    public async Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<SelfUserResponse?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         if (id == Guid.Empty)
             throw CustomExceptionFactory.CreateBadRequestError(
@@ -45,7 +45,8 @@ public class UserService : IUserService
             throw CustomExceptionFactory.CreateNotFoundError(
                 ResponseMessages.NOT_FOUND.FormatMessage("User"));
 
-        return user;
+        var response = _mapper.Map<SelfUserResponse>(user);
+        return response;
     }
 
     public async Task<PagedResult<CompanyUserResponse>> GetPagedCompanyUsersAsync(CompanyUserPagedRequest request, CancellationToken cancellationToken)

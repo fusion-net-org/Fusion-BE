@@ -23,11 +23,11 @@ namespace Fusion.API.Controllers
         }
 
         [HttpGet("{id:guid}")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<User>))]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<SelfUserResponse>))]
         public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
         {
             var user = await _userService.GetByIdAsync(id, cancellationToken);
-            return Ok(ResponseModel<User>.Ok(
+            return Ok(ResponseModel<SelfUserResponse>.Ok(
                 data: user,
                 message: "Get user successfully"));
         }

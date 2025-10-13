@@ -19,7 +19,6 @@ namespace Fusion.API.Controllers
 
         // GET: lấy danh sách role của member trong 1 company
         [HttpGet]
-        [HasPermission("Member.AssignRole")]
         public async Task<IActionResult> Get(Guid companyId, Guid userId, CancellationToken ct)
         {
             var roles = await _service.GetAsync(companyId, userId, ct);

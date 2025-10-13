@@ -43,6 +43,12 @@ namespace Fusion.Repository.Repositories
             if (comment == null)
                 throw CustomExceptionFactory.
                                     CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Comment"));
+            
+            if(comment.Status.ToLower() == "Inactive".ToLower())
+            {
+                throw CustomExceptionFactory.
+                                   CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Comment"));
+            }
 
             comment.Status = "Inactive";
             _context.Comments.Update(comment);
@@ -54,7 +60,8 @@ namespace Fusion.Repository.Repositories
         {
              return await _context.Comments
                 .Include(x => x.Task)
-                .ToListAsync();
+                .Where(x => x.Status.ToLower() == "Active".ToLower())
+                .ToListAsync();          
         }
 
         public async Task<Comment?> GetCommentByIdAsync(long id)
@@ -66,6 +73,11 @@ namespace Fusion.Repository.Repositories
             if(commentById == null)
                 throw CustomExceptionFactory.
                                     CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Comment"));
+            if (commentById.Status.ToLower() == "Inactive".ToLower())
+            {
+                throw CustomExceptionFactory.
+                                   CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Comment"));
+            }
 
             return commentById;
         }
@@ -76,6 +88,12 @@ namespace Fusion.Repository.Repositories
             if (existingComment == null)
                 throw CustomExceptionFactory.
                                     CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Comment"));
+
+            if (existingComment.Status.ToLower() == "Inactive".ToLower())
+            {
+                throw CustomExceptionFactory.
+                                   CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Comment"));
+            }
 
             existingComment.AuthorUserId = userId;
             existingComment.Body = comment.Body;

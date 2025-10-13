@@ -10,7 +10,7 @@ namespace Fusion.Service.IServices;
 
 public interface IUserService
 {
-    Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<SelfUserResponse?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<PagedResult<CompanyUserResponse>> GetPagedCompanyUsersAsync(
             CompanyUserPagedRequest request,
             CancellationToken cancellationToken = default);
