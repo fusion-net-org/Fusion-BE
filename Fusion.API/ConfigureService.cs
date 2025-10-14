@@ -146,7 +146,7 @@ namespace Fusion.API
                 options.AddPolicy("AllowFrontend",
                     policy =>
                     {
-                        policy.WithOrigins("http://localhost:5173", "https://localhost:5173")
+                        policy.WithOrigins("http://localhost:5173", "https://localhost:5173", "http://localhost:19006")
                               .AllowAnyHeader()
                               .AllowAnyMethod()
                               .AllowCredentials();
