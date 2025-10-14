@@ -69,11 +69,11 @@ namespace Fusion.Service.Services
             //check tax-code có tồn tại duy nhất hay không (trong hệ thống)
             var company_taxcode_existed = await _companyRepository.GetCompanyByTaxCode(request.TaxCode);
             if (company_taxcode_existed != null)
-                throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.EXISTED.FormatMessage("Tax-code is existed in the system"));
+                throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.EXISTED.FormatMessage("Tax-code"));
 
             var company_email_existed = await _companyRepository.GetCompanyByEmail(request.Email);
             if (company_email_existed != null)
-                throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.EXISTED.FormatMessage("Company Email"), "Company Email is existed in the system");
+                throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.EXISTED.FormatMessage("Company Email"));
 
             var image_company = await _cloudinaryService.UploadImageAsync(request.ImageCompany, "CompanyBanner", cancellationToken);
             var avatar_company = await _cloudinaryService.UploadImageAsync(request.AvatarCompany, "CompanyAvatar", cancellationToken);
