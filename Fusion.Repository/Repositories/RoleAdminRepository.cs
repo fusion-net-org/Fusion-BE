@@ -48,7 +48,7 @@ namespace Fusion.Repository.Repositories
                     .Select(f => f.Id).ToListAsync(ct);
 
                 foreach (var fid in validIds)
-                    _db.RolePermissions.Add(new RolePermission { RoleId = role.Id, FunctionId = fid, IsAccess = true });
+                    _db.RolePermissions.Add(new RolePermission { RoleId = role.Id, FunctionId = fid, IsAccess = true, CompanyId = companyId });
 
                 await _db.SaveChangesAsync(ct);
             }

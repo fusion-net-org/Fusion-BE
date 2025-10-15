@@ -1,4 +1,5 @@
-﻿using Fusion.Repository.Bases.Page;
+﻿using Fusion.API.Auth;
+using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.Company;
 using Fusion.Repository.Bases.Page.User;
 using Fusion.Repository.Bases.Responses;
