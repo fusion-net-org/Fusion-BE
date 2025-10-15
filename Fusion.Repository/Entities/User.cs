@@ -108,4 +108,7 @@ public partial class User
 
     [InverseProperty("User")]
     public virtual ICollection<TransactionPayment> TransactionPayments { get; set; } = new List<TransactionPayment>();
+
+    [InverseProperty("User")]
+    public virtual ICollection<UserDevice> UserDevices { get; set; } = new List<UserDevice>();
 }

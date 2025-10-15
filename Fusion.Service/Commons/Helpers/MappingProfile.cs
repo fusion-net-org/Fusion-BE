@@ -15,6 +15,8 @@ using Fusion.Service.ViewModels.Users.Requests;
 using Fusion.Service.ViewModels.Users.Responses;
 using Fusion.Service.ViewModels.SubscriptionPackage.Responses;
 using Fusion.Service.ViewModels.SubscriptionPackage.Requests;
+using Fusion.Service.ViewModels.Notifications.Responses;
+using Fusion.Service.ViewModels.Notifications.Requests;
 
 namespace Fusion.Service.Commons.Helpers;
 
@@ -123,6 +125,12 @@ public class MappingProfile : Profile
 
         CreateMap<SubscriptionPackage, SubscriptionAdminResponse>();
         CreateMap<SubscriptionPackage, SubscriptionResponse>();
+
+        //----------------------------     entity: Notification ---------------------------------------------
+        CreateMap<Notification, NotificationResponse>();
+        CreateMap<SendNotificationRequest, Notification>();
+
+
     }
 
 }

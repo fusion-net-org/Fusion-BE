@@ -1,16 +1,25 @@
-﻿using FluentValidation;
+﻿using FirebaseAdmin;
+using FluentValidation;
 using Fusion.API;
 using Fusion.API.Auth;
 using Fusion.API.Middlewares;
 using Fusion.Repository;
 using Fusion.Service;
 using Fusion.Service.Commons.BaseResponses;
+using Google.Apis.Auth.OAuth2;
+using Microsoft.AspNetCore.Builder.Extensions;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
 using System.Net;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Ai code mobile thi mo cai nay de xai
+//builder.WebHost.ConfigureKestrel(options =>
+//{
+//    options.ListenAnyIP(5191); // HTTP
 
+//});
 
 var isCi = builder.Configuration.GetValue<bool>("CI"); // GitHub Actions tự set CI=true
 if (isCi)
@@ -39,6 +48,13 @@ builder.Services.AddStackExchangeRedisCache(o =>
 
 
 builder.Services.AddHealthChecks();
+
+//FireBase
+var firebaseConfig = builder.Configuration.GetSection("FireBase").Get<Dictionary<string, object>>();
+FirebaseApp.Create(new AppOptions
+{
+    Credential = GoogleCredential.FromJson(JsonConvert.SerializeObject(firebaseConfig)),
+});
 
 #region Custom application service configuration
 

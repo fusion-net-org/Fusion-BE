@@ -58,6 +58,8 @@ public partial class FusionDbContext : DbContext
     public virtual DbSet<SubscriptionPackage> SubscriptionPackages { get; set; }
     public virtual DbSet<UserSubscription> UserSubscriptions { get; set; }
     public virtual DbSet<TransactionPayment> TransactionPayments { get; set; }
+    public virtual DbSet<UserDevice> UserDevices { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Comment>(entity =>
