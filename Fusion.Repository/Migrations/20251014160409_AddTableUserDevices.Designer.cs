@@ -4,6 +4,7 @@ using Fusion.Repository.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Fusion.Repository.Migrations
 {
     [DbContext(typeof(FusionDbContext))]
-    partial class FusionDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251014160409_AddTableUserDevices")]
+    partial class AddTableUserDevices
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -303,15 +306,10 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("bit")
                         .HasColumnName("is_read");
 
-                    b.Property<string>("LinkUrlMobile")
+                    b.Property<string>("LinkUrl")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)")
-                        .HasColumnName("link_url_mobile");
-
-                    b.Property<string>("LinkUrlWeb")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)")
-                        .HasColumnName("link_url_web");
+                        .HasColumnName("link_url");
 
                     b.Property<DateTime?>("ReadAt")
                         .HasPrecision(3)

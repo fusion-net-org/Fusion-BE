@@ -30,9 +30,13 @@ public partial class Notification
     [Column("context")]
     public string? Context { get; set; }
 
-    [Column("link_url")]
+    [Column("link_url_web")]
     [StringLength(500)]
-    public string? LinkUrl { get; set; }
+    public string? LinkUrlWeb { get; set; }
+
+    [Column("link_url_mobile")]
+    [StringLength(500)]
+    public string? LinkUrlMobile { get; set; }
 
     [Column("is_read")]
     public bool IsRead { get; set; }

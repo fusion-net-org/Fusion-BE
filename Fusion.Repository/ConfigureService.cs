@@ -59,6 +59,12 @@ namespace Fusion.Repository
             //refresh token
             services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 
+            //notification
+            services.AddScoped<INotificationRepository, NotificationRepository>();
+
+            //user device
+            services.AddScoped<IUserDeviceRepository, UserDeviceRepository>();
+
             return services;
         }
         public static void AddDatabase(this IServiceCollection services, IConfiguration configuration)

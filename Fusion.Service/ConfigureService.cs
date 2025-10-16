@@ -57,6 +57,15 @@ namespace Fusion.Service
             //user subscrption
             services.AddScoped<IUserSubscriptionService, UserSubscriptionService>();
 
+            //notification
+            services.AddScoped<INotificationService, NotificationService>();
+
+            //firebase cloud message
+            services.AddScoped<IFcmService, FcmService>();
+
+            //user device
+            services.AddScoped<IUserDeviceService, UserDeviceService>();
+
             return services;
         }
      }
