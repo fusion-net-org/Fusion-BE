@@ -21,12 +21,14 @@ namespace Fusion.Service.ViewModels.Notifications.Requests
         public string? LinkKey { get; set; }
 
         /// <summary>Id tham chiếu (thường là TaskId, ProjectId...)</summary>
-        public Guid? Id { get; set; }
+        public Guid? IdLink { get; set; }
 
         /// <summary>Tên sự kiện (vd: TaskUpdated, ProjectCreated...)</summary>
-        public string? EventName { get; set; }
+        public string? Event { get; set; }
 
         /// <summary>Dữ liệu bổ sung (JSON hoặc context business)</summary>
         public string? Context { get; set; }
+
+        public string? NotificationType { get; set; }
     }
 }

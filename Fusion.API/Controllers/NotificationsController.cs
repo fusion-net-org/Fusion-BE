@@ -5,6 +5,7 @@ using Fusion.Service.ViewModels.Notifications.Requests;
 using Fusion.Service.ViewModels.Notifications.Responses;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Fusion.API.Controllers
 {
@@ -13,18 +14,25 @@ namespace Fusion.API.Controllers
     public class NotificationsController : ControllerBase
     {
         private readonly INotificationService _notificationService;
-        private readonly ICompanyContextAccessor _companyContextAccessor;
 
-        public NotificationsController(INotificationService notificationService, ICompanyContextAccessor companyContextAccessor)
+        public NotificationsController(INotificationService notificationService)
         {
             _notificationService = notificationService;
-            _companyContextAccessor = companyContextAccessor;
         }
 
         [HttpGet]
         public async Task<IActionResult> GetMyNotifications(CancellationToken ct)
         {
-            var result = await _notificationService.GetUserNotificationsAsync(_companyContextAccessor.Current.UserId, ct);
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(ResponseModel<string>.Error(
+                    StatusCodes.Status401Unauthorized,
+                    "Don't find token!"));
+            }
+
+            var result = await _notificationService.GetUserNotificationsAsync(userId, ct);
 
             return Ok(ResponseModel<IEnumerable<NotificationResponse>>.Ok(
                 data: result,
@@ -35,7 +43,17 @@ namespace Fusion.API.Controllers
         [HttpPut("{notificationId:guid}/read")]
         public async Task<IActionResult> MarkAsRead(Guid notificationId, CancellationToken ct)
         {
-            await _notificationService.MarkAsReadAsync(_companyContextAccessor.Current.UserId, notificationId, ct);
+
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(ResponseModel<string>.Error(
+                    StatusCodes.Status401Unauthorized,
+                    "Don't find token!"));
+            }
+
+            await _notificationService.MarkAsReadAsync(userId, notificationId, ct);
 
             return Ok(ResponseModel<string>.Ok(
                 data: null,
@@ -43,6 +61,15 @@ namespace Fusion.API.Controllers
             ));
         }
 
-     
+        [HttpPost("send")]
+        public async Task<IActionResult> SendNotification([FromBody] SendNotificationRequest request)
+        {
+            await _notificationService.CreateNotificationAsync(request);
+
+            return Ok(ResponseModel<string>.Ok(
+                data: null,
+                message: "Send Notification success"
+                ));
+        }
     }
 }

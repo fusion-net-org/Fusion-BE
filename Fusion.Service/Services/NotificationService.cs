@@ -1,11 +1,15 @@
 ﻿using AutoMapper;
+using Fusion.Repository.Bases.Exceptions;
+using Fusion.Repository.Bases.Responses;
 using Fusion.Repository.Entities;
+using Fusion.Repository.Enums;
 using Fusion.Repository.IRepositories;
 using Fusion.Repository.Repositories;
 using Fusion.Service.Commons.Helpers;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.Notifications.Requests;
 using Fusion.Service.ViewModels.Notifications.Responses;
+using Google.Api.Gax;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,21 +31,36 @@ namespace Fusion.Service.Services
             _mapper = mapper;
         }
 
-        public async Task CreateAsync(SendNotificationRequest request, CancellationToken cancellationToken = default)
+        public async Task CreateNotificationAsync(SendNotificationRequest request, CancellationToken cancellationToken = default)
         {
             string? linkUrlWeb = null;
             string? linkUrlMobile = null;
 
             if (!string.IsNullOrWhiteSpace(request.LinkKey))
             {
-                (linkUrlWeb, linkUrlMobile) = NotificationRouteMap.Resolve(request.LinkKey, request.Id);
+                (linkUrlWeb, linkUrlMobile) = NotificationRouteMap.Resolve(request.LinkKey, request.IdLink);
+            }
+
+            if (!Enum.TryParse<NotificationTypeEnum>(request.NotificationType, true, out var typeEnum))
+            {
+                throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.INVALID_INPUT, $"Invalid type: {request.NotificationType}");
             }
 
             var notification = _mapper.Map<Notification>(request);
 
-            await _notificationRepository.CreateAsync(notification, linkUrlWeb, linkUrlMobile, cancellationToken);
+            var notificationReceive = await _notificationRepository.CreateAsync(notification, linkUrlWeb, linkUrlMobile, cancellationToken);
 
-            await _fcmService.SendToUserAsync(request.UserId, request.Title, request.Body, linkUrlWeb, linkUrlMobile, cancellationToken);
+            await _fcmService.SendToUserAsync(new FCMNotificationRequest 
+            { 
+                NotificationId = notificationReceive.Id, 
+                Body = request.Body,
+                Title = request.Title,
+                LinkUrlMobile = linkUrlMobile,
+                LinkUrlWeb = linkUrlWeb,
+                Type = request.NotificationType,
+                UserId = request.UserId,
+            }, cancellationToken);
+
 
         }
 

@@ -21,7 +21,7 @@ namespace Fusion.Repository.Repositories
             _context = context;
         }
 
-        public async Task CreateAsync(Notification notification, string? linkUrlWeb = null,string? linkUrlMobile = null, CancellationToken cancellationToken = default)
+        public async Task<Notification> CreateAsync(Notification notification, string? linkUrlWeb = null,string? linkUrlMobile = null, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(notification.Title))
                 throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.NOT_FOUND.FormatMessage("Notification"));
@@ -37,6 +37,8 @@ namespace Fusion.Repository.Repositories
 
             _context.Notifications.Add(notification);
             await _context.SaveChangesAsync();
+
+            return notification;
         }
 
         public async Task<IEnumerable<Notification>> GetUserNotificationsAsync(Guid userId, CancellationToken cancellationToken = default)

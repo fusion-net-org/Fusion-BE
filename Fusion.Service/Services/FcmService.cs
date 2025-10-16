@@ -3,6 +3,7 @@ using Fusion.Repository.IRepositories;
 using Fusion.Repository.Repositories;
 using Fusion.Service.Commons.Helpers;
 using Fusion.Service.IServices;
+using Fusion.Service.ViewModels.Notifications.Requests;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,11 +21,10 @@ namespace Fusion.Service.Services
             _userDeviceRepository = userDeviceRepository;
         }
 
-        public async Task SendToUserAsync(Guid userId, string title, string? body, string? linkUrlWeb = null,
-            string? linkUrlMobile = null, CancellationToken cancellationToken = default)
+        public async Task SendToUserAsync(FCMNotificationRequest request, CancellationToken cancellationToken = default)
         {
 
-            var tokens = await _userDeviceRepository.GetTokensByUserIdAsync(userId);
+            var tokens = await _userDeviceRepository.GetTokensByUserIdAsync(request.UserId);
 
             if (!tokens.Any())
                 return;
@@ -34,16 +34,27 @@ namespace Fusion.Service.Services
                 Tokens = tokens,
                 Notification = new FirebaseAdmin.Messaging.Notification
                 {
-                    Title = title,
-                    Body = body
+                    Title = request.Title,
+                    Body = request.Body
                 },
                 Data = new Dictionary<string, string>
+                    {
+                        {"NotificationId", request.NotificationId.ToString() },
+                        { "linkUrlWeb", request.LinkUrlWeb ?? "" },
+                        { "linkUrlMobile", request.LinkUrlMobile ?? "" },
+                        { "type", request.Type },
+                        { "timestamp", DateTime.UtcNow.ToString("O") },
+                    },
+                Android = new AndroidConfig
                 {
-                    { "linkUrlWeb", linkUrlWeb ?? "" },
-                    { "linkUrlMobile", linkUrlMobile ?? "" },
-                    { "type", "BUSINESS" },
-                    { "timestamp", DateTime.UtcNow.ToString("O") }
-                }
+                    Priority = Priority.High,
+                    Notification = new AndroidNotification
+                    {
+                        ChannelId = "default",
+                        Sound = "default",
+                    }
+                },
+
             };
 
             var response = await FirebaseMessaging.DefaultInstance.SendEachForMulticastAsync(message, cancellationToken);
