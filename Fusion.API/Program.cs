@@ -15,11 +15,11 @@ using System.Net;
 var builder = WebApplication.CreateBuilder(args);
 
 // Ai code mobile thi mo cai nay de xai
-builder.WebHost.ConfigureKestrel(options =>
-{
-    options.ListenAnyIP(5191); // HTTP
+//builder.WebHost.ConfigureKestrel(options =>
+//{
+//    options.ListenAnyIP(5191); // HTTP
 
-});
+//});
 
 var isCi = builder.Configuration.GetValue<bool>("CI"); // GitHub Actions tự set CI=true
 if (isCi)
