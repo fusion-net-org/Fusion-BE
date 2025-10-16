@@ -48,13 +48,14 @@ builder.Services.AddStackExchangeRedisCache(o =>
 
 
 builder.Services.AddHealthChecks();
-
-//FireBase
-var firebaseConfig = builder.Configuration.GetSection("FireBase").Get<Dictionary<string, object>>();
-FirebaseApp.Create(new AppOptions
+if (!isCi)
 {
-    Credential = GoogleCredential.FromJson(JsonConvert.SerializeObject(firebaseConfig)),
-});
+    var firebaseConfig = builder.Configuration.GetSection("FireBase").Get<Dictionary<string, object>>();
+    FirebaseApp.Create(new AppOptions
+    {
+        Credential = GoogleCredential.FromJson(JsonConvert.SerializeObject(firebaseConfig)),
+    });
+}
 
 #region Custom application service configuration
 
