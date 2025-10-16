@@ -20,9 +20,9 @@ namespace Fusion.Service.Services
 
         public RoleAdminService(IRoleAdminRepository repo) => _repo = repo;
         public Task<RoleDetailVm?> GetByIdAsync(Guid companyId, int roleId, CancellationToken ct = default)
-        => _repo.GetByIdAsync(companyId, roleId, ct);
+        => _repo.GetByIdWithPermissionsAsync(companyId, roleId, ct);
         public Task<List<RoleDetailVm>> GetAllAsync(Guid companyId, CancellationToken ct = default)
-        => _repo.GetAllAsync(companyId, ct);
+        => _repo.GetAllWithPermissionsAsync(companyId, ct);
         public async Task<int> CreateAsync(Guid companyId, CreateRoleDto dto, CancellationToken ct = default)
         {
             if (string.IsNullOrWhiteSpace(dto.Name))
