@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Fusion.Repository.Entities
 {
-    [Index(nameof(DeviceToken), IsUnique = true)]
+    [Index(nameof(UserId), nameof(DeviceToken), IsUnique = true)]
     public partial class UserDevice
     {
         [Key]
