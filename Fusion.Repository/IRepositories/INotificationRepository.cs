@@ -12,6 +12,6 @@ namespace Fusion.Repository.IRepositories
     {
         Task<IEnumerable<Notification>> GetUserNotificationsAsync(Guid userId, CancellationToken cancellationToken = default);
         Task MarkAsReadAsync(Guid userId, Guid notificationId, CancellationToken cancellationToken = default);
-        Task<Notification> CreateAsync(Notification notification,string? linkUrlWeb = null, string? linkUrlMobile = null, CancellationToken cancellationToken = default);
+        Task<Notification> CreateAsync(Notification notification, string? type, string? linkUrlWeb = null, string? linkUrlMobile = null, CancellationToken cancellationToken = default);
     }
 }
