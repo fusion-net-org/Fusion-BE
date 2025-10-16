@@ -48,7 +48,7 @@ namespace Fusion.Service.Services
 
             var notification = _mapper.Map<Notification>(request);
 
-            var notificationReceive = await _notificationRepository.CreateAsync(notification, linkUrlWeb, linkUrlMobile, cancellationToken);
+            var notificationReceive = await _notificationRepository.CreateAsync(notification, request.NotificationType, linkUrlWeb, linkUrlMobile, cancellationToken);
 
             await _fcmService.SendToUserAsync(new FCMNotificationRequest 
             { 

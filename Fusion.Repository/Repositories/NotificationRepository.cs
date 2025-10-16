@@ -2,6 +2,7 @@
 using Fusion.Repository.Bases.Responses;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
+using Fusion.Repository.Enums;
 using Fusion.Repository.IRepositories;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -21,7 +22,7 @@ namespace Fusion.Repository.Repositories
             _context = context;
         }
 
-        public async Task<Notification> CreateAsync(Notification notification, string? linkUrlWeb = null,string? linkUrlMobile = null, CancellationToken cancellationToken = default)
+        public async Task<Notification> CreateAsync(Notification notification, string? type, string? linkUrlWeb = null, string? linkUrlMobile = null, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(notification.Title))
                 throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.NOT_FOUND.FormatMessage("Notification"));
@@ -30,7 +31,16 @@ namespace Fusion.Repository.Repositories
             if (exists == null)
                 throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("User"));
 
-            notification.IsRead = false;
+            if (type == NotificationTypeEnum.SYSTEM.ToString())
+            {
+                notification.IsRead = true;
+                notification.ReadAt = DateTime.UtcNow.AddHours(7);
+            }
+            else
+            {
+                notification.IsRead = false;
+            }
+
             notification.CreateAt = DateTime.UtcNow.AddHours(7);
             notification.LinkUrlWeb = linkUrlWeb;
             notification.LinkUrlMobile = linkUrlMobile;
@@ -62,7 +72,7 @@ namespace Fusion.Repository.Repositories
             var notification = await _context.Notifications.FirstOrDefaultAsync(x => x.Id == notificationId && x.UserId == userId, cancellationToken);
             if (notification == null) return;
             notification.IsRead = true;
-            notification.ReadAt = DateTime.UtcNow;
+            notification.ReadAt = DateTime.UtcNow.AddHours(7);
             await _context.SaveChangesAsync(cancellationToken);
         }
     }

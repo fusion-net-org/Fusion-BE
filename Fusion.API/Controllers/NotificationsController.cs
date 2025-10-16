@@ -1,6 +1,7 @@
 ﻿using Fusion.API.Context;
 using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.IServices;
+using Fusion.Service.ViewModels.Companies.Responses;
 using Fusion.Service.ViewModels.Notifications.Requests;
 using Fusion.Service.ViewModels.Notifications.Responses;
 using Microsoft.AspNetCore.Http;
@@ -20,7 +21,8 @@ namespace Fusion.API.Controllers
             _notificationService = notificationService;
         }
 
-        [HttpGet]
+        [HttpGet("user")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<NotificationResponse>))]
         public async Task<IActionResult> GetMyNotifications(CancellationToken ct)
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -41,6 +43,8 @@ namespace Fusion.API.Controllers
         }
 
         [HttpPut("{notificationId:guid}/read")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<string>))]
+
         public async Task<IActionResult> MarkAsRead(Guid notificationId, CancellationToken ct)
         {
 
@@ -62,6 +66,7 @@ namespace Fusion.API.Controllers
         }
 
         [HttpPost("send")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<string>))]
         public async Task<IActionResult> SendNotification([FromBody] SendNotificationRequest request)
         {
             await _notificationService.CreateNotificationAsync(request);
