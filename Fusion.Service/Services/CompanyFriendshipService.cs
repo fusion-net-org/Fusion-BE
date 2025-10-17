@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using AutoMapper;
 using Fusion.Repository.Bases.Exceptions;
+using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.IRepositories;
@@ -46,14 +47,29 @@ namespace Fusion.Service.Services
             return _mapper.Map<CompanyFriendshipResponse>(entity);
         }
 
-        public async Task<List<CompanyFriendship>> GetCompanyFriendshipByOwnerUserID(Guid ownerUserID)
+        public async Task<PagedResult<CompanyFriendshipResponse>> GetCompanyFriendshipByOwnerUserID(Guid ownerUserID, PagedRequest request, CancellationToken cancellationToken = default)
         {
-            return await _companyFriendshipRepository.GetCompanyFriendshipByOwnerUserID(ownerUserID);
+            var result = await _companyFriendshipRepository.GetCompanyFriendshipByOwnerUserID(ownerUserID, request, cancellationToken);
+
+            var mappedItems = _mapper.Map<List<CompanyFriendshipResponse>>(result.Items);
+
+            return new PagedResult<CompanyFriendshipResponse>
+            {
+                Items = mappedItems,
+                TotalCount = result.TotalCount,
+                PageNumber = result.PageNumber,
+                PageSize = result.PageSize
+            };
         }
 
         public async Task<List<CompanyFriendship>> GetCompanyFriendshipByStatus(string status)
         {
             return await _companyFriendshipRepository.GetCompanyFriendshipByStatus(status);
+        }
+
+        public async Task<object> GetCompanyFriendshipStatusSummary(Guid ownerUserId)
+        {
+            return await _companyFriendshipRepository.GetCompanyFriendshipStatusSummary(ownerUserId);
         }
 
         public async Task<CompanyFriendshipResponse> InviteCompanyFriendship(Guid companyAId, Guid companyBId, Guid requesterId)

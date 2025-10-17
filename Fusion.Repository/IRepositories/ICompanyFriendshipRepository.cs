@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Entities;
 
 namespace Fusion.Repository.IRepositories
@@ -13,6 +9,7 @@ namespace Fusion.Repository.IRepositories
         Task<CompanyFriendship> CancelCompanyFriendship(long id);
         Task<CompanyFriendship> AcceptCompanyFriendship(long id);
         Task<List<CompanyFriendship>> GetCompanyFriendshipByStatus(string status);
-        Task<List<CompanyFriendship>> GetCompanyFriendshipByOwnerUserID(Guid ownerUserID);
+        Task<PagedResult<CompanyFriendship>> GetCompanyFriendshipByOwnerUserID(Guid ownerUserID, PagedRequest request, CancellationToken cancellationToken = default);
+        Task<object> GetCompanyFriendshipStatusSummary(Guid ownerUserId);
     }
 }
