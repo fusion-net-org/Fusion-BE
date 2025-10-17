@@ -1,4 +1,7 @@
-﻿using Fusion.Repository.Bases.Exceptions;
+﻿using System.Threading;
+using Azure.Core;
+using Fusion.Repository.Bases.Exceptions;
+using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.IRepositories;
@@ -45,11 +48,19 @@ namespace Fusion.Repository.Repositories
             return friendship;
         }
 
-        public async Task<List<CompanyFriendship>> GetCompanyFriendshipByOwnerUserID(Guid ownerUserID)
+        public async Task<PagedResult<CompanyFriendship>> GetCompanyFriendshipByOwnerUserID(Guid ownerUserID, PagedRequest request, CancellationToken cancellationToken = default)
         {
-            return await _context.CompanyFriendships
-                .Where(x => x.RequesterId == ownerUserID)
-                .ToListAsync();
+            var query = _dbSet              
+                  .Include(cf => cf.CompanyB)
+                      .ThenInclude(c => c.CompanyMembers)
+                  .Include(cf => cf.CompanyB)
+                      .ThenInclude(c => c.ProjectCompanies)
+                  .Include(cf => cf.CompanyB)
+                      .ThenInclude(c => c.ProjectCompanyHireds)
+                  .Where(cf => cf.CompanyA.OwnerUserId == ownerUserID)
+                  .AsQueryable();
+
+            return await query.ToPagedResultAsync(request, cancellationToken);
         }
 
 
@@ -60,7 +71,7 @@ namespace Fusion.Repository.Repositories
 
             var normalized = status.Trim().ToLowerInvariant();
 
-            if(normalized != "pending" && normalized != "active" && normalized != "inactive")
+            if (normalized != "pending" && normalized != "active" && normalized != "inactive")
                 throw new CustomException(StatusCodes.Status400BadRequest, "INVALID_STATUS", "Status must be 'Pending', 'Active', or 'Inactive'.");
 
             var listCompanyFriendship = await _context.CompanyFriendships
@@ -128,6 +139,25 @@ namespace Fusion.Repository.Repositories
             _context.CompanyFriendships.Add(friendship);
             await _context.SaveChangesAsync();
             return friendship;
+        }
+        public async Task<object> GetCompanyFriendshipStatusSummary(Guid ownerUserId)
+        {
+            var query = _context.CompanyFriendships
+                .Include(cf => cf.CompanyA)
+                .Include(cf => cf.CompanyB)
+                .Where(cf => cf.CompanyA.OwnerUserId == ownerUserId);
+
+            var totalPending = await query.CountAsync(cf => cf.Status == "Pending".ToLower());
+            var totalActive = await query.CountAsync(cf => cf.Status == "Active".ToLower());
+            var totalInactive = await query.CountAsync(cf => cf.Status == "Inactive".ToLower());
+
+            return new
+            {
+                Pending = totalPending,
+                Active = totalActive,
+                Inactive = totalInactive,
+                Total = totalPending + totalActive + totalInactive
+            };
         }
 
     }

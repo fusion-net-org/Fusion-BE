@@ -17,5 +17,7 @@ namespace Fusion.Service.ViewModels.Companies.Responses
         public Guid? LastActionBy { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
+        public int? TotalProject { get; set; }
+        public int? TotalMember { get; set; }
     }
 }

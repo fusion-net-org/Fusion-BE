@@ -34,7 +34,13 @@ public class MappingProfile : Profile
                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => true));
 
         //----------------------------     entity: Partner  ---------------------------------------------
-        CreateMap<CompanyFriendshipResponse, CompanyFriendship>().ReverseMap();
+        CreateMap<CompanyFriendship, CompanyFriendshipResponse>()
+             .ForMember(dest => dest.TotalProject, opt => opt.MapFrom(
+                        src => (src.CompanyB != null ? src.CompanyB.ProjectCompanies.Count + src.CompanyB.ProjectCompanyHireds.Count : 0)))
+             .ForMember(dest => dest.TotalMember, opt => opt.MapFrom(
+                       src => (src.CompanyB != null ? src.CompanyB.CompanyMembers.Count : 0)))
+             .ReverseMap();
+
 
         CreateMap<UpdateSelfUserRequest, User>()
                .ForMember(dest => dest.Avatar, opt => opt.Ignore())

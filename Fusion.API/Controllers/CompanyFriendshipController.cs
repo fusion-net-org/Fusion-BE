@@ -1,6 +1,7 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Fusion.Repository.Bases.Exceptions;
+using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Responses;
 using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.IServices;
@@ -8,6 +9,7 @@ using Fusion.Service.ViewModels.Companies.Requests;
 using Fusion.Service.ViewModels.Companies.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Fusion.API.Controllers
@@ -51,10 +53,10 @@ namespace Fusion.API.Controllers
 
         /// <summary>
         /// Get company friendships by Owner User ID
-        /// </summary>
+        /// <summary></summary>
         [HttpGet("owner")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<List<CompanyFriendshipResponse>>))]
-        public async Task<IActionResult> GetCompanyFriendshipByOwnerUserID()
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PagedResult<CompanyFriendshipResponse>>))]
+        public async Task<IActionResult> GetCompanyFriendshipByOwnerUserID([FromQuery] PagedRequest request)
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
@@ -65,20 +67,10 @@ namespace Fusion.API.Controllers
                     "Don't find token!"));
             }
 
-            var result = await _companyFriendshipService.GetCompanyFriendshipByOwnerUserID(userId);
+            var result = await _companyFriendshipService.GetCompanyFriendshipByOwnerUserID(userId, request);
 
-            var response = result.Select(r => new CompanyFriendshipResponse
-            {
-                Id = r.Id,
-                CompanyAId = r.CompanyAId,
-                CompanyBId = r.CompanyBId,
-                RequesterId = r.RequesterId,
-                Status = r.Status,
-                CreatedAt = r.CreatedAt
-            }).ToList();
-
-            return Ok(ResponseModel<List<CompanyFriendshipResponse>>.Ok(
-                data: response,
+            return Ok(ResponseModel<PagedResult<CompanyFriendshipResponse>>.Ok(
+                data: result,
                 message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "company friendships by owner user")));
         }
 
@@ -133,6 +125,29 @@ namespace Fusion.API.Controllers
             return Ok(ResponseModel<CompanyFriendshipResponse>.Ok(
                 data: result,
                 message: "Friendship rejected successfully"));
+        }
+
+        /// <summary>
+        /// Get count of company friendships by status (Pending, Active, Inactive)
+        /// </summary>
+        [HttpGet("status-summary")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<object>))]
+        public async Task<IActionResult> GetCompanyFriendshipStatusSummary(CancellationToken cancellationToken)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(ResponseModel<string>.Error(
+                    StatusCodes.Status401Unauthorized,
+                    "Don't find token!"));
+            }
+
+            var summary = await _companyFriendshipService.GetCompanyFriendshipStatusSummary(userId);
+
+            return Ok(ResponseModel<object>.Ok(
+                data: summary,
+                message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "friendship status summary")));
         }
 
 
