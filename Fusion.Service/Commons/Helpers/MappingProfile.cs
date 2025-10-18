@@ -54,6 +54,7 @@ public class MappingProfile : Profile
         //----------------------------     entity: Company ---------------------------------------------
         CreateMap<Company, CompanyResponse>()
             .ForMember(dest => dest.OwnerUserName, otp => otp.MapFrom(src => src.OwnerUser.UserName))
+            .ForMember(dest => dest.OwnerUserAvatar, otp => otp.MapFrom(src => src.OwnerUser.Avatar))
             .ForMember(dest => dest.ListMembers, opt => opt.MapFrom(src => src.CompanyMembers))
             .ForMember(dest => dest.TotalProject, opt => opt.MapFrom(
                         src => src.ProjectCompanies.Count + src.ProjectCompanyHireds.Count
