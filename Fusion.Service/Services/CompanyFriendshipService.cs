@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Bases.Page;
+using Fusion.Repository.Bases.Page.Partner;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.IRepositories;
@@ -35,19 +36,81 @@ namespace Fusion.Service.Services
             _companyRepository = companyRepository;
         }
 
+        //public async Task<CompanyFriendshipResponse> AcceptCompanyFriendship(long id)
+        //{
+        //    var entity = await _companyFriendshipRepository.AcceptCompanyFriendship(id);
+        //    return _mapper.Map<CompanyFriendshipResponse>(entity);
+        //}
         public async Task<CompanyFriendshipResponse> AcceptCompanyFriendship(long id)
         {
             var entity = await _companyFriendshipRepository.AcceptCompanyFriendship(id);
+
+            var companyA = await _companyRepository.GetCompanyByIdAsync((Guid)entity.CompanyAId!);
+            var companyB = await _companyRepository.GetCompanyByIdAsync((Guid)entity.CompanyBId!);
+
+            await _mailService.SendEmailAsync(new MailRequest
+            {
+                ToEmail = companyA.Email,
+                Subject = "Kết nối đối tác thành công",
+                Body = $@"
+        <p>Xin chúc mừng!</p>
+        <p>Công ty <b>{companyA.Name}</b> và <b>{companyB.Name}</b> đã kết nối thành công như đối tác.</p>
+        <p>Hãy cùng bắt đầu hợp tác hiệu quả!</p>"
+            });
+
+            await _mailService.SendEmailAsync(new MailRequest
+            {
+                ToEmail = companyB.Email,
+                Subject = "Kết nối đối tác thành công",
+                Body = $@"
+        <p>Xin chúc mừng!</p>
+        <p>Công ty <b>{companyA.Name}</b> và <b>{companyB.Name}</b> đã kết nối thành công như đối tác.</p>
+        <p>Chúc mừng sự hợp tác giữa hai bên!</p>"
+            });
+
+            await _unitOfWork.SaveChangesAsync();
+
             return _mapper.Map<CompanyFriendshipResponse>(entity);
         }
 
+
+        //public async Task<CompanyFriendshipResponse> CancelCompanyFriendship(long id)
+        //{
+        //    var entity = await _companyFriendshipRepository.CancelCompanyFriendship(id);
+        //    return _mapper.Map<CompanyFriendshipResponse>(entity);
+        //}
         public async Task<CompanyFriendshipResponse> CancelCompanyFriendship(long id)
         {
             var entity = await _companyFriendshipRepository.CancelCompanyFriendship(id);
+
+            var companyA = await _companyRepository.GetCompanyByIdAsync((Guid)entity.CompanyAId!);
+            var companyB = await _companyRepository.GetCompanyByIdAsync((Guid)entity.CompanyBId!);
+
+            // Gửi mail cho cả 2 bên thông báo từ chối
+            await _mailService.SendEmailAsync(new MailRequest
+            {
+                ToEmail = companyA.Email,
+                Subject = "Lời mời hợp tác bị từ chối",
+                Body = $@"
+        <p>Xin thông báo, lời mời hợp tác từ công ty <b>{companyA.Name}</b> tới <b>{companyB!.Name}</b> đã bị từ chối.</p>
+        <p>Vui lòng liên hệ lại nếu cần thảo luận thêm.</p>"
+            });
+
+            await _mailService.SendEmailAsync(new MailRequest
+            {
+                ToEmail = companyB.Email,
+                Subject = "Lời mời hợp tác bị từ chối",
+                Body = $@"
+        <p>Xin thông báo, bạn đã từ chối lời mời kết nối từ công ty <b>{companyA.Name}</b>.</p>
+        <p>Nếu có sự thay đổi, vui lòng gửi lại yêu cầu hợp tác mới.</p>"
+            });
+
+            await _unitOfWork.SaveChangesAsync();
+
             return _mapper.Map<CompanyFriendshipResponse>(entity);
         }
 
-        public async Task<PagedResult<CompanyFriendshipResponse>> GetCompanyFriendshipByOwnerUserID(Guid ownerUserID, PagedRequest request, CancellationToken cancellationToken = default)
+        public async Task<PagedResult<CompanyFriendshipResponse>> GetCompanyFriendshipByOwnerUserID(Guid ownerUserID, CompanyFriendshipSearchRequest request, CancellationToken cancellationToken = default)
         {
             var result = await _companyFriendshipRepository.GetCompanyFriendshipByOwnerUserID(ownerUserID, request, cancellationToken);
 
@@ -62,9 +125,19 @@ namespace Fusion.Service.Services
             };
         }
 
-        public async Task<List<CompanyFriendship>> GetCompanyFriendshipByStatus(string status)
+        public async Task<PagedResult<CompanyFriendshipResponse>> GetCompanyFriendshipByStatus(Guid ownerUserID, string status, PagedRequest request, CancellationToken cancellationToken = default)
         {
-            return await _companyFriendshipRepository.GetCompanyFriendshipByStatus(status);
+            var result = await _companyFriendshipRepository.GetCompanyFriendshipByStatus(ownerUserID,status,request,cancellationToken);
+
+            var mappedItems = _mapper.Map<List<CompanyFriendshipResponse>>(result.Items);
+
+            return new PagedResult<CompanyFriendshipResponse>
+            {
+                Items = mappedItems,
+                TotalCount = result.TotalCount,
+                PageNumber = result.PageNumber,
+                PageSize = result.PageSize
+            };
         }
 
         public async Task<object> GetCompanyFriendshipStatusSummary(Guid ownerUserId)
@@ -72,19 +145,35 @@ namespace Fusion.Service.Services
             return await _companyFriendshipRepository.GetCompanyFriendshipStatusSummary(ownerUserId);
         }
 
-        public async Task<CompanyFriendshipResponse> InviteCompanyFriendship(Guid companyAId, Guid companyBId, Guid requesterId)
+        public async Task<CompanyFriendshipResponse> InviteCompanyFriendship(Guid companyAId, Guid companyBId, Guid requesterId, string? note)
         {
 
             var entity = await _companyFriendshipRepository.InviteCompanyFriendship(
                companyAId,
                companyBId,
-               requesterId);
+               requesterId,
+               note);
 
             var nameCompanyA = await _companyRepository.GetCompanyNameByGuid(companyAId);
+            var nameCompanyB = await _companyRepository.GetCompanyNameByGuid(companyBId);
 
             var emailCompanyB = await _companyRepository.GetMailCompanyByGuid(companyBId);
+            var emailCompanyA = await _companyRepository.GetMailCompanyByGuid(companyAId);
 
             await _unitOfWork.SaveChangesAsync();
+
+            // Send notification company A 
+            await _mailService.SendEmailAsync(new MailRequest
+            {
+                ToEmail = emailCompanyA,
+                Subject = $"Đã gửi lời mời hợp tác đến công ty {nameCompanyB}",
+                Body = $@"
+        <p>Xin chào <b>{nameCompanyA}</b>,</p>
+        <p>Bạn đã gửi lời mời hợp tác đến công ty <b>{nameCompanyB}</b>.</p>
+        <p>Hệ thống sẽ thông báo cho bạn ngay khi công ty <b>{nameCompanyB}</b> phản hồi lời mời này.</p>
+        <br/>
+        <p><i>Trân trọng,</i><br/>Hệ thống Fusion</p>"
+            });
 
             // Gửi mail cho công ty B
             await _mailService.SendEmailAsync(new MailRequest

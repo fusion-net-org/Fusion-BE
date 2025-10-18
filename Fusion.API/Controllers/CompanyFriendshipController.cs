@@ -2,6 +2,7 @@
 using System.Security.Claims;
 using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Bases.Page;
+using Fusion.Repository.Bases.Page.Partner;
 using Fusion.Repository.Bases.Responses;
 using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.IServices;
@@ -32,23 +33,22 @@ namespace Fusion.API.Controllers
         /// </summary>
         [HttpGet("{status}")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<List<CompanyFriendshipResponse>>))]
-        public async Task<IActionResult> GetPartnerByStatus(string status)
+        public async Task<IActionResult> GetPartnerByStatus(string status, [FromQuery] PagedRequest request)
         {
-            var result = await _companyFriendshipService.GetCompanyFriendshipByStatus(status);
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-            var response = result.Select(r => new CompanyFriendshipResponse
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
             {
-                Id = r.Id,
-                CompanyAId = r.CompanyAId,
-                CompanyBId = r.CompanyBId,
-                RequesterId = r.RequesterId,
-                Status = r.Status,
-                CreatedAt = r.CreatedAt
-            }).ToList();
+                return Unauthorized(ResponseModel<string>.Error(
+                    StatusCodes.Status401Unauthorized,
+                    "Don't find token!"));
+            }
+            var result = await _companyFriendshipService.GetCompanyFriendshipByStatus(userId,status, request);
 
-            return Ok(ResponseModel<List<CompanyFriendshipResponse>>.Ok(
-                data: response,
-                message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "partnership by status")));
+
+            return Ok(ResponseModel<PagedResult<CompanyFriendshipResponse>>.Ok(
+                data: result,
+                message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "company friendships by status")));
         }
 
         /// <summary>
@@ -56,7 +56,7 @@ namespace Fusion.API.Controllers
         /// <summary></summary>
         [HttpGet("owner")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PagedResult<CompanyFriendshipResponse>>))]
-        public async Task<IActionResult> GetCompanyFriendshipByOwnerUserID([FromQuery] PagedRequest request)
+        public async Task<IActionResult> GetCompanyFriendshipByOwnerUserID([FromQuery] CompanyFriendshipSearchRequest request)
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
@@ -93,7 +93,7 @@ namespace Fusion.API.Controllers
 
             var CompanyAID = await _companyService.GetCompanyIdByUserId(userId);
 
-            var result = await _companyFriendshipService.InviteCompanyFriendship((Guid)CompanyAID, inviteCompanyRequest.CompanyBID, userId);
+            var result = await _companyFriendshipService.InviteCompanyFriendship((Guid)CompanyAID, inviteCompanyRequest.CompanyBID, userId,inviteCompanyRequest.Note);
 
             return Ok(ResponseModel<CompanyFriendshipResponse>.Ok(
                 data: result,

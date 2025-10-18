@@ -13,6 +13,7 @@ namespace Fusion.Service.ViewModels.Companies.Responses
         public Guid? CompanyBId { get; set; }
         public Guid? RequesterId { get; set; }
         public string? Status { get; set; }
+        public string? Note { get; set; }
         public DateTime? RespondedAt { get; set; }
         public Guid? LastActionBy { get; set; }
         public DateTime CreatedAt { get; set; }

@@ -26,6 +26,9 @@ public partial class CompanyFriendship
     [Unicode(false)]
     public string? Status { get; set; }
 
+    [Column("note")]
+    public string? Note { get; set; }
+
     [Column("responded_at")]
     [Precision(3)]
     public DateTime? RespondedAt { get; set; }
