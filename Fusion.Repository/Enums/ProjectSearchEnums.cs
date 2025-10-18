@@ -10,6 +10,6 @@ namespace Fusion.Repository.Enums
     public enum ProjectSearchRelationShipEnums
     {
         Owner,
-        OwnerMember,
+        Member,
     }
 }

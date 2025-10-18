@@ -41,7 +41,7 @@ namespace Fusion.Repository.Repositories
                         query = query.Where(c => c.OwnerUser.Email == userMail);
                         break;
 
-                    case ProjectSearchRelationShipEnums.OwnerMember:
+                    case ProjectSearchRelationShipEnums.Member:
                         // User là chủ sở hữu hoặc thành viên công ty
                         query = query.Where(c =>
                             c.OwnerUser.Email == userMail ||
@@ -80,11 +80,11 @@ namespace Fusion.Repository.Repositories
             {
                 if (request.SortDescending)
                 {
-                    query = query.Where(u => u.ProjectCompanies.Count + u.ProjectCompanyHireds.Count <= request.TotalProject);
+                    query = query.Where(u => u.ProjectCompanies.Count + u.ProjectCompanyHireds.Count >= request.TotalProject);
                 }
                 else
                 {
-                    query = query.Where(u => u.ProjectCompanies.Count + u.ProjectCompanyHireds.Count >= request.TotalProject);
+                    query = query.Where(u => u.ProjectCompanies.Count + u.ProjectCompanyHireds.Count <= request.TotalProject);
 
                 }
             }
@@ -93,11 +93,11 @@ namespace Fusion.Repository.Repositories
             {
                 if (request.SortDescending)
                 {
-                    query = query.Where(u => u.CompanyMembers.Count <= request.TotalMember);
+                    query = query.Where(u => u.CompanyMembers.Count >= request.TotalMember);
                 }
                 else
                 {
-                    query = query.Where(u => u.CompanyMembers.Count >= request.TotalMember);
+                    query = query.Where(u => u.CompanyMembers.Count <= request.TotalMember);
 
                 }
             }
