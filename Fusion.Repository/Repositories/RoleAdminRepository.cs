@@ -12,7 +12,15 @@ namespace Fusion.Repository.Repositories
     public record CreateRoleDto(string Name, string? Description, IEnumerable<int>? FunctionIdsToGrant);
     public record RoleDetailVm(int Id, string Name, string? Description, List<RolePermissionVm> Permissions);
     public record RolePermissionVm(int FunctionId, string FunctionCode, string FunctionName, bool IsAccess);
-
+    public sealed class UpdateRoleInfoDto
+    {
+        public string? Name { get; set; }
+        public string? Description { get; set; }
+    }
+    public sealed class UpdateRoleDto
+    {
+        public IEnumerable<int>? FunctionIdsToGrant { get; set; }
+    }
 
     public interface IRoleAdminRepository
     {
@@ -22,6 +30,9 @@ namespace Fusion.Repository.Repositories
         Task<bool> ExistsNameAsync(Guid companyId, string name, CancellationToken ct = default);
         Task<List<RoleDetailVm>> GetAllAsync(Guid companyId, CancellationToken ct = default);
         Task<List<RoleDetailVm>> GetAllWithPermissionsAsync(Guid companyId, CancellationToken ct = default);
+        Task UpdatePermissionsAsync(Guid companyId, int roleId, IEnumerable<int> functionIds, CancellationToken ct = default);
+        Task<int> UpdateInfoAsync(Guid companyId, int roleId, UpdateRoleInfoDto dto, CancellationToken ct = default);
+
     }
 
     public class RoleAdminRepository : IRoleAdminRepository
@@ -31,6 +42,86 @@ namespace Fusion.Repository.Repositories
 
         public Task<bool> ExistsNameAsync(Guid companyId, string name, CancellationToken ct = default)
             => _db.Roles.AsNoTracking().AnyAsync(r => r.CompanyId == companyId && r.RoleName == name, ct);
+        public async Task<int> UpdateInfoAsync(
+    Guid companyId,
+    int roleId,
+    UpdateRoleInfoDto dto,
+    CancellationToken ct = default)
+        {
+            var role = await _db.Roles
+                .FirstOrDefaultAsync(r => r.Id == roleId && r.CompanyId == companyId, ct);
+            if (role == null) throw new KeyNotFoundException("Role not found");
+
+            // Chuẩn hóa dữ liệu
+            var newName = dto.Name?.Trim();
+            var newDesc = dto.Description?.Trim();
+
+            // Đổi tên: kiểm tra trùng trong cùng company (loại trừ chính nó)
+            if (!string.IsNullOrWhiteSpace(newName) &&
+                !string.Equals(newName, role.RoleName, StringComparison.Ordinal))
+            {
+                var exists = await _db.Roles.AsNoTracking()
+                    .AnyAsync(r => r.CompanyId == companyId
+                                   && r.Id != roleId
+                                   && r.RoleName == newName, ct);
+                if (exists)
+                    throw new InvalidOperationException("Role name already exists.");
+
+                role.RoleName = newName;
+            }
+
+            // Mô tả: nếu truyền null -> bỏ qua; nếu truyền "" -> xóa mô tả
+            if (dto.Description != null)
+                role.Description = newDesc;
+
+            await _db.SaveChangesAsync(ct);
+            return role.Id;
+        }
+
+        public async Task UpdatePermissionsAsync(Guid companyId, int roleId, IEnumerable<int> functionIds, CancellationToken ct = default)
+        {
+            var wanted = (functionIds ?? Enumerable.Empty<int>())
+                         .Distinct()
+                         .ToList();
+
+            // Chỉ nhận function còn active
+            var validIds = await _db.FunctionInPages.AsNoTracking()
+                .Where(f => wanted.Contains(f.Id))
+                .Select(f => f.Id)
+                .ToListAsync(ct);
+
+            // Tập hiện có trong DB
+            var existing = await _db.RolePermissions
+                .Where(rp => rp.CompanyId == companyId && rp.RoleId == roleId)
+                .ToListAsync(ct);
+
+            var existingIds = existing
+                .Where(e => e.FunctionId.HasValue)           // FunctionId là int?
+                .Select(e => e.FunctionId!.Value)            // <-- .Value để về int
+                .ToHashSet();
+
+            // Xóa những permission không còn trong validIds
+            var toRemove = existing
+                .Where(e => e.FunctionId.HasValue && !validIds.Contains(e.FunctionId!.Value))
+                .ToList();
+            if (toRemove.Count > 0)
+                _db.RolePermissions.RemoveRange(toRemove);
+
+            // Thêm những cái còn thiếu
+            var toAddIds = validIds.Where(id => !existingIds.Contains(id)).ToList();
+            foreach (var fid in toAddIds)
+            {
+                _db.RolePermissions.Add(new RolePermission
+                {
+                    CompanyId = companyId,
+                    RoleId = roleId,
+                    FunctionId = fid,
+                    IsAccess = true
+                });
+            }
+
+            await _db.SaveChangesAsync(ct);
+        }
 
         public async Task<int> CreateAsync(Guid companyId, CreateRoleDto dto, CancellationToken ct = default)
         {
