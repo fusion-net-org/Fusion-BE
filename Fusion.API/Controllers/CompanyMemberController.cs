@@ -1,4 +1,6 @@
 ﻿using Azure;
+using Fusion.Repository.Bases.Page;
+using Fusion.Repository.Bases.Page.Company;
 using Fusion.Repository.Bases.Responses;
 using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.IServices;
@@ -25,13 +27,13 @@ namespace Fusion.API.Controllers
         }
 
         [HttpPost("invite")]
-        public async Task<IActionResult> InviteMember([FromBody] InviteMemberRequest request, CancellationToken token)
+        public async Task<IActionResult> InviteMemberToCompany([FromBody] InviteMemberRequest request, CancellationToken token)
         {
 
             var emailClaim = User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email || c.Type == ClaimTypes.Email || c.Type == "email");
             var inviterEmail = emailClaim?.Value; if (inviterEmail == null)
             {
-                return Unauthorized(ResponseModel<CompanyResponse>.Error(
+                return Unauthorized(ResponseModel<string>.Error(
                     statusCode: StatusCodes.Status401Unauthorized,
                     message: "Unauthorized: User identity not found"
                 ));
@@ -44,19 +46,53 @@ namespace Fusion.API.Controllers
                 token
             );
 
-            return Ok(ResponseModel<bool?>.Ok(
+            return Ok(ResponseModel<CompanyMemberResponse?>.Ok(
                  data: result,
-                 message: ResponseMessageHelper.FormatMessage(ResponseMessages.SUCCESS, "Send Mail to Member ")));
+                 message: ResponseMessageHelper.FormatMessage(ResponseMessages.SUCCESS, "Added Member to Company Successfully")));
         }
 
-        [HttpGet("join")]
-        public async Task<IActionResult> JoinCompany([FromQuery] string tokenConfirm, CancellationToken tokenCts)
+        [HttpGet("paged/{companyId}")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PagedResult<CompanyMemberResponse>>))]
+        public async Task<IActionResult> GetPaged([FromQuery] PagedRequest request, Guid companyId, CancellationToken cancellationToken)
         {
-            var result = await _companyMemberService.JoinMemberToCompany(tokenConfirm, tokenCts);
+            var emailClaim = User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email || c.Type == ClaimTypes.Email || c.Type == "email");
+            var email = emailClaim?.Value; if (email == null)
+            {
+                return Unauthorized(ResponseModel<string>.Error(
+                    statusCode: StatusCodes.Status401Unauthorized,
+                    message: "Unauthorized: User identity not found"
+                ));
+            }
+
+            var result = await _companyMemberService.GetPagedCompanyMemberByCompanyIdAsync(companyId, email, request, cancellationToken);
+            return Ok(ResponseModel<PagedResult<CompanyMemberResponse>>.Ok(
+                data: result,
+                message: "Get paged companies member successfully"));
+        }
+
+        [HttpPost("fired")]
+        public async Task<IActionResult> FiredMemberFromCompany([FromBody] FiredMemberRequest request, CancellationToken token)
+        {
+
+            var emailClaim = User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email || c.Type == ClaimTypes.Email || c.Type == "email");
+            var terminatorEmail = emailClaim?.Value; if (terminatorEmail == null)
+            {
+                return Unauthorized(ResponseModel<string>.Error(
+                    statusCode: StatusCodes.Status401Unauthorized,
+                    message: "Unauthorized: User identity not found"
+                ));
+            }
+
+            var result = await _companyMemberService.FiredMemberFromCompany(
+               terminatorEmail,
+               request.FiredMemberId,
+               request.CompanyId,
+               token
+            );
 
             return Ok(ResponseModel<CompanyMemberResponse?>.Ok(
-                data: result,
-                message: ResponseMessageHelper.FormatMessage(ResponseMessages.SAVE_SUCCESS, "Member successfully join the company")));
+                 data: result,
+                 message: ResponseMessageHelper.FormatMessage(ResponseMessages.SUCCESS, "Fired Member from Company Successfully")));
         }
     }
 }
