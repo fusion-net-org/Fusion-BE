@@ -23,35 +23,48 @@ namespace Fusion.Repository.Repositories
             _userRepository = userRepository;
         }
 
-        public async Task<CompanyFriendship> AcceptCompanyFriendship(long id)
+        public async Task<CompanyFriendship> AcceptCompanyFriendship(long id, Guid currentUserId)
         {
-            var friendship = await _context.CompanyFriendships.FindAsync(id);
+            var friendship = await _context.CompanyFriendships
+                .Include(f => f.CompanyB)
+                .FirstOrDefaultAsync(f => f.Id == id);
+
             if (friendship == null)
                 throw new CustomException(StatusCodes.Status404NotFound, "FRIENDSHIP_NOT_FOUND", "Not Found Friendship");
+
+            if (friendship.CompanyB.OwnerUserId != currentUserId)
+                throw new CustomException(StatusCodes.Status403Forbidden, "FORBIDDEN", "Only company B owner can approve this request.");
 
             friendship.Status = "Active";
-            friendship.RespondedAt = DateTime.UtcNow.AddDays(7);
-            friendship.UpdatedAt = DateTime.UtcNow.AddDays(7);
+            friendship.RespondedAt = DateTime.UtcNow;
+            friendship.UpdatedAt = DateTime.UtcNow;
 
             _context.CompanyFriendships.Update(friendship);
             await _context.SaveChangesAsync();
             return friendship;
         }
 
-        public async Task<CompanyFriendship> CancelCompanyFriendship(long id)
+        public async Task<CompanyFriendship> CancelCompanyFriendship(long id, Guid currentUserId)
         {
-            var friendship = await _context.CompanyFriendships.FindAsync(id);
+            var friendship = await _context.CompanyFriendships
+                .Include(f => f.CompanyB)
+                .FirstOrDefaultAsync(f => f.Id == id);
+
             if (friendship == null)
                 throw new CustomException(StatusCodes.Status404NotFound, "FRIENDSHIP_NOT_FOUND", "Not Found Friendship");
 
+            if (friendship.CompanyB.OwnerUserId != currentUserId)
+                throw new CustomException(StatusCodes.Status403Forbidden, "FORBIDDEN", "Only company B owner can cancel this request.");
+
             friendship.Status = "Inactive";
-            friendship.RespondedAt = DateTime.UtcNow.AddDays(7);
-            friendship.UpdatedAt = DateTime.UtcNow.AddDays(7);
+            friendship.RespondedAt = DateTime.UtcNow;
+            friendship.UpdatedAt = DateTime.UtcNow;
 
             _context.CompanyFriendships.Update(friendship);
             await _context.SaveChangesAsync();
             return friendship;
         }
+
 
         public async Task<PagedResult<CompanyFriendship>> GetCompanyFriendshipByOwnerUserID(Guid ownerUserID, CompanyFriendshipSearchRequest request, CancellationToken cancellationToken = default)
         {
@@ -64,7 +77,7 @@ namespace Fusion.Repository.Repositories
                    .ThenInclude(c => c.ProjectCompanyHireds)
                .Include(cf => cf.CompanyB)
                    .ThenInclude(c => c.OwnerUser)
-               .Where(cf => cf.CompanyA.OwnerUserId == ownerUserID)
+               .Where(cf => cf.CompanyA.OwnerUserId == ownerUserID || cf.CompanyB.OwnerUserId == ownerUserID)
                .AsQueryable();
 
             // search
@@ -129,7 +142,7 @@ namespace Fusion.Repository.Repositories
                     .ThenInclude(c => c.OwnerUser)
                 .Include(cf => cf.CompanyA)
                     .ThenInclude(c => c.OwnerUser)
-                .Where(cf => cf.CompanyA.OwnerUserId == ownerUserID)
+                .Where(cf => cf.CompanyA.OwnerUserId == ownerUserID || cf.CompanyB.OwnerUserId == ownerUserID)
                 .AsQueryable();
 
             query = query.Where(x => !string.IsNullOrEmpty(x.Status) && x.Status.ToLower() == normalized);
@@ -157,7 +170,19 @@ namespace Fusion.Repository.Repositories
                 note = null;
             }
 
+            var checkCompanyA = await _context.Companies
+                  .FirstOrDefaultAsync(c =>
+                      c.Id == companyAId &&
+                      c.OwnerUserId == requesterId); 
 
+            if (checkCompanyA == null)
+            {
+                throw new CustomException(
+                    statusCode: StatusCodes.Status403Forbidden,
+                    errorCode: "UNAUTHORIZED_COMPANY_ACCESS",
+                    errorMessage: $"Company request Does not exist or requester does not have permission to invite from this company."
+                );
+            }
 
             // Check duplicate friendship
             var existingFriendship = await _context.CompanyFriendships.FirstOrDefaultAsync(x =>
@@ -209,7 +234,7 @@ namespace Fusion.Repository.Repositories
             var query = _context.CompanyFriendships
                 .Include(cf => cf.CompanyA)
                 .Include(cf => cf.CompanyB)
-                .Where(cf => cf.CompanyA.OwnerUserId == ownerUserId);
+                .Where(cf => cf.CompanyA.OwnerUserId == ownerUserId || cf.CompanyB.OwnerUserId == ownerUserId);
 
             var totalPending = await query.CountAsync(cf => cf.Status == "Pending".ToLower());
             var totalActive = await query.CountAsync(cf => cf.Status == "Active".ToLower());
@@ -223,6 +248,27 @@ namespace Fusion.Repository.Repositories
                 Total = totalPending + totalActive + totalInactive
             };
         }
+
+        public async Task<List<CompanyFriendship>> GetCompanyFriendshipByCompanyID(Guid userID, Guid companyID)
+        {
+            var company = await _context.Companies
+                .FirstOrDefaultAsync(c => c.Id == companyID && c.OwnerUserId == userID);
+
+            if (company == null)
+            {
+                throw new CustomException(
+                    statusCode: StatusCodes.Status404NotFound,
+                    errorCode: "COMPANY_NOT_FOUND",
+                    errorMessage: $"Company with ID {companyID} does not exist."
+                );
+            }
+
+            var query = _context.CompanyFriendships
+               .Where(cf => cf.CompanyAId == companyID || cf.CompanyBId == companyID &&
+              (cf.Status.ToLower() == "active" || cf.Status.ToLower() == "pending"));
+            return query.ToList();
+        }
+
 
     }
 }

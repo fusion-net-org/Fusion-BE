@@ -18,4 +18,9 @@ namespace Fusion.Repository.Bases.Page.Company
         public int? TotalMember { get; set; }
         public ProjectSearchRelationShipEnums? RelationShipEnums { get; set; }
     }
+    public class CompanyPagedSearchRequestVersion2 : PagedRequest
+    {
+        public string? Keyword { get; set; }
+        public string? OwnerUserName { get; set; }
+    }
 }
