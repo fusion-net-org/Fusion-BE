@@ -3,7 +3,6 @@ using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.RefreshToken.Requests;
 using Fusion.Service.ViewModels.RefreshToken.Responses;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Fusion.API.Controllers

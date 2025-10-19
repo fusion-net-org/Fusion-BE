@@ -11,7 +11,6 @@ namespace Fusion.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
     public class SubscriptionPackageController : ControllerBase
     {
         private readonly ISubscriptionPackageService _subService;
@@ -44,7 +43,6 @@ namespace Fusion.API.Controllers
                 ));
         }
 
-        [Authorize(Roles = "User")]
         [HttpGet("GetSubscriptionForCustomer")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<List<SubscriptionResponse>?>))]
         public async Task<IActionResult> GetSubscriptionForCustomer(CancellationToken cancellationToken)

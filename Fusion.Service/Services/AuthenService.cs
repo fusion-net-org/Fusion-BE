@@ -143,4 +143,14 @@ public class AuthenService : IAuthenService
             RefreshToken = tokens.RefreshToken
         };
     }
+
+    public Task<bool> RequestPasswordResetAsync(string email, CancellationToken cancellationToken)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<bool> ResetPasswordAsync(string token, string newPassword, CancellationToken cancellationToken)
+    {
+        throw new NotImplementedException();
+    }
 }

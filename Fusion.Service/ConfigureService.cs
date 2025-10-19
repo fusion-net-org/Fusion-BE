@@ -5,6 +5,7 @@ using Fusion.Service.IServices;
 using Fusion.Service.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Net.payOS;
 
 namespace Fusion.Service
 {
@@ -66,6 +67,21 @@ namespace Fusion.Service
             //user device
             services.AddScoped<IUserDeviceService, UserDeviceService>();
 
+            // PayOS
+            services.AddSingleton<PayOS>(sp =>
+            {
+                var clientId = configuration["PayOS:ClientId"];
+                var apiKey = configuration["PayOS:ApiKey"];
+                var checksumKey = configuration["PayOS:ChecksumKey"];
+
+                if (string.IsNullOrEmpty(clientId) || string.IsNullOrEmpty(apiKey) || string.IsNullOrEmpty(checksumKey))
+                {
+                    throw new InvalidOperationException("Missing PayOS configuration in appsettings.json");
+                }
+
+                return new PayOS(clientId, apiKey, checksumKey);
+            });
+            services.AddScoped<IPayOSService, PayOSService>();
             return services;
         }
      }
