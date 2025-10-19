@@ -64,9 +64,10 @@ namespace Fusion.API.Controllers
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<bool>))]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordConfirmRequest model, CancellationToken cancellationToken)
         {
-            var result = await _authenService.ResetPasswordAsync(model.Token, model.NewPassword, cancellationToken);
+            var result = await _authenService.ResetPasswordAsync(model.ResetToken, model.NewPassword, cancellationToken);
             return Ok(ResponseModel<bool>.Ok(result, "Password reset successfully"));
         }
 
+       
     }
 }

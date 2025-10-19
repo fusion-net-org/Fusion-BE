@@ -69,5 +69,10 @@ namespace Fusion.Repository.Repositories
             // dùng extension để phân trang + sort
             return await query.ToPagedResultAsync(request, cancellationToken);
         }
+
+        public async Task<User?> GetUserByResetTokenAsync(string resetToken, CancellationToken cancellationToken = default)
+        {
+            return await _context.Users.FirstOrDefaultAsync(u => u.ResetToken == resetToken, cancellationToken);
+        }
     }
 }

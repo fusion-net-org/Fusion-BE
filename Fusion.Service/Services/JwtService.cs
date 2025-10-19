@@ -39,11 +39,9 @@ public class JwtService : IJwtService
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new Claim(JwtRegisteredClaimNames.Email, user.Email ?? string.Empty),
         };
-
+        claims.Add(new Claim(ClaimTypes.Role, "User"));
         if (user.IsSystemAdmin)
-        {
-            claims.Add(new Claim("isAdmin", "true"));
-        }
+            claims.Add(new Claim(ClaimTypes.Role, "Admin"));
 
 
         var accessToken = new JwtSecurityToken(

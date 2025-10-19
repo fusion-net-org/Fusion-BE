@@ -3,6 +3,7 @@ using Fusion.Repository.Bases.Page.User;
 using Fusion.Repository.Entities;
 using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.IServices;
+using Fusion.Service.Services;
 using Fusion.Service.ViewModels.Users.Requests;
 using Fusion.Service.ViewModels.Users.Responses;
 using Microsoft.AspNetCore.Authorization;
@@ -62,6 +63,13 @@ namespace Fusion.API.Controllers
                 message: "Update self user successfully"));
         }
 
+        [HttpPost("change-password")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<bool>))]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest model, CancellationToken cancellationToken)
+        {
+            var result = await _userService.ChangePasswordAsync(model, cancellationToken);
+            return Ok(ResponseModel<bool>.Ok(result, "Change password successfully"));
+        }
         //[HttpGet("paged-company")]
         //[ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PagedResult<CompanyUserResponse>>))]
         //public async Task<IActionResult> GetUserCompanyPaged([FromQuery] AdminUserPagedRequest request, CancellationToken cancellationToken)

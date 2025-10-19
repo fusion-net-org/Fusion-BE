@@ -4,7 +4,6 @@ using Fusion.Repository.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -12,11 +11,9 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Fusion.Repository.Migrations
 {
     [DbContext(typeof(FusionDbContext))]
-    [Migration("20251002090313_InitialCreate")]
-    partial class InitialCreate
+    partial class FusionDbContextModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -49,9 +46,18 @@ namespace Fusion.Repository.Migrations
                         .HasColumnName("create_at")
                         .HasDefaultValueSql("(sysutcdatetime())");
 
+                    b.Property<string>("Status")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("status");
+
                     b.Property<Guid?>("TaskId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("task_id");
+
+                    b.Property<DateTime>("UpdateAt")
+                        .HasPrecision(3)
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("update_at");
 
                     b.HasKey("Id");
 
@@ -69,6 +75,11 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("id")
                         .HasDefaultValueSql("(newid())");
+
+                    b.Property<string>("AvatarCompany")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("avatar_company");
 
                     b.Property<DateTime>("CreateAt")
                         .ValueGeneratedOnAdd()
@@ -150,6 +161,10 @@ namespace Fusion.Repository.Migrations
                     b.Property<Guid?>("LastActionBy")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("last_action_by");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("note");
 
                     b.Property<Guid?>("RequesterId")
                         .HasColumnType("uniqueidentifier")
@@ -292,10 +307,15 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("bit")
                         .HasColumnName("is_read");
 
-                    b.Property<string>("LinkUrl")
+                    b.Property<string>("LinkUrlMobile")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)")
-                        .HasColumnName("link_url");
+                        .HasColumnName("link_url_mobile");
+
+                    b.Property<string>("LinkUrlWeb")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("link_url_web");
 
                     b.Property<DateTime?>("ReadAt")
                         .HasPrecision(3)
@@ -495,6 +515,10 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("executor_company_id");
 
+                    b.Property<bool?>("IsDeleted")
+                        .HasColumnType("bit")
+                        .HasColumnName("is_deleted");
+
                     b.Property<string>("Name")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)")
@@ -544,7 +568,7 @@ namespace Fusion.Repository.Migrations
                         .HasColumnName("id")
                         .HasDefaultValueSql("(newid())");
 
-                    b.Property<DateTime>("CreateAt")
+                    b.Property<DateTime?>("CreateAt")
                         .ValueGeneratedOnAdd()
                         .HasPrecision(3)
                         .HasColumnType("datetime2(3)")
@@ -573,6 +597,14 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("bit")
                         .HasColumnName("is_backlog");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit")
+                        .HasColumnName("is_deleted");
+
+                    b.Property<int?>("OrderInSprint")
+                        .HasColumnType("int")
+                        .HasColumnName("order_in_sprint");
+
                     b.Property<int?>("Point")
                         .HasColumnType("int")
                         .HasColumnName("point");
@@ -596,6 +628,10 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("sprint_id");
 
+                    b.Property<string>("Status")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("status");
+
                     b.Property<string>("Title")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)")
@@ -606,6 +642,11 @@ namespace Fusion.Repository.Migrations
                         .IsUnicode(false)
                         .HasColumnType("varchar(20)")
                         .HasColumnName("type");
+
+                    b.Property<DateTime?>("UpdateAt")
+                        .HasPrecision(3)
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("update_at");
 
                     b.Property<DateTime?>("WithdrawnAt")
                         .HasPrecision(3)
@@ -751,9 +792,26 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("nvarchar(20)")
                         .HasColumnName("color");
 
-                    b.Property<DateOnly?>("EndDate")
-                        .HasColumnType("date")
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("created_by");
+
+                    b.Property<DateTime?>("EndDate")
+                        .HasColumnType("datetime2")
                         .HasColumnName("end_date");
+
+                    b.Property<string>("Goal")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("goal");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit")
+                        .HasColumnName("is_deleted");
 
                     b.Property<string>("Name")
                         .HasMaxLength(200)
@@ -764,9 +822,18 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("project_id");
 
-                    b.Property<DateOnly?>("StartDate")
-                        .HasColumnType("date")
+                    b.Property<DateTime?>("StartDate")
+                        .HasColumnType("datetime2")
                         .HasColumnName("start_date");
+
+                    b.Property<byte>("Status")
+                        .HasColumnType("tinyint")
+                        .HasColumnName("status");
+
+                    b.Property<DateTime?>("UpdateAt")
+                        .HasPrecision(3)
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("update_at");
 
                     b.HasKey("Id");
 
@@ -1152,6 +1219,14 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("nvarchar(20)")
                         .HasColumnName("phone");
 
+                    b.Property<string>("ResetToken")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("resetToken");
+
+                    b.Property<DateTime>("ResetTokenExpiry")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("resetTokenExpiry");
+
                     b.Property<bool>("Status")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
@@ -1180,6 +1255,50 @@ namespace Fusion.Repository.Migrations
                         .HasFilter("([email] IS NOT NULL)");
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("Fusion.Repository.Entities.UserDevice", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("create_at");
+
+                    b.Property<string>("DeviceName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("device_name");
+
+                    b.Property<string>("DeviceToken")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("device_token");
+
+                    b.Property<bool?>("IsActive")
+                        .HasColumnType("bit")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Platform")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("platform");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "DeviceToken")
+                        .IsUnique();
+
+                    b.ToTable("UserDevices");
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.UserRole", b =>
@@ -1707,6 +1826,17 @@ namespace Fusion.Repository.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Fusion.Repository.Entities.UserDevice", b =>
+                {
+                    b.HasOne("Fusion.Repository.Entities.User", "User")
+                        .WithMany("UserDevices")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Fusion.Repository.Entities.UserRole", b =>
                 {
                     b.HasOne("Fusion.Repository.Entities.Role", "Role")
@@ -1897,6 +2027,8 @@ namespace Fusion.Repository.Migrations
                     b.Navigation("Tickets");
 
                     b.Navigation("TransactionPayments");
+
+                    b.Navigation("UserDevices");
 
                     b.Navigation("UserRoles");
 

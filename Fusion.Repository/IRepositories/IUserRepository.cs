@@ -15,6 +15,7 @@ namespace Fusion.Repository.IRepositories
         Task<User?> GetUserByEmailAsync(string email, CancellationToken cancellationToken = default);
         Task<User?> GetUserByGoogleSubAsync(string googleSub, CancellationToken cancellationToken = default);
         Task<bool> CheckEmailExistAsync(string email, CancellationToken cancellationToken = default);
+        Task<User?> GetUserByResetTokenAsync(string resetToken, CancellationToken cancellationToken = default);
 
     }
 }
