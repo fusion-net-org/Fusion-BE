@@ -47,6 +47,9 @@ namespace Fusion.Repository
             //project request
             services.AddScoped<IProjectRequestRepository, ProjectRequestRepository>();
 
+            //project member
+            services.AddScoped<IProjectMemberRepository, ProjectMemberRepository>();
+
             //subscriptionpackage
             services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
 

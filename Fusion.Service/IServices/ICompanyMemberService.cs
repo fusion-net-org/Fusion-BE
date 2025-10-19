@@ -1,4 +1,6 @@
-﻿using Fusion.Service.ViewModels.Companies.Responses;
+﻿using Fusion.Repository.Bases.Page;
+using Fusion.Repository.Entities;
+using Fusion.Service.ViewModels.Companies.Responses;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +11,10 @@ namespace Fusion.Service.IServices
 {
     public interface ICompanyMemberService
     {
-        Task<bool?> InviteMemberToCompany(string inviterEmail, Guid inviteeMemberId, Guid CompanyId, CancellationToken token = default);
-        Task<CompanyMemberResponse?> JoinMemberToCompany(string tokenConfirm, CancellationToken token = default);
+        Task<CompanyMemberResponse?> InviteMemberToCompany(string inviterEmail, Guid inviteeMemberId, Guid CompanyId, CancellationToken token = default);
+
+        Task<PagedResult<CompanyMemberResponse>> GetPagedCompanyMemberByCompanyIdAsync(Guid companyId, string mail, PagedRequest request, CancellationToken token = default);
+
+        Task<CompanyMemberResponse?> FiredMemberFromCompany(string terminatorEmail, Guid firedMemberId, Guid companyId, CancellationToken token = default);
     }
 }
