@@ -70,6 +70,33 @@ public class MappingProfile : Profile
             .ForAllMembers(opt =>
                             opt.Condition((src, dest, srcMember) => srcMember != null));
 
+        CreateMap<Company,CompanyResponseVersion2>()
+            .ForMember(dest => dest.OwnerUserName, otp => otp.MapFrom(src => src.OwnerUser.UserName))
+            .ForMember(dest => dest.OwnerUserAvatar, otp => otp.MapFrom(src => src.OwnerUser.Avatar))
+            .ForMember(dest => dest.TotalProject, opt => opt.MapFrom(
+                        src => src.ProjectCompanies.Count + src.ProjectCompanyHireds.Count
+                        ))
+            .ForMember(dest => dest.TotalMember, opt => opt.MapFrom(
+                        src => src.CompanyMembers.Count))
+            //.ForMember(dest => dest.isOwner, opt => opt.MapFrom((src, dest, destMember, context) =>
+            //{
+            //    if (context.Items.ContainsKey("CurrentUserId") && context.Items["CurrentUserId"] is Guid currentUserId)
+            //    {
+            //        return src.OwnerUserId == currentUserId;
+            //    }
+            //    return false;
+            //}))
+            // .ForMember(dest => dest.isPartner, opt => opt.MapFrom((src, dest, destMember, context) =>
+            // {
+            //     if (context.Items.TryGetValue("PartnerCompanyIds", out var partnerIdsObj)
+            //         && partnerIdsObj is List<Guid> partnerIds)
+            //     {
+            //         return partnerIds.Contains(src.Id);
+            //     }
+            //     return false;
+            // }))
+            .ReverseMap();
+
         //----------------------------     entity: CompanyMember ---------------------------------------------
         CreateMap<CompanyMember, CompanyMemberResponse>()
             .ForMember(dest => dest.MemberId, opt => opt.MapFrom(src => src.UserId))

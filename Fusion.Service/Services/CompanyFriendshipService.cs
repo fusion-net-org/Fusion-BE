@@ -36,14 +36,9 @@ namespace Fusion.Service.Services
             _companyRepository = companyRepository;
         }
 
-        //public async Task<CompanyFriendshipResponse> AcceptCompanyFriendship(long id)
-        //{
-        //    var entity = await _companyFriendshipRepository.AcceptCompanyFriendship(id);
-        //    return _mapper.Map<CompanyFriendshipResponse>(entity);
-        //}
-        public async Task<CompanyFriendshipResponse> AcceptCompanyFriendship(long id)
+        public async Task<CompanyFriendshipResponse> AcceptCompanyFriendship(long id, Guid currentUserId)
         {
-            var entity = await _companyFriendshipRepository.AcceptCompanyFriendship(id);
+            var entity = await _companyFriendshipRepository.AcceptCompanyFriendship(id,currentUserId);
 
             var companyA = await _companyRepository.GetCompanyByIdAsync((Guid)entity.CompanyAId!);
             var companyB = await _companyRepository.GetCompanyByIdAsync((Guid)entity.CompanyBId!);
@@ -74,19 +69,13 @@ namespace Fusion.Service.Services
         }
 
 
-        //public async Task<CompanyFriendshipResponse> CancelCompanyFriendship(long id)
-        //{
-        //    var entity = await _companyFriendshipRepository.CancelCompanyFriendship(id);
-        //    return _mapper.Map<CompanyFriendshipResponse>(entity);
-        //}
-        public async Task<CompanyFriendshipResponse> CancelCompanyFriendship(long id)
+        public async Task<CompanyFriendshipResponse> CancelCompanyFriendship(long id, Guid currentUserId)
         {
-            var entity = await _companyFriendshipRepository.CancelCompanyFriendship(id);
+            var entity = await _companyFriendshipRepository.CancelCompanyFriendship(id,currentUserId);
 
             var companyA = await _companyRepository.GetCompanyByIdAsync((Guid)entity.CompanyAId!);
             var companyB = await _companyRepository.GetCompanyByIdAsync((Guid)entity.CompanyBId!);
 
-            // Gửi mail cho cả 2 bên thông báo từ chối
             await _mailService.SendEmailAsync(new MailRequest
             {
                 ToEmail = companyA.Email,
@@ -109,6 +98,15 @@ namespace Fusion.Service.Services
 
             return _mapper.Map<CompanyFriendshipResponse>(entity);
         }
+
+
+        public async Task<List<CompanyFriendshipResponse>> GetCompanyFriendshipByCompanyID(Guid userID, Guid companyID)
+        {
+            var friendships = await _companyFriendshipRepository.GetCompanyFriendshipByCompanyID(userID, companyID);
+            var result = _mapper.Map<List<CompanyFriendshipResponse>>(friendships);
+            return result;
+        }
+
 
         public async Task<PagedResult<CompanyFriendshipResponse>> GetCompanyFriendshipByOwnerUserID(Guid ownerUserID, CompanyFriendshipSearchRequest request, CancellationToken cancellationToken = default)
         {
@@ -193,5 +191,6 @@ namespace Fusion.Service.Services
             return _mapper.Map<CompanyFriendshipResponse>(entity);
         }
 
+     
     }
 }

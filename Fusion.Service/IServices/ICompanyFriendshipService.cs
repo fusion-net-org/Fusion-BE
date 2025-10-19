@@ -9,10 +9,12 @@ namespace Fusion.Service.IServices
     public interface ICompanyFriendshipService
     {
         Task<CompanyFriendshipResponse> InviteCompanyFriendship(Guid companyAId, Guid companyBId, Guid requesterId, string? note);
-        Task<CompanyFriendshipResponse> CancelCompanyFriendship(long id);
-        Task<CompanyFriendshipResponse> AcceptCompanyFriendship(long id);
+        Task<CompanyFriendshipResponse> CancelCompanyFriendship(long id, Guid currentUserId);
+        Task<CompanyFriendshipResponse> AcceptCompanyFriendship(long id, Guid currentUserId);
         Task<PagedResult<CompanyFriendshipResponse>> GetCompanyFriendshipByStatus(Guid ownerUserID, string status, PagedRequest request, CancellationToken cancellationToken = default);
         Task<PagedResult<CompanyFriendshipResponse>> GetCompanyFriendshipByOwnerUserID(Guid ownerUserID, CompanyFriendshipSearchRequest request, CancellationToken cancellationToken = default);
         Task<object> GetCompanyFriendshipStatusSummary(Guid ownerUserId);
+
+        Task<List<CompanyFriendshipResponse>> GetCompanyFriendshipByCompanyID(Guid userID, Guid companyID);
     }
 }
