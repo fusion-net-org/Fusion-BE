@@ -20,7 +20,6 @@ namespace Fusion.Service.ViewModels.Companies.Responses
 
         public string? OwnerUserAvatar { get; set; }
 
-
         public string? TaxCode { get; set; }
 
         public string? Email { get; set; }
@@ -40,5 +39,38 @@ namespace Fusion.Service.ViewModels.Companies.Responses
 
         public ICollection<CompanyMemberResponse>? ListMembers { get; set; }
         public ICollection<ProjectResponse>? ListProjects { get; set; }
+    }
+
+    public class CompanyResponseVersion2
+    {
+        public Guid Id { get; set; }
+
+        public string? Name { get; set; }
+
+        public Guid? OwnerUserId { get; set; }
+
+        public string? OwnerUserName { get; set; }
+
+        public string? OwnerUserAvatar { get; set; }
+
+        public string? TaxCode { get; set; }
+
+        public string? Email { get; set; }
+
+        public string? Detail { get; set; }
+
+        public string? ImageCompany { get; set; }
+
+        public string? AvatarCompany { get; set; }
+        public bool? isOwner { get; set; }
+        public bool? isPartner { get; set; }
+        public bool? isPendingAprovePartner { get; set; }
+        public DateTime CreateAt { get; set; }
+
+        public DateTime UpdateAt { get; set; }
+
+        public int? TotalMember { get; set; }
+        public int? TotalProject { get; set; }
+        
     }
 }
