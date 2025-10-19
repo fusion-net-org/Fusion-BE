@@ -18,6 +18,9 @@ namespace Fusion.Service.ViewModels.Companies.Responses
 
         public string? OwnerUserName { get; set; }
 
+        public string? OwnerUserAvatar { get; set; }
+
+
         public string? TaxCode { get; set; }
 
         public string? Email { get; set; }

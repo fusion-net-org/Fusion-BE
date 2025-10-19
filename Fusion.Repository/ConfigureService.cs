@@ -69,16 +69,13 @@ namespace Fusion.Repository
         }
         public static void AddDatabase(this IServiceCollection services, IConfiguration configuration)
         {
-            //services.AddDbContext<ApplicationDbContext>(options =>
-            //{
-            //    options.UseSqlServer(configuration.GetConnectionString("DefaultConnection"));
-            //});
 
             services.AddDbContext<FusionDbContext>(options =>
-            options.UseSqlServer(
-                configuration.GetConnectionString("DefaultConnection")
-            )
-        );
+                    options.UseSqlServer(
+                        configuration.GetConnectionString("DefaultConnection"),
+                        sqlOptions => sqlOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)
+                    )
+                );
         }
     }
 }
