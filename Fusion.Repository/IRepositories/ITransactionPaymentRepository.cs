@@ -9,5 +9,6 @@ namespace Fusion.Repository.IRepositories
     {
         Task<IEnumerable<TransactionPayment>> GetListPaymentForAdminAsync(AdminTransactionSearch request, CancellationToken cancellationToken = default);
         Task<IEnumerable<TransactionPayment>> GetListPaymentForCurrentUserAsync(Guid id, CancellationToken cancellationToken = default);
+        Task<TransactionPayment?> GetLasterTransactionForUserAsync(Guid id, CancellationToken cancellationToken = default);
     }
 }

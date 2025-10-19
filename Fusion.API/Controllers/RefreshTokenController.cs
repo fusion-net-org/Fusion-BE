@@ -10,7 +10,7 @@ namespace Fusion.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+
     public class RefreshTokenController : ControllerBase
     {
         private readonly IRefreshTokenService _refreshTokenService;
@@ -59,6 +59,7 @@ namespace Fusion.API.Controllers
         /// <summary>
         /// Dọn dẹp các refresh token đã hết hạn (chỉ admin hoặc background job nên gọi).
         /// </summary>
+        
         [HttpDelete("cleanup")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<object>))]
         public async Task<IActionResult> CleanUpExpiredTokensAsync(CancellationToken cancellationToken)

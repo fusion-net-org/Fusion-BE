@@ -85,5 +85,16 @@ namespace Fusion.Repository.Repositories
                 .ToListAsync(cancellationToken);
 
         }
+
+        public async Task<TransactionPayment?> GetLasterTransactionForUserAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            var transaction = await _context.TransactionPayments
+                              .Where(t => t.UserId == id)
+                              .OrderByDescending(t => t.CreatedAt)
+                              .FirstOrDefaultAsync(cancellationToken);
+
+            return transaction!;
+
+        }
     }
 }
