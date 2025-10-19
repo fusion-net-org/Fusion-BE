@@ -23,30 +23,31 @@ namespace Fusion.Repository.Repositories
 
         public async Task<ProjectRequest> AddProjectRequestAsync(ProjectRequest request, string vendorEmail, string code, CancellationToken cancellationToken)
         {
+            // User send request - Nguoi di thue - Vendor
             var vendor = await _context.Users.SingleOrDefaultAsync(x => x.Email == vendorEmail, cancellationToken);
             if (vendor == null)
                 throw CustomExceptionFactory.
-                    CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Vendor not found"));
+                    CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Vendor"));
 
             var companyRequester = await _context.CompanyMembers.FirstOrDefaultAsync(v => v.UserId == vendor.Id && v.CompanyId == request.RequesterCompanyId, cancellationToken);
 
             if (companyRequester == null)
                 throw CustomExceptionFactory.CreateBadRequestError(
-                    ResponseMessages.INVALID_INPUT.FormatMessage("Invalid requester company"),
-                    "Vendor is not a member of the requested company");
+                    ResponseMessages.INVALID_INPUT.FormatMessage("Vendor is not a member of the requested company"));
 
             var companyExecutor = await _context.Companies.SingleOrDefaultAsync(e => e.Id == request.ExecutorCompanyId, cancellationToken);
             if (companyExecutor == null)
                 throw CustomExceptionFactory.
-                    CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Company Executor not found"));
+                    CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Company Executor"));
 
             if (companyRequester.CompanyId == request.ExecutorCompanyId)
                 throw CustomExceptionFactory.CreateBadRequestError(
-                    ResponseMessages.INVALID_INPUT.FormatMessage("Invalid Company"), "Executor company cannot be the same as requester company");
+                    ResponseMessages.INVALID_INPUT.FormatMessage("Executor company cannot be the same as requester company"));
 
             var isFriendShip = await _context.CompanyFriendships.SingleOrDefaultAsync(v =>
-                    (v.CompanyAId == companyRequester.CompanyId && v.CompanyBId == request.ExecutorCompanyId) ||
-                    (v.CompanyAId == request.ExecutorCompanyId && v.CompanyBId == companyRequester.CompanyId),
+                    ((v.CompanyAId == companyRequester.CompanyId && v.CompanyBId == request.ExecutorCompanyId) ||
+                    (v.CompanyAId == request.ExecutorCompanyId && v.CompanyBId == companyRequester.CompanyId)) 
+                    && v.Status == "Active",
                     cancellationToken);
 
             if (isFriendShip == null)
@@ -84,7 +85,9 @@ namespace Fusion.Repository.Repositories
 
             var result = await _context.ProjectRequests
                 .Include(x => x.RequesterCompany)
+                    .ThenInclude(rc => rc.OwnerUser)
                 .Include(x => x.ExecutorCompany)
+                    .ThenInclude(ec => ec.OwnerUser)
                 .Include(x => x.CreatedByNavigation)
                 .Include(x => x.Project)
                 .FirstOrDefaultAsync(x => x.Id == projectRequest.Entity.Id, cancellationToken);
@@ -123,7 +126,7 @@ namespace Fusion.Repository.Repositories
             if (vendor == null)
                 throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Vendor not found"));
 
-            var companyRequester = await _context.CompanyMembers.SingleOrDefaultAsync(v => v.UserId == vendor.Id, cancellationToken);
+            var companyRequester = await _context.CompanyMembers.SingleOrDefaultAsync(v => v.UserId == vendor.Id && v.CompanyId == request.RequesterCompanyId, cancellationToken);
             if (companyRequester == null)
                 throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Company Vendor not found"));
 
@@ -133,13 +136,32 @@ namespace Fusion.Repository.Repositories
 
             // Rule: chỉ Requester mới được update
             if (existingRequest.RequesterCompanyId != companyRequester.CompanyId)
-                throw CustomExceptionFactory.CreateBadRequestError("You are not allowed to update this project request");
+                throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.FORBIDDEN.FormatMessage("You are not allowed to update this project request"));
 
             //// Rule: chỉ được update khi đang Pending
             //if (existingRequest.Status != ProjectRequestStatusEnum.Pending.ToString())
             //    throw CustomExceptionFactory.CreateBadRequestError(
             //        ResponseMessages.INVALID_INPUT.FormatMessage("Invalid Status"),
             //        "Only Pending requests can be updated");
+
+            
+
+            if (request.ExecutorCompanyId.HasValue && request.ExecutorCompanyId != existingRequest.ExecutorCompanyId)
+            {
+                if (existingRequest.Status == ProjectRequestStatusEnum.Rejected.ToString())
+                {
+                    throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.FORBIDDEN.FormatMessage("Cannot change executor because the request has been rejected"));
+                }
+
+                // Check friendship khi đổi executor
+                var isFriendShip = await _context.CompanyFriendships.SingleOrDefaultAsync(v =>
+                    v.CompanyAId == companyRequester.CompanyId && v.CompanyBId == request.ExecutorCompanyId, cancellationToken);
+
+                if (isFriendShip == null)
+                    throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.NOT_FOUND.FormatMessage($"Relationship between Requester and Executor"));
+
+                existingRequest.ExecutorCompanyId = request.ExecutorCompanyId;
+            }
 
             // Update các field cho phép sửa
             if (!string.IsNullOrEmpty(request.Name))
@@ -160,18 +182,6 @@ namespace Fusion.Repository.Repositories
             if (!string.IsNullOrEmpty(request.Status))
                 existingRequest.Status = request.Status;
 
-            if (request.ExecutorCompanyId.HasValue && request.ExecutorCompanyId != existingRequest.ExecutorCompanyId)
-            {
-                // Check friendship khi đổi executor
-                var isFriendShip = await _context.CompanyFriendships.SingleOrDefaultAsync(v =>
-                    v.CompanyAId == companyRequester.CompanyId && v.CompanyBId == request.ExecutorCompanyId, cancellationToken);
-
-                if (isFriendShip == null)
-                    throw CustomExceptionFactory.CreateBadRequestError("Invalid Company", "No friendship between requester and new executor");
-
-                existingRequest.ExecutorCompanyId = request.ExecutorCompanyId;
-            }
-
             // Cập nhật thời gian
             existingRequest.UpdateAt = DateTime.UtcNow.AddHours(7);
 
@@ -180,7 +190,9 @@ namespace Fusion.Repository.Repositories
             // Trả ra kèm các thông tin liên quan
             var result = await _context.ProjectRequests
                 .Include(x => x.RequesterCompany)
+                    .ThenInclude(rc => rc.OwnerUser)
                 .Include(x => x.ExecutorCompany)
+                    .ThenInclude(ec =>ec.OwnerUser)
                 .Include(x => x.CreatedByNavigation)
                 .Include(x => x.Project)
                 .FirstOrDefaultAsync(x => x.Id == existingRequest.Id, cancellationToken);
@@ -239,14 +251,16 @@ namespace Fusion.Repository.Repositories
         {
             var projectRequest = await _context.ProjectRequests
                 .Include(x => x.RequesterCompany)
+                    .ThenInclude(rc =>rc.OwnerUser)
                 .Include(x => x.ExecutorCompany)
+                    .ThenInclude(ec => ec.OwnerUser)
                 .Include(x => x.CreatedByNavigation)
                 .Include(x => x.Project)
                 .FirstOrDefaultAsync(x => x.Id == id && x.IsDeleted != true, cancellationToken);
 
             if (projectRequest == null)
                 throw CustomExceptionFactory.CreateNotFoundError(
-                    ResponseMessages.NOT_FOUND.FormatMessage("ProjectRequest not found"));
+                    ResponseMessages.NOT_FOUND.FormatMessage("ProjectRequest"));
 
             return projectRequest;
         }
@@ -255,8 +269,10 @@ namespace Fusion.Repository.Repositories
         {
 
             var request = await _context.ProjectRequests
-                .Include(x => x.ExecutorCompany)
                 .Include(x => x.RequesterCompany)
+                    .ThenInclude(rc => rc.OwnerUser)
+                .Include(x => x.ExecutorCompany)
+                    .ThenInclude(ec => ec.OwnerUser)
                 .Include(x => x.CreatedByNavigation)
                 .Include(x => x.Project)
                 .SingleOrDefaultAsync(x => x.Id == requestId && x.IsDeleted == false, cancellationToken);
@@ -272,12 +288,12 @@ namespace Fusion.Repository.Repositories
 
             if (executor == null)
                 throw CustomExceptionFactory.CreateNotFoundError(
-                     ResponseMessages.NOT_FOUND.FormatMessage("User not found"));
+                     ResponseMessages.NOT_FOUND.FormatMessage("Executor"));
 
             var executorMember = await _context.CompanyMembers.SingleOrDefaultAsync(x => x.UserId == executor.Id && x.CompanyId == request.ExecutorCompanyId, cancellationToken); 
             if (executorMember == null)
                 throw CustomExceptionFactory.CreateNotFoundError(
-                     ResponseMessages.NOT_FOUND.FormatMessage($"User not belong to {request.ExecutorCompany.Name}"));
+                     ResponseMessages.NOT_FOUND.FormatMessage($"User in this {request.ExecutorCompany.Name}"));
 
             //Cập nhật trạng thái
             request.Status = ProjectRequestStatusEnum.Accepted.ToString();
@@ -296,12 +312,24 @@ namespace Fusion.Repository.Repositories
                 CompanyId = request.RequesterCompanyId,
                 IsHired = true,
                 Status = "Open",
-                CreatedBy = request.CreatedBy,
+                CreatedBy = executor.Id,
                 Code = request.Code
             };
 
             await _context.Projects.AddAsync(project, cancellationToken);
+
             request.ConvertedProjectId = project.Id;
+
+            var projectMember = new ProjectMember  // executor là nguoi thuc hien
+            {
+                ProjectId = project.Id,
+                UserId = executor.Id,  
+                IsPartner = false,
+                IsViewAll = true,
+                JoinedAt = DateTime.UtcNow.AddHours(7),
+            };
+
+            await _context.ProjectMembers.AddAsync(projectMember, cancellationToken);
 
             await _context.SaveChangesAsync(cancellationToken);
 

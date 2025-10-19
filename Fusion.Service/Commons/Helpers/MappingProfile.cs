@@ -75,7 +75,11 @@ public class MappingProfile : Profile
         CreateMap<CompanyMember, CompanyMemberResponse>()
             .ForMember(dest => dest.MemberId, opt => opt.MapFrom(src => src.UserId))
             .ForMember(dest => dest.CompanyName, opt => opt.MapFrom(src => src.Company!.Name))
-            .ForMember(dest => dest.MemberName, opt => opt.MapFrom(src => src.User!.UserName));
+            .ForMember(dest => dest.MemberName, opt => opt.MapFrom(src => src.User!.UserName))
+            .ForMember(dest => dest.MemberAvatar, opt => opt.MapFrom(src => src.User!.Avatar))
+            .ForMember(dest => dest.IsOwner, opt => opt.MapFrom(src =>
+                                src.Company != null && src.User != null && src.Company.OwnerUser != null &&
+                                src.Company.OwnerUser.UserName == src.User.UserName));
 
         //----------------------------     entity: Ticket ---------------------------------------------
         CreateMap<Ticket, TicketResponse>().ReverseMap();

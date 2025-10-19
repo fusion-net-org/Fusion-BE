@@ -1,4 +1,6 @@
-﻿using Fusion.Repository.Bases.Exceptions;
+﻿using Azure.Core;
+using Fusion.Repository.Bases.Exceptions;
+using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Responses;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
@@ -23,7 +25,7 @@ namespace Fusion.Repository.Repositories
             _context = context;
         }
 
-        public async Task<CompanyMember?> AddCompanyMemberAsync(CompanyMember companyMember, CancellationToken token)
+        public async Task<CompanyMember?> AddCompanyMemberAsync(CompanyMember companyMember, CancellationToken token = default)
         {
             var newCompany = await _context.CompanyMembers.AddAsync(companyMember, token);
             await _context.SaveChangesAsync(token);
@@ -31,7 +33,16 @@ namespace Fusion.Repository.Repositories
             return newCompany.Entity;
         }
 
-        public async Task<bool?> InviteMemberToCompany(string inviterEmail, Guid inviteeMemberId, Guid companyId, CancellationToken token)
+        public async Task<CompanyMember?> GetCompanyMemberByIdAsync(long id, CancellationToken token = default)
+        {
+            return await _context.CompanyMembers
+                .Include(cm => cm.Company)
+                    .ThenInclude(c => c.OwnerUser)
+                .Include(cm => cm.User)
+                .SingleOrDefaultAsync(cm => cm.Id == id, token);
+        }
+ 
+        public async Task<CompanyMember?> InviteMemberToCompany(string inviterEmail, Guid inviteeMemberId, Guid companyId, CancellationToken token)
         {
             var owner_user = await _context.Users.SingleOrDefaultAsync(x => x.Email == inviterEmail, token);
             if (owner_user == null)
@@ -64,34 +75,65 @@ namespace Fusion.Repository.Repositories
             {
                 CompanyId = companyId,
                 UserId = inviteeMemberId,
-                Status = false,
+                Status = true,
+                JoinedAt = DateTime.UtcNow.AddHours(7),
             };
 
             await _context.CompanyMembers.AddAsync(companyMember, token);
             await _context.SaveChangesAsync(token);
 
-            return true;
+            return companyMember;
         }
 
-        public async Task<CompanyMember?> JoinMemberToCompany(Guid inviteeMemberId, Guid companyId, CancellationToken token)
+        public async Task<PagedResult<CompanyMember>> GetPagedCompanyMemberByCompanyIdAsync(Guid companyId, string mail, PagedRequest request, CancellationToken token)
         {
-            var companyMember = await _context.CompanyMembers
+            var company = await _context.Companies.FindAsync(companyId, token);
+            if (company == null)
+                throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Company"));
+
+            var user = await _context.Users.SingleOrDefaultAsync(u => u.Email == mail);
+            if (user == null)
+                throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("User"));
+
+            var isMember = await _context.CompanyMembers.SingleOrDefaultAsync(cm => cm.UserId == user.Id && cm.CompanyId == companyId);
+            if (isMember == null)
+                throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.FORBIDDEN.FormatMessage($"User can not access to {company.Name}"));
+
+            var query = _context.CompanyMembers
                 .Include(x => x.User)
                 .Include(x => x.Company)
-                .SingleOrDefaultAsync(cm => cm.UserId == inviteeMemberId && cm.CompanyId == companyId, token);
+                    .ThenInclude(c => c.OwnerUser)
+                .AsQueryable();
+
+
+            query = query.Where(cm => cm.CompanyId == companyId).OrderByDescending(cm => cm.JoinedAt);
+
+            return await query.ToPagedResultAsync(request, token);
+        }
+
+        public async Task<CompanyMember?> FiredMemberFromCompany(string terminatorEmail, Guid firedMemberId, Guid companyId, CancellationToken token)
+        {
+            var company = await _context.Companies
+              .Include(c => c.OwnerUser)
+              .SingleOrDefaultAsync(c => c.Id == companyId && c.OwnerUser.Email == terminatorEmail);
+            if (company == null)
+                throw CustomExceptionFactory.CreateNotFoundError(
+                    ResponseMessages.NOT_FOUND.FormatMessage($"{terminatorEmail}"));
+
+
+            var companyMember = await _context.CompanyMembers
+                .SingleOrDefaultAsync(cm => 
+                    cm.CompanyId == companyId
+                    && cm.UserId == firedMemberId, token);
 
             if (companyMember == null)
-                throw CustomExceptionFactory.
-                    CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Member company does not existed"));
+                throw CustomExceptionFactory.CreateNotFoundError(
+                    ResponseMessages.NOT_FOUND.FormatMessage("User in Company"));
 
-            companyMember.JoinedAt = DateTime.UtcNow.AddHours(7);
-            companyMember.Status = true;
-
-            _context.CompanyMembers.Update(companyMember);
+            companyMember.Status = false;
             await _context.SaveChangesAsync(token);
 
             return companyMember;
-
         }
     }
 }
