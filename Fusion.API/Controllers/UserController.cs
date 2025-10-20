@@ -71,5 +71,26 @@ namespace Fusion.API.Controllers
         //        data: result,
         //        message: "Get paged users successfully"));
         //}
+
+        [HttpGet("get-all")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PagedResult<SelfUserResponse>>))]
+        public async Task<IActionResult> GetAllUsersPaged([FromQuery] PagedRequest request, CancellationToken cancellationToken)
+        {
+            var result = await _userService.GetAllUsersAsync(request, cancellationToken);
+            return Ok(ResponseModel<PagedResult<SelfUserResponse>>.Ok(
+                data: result,
+                message: "Get all users successfully"));
+        }
+
+        [HttpGet("owner-user/{companyId:guid}")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<Guid>))]
+        public async Task<IActionResult> GetOwnerUserIdByCompanyId(Guid companyId, CancellationToken cancellationToken)
+        {
+            var ownerId = await _userService.GetOwnerUserIdByCompanyIdAsync(companyId, cancellationToken);
+            return Ok(ResponseModel<Guid>.Ok(
+                data: ownerId.Value,
+                message: "Get owner user id by company successfully"));
+        }
+
     }
 }

@@ -22,5 +22,7 @@ namespace Fusion.Repository.Bases.Page.Company
     {
         public string? Keyword { get; set; }
         public string? OwnerUserName { get; set; }
+        public ProjectSearchRelationShipEnums? RelationShipEnums { get; set; }
+
     }
 }
