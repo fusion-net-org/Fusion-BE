@@ -210,10 +210,13 @@ namespace Fusion.Repository.Repositories
                 .AsQueryable();
 
             // ViewMode filter
-            if (filter.ViewMode == ProjectRequestViewMode.AsRequester)
-                query = query.Where(x => x.RequesterCompanyId == userCompanyId);
-            else if (filter.ViewMode == ProjectRequestViewMode.AsExecutor)
-                query = query.Where(x => x.ExecutorCompanyId == userCompanyId);
+            if (filter.ViewMode.HasValue)
+            {
+                if (filter.ViewMode == ProjectRequestViewMode.AsRequester)
+                    query = query.Where(x => x.RequesterCompanyId == userCompanyId);
+                else if (filter.ViewMode == ProjectRequestViewMode.AsExecutor)
+                    query = query.Where(x => x.ExecutorCompanyId == userCompanyId);
+            }
 
             // Keyword
             if (!string.IsNullOrWhiteSpace(filter.Keyword))

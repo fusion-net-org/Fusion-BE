@@ -45,9 +45,9 @@ namespace Fusion.Service.Services
             _mapper = mapper;
         }
 
-        public async Task<CompanyMemberResponse?> FiredMemberFromCompany(string terminatorEmail, Guid firedMemberId, Guid companyId, CancellationToken token = default)
+        public async Task<CompanyMemberResponse?> FiredMemberFromCompany(string terminatorEmail, string firedMemberMail, Guid companyId, CancellationToken token = default)
         {
-            var result = await _companyMemberRepository.FiredMemberFromCompany(terminatorEmail, firedMemberId, companyId, token);
+            var result = await _companyMemberRepository.FiredMemberFromCompany(terminatorEmail, firedMemberMail, companyId, token);
 
             var response = await _companyMemberRepository.GetCompanyMemberByIdAsync(result.Id);
 
@@ -90,9 +90,9 @@ namespace Fusion.Service.Services
             };
         }
 
-        public async Task<CompanyMemberResponse?> InviteMemberToCompany(string inviterEmail, Guid inviteeMemberId, Guid companyId, CancellationToken cancellationToken)
+        public async Task<CompanyMemberResponse?> InviteMemberToCompany(string inviterEmail, string inviteeMemberMail, Guid companyId, CancellationToken cancellationToken)
         {
-            var result = await _companyMemberRepository.InviteMemberToCompany(inviterEmail, inviteeMemberId, companyId, cancellationToken);
+            var result = await _companyMemberRepository.InviteMemberToCompany(inviterEmail, inviteeMemberMail, companyId, cancellationToken);
 
             var response = await _companyMemberRepository.GetCompanyMemberByIdAsync(result.Id);
 
