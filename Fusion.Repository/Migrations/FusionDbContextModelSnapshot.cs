@@ -1223,7 +1223,7 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("resetToken");
 
-                    b.Property<DateTime>("ResetTokenExpiry")
+                    b.Property<DateTime?>("ResetTokenExpiry")
                         .HasColumnType("datetime2")
                         .HasColumnName("resetTokenExpiry");
 

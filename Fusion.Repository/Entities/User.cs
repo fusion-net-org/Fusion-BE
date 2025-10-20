@@ -55,7 +55,7 @@ public partial class User
     public string? ResetToken { get; set; }
 
     [Column("resetTokenExpiry")]
-    public DateTime ResetTokenExpiry { get; set; }
+    public DateTime? ResetTokenExpiry { get; set; }
 
     [Column("create_at")]
     [Precision(3)]

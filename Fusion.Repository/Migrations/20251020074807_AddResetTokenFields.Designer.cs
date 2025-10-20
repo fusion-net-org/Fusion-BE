@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Fusion.Repository.Migrations
 {
     [DbContext(typeof(FusionDbContext))]
-    [Migration("20251019122353_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20251020074807_AddResetTokenFields")]
+    partial class AddResetTokenFields
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -1226,7 +1226,7 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("resetToken");
 
-                    b.Property<DateTime>("ResetTokenExpiry")
+                    b.Property<DateTime?>("ResetTokenExpiry")
                         .HasColumnType("datetime2")
                         .HasColumnName("resetTokenExpiry");
 
