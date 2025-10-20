@@ -11,7 +11,7 @@ namespace Fusion.Repository.IRepositories
 {
     public interface ICompanyMemberRepository : IGenericRepository<CompanyMember>
     {
-        Task<CompanyMember?> InviteMemberToCompany(string inviterEmail, Guid inviteeMemberId, Guid companyId, CancellationToken token = default);
+        Task<CompanyMember?> InviteMemberToCompany(string inviterEmail, string inviteeMemberMail, Guid companyId, CancellationToken token = default);
 
         Task<CompanyMember?> GetCompanyMemberByIdAsync(long id, CancellationToken token = default);
 
@@ -19,6 +19,6 @@ namespace Fusion.Repository.IRepositories
 
         Task<PagedResult<CompanyMember>> GetPagedCompanyMemberByCompanyIdAsync(Guid companyId, string mail, PagedRequest request, CancellationToken token = default);
 
-        Task<CompanyMember?> FiredMemberFromCompany(string terminatorEmail, Guid firedMemberId, Guid companyId, CancellationToken token = default);
+        Task<CompanyMember?> FiredMemberFromCompany(string terminatorEmail, string firedMemberMail, Guid companyId, CancellationToken token = default);
     }
 }

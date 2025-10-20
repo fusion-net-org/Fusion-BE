@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using AutoMapper;
+﻿using AutoMapper;
 using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.Partner;
@@ -16,6 +11,12 @@ using Fusion.Service.ViewModels.Companies.Email;
 using Fusion.Service.ViewModels.Companies.Responses;
 using Fusion.Service.ViewModels.Users.Requests;
 using Microsoft.AspNetCore.Http;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.Design;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace Fusion.Service.Services
 {
@@ -191,6 +192,46 @@ namespace Fusion.Service.Services
             return _mapper.Map<CompanyFriendshipResponse>(entity);
         }
 
-     
+        /*****************************************************************************************Mobile*****************************************************************/
+        public async Task<PagedResult<PartnerResponse>> GetCompanyFriendshipByCompanyID(Guid ownerUserID, Guid companyID, CompanyFriendshipSearchRequest request, CancellationToken token)
+        {
+            var result = await _companyFriendshipRepository.GetCompanyFriendshipByCompanyID(ownerUserID, companyID, request, token);
+
+            var partners = new List<PartnerResponse>();
+            var addedCompanyIds = new HashSet<Guid>();
+
+            foreach (var friendship in result.Items)
+            {
+                var partnerCompany = friendship.CompanyAId == companyID ? friendship.CompanyB: friendship.CompanyA;
+
+                if (partnerCompany != null && partnerCompany.Id != companyID && addedCompanyIds.Add(partnerCompany.Id))
+                {
+                    partners.Add(new PartnerResponse
+                    {
+                        CompanyId = partnerCompany.Id,
+                        Name = partnerCompany.Name,
+                        OwnerUserName = partnerCompany.OwnerUser?.UserName,
+                        TaxCode = partnerCompany.TaxCode,
+                        RespondedAt = friendship.RespondedAt,
+                        CreatedAt = friendship.CreatedAt,
+                        TotalProject = partnerCompany.ProjectCompanies.Count + partnerCompany.ProjectCompanyHireds.Count,
+                    });
+                }
+            }
+
+            return new PagedResult<PartnerResponse>
+            {
+                Items = partners,
+                TotalCount = result.TotalCount,
+                PageNumber = result.PageNumber,
+                PageSize = result.PageSize
+            };
+        }
+
+        public async Task<object> GetCompanyFriendshipStatusSummary(Guid ownerUserId, Guid companyId)
+        {
+            return await _companyFriendshipRepository.GetCompanyFriendshipStatusSummary(ownerUserId, companyId);
+        }
+
     }
 }

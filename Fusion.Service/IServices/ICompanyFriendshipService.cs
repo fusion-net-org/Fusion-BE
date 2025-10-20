@@ -16,5 +16,12 @@ namespace Fusion.Service.IServices
         Task<object> GetCompanyFriendshipStatusSummary(Guid ownerUserId);
 
         Task<List<CompanyFriendshipResponse>> GetCompanyFriendshipByCompanyID(Guid userID, Guid companyID);
+
+        /*************************************************************Mobile**************************************************************************/
+
+        Task<PagedResult<PartnerResponse>> GetCompanyFriendshipByCompanyID(Guid ownerUserID, Guid companyID, CompanyFriendshipSearchRequest request, CancellationToken token);
+
+        Task<object> GetCompanyFriendshipStatusSummary(Guid ownerUserId, Guid companyId);
+
     }
 }
