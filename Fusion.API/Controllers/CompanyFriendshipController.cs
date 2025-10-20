@@ -185,6 +185,32 @@ namespace Fusion.API.Controllers
                 message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "company friendships by company ID")));
 
         }
+        /// <summary>
+        /// Get paged & searchable company friendships by a specific company ID
+        /// </summary>
+        [HttpGet("by-company/v2")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PagedResult<CompanyFriendshipResponse>>))]
+        public async Task<IActionResult> GetCompanyFriendshipByCompanyIDVersion2(
+            [FromQuery] Guid companyId,
+            [FromQuery] CompanyFriendshipSearchRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(ResponseModel<string>.Error(
+                    StatusCodes.Status401Unauthorized,
+                    "Don't find token!"));
+            }
+
+            var result = await _companyFriendshipService
+                .GetCompanyFriendshipByCompanyIDVersion2(userId, companyId, request, cancellationToken);
+
+            return Ok(ResponseModel<PagedResult<CompanyFriendshipResponse>>.Ok(
+                data: result,
+                message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "company friendships by company ID (v2)")));
+        }
 
         /***************************************************Mobile*********************************************/
 
@@ -227,33 +253,7 @@ namespace Fusion.API.Controllers
                 data: summary,
                 message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "friendship status summary")));
         }
-        /// <summary>
-        /// Get paged & searchable company friendships by a specific company ID
-        /// </summary>
-        [HttpGet("by-company/v2")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PagedResult<CompanyFriendshipResponse>>))]
-        public async Task<IActionResult> GetCompanyFriendshipByCompanyIDVersion2(
-            [FromQuery] Guid companyId,
-            [FromQuery] CompanyFriendshipSearchRequest request,
-            CancellationToken cancellationToken = default)
-        {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-            {
-                return Unauthorized(ResponseModel<string>.Error(
-                    StatusCodes.Status401Unauthorized,
-                    "Don't find token!"));
-            }
-
-            var result = await _companyFriendshipService
-                .GetCompanyFriendshipByCompanyIDVersion2(userId, companyId, request, cancellationToken);
-
-            return Ok(ResponseModel<PagedResult<CompanyFriendshipResponse>>.Ok(
-                data: result,
-                message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "company friendships by company ID (v2)")));
-        }
-
+       
 
     }
 }
