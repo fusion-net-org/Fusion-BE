@@ -15,5 +15,10 @@ namespace Fusion.Repository.IRepositories
         Task<List<CompanyFriendship>> GetCompanyFriendshipByCompanyID(Guid userID, Guid companyID);
         Task<PagedResult<CompanyFriendship>> GetCompanyFriendshipByCompanyIDVersion2(Guid userID, Guid companyID, CompanyFriendshipSearchRequest request, CancellationToken cancellationToken = default);
 
+        /*************************************************************Mobile**************************************************************************/
+
+        Task<PagedResult<CompanyFriendship>> GetCompanyFriendshipByCompanyID(Guid ownerUserID, Guid companyID, CompanyFriendshipSearchRequest request, CancellationToken token);
+
+        Task<object> GetCompanyFriendshipStatusSummary(Guid ownerUserId, Guid companyId);
     }
 }

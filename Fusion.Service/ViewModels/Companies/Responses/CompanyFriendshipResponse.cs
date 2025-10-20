@@ -21,4 +21,24 @@ namespace Fusion.Service.ViewModels.Companies.Responses
         public int? TotalProject { get; set; }
         public int? TotalMember { get; set; }
     }
+
+    public class PartnerResponse 
+    {
+        public Guid? CompanyId { get; set; }
+
+        public string? Name { get; set; }
+
+        public string? TaxCode { get; set; }
+
+        public string? OwnerUserName { get; set; }
+
+        public DateTime? RespondedAt { get; set; }
+
+        public DateTime CreatedAt { get; set; }
+
+
+        public int? TotalProject { get; set; }
+
+    }
+
 }

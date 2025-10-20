@@ -11,10 +11,10 @@ namespace Fusion.Service.IServices
 {
     public interface ICompanyMemberService
     {
-        Task<CompanyMemberResponse?> InviteMemberToCompany(string inviterEmail, Guid inviteeMemberId, Guid CompanyId, CancellationToken token = default);
+        Task<CompanyMemberResponse?> InviteMemberToCompany(string inviterEmail, string inviteeMemberMail, Guid CompanyId, CancellationToken token = default);
 
         Task<PagedResult<CompanyMemberResponse>> GetPagedCompanyMemberByCompanyIdAsync(Guid companyId, string mail, PagedRequest request, CancellationToken token = default);
 
-        Task<CompanyMemberResponse?> FiredMemberFromCompany(string terminatorEmail, Guid firedMemberId, Guid companyId, CancellationToken token = default);
+        Task<CompanyMemberResponse?> FiredMemberFromCompany(string terminatorEmail, string firedMemberMail, Guid companyId, CancellationToken token = default);
     }
 }
