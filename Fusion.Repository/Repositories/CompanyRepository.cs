@@ -35,6 +35,23 @@ namespace Fusion.Repository.Repositories
                 .Include(c => c.CompanyFriendshipCompanyBs)
                 .AsQueryable();
 
+            if (request.RelationShipEnums.HasValue)
+            {
+                switch (request.RelationShipEnums.Value)
+                {
+                    case ProjectSearchRelationShipEnums.Owner:
+                        // User là chủ sở hữu công ty
+                        query = query.Where(c => c.OwnerUser.Email == userMail);
+                        break;
+
+                    case ProjectSearchRelationShipEnums.Member:
+                        // User là chủ sở hữu hoặc thành viên công ty
+                        query = query.Where(c =>
+                            c.OwnerUser.Email == userMail ||
+                            c.CompanyMembers.Any(m => m.User.Email == userMail));
+                        break;
+                }
+            }
 
             // search
             if (!string.IsNullOrWhiteSpace(request.Keyword))

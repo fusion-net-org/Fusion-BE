@@ -11,11 +11,12 @@ namespace Fusion.Service.IServices
         Task<CompanyFriendshipResponse> InviteCompanyFriendship(Guid companyAId, Guid companyBId, Guid requesterId, string? note);
         Task<CompanyFriendshipResponse> CancelCompanyFriendship(long id, Guid currentUserId);
         Task<CompanyFriendshipResponse> AcceptCompanyFriendship(long id, Guid currentUserId);
-        Task<PagedResult<CompanyFriendshipResponse>> GetCompanyFriendshipByStatus(Guid ownerUserID, string status, PagedRequest request, CancellationToken cancellationToken = default);
+        Task<PagedResult<CompanyFriendshipResponse>> GetCompanyFriendshipByStatus(Guid ownerUserID, Guid companyID, string status, PagedRequest request, CancellationToken cancellationToken = default);
         Task<PagedResult<CompanyFriendshipResponse>> GetCompanyFriendshipByOwnerUserID(Guid ownerUserID, CompanyFriendshipSearchRequest request, CancellationToken cancellationToken = default);
-        Task<object> GetCompanyFriendshipStatusSummary(Guid ownerUserId);
+        Task<object> GetCompanyFriendshipStatusSummary(Guid ownerUserId, Guid? companyId = null);
 
         Task<List<CompanyFriendshipResponse>> GetCompanyFriendshipByCompanyID(Guid userID, Guid companyID);
+        Task<PagedResult<CompanyFriendshipResponse>> GetCompanyFriendshipByCompanyIDVersion2(Guid userID, Guid companyID, CompanyFriendshipSearchRequest request, CancellationToken cancellationToken = default);
 
         /*************************************************************Mobile**************************************************************************/
 

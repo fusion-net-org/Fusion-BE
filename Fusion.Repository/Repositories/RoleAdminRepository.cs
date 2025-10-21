@@ -32,6 +32,8 @@ namespace Fusion.Repository.Repositories
         Task<List<RoleDetailVm>> GetAllWithPermissionsAsync(Guid companyId, CancellationToken ct = default);
         Task UpdatePermissionsAsync(Guid companyId, int roleId, IEnumerable<int> functionIds, CancellationToken ct = default);
         Task<int> UpdateInfoAsync(Guid companyId, int roleId, UpdateRoleInfoDto dto, CancellationToken ct = default);
+        Task DeleteAsync(Guid companyId, int roleId, CancellationToken ct = default);
+
 
     }
 
@@ -250,8 +252,43 @@ namespace Fusion.Repository.Repositories
             return result;
         }
 
+        public async Task DeleteAsync(Guid companyId, int roleId, CancellationToken ct = default)
+        {
+            var role = await _db.Roles
+                .FirstOrDefaultAsync(r => r.Id == roleId && r.CompanyId == companyId, ct);
 
+            if (role == null)
+                throw new KeyNotFoundException("Role not found.");
 
+            using var tx = await _db.Database.BeginTransactionAsync(ct);
+            try
+            {
+                // 1) Xoá tất cả permission của role (trong công ty này)
+                var rp = await _db.RolePermissions
+                    .Where(rp => rp.RoleId == roleId
+                                 && (rp.CompanyId == companyId || rp.CompanyId == null))
+                    .ToListAsync(ct);
+                if (rp.Count > 0) _db.RolePermissions.RemoveRange(rp);
+
+                // 2) Gỡ role khỏi tất cả user đang gắn
+                //    (nếu bảng UserRoles có cột CompanyId thì thêm điều kiện companyId vào)
+                var ur = await _db.UserRoles
+                    .Where(ur => ur.RoleId == roleId )
+                    .ToListAsync(ct);
+                if (ur.Count > 0) _db.UserRoles.RemoveRange(ur);
+
+                // 3) Xoá role
+                _db.Roles.Remove(role);
+
+                await _db.SaveChangesAsync(ct);
+                await tx.CommitAsync(ct);
+            }
+            catch
+            {
+                await tx.RollbackAsync(ct);
+                throw;
+            }
+        }
 
 
         public Task<List<RoleDetailVm>> GetAllAsync(Guid companyId, CancellationToken ct = default)

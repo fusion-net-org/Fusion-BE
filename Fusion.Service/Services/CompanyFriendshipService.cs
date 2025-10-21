@@ -108,6 +108,26 @@ namespace Fusion.Service.Services
             return result;
         }
 
+        public async Task<PagedResult<CompanyFriendshipResponse>> GetCompanyFriendshipByCompanyIDVersion2(
+              Guid userID,
+              Guid companyID,
+              CompanyFriendshipSearchRequest request,
+              CancellationToken cancellationToken = default)
+        {
+            var pagedFriendships = await _companyFriendshipRepository
+                .GetCompanyFriendshipByCompanyIDVersion2(userID, companyID, request, cancellationToken);
+
+            var mappedItems = _mapper.Map<List<CompanyFriendshipResponse>>(pagedFriendships.Items);
+
+            return new PagedResult<CompanyFriendshipResponse>
+            {
+                Items = mappedItems,
+                TotalCount = pagedFriendships.TotalCount,
+                PageNumber = pagedFriendships.PageNumber,
+                PageSize = pagedFriendships.PageSize
+            };
+        }
+
 
         public async Task<PagedResult<CompanyFriendshipResponse>> GetCompanyFriendshipByOwnerUserID(Guid ownerUserID, CompanyFriendshipSearchRequest request, CancellationToken cancellationToken = default)
         {
@@ -124,9 +144,9 @@ namespace Fusion.Service.Services
             };
         }
 
-        public async Task<PagedResult<CompanyFriendshipResponse>> GetCompanyFriendshipByStatus(Guid ownerUserID, string status, PagedRequest request, CancellationToken cancellationToken = default)
+        public async Task<PagedResult<CompanyFriendshipResponse>> GetCompanyFriendshipByStatus(Guid ownerUserID, Guid companyID, string status, PagedRequest request, CancellationToken cancellationToken = default)
         {
-            var result = await _companyFriendshipRepository.GetCompanyFriendshipByStatus(ownerUserID,status,request,cancellationToken);
+            var result = await _companyFriendshipRepository.GetCompanyFriendshipByStatus(ownerUserID, companyID, status,request,cancellationToken);
 
             var mappedItems = _mapper.Map<List<CompanyFriendshipResponse>>(result.Items);
 
@@ -139,9 +159,9 @@ namespace Fusion.Service.Services
             };
         }
 
-        public async Task<object> GetCompanyFriendshipStatusSummary(Guid ownerUserId)
+        public async Task<object> GetCompanyFriendshipStatusSummary(Guid ownerUserId, Guid? companyId = null)
         {
-            return await _companyFriendshipRepository.GetCompanyFriendshipStatusSummary(ownerUserId);
+            return await _companyFriendshipRepository.GetCompanyFriendshipStatusSummary(ownerUserId, companyId);
         }
 
         public async Task<CompanyFriendshipResponse> InviteCompanyFriendship(Guid companyAId, Guid companyBId, Guid requesterId, string? note)

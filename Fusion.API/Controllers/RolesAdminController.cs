@@ -82,7 +82,17 @@ namespace Fusion.API.Controllers
                 message: ResponseMessageHelper.FormatMessage(ResponseMessages.SAVE_SUCCESS, "Cập nhật role thành công")
             ));
         }
+        [HttpDelete("{roleId:int}")]
+        public async Task<IActionResult> Delete(Guid companyId, int roleId, CancellationToken ct)
+        {
+            await _service.DeleteAsync(companyId, roleId, ct);
 
+            return Ok(ResponseModel<object>.Ok(
+                data: new { roleId },
+                message: ResponseMessageHelper.FormatMessage(
+                    ResponseMessages.DELETE_SUCCESS, "Xoá role thành công")
+            ));
+        }
 
     }
 
