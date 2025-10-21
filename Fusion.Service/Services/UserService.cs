@@ -186,19 +186,23 @@ public class UserService : IUserService
         return list;
     }
 
-    public async Task<Guid?> GetOwnerUserIdByCompanyIdAsync(Guid companyId, CancellationToken cancellationToken = default)
+    public async Task<SelfUserResponse?> GetOwnerUserByCompanyIdAsync(Guid companyId, CancellationToken cancellationToken = default)
     {
         if (companyId == Guid.Empty)
             throw CustomExceptionFactory.CreateBadRequestError(
                 ResponseMessages.INVALID_INPUT.FormatMessage("Company Id"));
 
-        var ownerId = await _userRepository.GetOwnerUserIdByCompanyIdAsync(companyId, cancellationToken);
+        // Lấy User thay vì chỉ OwnerId
+        var owner = await _userRepository.GetOwnerUserByCompanyIdAsync(companyId, cancellationToken);
 
-        if (ownerId == null)
+        if (owner == null)
             throw CustomExceptionFactory.CreateNotFoundError(
                 ResponseMessages.NOT_FOUND.FormatMessage("Owner User"));
 
-        return ownerId;
+        // Map sang SelfUserResponse
+        var response = _mapper.Map<SelfUserResponse>(owner);
+
+        return response;
     }
 
 }
