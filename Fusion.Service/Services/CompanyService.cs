@@ -122,6 +122,21 @@ namespace Fusion.Service.Services
                 PageNumber = result.PageNumber,
                 PageSize = result.PageSize
             };
+
+            foreach (var item in list.Items)
+            {
+                var company = result.Items.FirstOrDefault(c => c.Id == item.Id);
+                if (company == null) continue;
+
+                var friendships = company.CompanyFriendshipCompanyAs
+                    .Concat(company.CompanyFriendshipCompanyBs)
+                    .ToList();
+
+                item.TotalApproved = friendships.Count(f => f.Status == "Active");
+                item.TotalWaitForApprove = friendships.Count(f => f.Status == "Pending");
+                item.TotalPartners = friendships.Count();
+            }
+
             return list;
         }
         public async Task<PagedResult<CompanyResponseVersion2>> GetAllCompaniesAsync(
@@ -144,10 +159,10 @@ namespace Fusion.Service.Services
 
             if (currentCompanyA != null)
             {
-               var friendships = await _companyFriendshipRepository.GetCompanyFriendshipByCompanyID(currentUserId, currentCompanyA.Value);
+                var friendships = await _companyFriendshipRepository.GetCompanyFriendshipByCompanyID(currentUserId, currentCompanyA.Value);
 
                 partnerCompanyIds = friendships
-                     .Where(f => f.Status.ToLower() == "active") 
+                     .Where(f => f.Status.ToLower() == "active")
                      .Select(f => f.CompanyAId == currentCompanyA ? f.CompanyBId : f.CompanyAId)
                      .Where(id => id.HasValue)
                      .Select(id => id.Value)
@@ -173,7 +188,7 @@ namespace Fusion.Service.Services
                 throw CustomExceptionFactory.CreateNotFoundError(
                     ResponseMessages.NOT_FOUND.FormatMessage("Companies"));
 
-     
+
             var list = new PagedResult<CompanyResponseVersion2>
             {
 
@@ -193,6 +208,20 @@ namespace Fusion.Service.Services
                 PageSize = result.PageSize
             };
 
+            foreach (var item in list.Items)
+            {
+                var company = result.Items.FirstOrDefault(c => c.Id == item.Id);
+                if (company == null) continue;
+
+                var friendships = company.CompanyFriendshipCompanyAs
+                    .Concat(company.CompanyFriendshipCompanyBs)
+                    .ToList();
+
+                item.TotalApproved = friendships.Count(f => f.Status == "Active");
+                item.TotalWaitForApprove = friendships.Count(f => f.Status == "Pending");
+                item.TotalPartners = friendships.Count();
+            }
+
             return list;
         }
 
@@ -206,10 +235,21 @@ namespace Fusion.Service.Services
         public async Task<CompanyResponse> GetCompanyByIdAsync(Guid companyId, CancellationToken cancellationToken = default)
         {
             var company = await _companyRepository.GetCompanyByIdAsync(companyId);
+
+
+            var friendships = company.CompanyFriendshipCompanyAs
+                .Concat(company.CompanyFriendshipCompanyBs)
+                .ToList();
             if (company == null)
                 throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Company"));
 
-            return _mapper.Map<CompanyResponse>(company);
+            var result = _mapper.Map<CompanyResponse>(company);
+
+            result.TotalApproved = friendships.Count(f => f.Status == "Active");
+            result.TotalWaitForApprove = friendships.Count(f => f.Status == "Pending");
+            result.TotalPartners = friendships.Count();
+
+            return result;
         }
 
         public async Task<string> GetCompanyNameByGuid(Guid company)
