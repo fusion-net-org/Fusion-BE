@@ -12,7 +12,7 @@ namespace Fusion.Repository.Bases.Page.ProjectRequest
         public string? Keyword { get; set; } 
         public ProjectRequestStatusEnum? Status { get; set; }    
 
-        public ProjectRequestViewMode ViewMode { get; set; }
+        public ProjectRequestViewMode? ViewMode { get; set; }
 
         public DateRange<DateOnly>? StartDate { get; set; }
         public DateRange<DateOnly>? EndDate { get; set; }

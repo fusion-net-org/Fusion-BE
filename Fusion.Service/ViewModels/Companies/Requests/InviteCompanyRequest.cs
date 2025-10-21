@@ -9,6 +9,7 @@ namespace Fusion.Service.ViewModels.Companies.Requests
 {
     public class InviteCompanyRequest
     {
+        public Guid CompanyAID { get; set; }
         public Guid CompanyBID { get; set; }
 
         [DefaultValue(null)]

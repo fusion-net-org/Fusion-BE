@@ -12,6 +12,7 @@ using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.Companies.Responses;
 using Fusion.Service.ViewModels.Users.Requests;
 using Fusion.Service.ViewModels.Users.Responses;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
 
 namespace Fusion.Service.Services;
@@ -198,4 +199,42 @@ public class UserService : IUserService
 
         }
     }
+
+    public async Task<PagedResult<SelfUserResponse>> GetAllUsersAsync(PagedRequest request, CancellationToken cancellationToken = default)
+    {
+        if (request == null)
+            throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.INVALID_INPUT);
+
+        var result = await _userRepository.GetAllUsersAsync(request, cancellationToken);
+
+        if (result == null || result.Items.Count == 0)
+            throw CustomExceptionFactory.CreateNotFoundError(
+                ResponseMessages.NOT_FOUND.FormatMessage("Users"));
+
+        var list = new PagedResult<SelfUserResponse>
+        {
+            Items = _mapper.Map<List<SelfUserResponse>>(result.Items),
+            TotalCount = result.TotalCount,
+            PageNumber = result.PageNumber,
+            PageSize = result.PageSize
+        };
+
+        return list;
+    }
+
+    public async Task<Guid?> GetOwnerUserIdByCompanyIdAsync(Guid companyId, CancellationToken cancellationToken = default)
+    {
+        if (companyId == Guid.Empty)
+            throw CustomExceptionFactory.CreateBadRequestError(
+                ResponseMessages.INVALID_INPUT.FormatMessage("Company Id"));
+
+        var ownerId = await _userRepository.GetOwnerUserIdByCompanyIdAsync(companyId, cancellationToken);
+
+        if (ownerId == null)
+            throw CustomExceptionFactory.CreateNotFoundError(
+                ResponseMessages.NOT_FOUND.FormatMessage("Owner User"));
+
+        return ownerId;
+    }
+
 }

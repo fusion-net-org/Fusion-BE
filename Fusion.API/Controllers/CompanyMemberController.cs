@@ -41,7 +41,7 @@ namespace Fusion.API.Controllers
 
             var result = await _companyMemberService.InviteMemberToCompany(
                 inviterEmail,
-                request.InviteeMemberId,
+                request.InviteeMemberMail,
                 request.CompanyId,
                 token
             );
@@ -85,7 +85,7 @@ namespace Fusion.API.Controllers
 
             var result = await _companyMemberService.FiredMemberFromCompany(
                terminatorEmail,
-               request.FiredMemberId,
+               request.FiredMemberMail,
                request.CompanyId,
                token
             );

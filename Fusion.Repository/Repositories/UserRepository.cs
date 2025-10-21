@@ -70,6 +70,26 @@ namespace Fusion.Repository.Repositories
             return await query.ToPagedResultAsync(request, cancellationToken);
         }
 
+        public async Task<PagedResult<User>> GetAllUsersAsync(PagedRequest request, CancellationToken cancellationToken = default)
+        {
+            var query = _dbSet.AsQueryable();
+
+
+            return await query.ToPagedResultAsync(request, cancellationToken);
+        }
+
+        public async Task<Guid?> GetOwnerUserIdByCompanyIdAsync(Guid companyId, CancellationToken cancellationToken = default)
+        {
+            var company = await _context.Companies
+                .AsNoTracking()
+                .Where(c => c.Id == companyId)
+                .Select(c => c.OwnerUserId)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            return company;
+        }
+
+
         public async Task<User?> GetUserByResetTokenAsync(string resetToken, CancellationToken cancellationToken = default)
         {
             return await _context.Users.FirstOrDefaultAsync(u => u.ResetToken == resetToken, cancellationToken);

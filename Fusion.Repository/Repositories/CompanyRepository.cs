@@ -22,7 +22,50 @@ namespace Fusion.Repository.Repositories
         {
             _context = context;
         }
+        public async Task<PagedResult<Company>> GetAllCompaniesAsync(string userMail, CompanyPagedSearchRequestVersion2 request, Guid? selectedCompanyId, CancellationToken cancellationToken = default)
+        {
+       
 
+            var query = _dbSet
+                           .Include(x => x.CompanyMembers)
+                           .Include(x => x.OwnerUser)
+                           .AsQueryable();
+
+            if (request.RelationShipEnums.HasValue)
+            {
+                switch (request.RelationShipEnums.Value)
+                {
+                    case ProjectSearchRelationShipEnums.Owner:
+                        // User là chủ sở hữu công ty
+                        query = query.Where(c => c.OwnerUser.Email == userMail);
+                        break;
+
+                    case ProjectSearchRelationShipEnums.Member:
+                        // User là chủ sở hữu hoặc thành viên công ty
+                        query = query.Where(c =>
+                            c.OwnerUser.Email == userMail ||
+                            c.CompanyMembers.Any(m => m.User.Email == userMail));
+                        break;
+                }
+            }
+
+            // search
+            if (!string.IsNullOrWhiteSpace(request.Keyword))
+            {
+                var keyword = request.Keyword.Trim().ToLower();
+                query = query.Where(u =>
+                    (u.Name ?? "").ToLower().Contains(keyword) ||
+                    (u.TaxCode ?? "").ToLower().Contains(keyword));
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.OwnerUserName))
+            {
+                query = query.Where(u => (u.OwnerUser.UserName ?? "").Contains(request.OwnerUserName));
+            }
+
+
+            return await query.ToPagedResultAsync(request, cancellationToken);
+        }
         public async Task<PagedResult<Company>> GetPagedCompaniesAsync(string userMail, CompanyPagedSearchRequest request, CancellationToken cancellationToken = default)
         {
             var query = _dbSet
@@ -186,6 +229,6 @@ namespace Fusion.Repository.Repositories
             return await _context.Companies.Include(x => x.OwnerUser).SingleOrDefaultAsync(x => x.Id == Id);
         }
 
-
+      
     }
 }
