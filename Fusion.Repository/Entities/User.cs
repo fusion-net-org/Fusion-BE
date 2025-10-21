@@ -57,6 +57,9 @@ public partial class User
     [Column("resetTokenExpiry")]
     public DateTime? ResetTokenExpiry { get; set; }
 
+    [Column("confirm-token")]
+    public string? ConfirmToken { get; set; }
+
     [Column("create_at")]
     [Precision(3)]
     public DateTime CreateAt { get; set; }

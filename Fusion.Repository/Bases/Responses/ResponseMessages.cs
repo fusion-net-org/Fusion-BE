@@ -16,6 +16,7 @@ public static class ResponseMessages
     public const string BAD_REQUEST = "Bad request!";
     public const string ERROR = "Error!";
     public const string HIGHLIGHTED_EVENT_LIMIT = "The number of featured events has reached the limit.";
+    public const string CONFIRM_YOUR_ACCOUNT = "Please confirm your account via the link sent to your email.";
 
     // Success messages
     public const string CREATE_SUCCESS = "Created {0} successfully!";

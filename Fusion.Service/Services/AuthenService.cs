@@ -42,23 +42,44 @@ public class AuthenService : IAuthenService
         if (await _userRepository.CheckEmailExistAsync(request.Email, cancellationToken))
             throw CustomExceptionFactory.
                 CreateBadRequestError(ResponseMessages.EXISTED.FormatMessage("Email"));
+        try
+        {
 
-        //3. Map request to user entity
-        var user = _mapper.Map<User>(request);
+            //3. Map request to user entity
+            var user = _mapper.Map<User>(request);
 
-        //4.Create password hash and salt
-        using var hmac = new HMACSHA512();
-        var passwordSalt = hmac.Key;
-        var passwordHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(request.Password));
+            //4.Create password hash and salt
+            using var hmac = new HMACSHA512();
+            var passwordSalt = hmac.Key;
+            var passwordHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(request.Password));
 
-        user.PasswordSalt = passwordSalt;
-        user.PasswordHash = passwordHash;
-        user.CreateAt = DateTime.UtcNow.AddHours(7);
+            user.PasswordSalt = passwordSalt;
+            user.PasswordHash = passwordHash;
+            user.CreateAt = DateTime.UtcNow.AddHours(7);
 
-        await _unitOfWork.Repository<User>().AddAsync(user, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+            var confirmToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+            user.ResetToken = confirmToken;
+            user.Status = false;
 
-        return true;
+            await _unitOfWork.Repository<User>().AddAsync(user, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            var confirmLink = $"............/confirm-account?token={confirmToken}";
+
+            var email = new MailRequest
+            {
+                ToEmail = user.Email,
+                Subject = "Confirm your account",
+                Body = $"<p>Click the link below to confirm your account:</p><a href='{confirmLink}'>Confirm Account</a>"
+            };
+
+            await _mailService.SendEmailAsync(email);
+            return true;
+        }
+        catch
+        {
+            throw;
+        }
     }
     public async Task<LoginResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken)
     {
@@ -73,6 +94,11 @@ public class AuthenService : IAuthenService
             throw CustomExceptionFactory.
                 CreateBadRequestError(ResponseMessages.INVALID_INPUT.FormatMessage("Email incorrect!"));
 
+        if(user.Status == false)
+        {
+            throw CustomExceptionFactory.
+              CreateBadRequestError(ResponseMessages.CONFIRM_YOUR_ACCOUNT);
+        }
         //3. vertify password
         using var hmac = new HMACSHA512(user.PasswordSalt);
         var computedHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(request.Password));
@@ -194,4 +220,26 @@ public class AuthenService : IAuthenService
         return true;
     }
 
+    public async Task<bool> ConfirmAccountAsync(string token, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrEmpty(token))
+            throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.INVALID_INPUT.FormatMessage("Token is required"));
+
+        var user = await _userRepository.GetUserByResetTokenAsync(token, cancellationToken);
+
+        if (user == null)
+            throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("User or token invalid"));
+
+        // Check if already confirmed
+        if (user.Status)
+            throw CustomExceptionFactory.CreateBadRequestError("Account already confirmed");
+        
+        user.Status = true;
+        user.ResetToken = null;
+        user.UpdateAt = DateTime.UtcNow.AddHours(7);    
+
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return true;
+    }
 }

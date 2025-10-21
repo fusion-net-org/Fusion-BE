@@ -11,4 +11,6 @@ public interface IAuthenService
     Task<LoginResponse> GoogleLoginAsync(GoogleLoginRequest request, CancellationToken cancellationToken = default);
     Task<bool> RequestPasswordResetAsync(string email, CancellationToken cancellationToken);
     Task<bool> ResetPasswordAsync(string token, string newPassword, CancellationToken cancellationToken);
+    Task<bool> ConfirmAccountAsync(string token, CancellationToken cancellationToken);
+
 }
