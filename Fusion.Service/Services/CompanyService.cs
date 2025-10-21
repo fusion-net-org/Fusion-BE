@@ -1,4 +1,10 @@
-﻿using AutoMapper;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using AutoMapper;
 using FluentValidation;
 using FluentValidation.Results;
 using Fusion.Repository.Bases.Exceptions;
@@ -18,12 +24,8 @@ using Fusion.Service.ViewModels.Companies.Requests;
 using Fusion.Service.ViewModels.Companies.Responses;
 using Fusion.Service.ViewModels.Companies.Validators;
 using Fusion.Service.ViewModels.Users.Responses;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace Fusion.Service.Services
 {
@@ -35,9 +37,9 @@ namespace Fusion.Service.Services
         private readonly IUserRepository _userRepository;
         private readonly ICompanyMemberRepository _companyMemberRepository;
         private readonly IValidator<CompanyRequest> _validator;
-
+        private readonly ICompanyFriendshipRepository _companyFriendshipRepository;
         public CompanyService(IMapper mapper, ICompanyRepository companyRepository, ICloudinaryService cloudinaryService
-            , IUserRepository userRepository, ICompanyMemberRepository companyMemberRepository, IValidator<CompanyRequest> validator)
+            , IUserRepository userRepository, ICompanyMemberRepository companyMemberRepository, IValidator<CompanyRequest> validator, ICompanyFriendshipRepository companyFriendshipRepository)
         {
             _mapper = mapper;
             _companyRepository = companyRepository;
@@ -45,6 +47,7 @@ namespace Fusion.Service.Services
             _userRepository = userRepository;
             _companyMemberRepository = companyMemberRepository;
             _validator = validator;
+            _companyFriendshipRepository = companyFriendshipRepository;
         }
 
         public async Task<CompanyResponse> CreateCompanyAsync(CompanyRequest request, string Email, CancellationToken cancellationToken = default)
@@ -82,7 +85,7 @@ namespace Fusion.Service.Services
 
             var newCompany = await _companyRepository.AddCompanyAsync(user, image_company, avatar_company, company, cancellationToken);
 
-            if(newCompany == null)
+            if (newCompany == null)
                 throw CustomExceptionFactory.CreateInternalServerError(ResponseMessages.INTERNAL_SERVER_ERROR.FormatMessage("Add Company fail"));
 
             var newMember = await _companyMemberRepository.AddCompanyMemberAsync(new CompanyMember
@@ -100,7 +103,7 @@ namespace Fusion.Service.Services
 
         }
 
-        public async Task<PagedResult<CompanyResponse>> GetPagedCompaniesAsync(string userMail,CompanyPagedSearchRequest request, CancellationToken cancellationToken = default)
+        public async Task<PagedResult<CompanyResponse>> GetPagedCompaniesAsync(string userMail, CompanyPagedSearchRequest request, CancellationToken cancellationToken = default)
         {
             if (request == null)
                 throw CustomExceptionFactory.CreateBadRequestError(
@@ -121,6 +124,79 @@ namespace Fusion.Service.Services
             };
             return list;
         }
+        public async Task<PagedResult<CompanyResponseVersion2>> GetAllCompaniesAsync(
+    string userMail,
+    CompanyPagedSearchRequestVersion2 request,
+    Guid? selectedCompanyId = null,
+    CancellationToken cancellationToken = default)
+        {
+            var currentUser = await _userRepository.GetUserByEmailAsync(userMail);
+            if (currentUser == null)
+                throw CustomExceptionFactory.CreateUnauthorizedError("Don't find information user!");
+
+            var currentUserId = currentUser.Id;
+
+            Guid? currentCompanyA = selectedCompanyId ?? await _companyRepository.GetCompanyIdByUserId(currentUserId);
+
+            var partnerCompanyIds = new List<Guid>();
+
+            var pendingPartnerIds = new List<Guid>();
+
+            if (currentCompanyA != null)
+            {
+               var friendships = await _companyFriendshipRepository.GetCompanyFriendshipByCompanyID(currentUserId, currentCompanyA.Value);
+
+                partnerCompanyIds = friendships
+                     .Where(f => f.Status.ToLower() == "active") 
+                     .Select(f => f.CompanyAId == currentCompanyA ? f.CompanyBId : f.CompanyAId)
+                     .Where(id => id.HasValue)
+                     .Select(id => id.Value)
+                     .Distinct()
+                     .ToList();
+
+
+
+                pendingPartnerIds = friendships
+                    .Where(f => f.Status.ToLower() == "Pending".ToLower())
+                    .Select(f => f.CompanyAId == currentCompanyA ? f.CompanyBId : f.CompanyAId)
+                    .Where(id => id.HasValue)
+                    .Select(id => id.Value)
+                    .Distinct()
+                    .ToList();
+
+            }
+
+
+            var result = await _companyRepository.GetAllCompaniesAsync(userMail, request, selectedCompanyId, cancellationToken);
+
+            if (result == null)
+                throw CustomExceptionFactory.CreateNotFoundError(
+                    ResponseMessages.NOT_FOUND.FormatMessage("Companies"));
+
+     
+            var list = new PagedResult<CompanyResponseVersion2>
+            {
+
+                Items = result.Items.Select(company =>
+                {
+                    var item = _mapper.Map<CompanyResponseVersion2>(company);
+
+                    item.isOwner = company.OwnerUserId == currentUserId;
+                    item.isPartner = currentCompanyA != null && partnerCompanyIds.Contains(company.Id);
+                    item.isPendingAprovePartner = currentCompanyA != null && pendingPartnerIds.Contains(company.Id);
+
+                    return item;
+                }).ToList(),
+
+                TotalCount = result.TotalCount,
+                PageNumber = result.PageNumber,
+                PageSize = result.PageSize
+            };
+
+            return list;
+        }
+
+
 
         public async Task<Guid?> GetCompanyIdByUserId(Guid userId)
         {
@@ -229,5 +305,7 @@ namespace Fusion.Service.Services
             await _companyRepository.DeleteCompanyAsync(company, cancellationToken);
             return true;
         }
+
+
     }
 }
