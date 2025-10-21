@@ -141,6 +141,29 @@ namespace Fusion.Service.Services
             return list;
         }
 
+        public async Task<PagedResult<ProjectRequestResponse>> SearchProjectRequestAsync(ProjectRequestSearchRequest filter, Guid userCompanyId, Guid partnerId, CancellationToken cancellationToken = default)
+        {
+            if (filter == null)
+                throw CustomExceptionFactory.CreateBadRequestError(
+                    ResponseMessages.INVALID_INPUT);
+
+            var result = await _projectRequestRepository.SearchProjectRequestAsync(filter, userCompanyId, partnerId, cancellationToken);
+
+            if (result == null || result.Items.Count == 0)
+                throw CustomExceptionFactory.CreateNotFoundError(
+                    ResponseMessages.NOT_FOUND.FormatMessage("Project Request"));
+
+            var list = new PagedResult<ProjectRequestResponse>
+            {
+                Items = _mapper.Map<List<ProjectRequestResponse>>(result.Items),
+                TotalCount = result.TotalCount,
+                PageNumber = result.PageNumber,
+                PageSize = result.PageSize
+            };
+            return list;
+        }
+
+
         public async Task<ProjectRequestResponse> UpdateProjectRequestAsync(Guid id, UpdateProjectRequestRequest request, string vendorEmail, CancellationToken cancellationToken = default)
         {
             var projectRequest = _mapper.Map<ProjectRequest>(request);

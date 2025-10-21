@@ -250,6 +250,60 @@ namespace Fusion.Repository.Repositories
             );
         }
 
+        public async Task<PagedResult<ProjectRequest>> SearchProjectRequestAsync(ProjectRequestSearchRequest filter, Guid userCompanyId, Guid partnerId, CancellationToken cancellationToken = default)
+        {
+            var query = _context.ProjectRequests
+        .Include(x => x.RequesterCompany)
+        .Include(x => x.ExecutorCompany)
+        .Include(x => x.CreatedByNavigation)
+        .Include(x => x.Project)
+        .Where(x =>
+            (x.RequesterCompanyId == userCompanyId && x.ExecutorCompanyId == partnerId) ||
+            (x.RequesterCompanyId == partnerId && x.ExecutorCompanyId == userCompanyId))
+        .AsQueryable();
+
+            // ViewMode filter
+            if (filter.ViewMode.HasValue)
+            {
+                if (filter.ViewMode == ProjectRequestViewMode.AsRequester)
+                    query = query.Where(x => x.RequesterCompanyId == userCompanyId);
+                else if (filter.ViewMode == ProjectRequestViewMode.AsExecutor)
+                    query = query.Where(x => x.ExecutorCompanyId == userCompanyId);
+            }
+
+            // Keyword
+            if (!string.IsNullOrWhiteSpace(filter.Keyword))
+                query = query.Where(x => x.Name.Contains(filter.Keyword) || x.Code.Contains(filter.Keyword));
+
+            // Status
+            if (filter.Status.HasValue)
+                query = query.Where(x => x.Status == filter.Status.Value.ToString());
+
+            // StartDate
+            if (filter.StartDate?.From != null)
+                query = query.Where(x => x.StartDate >= filter.StartDate.From);
+            if (filter.StartDate?.To != null)
+                query = query.Where(x => x.StartDate <= filter.StartDate.To);
+
+            // EndDate
+            if (filter.EndDate?.From != null)
+                query = query.Where(x => x.EndDate >= filter.EndDate.From);
+            if (filter.EndDate?.To != null)
+                query = query.Where(x => x.EndDate <= filter.EndDate.To);
+
+            return await query.ToPagedResultAsync(
+                new PagedRequest
+                {
+                    PageNumber = filter.PageNumber,
+                    PageSize = filter.PageSize,
+                    SortColumn = filter.SortField,
+                    SortDescending = filter.SortDirection.ToLower() == "desc"
+                },
+                cancellationToken
+            );
+        }
+
+
         public async Task<ProjectRequest?> GetProjectRequestByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
             var projectRequest = await _context.ProjectRequests
