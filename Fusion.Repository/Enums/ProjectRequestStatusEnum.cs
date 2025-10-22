@@ -19,4 +19,13 @@ namespace Fusion.Repository.Enums
         AsRequester, // Công ty thuê
         AsExecutor   // Công ty được thuê
     }
+
+    public enum DateFilterType
+    {
+        CreatedDate, // lấy trên cái Ngày tạo
+        StartEndDate, // Lấy trên Start và End và Status 
+        ApprovedDate, //Lấy trên UpdateAt và Status Acceptd | Finished
+        RejectedDate, // Lấy trên UpdateAt và Status là Reject
+        PendingDate //Lấy trên CreateAt và Status Pending
+    }
 }
