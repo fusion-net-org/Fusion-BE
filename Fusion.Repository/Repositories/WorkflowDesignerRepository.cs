@@ -284,7 +284,6 @@ namespace Fusion.Repository.Repositories
                         WorkflowId = wf.Id,
                         FromStatusId = fromId,
                         ToStatusId = toId
-                        // DB does not have type/label/rule/roles fields
                     });
                 }
             }
