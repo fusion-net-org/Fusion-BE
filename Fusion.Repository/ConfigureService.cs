@@ -22,6 +22,7 @@ namespace Fusion.Repository
             // register repositories entites
             services.AddScoped<IUnitOfWork, UnitOfWork>();
 
+            services.AddScoped<IWorkflowDesignerRepository, WorkflowDesignerRepository>();
             //user
             services.AddScoped<IUserRepository, UserRepository>();
 

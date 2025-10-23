@@ -35,6 +35,9 @@ namespace Fusion.Repository.Repositories
                 .Include(c => c.CompanyFriendshipCompanyBs)
                 .AsQueryable();
 
+            query = query.Where(c => (bool)!c.IsDeleted);
+
+
             if (request.RelationShipEnums.HasValue)
             {
                 switch (request.RelationShipEnums.Value)
@@ -175,6 +178,9 @@ namespace Fusion.Repository.Repositories
             existed_company.TaxCode = update_company.TaxCode ?? existed_company.TaxCode;
             existed_company.Detail = update_company.Detail ?? existed_company.Detail;
             existed_company.Email = update_company.Email ?? existed_company.Email;
+            existed_company.PhoneNumber = update_company.PhoneNumber ?? existed_company.PhoneNumber;  
+            existed_company.Address = update_company.Address ?? existed_company.Address;           
+            existed_company.Website = update_company.Website ?? existed_company.Website;
             existed_company.ImageCompany = image_company;
             existed_company.AvatarCompany = avatar_company;
             existed_company.UpdateAt = DateTime.UtcNow.AddHours(7);
