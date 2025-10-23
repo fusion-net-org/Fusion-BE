@@ -211,6 +211,58 @@ namespace Fusion.Service.Services
 
             return _mapper.Map<CompanyFriendshipResponse>(entity);
         }
+        public async Task<CompanyFriendshipResponse?> GetCompanyFriendshipBetweenCompaniesAsync(
+            Guid companyAId,
+            Guid companyBId,
+            CancellationToken token = default)
+        {
+            var entity = await _companyFriendshipRepository.GetCompanyFriendshipBetweenCompaniesAsync(companyAId, companyBId, token);
+
+            if (entity == null)
+                return null;
+
+            var response = _mapper.Map<CompanyFriendshipResponse>(entity);
+
+            var totalProjectsA = entity.CompanyA?.ProjectCompanies?.Count ?? 0;
+            var totalProjectsB = entity.CompanyB?.ProjectCompanies?.Count ?? 0;
+            var totalMembersA = entity.CompanyA?.CompanyMembers?.Count ?? 0;
+            var totalMembersB = entity.CompanyB?.CompanyMembers?.Count ?? 0;
+
+            response.TotalProject = totalProjectsA + totalProjectsB;
+            response.TotalMember = totalMembersA + totalMembersB;
+
+            return response;
+        }
+
+        public async Task<CompanyFriendshipResponse> DeleteCompanyFriendship(long id, Guid currentUserId)
+        {
+            var entity = await _companyFriendshipRepository.DeleteCompanyFriendship(id, currentUserId);
+
+            var companyA = await _companyRepository.GetCompanyByIdAsync((Guid)entity.CompanyAId!);
+            var companyB = await _companyRepository.GetCompanyByIdAsync((Guid)entity.CompanyBId!);
+
+            await _mailService.SendEmailAsync(new MailRequest
+            {
+                ToEmail = companyA.Email,
+                Subject = "Đối tác đã hủy kết nối",
+                Body = $@"
+        <p>Xin thông báo, công ty <b>{companyB.Name}</b> đã hủy kết nối đối tác với công ty <b>{companyA.Name}</b>.</p>
+        <p>Nếu đây là nhầm lẫn, bạn có thể gửi lại lời mời hợp tác mới.</p>"
+            });
+
+            await _mailService.SendEmailAsync(new MailRequest
+            {
+                ToEmail = companyB.Email,
+                Subject = "Đã hủy kết nối đối tác",
+                Body = $@"
+        <p>Bạn vừa hủy kết nối đối tác với công ty <b>{companyA.Name}</b>.</p>
+        <p>Trạng thái mối quan hệ hiện là <b>Inactive</b>.</p>"
+            });
+
+            await _unitOfWork.SaveChangesAsync();
+
+            return _mapper.Map<CompanyFriendshipResponse>(entity);
+        }
 
         /*****************************************************************************************Mobile*****************************************************************/
         public async Task<PagedResult<PartnerResponse>> GetCompanyFriendshipByCompanyID(Guid ownerUserID, Guid companyID, CompanyFriendshipSearchRequest request, CancellationToken token)
@@ -253,5 +305,6 @@ namespace Fusion.Service.Services
             return await _companyFriendshipRepository.GetCompanyFriendshipStatusSummary(ownerUserId, companyId);
         }
 
+      
     }
 }

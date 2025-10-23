@@ -17,12 +17,16 @@ namespace Fusion.Service.IServices
 
         Task<List<CompanyFriendshipResponse>> GetCompanyFriendshipByCompanyID(Guid userID, Guid companyID);
         Task<PagedResult<CompanyFriendshipResponse>> GetCompanyFriendshipByCompanyIDVersion2(Guid userID, Guid companyID, CompanyFriendshipSearchRequest request, CancellationToken cancellationToken = default);
+        Task<CompanyFriendshipResponse?> GetCompanyFriendshipBetweenCompaniesAsync(Guid companyAId, Guid companyBId, CancellationToken token = default);
+
+        Task<CompanyFriendshipResponse> DeleteCompanyFriendship(long id, Guid currentUserId);
 
         /*************************************************************Mobile**************************************************************************/
 
         Task<PagedResult<PartnerResponse>> GetCompanyFriendshipByCompanyID(Guid ownerUserID, Guid companyID, CompanyFriendshipSearchRequest request, CancellationToken token);
 
         Task<object> GetCompanyFriendshipStatusSummary(Guid ownerUserId, Guid companyId);
+
 
     }
 }

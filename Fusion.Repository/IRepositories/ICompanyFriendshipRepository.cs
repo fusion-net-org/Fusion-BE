@@ -14,11 +14,14 @@ namespace Fusion.Repository.IRepositories
         Task<object> GetCompanyFriendshipStatusSummary(Guid ownerUserId, Guid? companyId = null);
         Task<List<CompanyFriendship>> GetCompanyFriendshipByCompanyID(Guid userID, Guid companyID);
         Task<PagedResult<CompanyFriendship>> GetCompanyFriendshipByCompanyIDVersion2(Guid userID, Guid companyID, CompanyFriendshipSearchRequest request, CancellationToken cancellationToken = default);
+        Task<CompanyFriendship> DeleteCompanyFriendship(long id, Guid currentUserId);
 
         /*************************************************************Mobile**************************************************************************/
 
         Task<PagedResult<CompanyFriendship>> GetCompanyFriendshipByCompanyID(Guid ownerUserID, Guid companyID, CompanyFriendshipSearchRequest request, CancellationToken token);
 
         Task<object> GetCompanyFriendshipStatusSummary(Guid ownerUserId, Guid companyId);
+        Task<CompanyFriendship?> GetCompanyFriendshipBetweenCompaniesAsync(Guid companyAId, Guid companyBId, CancellationToken token = default);
+
     }
 }
