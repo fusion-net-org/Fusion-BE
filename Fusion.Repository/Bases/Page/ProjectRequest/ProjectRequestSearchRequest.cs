@@ -14,11 +14,8 @@ namespace Fusion.Repository.Bases.Page.ProjectRequest
 
         public ProjectRequestViewMode? ViewMode { get; set; }
 
-        public DateRange<DateOnly>? StartDate { get; set; }
-        public DateRange<DateOnly>? EndDate { get; set; }
-
-        public string SortField { get; set; } = "CreateAt";   
-        public string SortDirection { get; set; } = "desc";
+        public DateFilterType? DateFilterType { get; set; }
+        public DateRange<DateOnly>? DateRange { get; set; }
 
     }
 

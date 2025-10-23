@@ -4,6 +4,7 @@ namespace Fusion.Service.ViewModels.Users.Responses;
 
 public record SelfUserResponse
 {
+    public string Id { get; set; }
     public string UserName { get; init; }
     public string? Email { get; init; }
     public string? Phone { get; init; }

@@ -24,12 +24,19 @@ namespace Fusion.Repository.Repositories
         }
         public async Task<PagedResult<Company>> GetAllCompaniesAsync(string userMail, CompanyPagedSearchRequestVersion2 request, Guid? selectedCompanyId, CancellationToken cancellationToken = default)
         {
-       
+
 
             var query = _dbSet
-                           .Include(x => x.CompanyMembers)
-                           .Include(x => x.OwnerUser)
-                           .AsQueryable();
+                .Include(x => x.CompanyMembers)
+                .Include(x => x.OwnerUser)
+                .Include(x => x.ProjectCompanies)
+                .Include(c => c.ProjectCompanyHireds)
+                .Include(c => c.CompanyFriendshipCompanyAs)
+                .Include(c => c.CompanyFriendshipCompanyBs)
+                .AsQueryable();
+
+            query = query.Where(c => (bool)!c.IsDeleted);
+
 
             if (request.RelationShipEnums.HasValue)
             {
@@ -73,6 +80,8 @@ namespace Fusion.Repository.Repositories
                 .Include(x => x.OwnerUser)
                 .Include(x => x.ProjectCompanies)
                 .Include(c => c.ProjectCompanyHireds)
+                .Include(c => c.CompanyFriendshipCompanyAs)
+                .Include(c => c.CompanyFriendshipCompanyBs)
                 .AsQueryable();
 
             if (request.RelationShipEnums.HasValue)
@@ -169,6 +178,9 @@ namespace Fusion.Repository.Repositories
             existed_company.TaxCode = update_company.TaxCode ?? existed_company.TaxCode;
             existed_company.Detail = update_company.Detail ?? existed_company.Detail;
             existed_company.Email = update_company.Email ?? existed_company.Email;
+            existed_company.PhoneNumber = update_company.PhoneNumber ?? existed_company.PhoneNumber;  
+            existed_company.Address = update_company.Address ?? existed_company.Address;           
+            existed_company.Website = update_company.Website ?? existed_company.Website;
             existed_company.ImageCompany = image_company;
             existed_company.AvatarCompany = avatar_company;
             existed_company.UpdateAt = DateTime.UtcNow.AddHours(7);
@@ -190,6 +202,12 @@ namespace Fusion.Repository.Repositories
         public async Task<Company?> GetCompanyByTaxCode(string taxcode)
         {
             var company = await _context.Companies
+                .Include(x => x.CompanyMembers)
+                .Include(x => x.OwnerUser)
+                .Include(x => x.ProjectCompanies)
+                .Include(c => c.ProjectCompanyHireds)
+                .Include(c => c.CompanyFriendshipCompanyAs)
+                .Include(c => c.CompanyFriendshipCompanyBs)
                 .SingleOrDefaultAsync(x => x.TaxCode == taxcode);
 
             return company;
@@ -198,6 +216,12 @@ namespace Fusion.Repository.Repositories
         public async Task<Company?> GetCompanyByEmail(string email)
         {
             var company = await _context.Companies
+                .Include(x => x.CompanyMembers)
+                .Include(x => x.OwnerUser)
+                .Include(x => x.ProjectCompanies)
+                .Include(c => c.ProjectCompanyHireds)
+                .Include(c => c.CompanyFriendshipCompanyAs)
+                .Include(c => c.CompanyFriendshipCompanyBs)
                 .SingleOrDefaultAsync(x => x.Email == email);
 
             return company;
@@ -207,6 +231,12 @@ namespace Fusion.Repository.Repositories
         public async Task<Guid?> GetCompanyIdByUserId(Guid userId)
         {
             var company = await _context.Companies
+                .Include(x => x.CompanyMembers)
+                .Include(x => x.OwnerUser)
+                .Include(x => x.ProjectCompanies)
+                .Include(c => c.ProjectCompanyHireds)
+                .Include(c => c.CompanyFriendshipCompanyAs)
+                .Include(c => c.CompanyFriendshipCompanyBs)
                 .FirstOrDefaultAsync(x => x.OwnerUserId == userId);
 
             return company?.Id;
@@ -226,9 +256,16 @@ namespace Fusion.Repository.Repositories
 
         public async Task<Company?> GetCompanyByIdAsync(Guid Id)
         {
-            return await _context.Companies.Include(x => x.OwnerUser).SingleOrDefaultAsync(x => x.Id == Id);
+            return await _context.Companies
+                .Include(x => x.CompanyMembers)
+                .Include(x => x.OwnerUser)
+                .Include(x => x.ProjectCompanies)
+                .Include(c => c.ProjectCompanyHireds)
+                .Include(c => c.CompanyFriendshipCompanyAs)
+                .Include(c => c.CompanyFriendshipCompanyBs)
+                .SingleOrDefaultAsync(x => x.Id == Id);
         }
 
-      
+
     }
 }

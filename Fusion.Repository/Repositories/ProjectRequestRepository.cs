@@ -226,29 +226,136 @@ namespace Fusion.Repository.Repositories
             if (filter.Status.HasValue)
                 query = query.Where(x => x.Status == filter.Status.Value.ToString());
 
-            // StartDate
-            if (filter.StartDate?.From != null)
-                query = query.Where(x => x.StartDate >= filter.StartDate.From);
-            if (filter.StartDate?.To != null)
-                query = query.Where(x => x.StartDate <= filter.StartDate.To);
+            if (filter.DateRange?.From != null && filter.DateRange?.To != null)
+            {
+                var from = filter.DateRange.From.Value.ToDateTime(TimeOnly.MinValue);
+                var to = filter.DateRange.To.Value.ToDateTime(TimeOnly.MaxValue);
 
-            // EndDate
-            if (filter.EndDate?.From != null)
-                query = query.Where(x => x.EndDate >= filter.EndDate.From);
-            if (filter.EndDate?.To != null)
-                query = query.Where(x => x.EndDate <= filter.EndDate.To);
+                query = filter.DateFilterType switch
+                {
+                    DateFilterType.CreatedDate =>
+                        query.Where(x =>
+                            x.CreateAt >= from &&
+                            x.CreateAt <= to
+                        ),
+
+                    DateFilterType.StartEndDate =>
+                        query.Where(x =>
+                            x.StartDate <= filter.DateRange.To &&
+                            x.EndDate >= filter.DateRange.From
+                        ),
+
+                    DateFilterType.ApprovedDate =>
+                        query.Where(x =>
+                            x.UpdateAt != null &&
+                            x.UpdateAt >= from &&
+                            x.UpdateAt <= to &&
+                            x.Status == ProjectRequestStatusEnum.Accepted.ToString()
+                        ),
+
+                    DateFilterType.RejectedDate =>
+                        query.Where(x =>
+                            x.UpdateAt != null &&
+                            x.UpdateAt >= from &&
+                            x.UpdateAt <= to &&
+                            x.Status == ProjectRequestStatusEnum.Rejected.ToString()
+                        ),
+                    DateFilterType.PendingDate =>
+                        query.Where(x =>
+                            x.CreateAt != null &&
+                            x.CreateAt >= from &&
+                            x.CreateAt <= to &&
+                            x.Status == ProjectRequestStatusEnum.Pending.ToString()
+                        ),
+
+                    _ => query
+                }; 
+            }
 
             return await query.ToPagedResultAsync(
-                new PagedRequest
-                {
-                    PageNumber = filter.PageNumber,
-                    PageSize = filter.PageSize,
-                    SortColumn = filter.SortField,
-                    SortDescending = filter.SortDirection.ToLower() == "desc"
-                },
+                filter,
                 cancellationToken
-            );
+                );
         }
+
+        public async Task<PagedResult<ProjectRequest>> SearchProjectRequestAsync(ProjectRequestSearchRequest filter, Guid userCompanyId, Guid partnerId, CancellationToken cancellationToken = default)
+        {
+            var query = _context.ProjectRequests
+        .Include(x => x.RequesterCompany)
+        .Include(x => x.ExecutorCompany)
+        .Include(x => x.CreatedByNavigation)
+        .Include(x => x.Project)
+        .Where(x =>
+            (x.RequesterCompanyId == userCompanyId && x.ExecutorCompanyId == partnerId) ||
+            (x.RequesterCompanyId == partnerId && x.ExecutorCompanyId == userCompanyId))
+        .AsQueryable();
+
+            // ViewMode filter
+            if (filter.ViewMode.HasValue)
+            {
+                if (filter.ViewMode == ProjectRequestViewMode.AsRequester)
+                    query = query.Where(x => x.RequesterCompanyId == userCompanyId);
+                else if (filter.ViewMode == ProjectRequestViewMode.AsExecutor)
+                    query = query.Where(x => x.ExecutorCompanyId == userCompanyId);
+            }
+
+            // Keyword
+            if (!string.IsNullOrWhiteSpace(filter.Keyword))
+                query = query.Where(x => x.Name.Contains(filter.Keyword) || x.Code.Contains(filter.Keyword));
+
+            // Status
+            if (filter.Status.HasValue)
+                query = query.Where(x => x.Status == filter.Status.Value.ToString());
+
+            if (filter.DateRange?.From != null && filter.DateRange?.To != null)
+            {
+                var from = filter.DateRange.From.Value.ToDateTime(TimeOnly.MinValue);
+                var to = filter.DateRange.To.Value.ToDateTime(TimeOnly.MaxValue);
+
+                query = filter.DateFilterType switch
+                {
+                    DateFilterType.CreatedDate =>
+                        query.Where(x =>
+                            x.CreateAt >= from &&
+                            x.CreateAt <= to
+                        ),
+
+                    DateFilterType.StartEndDate =>
+                        query.Where(x =>
+                            x.StartDate <= filter.DateRange.To &&
+                            x.EndDate >= filter.DateRange.From),
+
+                    DateFilterType.ApprovedDate =>
+                        query.Where(x =>
+                            x.UpdateAt != null &&
+                            x.UpdateAt >= from &&
+                            x.UpdateAt <= to &&
+                            x.Status == ProjectRequestStatusEnum.Accepted.ToString()
+                        ),
+
+                    DateFilterType.RejectedDate =>
+                        query.Where(x =>
+                            x.UpdateAt != null &&
+                            x.UpdateAt >= from &&
+                            x.UpdateAt <= to &&
+                            x.Status == ProjectRequestStatusEnum.Rejected.ToString()
+                        ),
+                    DateFilterType.PendingDate =>
+                        query.Where(x =>
+                            x.CreateAt != null &&
+                            x.CreateAt >= from &&
+                            x.CreateAt <= to &&
+                            x.Status == ProjectRequestStatusEnum.Pending.ToString()
+                        ),
+
+                    _ => query
+                };
+
+            }
+            return await query.ToPagedResultAsync(filter, cancellationToken);
+
+        }
+
 
         public async Task<ProjectRequest?> GetProjectRequestByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
@@ -301,38 +408,6 @@ namespace Fusion.Repository.Repositories
             //Cập nhật trạng thái
             request.Status = ProjectRequestStatusEnum.Accepted.ToString();
             request.UpdateAt = DateTime.UtcNow.AddHours(7);
-
-            var project = new Project
-            {
-                Id = Guid.NewGuid(),
-                ProjectRequestId = request.Id,
-                Name = request.Name,
-                Description = request.Description,
-                StartDate = request.StartDate,
-                EndDate = request.EndDate,
-                CreateAt = DateTime.UtcNow.AddHours(7),
-                CompanyHiredId = request.ExecutorCompanyId,
-                CompanyId = request.RequesterCompanyId,
-                IsHired = true,
-                Status = "Open",
-                CreatedBy = executor.Id,
-                Code = request.Code
-            };
-
-            await _context.Projects.AddAsync(project, cancellationToken);
-
-            request.ConvertedProjectId = project.Id;
-
-            var projectMember = new ProjectMember  // executor là nguoi thuc hien
-            {
-                ProjectId = project.Id,
-                UserId = executor.Id,  
-                IsPartner = false,
-                IsViewAll = true,
-                JoinedAt = DateTime.UtcNow.AddHours(7),
-            };
-
-            await _context.ProjectMembers.AddAsync(projectMember, cancellationToken);
 
             await _context.SaveChangesAsync(cancellationToken);
 

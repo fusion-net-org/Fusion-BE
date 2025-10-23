@@ -78,15 +78,22 @@ namespace Fusion.Repository.Repositories
             return await query.ToPagedResultAsync(request, cancellationToken);
         }
 
-        public async Task<Guid?> GetOwnerUserIdByCompanyIdAsync(Guid companyId, CancellationToken cancellationToken = default)
+        public async Task<User?> GetOwnerUserByCompanyIdAsync(Guid companyId, CancellationToken cancellationToken = default)
         {
-            var company = await _context.Companies
+            var ownerUserId = await _context.Companies
                 .AsNoTracking()
                 .Where(c => c.Id == companyId)
                 .Select(c => c.OwnerUserId)
                 .FirstOrDefaultAsync(cancellationToken);
 
-            return company;
+            if (ownerUserId == null)
+                return null;
+
+            var user = await _context.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Id == ownerUserId, cancellationToken);
+
+            return user;
         }
 
     }

@@ -19,6 +19,9 @@ namespace Fusion.Service.IServices
 
         Task<PagedResult<ProjectRequestResponse>> SearchProjectRequestAsync(ProjectRequestSearchRequest filter, Guid userCompanyId, CancellationToken cancellationToken = default);
 
+        Task<PagedResult<ProjectRequestResponse>> SearchProjectRequestAsync(ProjectRequestSearchRequest filter, Guid userCompanyId, Guid partnerId, CancellationToken cancellationToken = default);
+
+
         Task<ProjectRequestResponse?> GetProjectRequestByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
         Task<bool> DeleteProjectRequestAsync(Guid id, CancellationToken cancellationToken = default);

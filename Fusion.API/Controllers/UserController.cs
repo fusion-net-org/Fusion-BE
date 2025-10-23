@@ -83,14 +83,15 @@ namespace Fusion.API.Controllers
         }
 
         [HttpGet("owner-user/{companyId:guid}")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<Guid>))]
-        public async Task<IActionResult> GetOwnerUserIdByCompanyId(Guid companyId, CancellationToken cancellationToken)
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<SelfUserResponse>))]
+        public async Task<IActionResult> GetOwnerUserByCompanyId(Guid companyId, CancellationToken cancellationToken)
         {
-            var ownerId = await _userService.GetOwnerUserIdByCompanyIdAsync(companyId, cancellationToken);
-            return Ok(ResponseModel<Guid>.Ok(
-                data: ownerId.Value,
-                message: "Get owner user id by company successfully"));
+            var owner = await _userService.GetOwnerUserByCompanyIdAsync(companyId, cancellationToken);
+            return Ok(ResponseModel<SelfUserResponse>.Ok(
+                data: owner,
+                message: "Get owner user by company successfully"));
         }
+
 
     }
 }
