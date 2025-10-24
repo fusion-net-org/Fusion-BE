@@ -23,7 +23,7 @@ namespace Fusion.Service
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<ICloudinaryService, CloudinaryService>();
             services.AddScoped<IJwtService, JwtService>();
-
+            services.AddScoped<IWorkflowDesignerService, WorkflowDesignerService>();
             // register other services
             services.AddScoped<ICurrentService, CurrentService>();
             services.AddScoped<ICloudinaryService, CloudinaryService>();

@@ -42,7 +42,7 @@ namespace Fusion.Repository.Repositories
                 .SingleOrDefaultAsync(cm => cm.Id == id, token);
         }
  
-        public async Task<CompanyMember?> InviteMemberToCompany(string inviterEmail, Guid inviteeMemberId, Guid companyId, CancellationToken token)
+        public async Task<CompanyMember?> InviteMemberToCompany(string inviterEmail, string inviteeMemberMail, Guid companyId, CancellationToken token)
         {
             var owner_user = await _context.Users.SingleOrDefaultAsync(x => x.Email == inviterEmail, token);
             if (owner_user == null)
@@ -59,13 +59,13 @@ namespace Fusion.Repository.Repositories
                 throw CustomExceptionFactory.CreateNotFoundError(
                     ResponseMessages.INVALID_INPUT.FormatMessage($"{company.Name} does not belong to {owner_user.UserName}"));
 
-            var member = await _context.Users.FindAsync(inviteeMemberId, token);
+            var member = await _context.Users.SingleOrDefaultAsync(u => u.Email == inviteeMemberMail, token);
             if (member == null)
                 throw CustomExceptionFactory.
                     CreateNotFoundError(ResponseMessages.INVALID_INPUT.FormatMessage("Member does not register to the system!"));
 
             var alreadyInCompany = await _context.CompanyMembers
-                  .AnyAsync(cm => cm.CompanyId == companyId && cm.UserId == inviteeMemberId, token);
+                  .AnyAsync(cm => cm.CompanyId == companyId && cm.UserId == member.Id, token);
 
             if (alreadyInCompany)
                 throw CustomExceptionFactory.CreateBadRequestError(
@@ -74,7 +74,7 @@ namespace Fusion.Repository.Repositories
             var companyMember = new CompanyMember
             {
                 CompanyId = companyId,
-                UserId = inviteeMemberId,
+                UserId = member.Id,
                 Status = true,
                 JoinedAt = DateTime.UtcNow.AddHours(7),
             };
@@ -111,7 +111,7 @@ namespace Fusion.Repository.Repositories
             return await query.ToPagedResultAsync(request, token);
         }
 
-        public async Task<CompanyMember?> FiredMemberFromCompany(string terminatorEmail, Guid firedMemberId, Guid companyId, CancellationToken token)
+        public async Task<CompanyMember?> FiredMemberFromCompany(string terminatorEmail, string firedMemberMail, Guid companyId, CancellationToken token)
         {
             var company = await _context.Companies
               .Include(c => c.OwnerUser)
@@ -121,10 +121,10 @@ namespace Fusion.Repository.Repositories
                     ResponseMessages.NOT_FOUND.FormatMessage($"{terminatorEmail}"));
 
 
-            var companyMember = await _context.CompanyMembers
+            var companyMember = await _context.CompanyMembers.Include(cm => cm.User)
                 .SingleOrDefaultAsync(cm => 
                     cm.CompanyId == companyId
-                    && cm.UserId == firedMemberId, token);
+                    && cm.User.Email == firedMemberMail, token);
 
             if (companyMember == null)
                 throw CustomExceptionFactory.CreateNotFoundError(

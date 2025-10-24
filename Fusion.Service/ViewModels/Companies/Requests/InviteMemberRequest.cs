@@ -8,7 +8,7 @@ namespace Fusion.Service.ViewModels.Companies.Requests
 {
     public class InviteMemberRequest
     {
-        public Guid InviteeMemberId { get; set; }
+        public string InviteeMemberMail { get; set; }
         public Guid CompanyId { get; set; }
     }
 }

@@ -146,5 +146,15 @@ namespace Fusion.API.Controllers
                 data: result,
                 message: "Project request rejected successfully"));
         }
+
+        [HttpGet("companies/{companyId:guid}/partners/{partnerId:guid}")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PagedResult<ProjectRequestResponse>>))]
+        public async Task<IActionResult> GetProjectRequestPartnerPaged(Guid companyId, Guid partnerId, [FromQuery] ProjectRequestSearchRequest request, CancellationToken cancellationToken)
+        {
+            var result = await _projectRequestService.SearchProjectRequestAsync(request, companyId, partnerId, cancellationToken);
+            return Ok(ResponseModel<PagedResult<ProjectRequestResponse>>.Ok(
+                data: result,
+                message: "Get paged project request successfully"));
+        }
     }
 }

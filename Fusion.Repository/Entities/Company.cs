@@ -23,6 +23,18 @@ public partial class Company
     [StringLength(50)]
     public string? TaxCode { get; set; }
 
+    [Column("phone_number")]
+    [StringLength(50)]
+    public string? PhoneNumber { get; set; }
+
+    [Column("address")]
+    [StringLength(255)]
+    public string? Address { get; set; }
+
+    [Column("website")]
+    [StringLength(255)]
+    public string? Website { get; set; }
+
     [Column("email")]
     [StringLength(200)]
     public string? Email { get; set; }

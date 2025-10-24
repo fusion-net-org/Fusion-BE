@@ -8,7 +8,7 @@ namespace Fusion.Service.ViewModels.Companies.Requests
 {
     public class FiredMemberRequest
     {
-        public Guid FiredMemberId { get; set; }
+        public string FiredMemberMail { get; set; }
         public Guid CompanyId { get; set; }
     }
 }
