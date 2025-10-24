@@ -106,7 +106,8 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.MemberAvatar, opt => opt.MapFrom(src => src.User!.Avatar))
             .ForMember(dest => dest.IsOwner, opt => opt.MapFrom(src =>
                                 src.Company != null && src.User != null && src.Company.OwnerUser != null &&
-                                src.Company.OwnerUser.UserName == src.User.UserName));
+                                src.Company.OwnerUser.UserName == src.User.UserName))
+            .ForMember(dest => dest.NumberCompanyJoin, opt => opt.MapFrom(src => src.User.CompanyMembers.Count(cm => cm.IsDeleted == false)));
 
         //----------------------------     entity: Ticket ---------------------------------------------
         CreateMap<Ticket, TicketResponse>().ReverseMap();

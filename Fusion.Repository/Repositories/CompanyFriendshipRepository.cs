@@ -366,6 +366,31 @@ namespace Fusion.Repository.Repositories
                 Total = totalPending + totalActive + totalInactive
             };
         }
+        public async Task<CompanyFriendship> DeleteCompanyFriendship(long id, Guid currentUserId)
+        {
+            var friendship = await _context.CompanyFriendships
+                .Include(f => f.CompanyA)
+                .Include(f => f.CompanyB)
+                .FirstOrDefaultAsync(f => f.Id == id);
+
+            if (friendship == null)
+                throw new CustomException(StatusCodes.Status404NotFound, "FRIENDSHIP_NOT_FOUND", "Not Found Friendship");
+
+            bool isOwnerOfA = friendship.CompanyA?.OwnerUserId == currentUserId;
+            bool isOwnerOfB = friendship.CompanyB?.OwnerUserId == currentUserId;
+
+            if (!isOwnerOfA && !isOwnerOfB)
+                throw new CustomException(StatusCodes.Status403Forbidden, "FORBIDDEN", "Only company owners can delete this friendship.");
+
+            friendship.Status = "Inactive";
+            friendship.UpdatedAt = DateTime.UtcNow.AddHours(7);
+            friendship.RespondedAt = DateTime.UtcNow.AddHours(7);
+
+            _context.CompanyFriendships.Update(friendship);
+            await _context.SaveChangesAsync();
+
+            return friendship;
+        }
 
 
         /********************************************************************Mobile****************************************************************************/
@@ -461,5 +486,25 @@ namespace Fusion.Repository.Repositories
             };
         }
 
+        public async Task<CompanyFriendship?> GetCompanyFriendshipBetweenCompaniesAsync(
+            Guid companyAId,
+            Guid companyBId,
+            CancellationToken token = default)
+        {
+            return await _context.CompanyFriendships
+                .Include(cf => cf.CompanyA)
+                    .ThenInclude(c => c.CompanyMembers)
+                .Include(cf => cf.CompanyB)
+                    .ThenInclude(c => c.CompanyMembers)
+                .Include(cf => cf.CompanyA)
+                    .ThenInclude(c => c.ProjectCompanies)
+                .Include(cf => cf.CompanyB)
+                    .ThenInclude(c => c.ProjectCompanies)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x =>
+                    (x.CompanyAId == companyAId && x.CompanyBId == companyBId) ||
+                    (x.CompanyAId == companyBId && x.CompanyBId == companyAId),
+                    token);
+        }
     }
 }

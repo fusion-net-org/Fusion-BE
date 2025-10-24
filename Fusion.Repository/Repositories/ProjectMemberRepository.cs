@@ -21,12 +21,26 @@ namespace Fusion.Repository.Repositories
 
         public async Task<int> GetTotalProjectsForMemberInCompanyAsync(Guid memberId, Guid companyId, CancellationToken cancellationToken = default)
         {
-            var totalProjects = await _context.ProjectMembers.Where(pm => 
-                pm.UserId == memberId 
-                && ((pm.Project!.IsHired && pm.Project.CompanyHiredId == companyId) 
+            var totalProjects = await _context.ProjectMembers
+                .Include(x => x.Project)
+                .Where(pm =>
+                pm.UserId == memberId
+                && ((pm.Project!.IsHired && pm.Project.CompanyHiredId == companyId)
                 || (!pm.Project.IsHired && pm.Project.CompanyId == companyId)))
-                .Select(pm => pm.ProjectId).Distinct().CountAsync(cancellationToken); 
-            
+                .Select(pm => pm.ProjectId).Distinct().CountAsync(cancellationToken);
+
+            return totalProjects;
+        }
+
+        public async Task<int> GetTotalProjectsForMemberAsync(Guid memberId, CancellationToken cancellationToken = default)
+        {
+            var totalProjects = await _context.ProjectMembers
+                .Include(x => x.Project)
+                .Where(pm => pm.UserId == memberId)
+                .Select(pm => pm.ProjectId)
+                .Distinct()
+                .CountAsync(cancellationToken);
+
             return totalProjects;
         }
 

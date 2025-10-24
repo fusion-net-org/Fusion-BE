@@ -212,6 +212,60 @@ namespace Fusion.API.Controllers
                 message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "company friendships by company ID (v2)")));
         }
 
+        /// <summary>
+        /// Get friendship status between two companies
+        /// </summary>
+        [HttpGet("between/{companyAId:guid}/{companyBId:guid}")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<CompanyFriendshipResponse>))]
+        public async Task<IActionResult> GetFriendshipBetweenCompanies(Guid companyAId, Guid companyBId, CancellationToken token = default)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(ResponseModel<string>.Error(
+                    StatusCodes.Status401Unauthorized,
+                    "Don't find token!"));
+            }
+
+
+            var result = await _companyFriendshipService.GetCompanyFriendshipBetweenCompaniesAsync(companyAId, companyBId, token);
+
+            if (result == null)
+            {
+                return NotFound(ResponseModel<string>.Error(
+                    StatusCodes.Status404NotFound,
+                    $"No friendship found between CompanyA ({companyAId}) and CompanyB ({companyBId})."));
+            }
+
+            return Ok(ResponseModel<CompanyFriendshipResponse>.Ok(
+                data: result,
+                message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "company friendship between companies")));
+        }
+
+        /// <summary>
+        /// Delete (Unfriend) company partnership
+        /// </summary>
+        [HttpDelete("delete/{id:long}")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<CompanyFriendshipResponse>))]
+        public async Task<IActionResult> DeleteCompanyFriendship(long id)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(ResponseModel<string>.Error(
+                    StatusCodes.Status401Unauthorized,
+                    "Don't find token!"));
+            }
+
+            var result = await _companyFriendshipService.DeleteCompanyFriendship(id, userId);
+
+            return Ok(ResponseModel<CompanyFriendshipResponse>.Ok(
+                data: result,
+                message: ResponseMessageHelper.FormatMessage(ResponseMessages.DELETE_SUCCESS, "company friendship")));
+        }
+
         /***************************************************Mobile*********************************************/
 
         [HttpGet("paged/{companyId:guid}")]
