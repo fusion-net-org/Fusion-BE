@@ -162,5 +162,37 @@ namespace Fusion.API.Controllers
                 data: result,
                 message: ResponseMessageHelper.FormatMessage("Member reject to join the company")));
         }
+
+        [HttpGet("status/{companyId}")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<List<CompanyMemberResponse>>))]
+        public async Task<IActionResult> GetMembersByStatus(Guid companyId, [FromQuery] string status, CancellationToken token)
+        {
+            if (string.IsNullOrEmpty(status))
+            {
+                return BadRequest(ResponseModel<string>.Error(
+                    statusCode: StatusCodes.Status400BadRequest,
+                    message: "Status query parameter is required"
+                ));
+            }
+
+            var result = await _companyMemberService.GetMembersByStatus(companyId, status, token);
+
+            return Ok(ResponseModel<List<CompanyMemberResponse>>.Ok(
+                data: result,
+                message: $"Get members with status '{status}' successfully"
+            ));
+        }
+        [HttpGet("summary/{companyId}")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<Dictionary<string, int>>))]
+        public async Task<IActionResult> GetSummaryStatusByCompanyId(Guid companyId, CancellationToken token)
+        {
+            var result = await _companyMemberService.GetSummaryStatusByCompanyId(companyId, token);
+
+            return Ok(ResponseModel<Dictionary<string, int>>.Ok(
+                data: result,
+                message: "Get summary status successfully"
+            ));
+        }
+
     }
 }

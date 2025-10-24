@@ -8,7 +8,7 @@ namespace Fusion.Repository.Bases.Page.Company_Member
 {
     public class CompanyMemberPagedSearchRequest : PagedRequest
     {
-        public string? MemberName { get; set; }
+        public string? KeyWord { get; set; }
 
         public DateRange<DateOnly>? DateRange { get; set; }
 
