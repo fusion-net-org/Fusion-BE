@@ -17,7 +17,7 @@ using Fusion.Repository.Entities;
 using Fusion.Repository.Entities;
 using Fusion.Repository.IRepositories;
 using Fusion.Repository.Repositories;
-using Fusion.Service.Commons.Helpers; // import extension
+using Fusion.Service.Commons.Helpers;
 using Fusion.Service.IServices;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.Companies.Requests;
@@ -95,7 +95,8 @@ namespace Fusion.Service.Services
             {
                 CompanyId = newCompany.Id,
                 UserId = user.Id,
-                Status = true,
+                Status = "Active",
+                IsDeleted = false,
                 JoinedAt = DateTime.UtcNow.AddHours(7),
             }, cancellationToken);
 

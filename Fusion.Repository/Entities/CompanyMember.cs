@@ -19,7 +19,13 @@ public partial class CompanyMember
     public Guid? UserId { get; set; }
 
     [Column("status")]
-    public bool Status { get; set; }
+    public string? Status { get; set; }
+
+    [Column("reason")]
+    public string? Reason { get; set; }
+
+    [Column("is_deleted")]
+    public bool? IsDeleted { get; set; }
 
     [Column("joined_at")]
     [Precision(3)]

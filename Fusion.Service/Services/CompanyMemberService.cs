@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Bases.Page;
+using Fusion.Repository.Bases.Page.Company_Member;
 using Fusion.Repository.Bases.Responses;
 using Fusion.Repository.Entities;
 using Fusion.Repository.Enums;
@@ -32,9 +33,10 @@ namespace Fusion.Service.Services
         private readonly INotificationService _notificationService;
         private readonly IUserRepository _userRepository;
         private readonly ICompanyRepository _companyRepository;
+        private readonly IMailService _mailService;
         private readonly IMapper _mapper;
 
-        public CompanyMemberService(ICompanyMemberRepository companyMemberRepository, IProjectMemberRepository projectMemberRepository, INotificationService notificationService, IUserRepository userRepository, ICompanyRepository companyRepository, IMapper mapper)
+        public CompanyMemberService(ICompanyMemberRepository companyMemberRepository, IProjectMemberRepository projectMemberRepository, INotificationService notificationService, IUserRepository userRepository, ICompanyRepository companyRepository, IMapper mapper, IMailService mailService)
         {
 
             _companyMemberRepository = companyMemberRepository;
@@ -42,20 +44,34 @@ namespace Fusion.Service.Services
             _notificationService = notificationService;
             _userRepository = userRepository;
             _companyRepository = companyRepository;
+            _mailService = mailService;
             _mapper = mapper;
         }
 
-        public async Task<CompanyMemberResponse?> FiredMemberFromCompany(string terminatorEmail, string firedMemberMail, Guid companyId, CancellationToken token = default)
+        public async Task<CompanyMemberResponse?> FiredMemberFromCompany(string terminatorEmail, string firedMemberMail, string reason, Guid companyId, CancellationToken token = default)
         {
-            var result = await _companyMemberRepository.FiredMemberFromCompany(terminatorEmail, firedMemberMail, companyId, token);
+            var result = await _companyMemberRepository.FiredMemberFromCompany(terminatorEmail, firedMemberMail, reason, companyId, token);
 
             var response = await _companyMemberRepository.GetCompanyMemberByIdAsync(result.Id);
 
+            var emailBody = MailUtils.FiredMemberFromCompany(
+                               terminatorEmail,
+                               result.User.UserName,
+                               result.Company.Name,
+                               reason);
+
+            await _mailService.SendEmailAsync(new MailRequest()
+            {
+                Subject = $"{result.User.UserName} has been fired from {result.Company.Name}",
+                Body = emailBody,
+                ToEmail = result.User.Email
+            });
+
             //await _notificationService.CreateNotificationAsync(new SendNotificationRequest
             //{
-            //    UserId = firedMemberId,
+            //    UserId = result.UserId.Value,
             //    Title = "Fired from company",
-            //    Body = $"You have been removed from the company {response.Company.Name} by {response.Company.OwnerUser.UserName}.",
+            //    Body = $"You have been removed from the company {response.Company.Name} by {response.Company.OwnerUser.UserName}. Reason: {reason}",
             //    LinkKey = null,
             //    IdLink = null,
             //    Event = "MEMBER_REMOVED",
@@ -65,7 +81,7 @@ namespace Fusion.Service.Services
             return _mapper.Map<CompanyMemberResponse>(response);
         }
 
-        public async Task<PagedResult<CompanyMemberResponse>> GetPagedCompanyMemberByCompanyIdAsync(Guid companyId, string mail, PagedRequest request, CancellationToken token = default)
+        public async Task<PagedResult<CompanyMemberResponse>> GetPagedCompanyMemberByCompanyIdAsync(Guid companyId, string mail, CompanyMemberPagedSearchRequest request, CancellationToken token = default)
         {
 
             var result = await _companyMemberRepository.GetPagedCompanyMemberByCompanyIdAsync(companyId, mail, request, token);
@@ -74,6 +90,31 @@ namespace Fusion.Service.Services
             foreach (var member in result.Items)
             {
                 var numberProjectJoin = await _projectMemberRepository.GetTotalProjectsForMemberInCompanyAsync(member.User.Id, companyId, token);
+
+                var dto = _mapper.Map<CompanyMemberResponse>(member);
+                dto.NumberProductJoin = numberProjectJoin;
+
+                memberResponses.Add(dto);
+            }
+
+            return new PagedResult<CompanyMemberResponse>
+            {
+                Items = memberResponses,
+                TotalCount = result.TotalCount,
+                PageNumber = result.PageNumber,
+                PageSize = result.PageSize
+            };
+        }
+
+        public async Task<PagedResult<CompanyMemberResponse>> GetPagedCompanyMemberAsync(CompanyMemberPagedSearchAdminRequest request, CancellationToken token = default)
+        {
+
+            var result = await _companyMemberRepository.GetPagedCompanyMemberAsync(request, token);
+
+            var memberResponses = new List<CompanyMemberResponse>();
+            foreach (var member in result.Items)
+            {
+                var numberProjectJoin = await _projectMemberRepository.GetTotalProjectsForMemberAsync(member.User.Id, token);
 
                 var dto = _mapper.Map<CompanyMemberResponse>(member);
                 dto.NumberProductJoin = numberProjectJoin;
@@ -108,17 +149,9 @@ namespace Fusion.Service.Services
             //    NotificationType = NotificationTypeEnum.BUSINESS.ToString(),
             //});
 
-            return _mapper.Map<CompanyMemberResponse>(response);
+            var owner_user = await _userRepository.GetUserByEmailAsync(inviterEmail);
 
-            #region Tui tính để đó khi nào làm ProjectMember mới dùng tới
-            //if (check_member is not true)
-            //    return check_member;
-
-            //var owner_user = await _userRepository.GetUserByEmailAsync(inviterEmail);
-            //var member = await _userRepository.GetUserByIdAsync(inviteeMemberId);
-            //var company = await _companyRepository.GetCompanyByIdAsync(companyId);
-
-            //var inviteToken = Guid.NewGuid().ToString();
+            var inviteToken = result.Id.ToString();
 
             //var cacheKey = $"company_invite:{inviteToken}";
 
@@ -130,38 +163,63 @@ namespace Fusion.Service.Services
             //    },
             //    TimeSpan.FromMinutes(10), cancellationToken);
 
-            //var inviteUrl = $"https://localhost:7160/api/companymember/join?tokenConfirm={inviteToken}"; // hoặc token thật
-            //var emailBody = MailUtils.InviteMemberToCompany(
-            //                    owner_user.UserName,
-            //                    member.UserName,
-            //                    company.Name,
-            //                    inviteUrl,
-            //                    10);
+            var inviteUrl = $"https://localhost:7160/api/companymember/accept?tokenConfirm={inviteToken}";
+            var rejectUrl = $"https://localhost:7160/api/companymember/reject?tokenConfirm={inviteToken}";
 
-            //await _mailService.SendEmailAsync(new MailRequest()
-            //{
-            //    Subject = $"Chào mừng bạn đến với {company.Name}!",
-            //    Body = emailBody,
-            //    ToEmail = member.Email
-            //});
+            var emailBody = MailUtils.InviteMemberToCompany(
+                                owner_user.UserName,
+                                result.User.UserName,
+                                result.Company.Name,
+                                inviteUrl,
+                                rejectUrl,
+                                10);
 
-            //    public async Task<CompanyMemberResponse?> JoinMemberToCompany(string tokenConfirm, CancellationToken cancellationToken = default)
-            //{
-            //    var cacheKey = $"company_invite:{tokenConfirm}";
-            //    var data = await _cacheService.GetAsync<InviteMemberRequest>(cacheKey, cancellationToken);
-
-            //    if (data is null)
-            //        throw CustomExceptionFactory.
-            //           CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Token is invalid or expired"));
-
-            //    var result = await _companyMemberRepository.JoinMemberToCompany(data.InviteeMemberId, data.CompanyId, cancellationToken);
-            //    return _mapper.Map<CompanyMemberResponse>(result);
-            //}
-            #endregion
+            await _mailService.SendEmailAsync(new MailRequest()
+            {
+                Subject = $"Welcome {result.User.UserName} joined our {result.Company.Name}!",
+                Body = emailBody,
+                ToEmail = result.User.Email
+            });
+            return _mapper.Map<CompanyMemberResponse>(response);
 
         }
 
+        public async Task<CompanyMemberResponse?> AcceptJoinMemberToCompany(string tokenConfirm, CancellationToken cancellationToken = default)
+        {
+            //var cacheKey = $"company_invite:{tokenConfirm}";
+            //var data = await _cacheService.GetAsync<InviteMemberRequest>(cacheKey, cancellationToken);
 
+            var data = await _companyMemberRepository.GetCompanyMemberByIdAsync(long.Parse(tokenConfirm));
+
+            if (data == null)
+                throw CustomExceptionFactory.
+                   CreateNotFoundError("Token is invalid");
+
+            var result = await _companyMemberRepository.AcceptJoinMemberToCompany(data.UserId.Value, data.CompanyId.Value, cancellationToken);
+            return _mapper.Map<CompanyMemberResponse>(result);
+        }
+
+        public async Task<CompanyMemberResponse?> RejectJoinMemberToCompany(string tokenConfirm, CancellationToken cancellationToken = default)
+        {
+            //var cacheKey = $"company_invite:{tokenConfirm}";
+            //var data = await _cacheService.GetAsync<InviteMemberRequest>(cacheKey, cancellationToken);
+
+            var data = await _companyMemberRepository.GetCompanyMemberByIdAsync(long.Parse(tokenConfirm));
+
+            if (data == null)
+                throw CustomExceptionFactory.
+                   CreateNotFoundError("Token is invalid");
+
+            var result = await _companyMemberRepository.RejectJoinMemberToCompany(data.UserId.Value, data.CompanyId.Value, cancellationToken);
+            return _mapper.Map<CompanyMemberResponse>(result);
+        }
+
+        public async Task<CompanyMemberResponse?> RemoveMemberFromCompany(string terminatorEmail, Guid userId, Guid companyId, CancellationToken token = default)
+        {
+            var result = await _companyMemberRepository.RemoveMemberFromCompany(terminatorEmail, userId, companyId, token);
+
+            return _mapper.Map<CompanyMemberResponse>(result);
+        }
 
 
     }
