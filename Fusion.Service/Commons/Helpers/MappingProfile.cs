@@ -17,6 +17,7 @@ using Fusion.Service.ViewModels.SubscriptionPackage.Responses;
 using Fusion.Service.ViewModels.SubscriptionPackage.Requests;
 using Fusion.Service.ViewModels.Notifications.Responses;
 using Fusion.Service.ViewModels.Notifications.Requests;
+using Fusion.Service.ViewModels.TransactionPayment.Requests;
 
 namespace Fusion.Service.Commons.Helpers;
 
@@ -148,11 +149,7 @@ public class MappingProfile : Profile
             .ReverseMap();
 
         //--------------------------- entity: Transaction Payment ---------------------------------------------
-        CreateMap<SubscriptionRequest, SubscriptionPackage>()
-        .ForMember(dest => dest.Id, opt => opt.Ignore());
-
-        CreateMap<SubscriptionPackage, SubscriptionAdminResponse>();
-        CreateMap<SubscriptionPackage, SubscriptionResponse>();
+        CreateMap<CreateTransactionRequest, TransactionPayment>();
 
         //----------------------------     entity: Project  ---------------------------------------------
         CreateMap<Project, ProjectResponse>();
@@ -168,7 +165,6 @@ public class MappingProfile : Profile
         //----------------------------     entity: Notification ---------------------------------------------
         CreateMap<Notification, NotificationResponse>();
         CreateMap<SendNotificationRequest, Notification>();
-
 
     }
 

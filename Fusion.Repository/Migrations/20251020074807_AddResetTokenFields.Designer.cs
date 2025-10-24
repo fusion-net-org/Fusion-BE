@@ -4,6 +4,7 @@ using Fusion.Repository.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Fusion.Repository.Migrations
 {
     [DbContext(typeof(FusionDbContext))]
-    partial class FusionDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251020074807_AddResetTokenFields")]
+    partial class AddResetTokenFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -76,11 +79,6 @@ namespace Fusion.Repository.Migrations
                         .HasColumnName("id")
                         .HasDefaultValueSql("(newid())");
 
-                    b.Property<string>("Address")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)")
-                        .HasColumnName("address");
-
                     b.Property<string>("AvatarCompany")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)")
@@ -120,11 +118,6 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("owner_user_id");
 
-                    b.Property<string>("PhoneNumber")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasColumnName("phone_number");
-
                     b.Property<string>("TaxCode")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)")
@@ -136,11 +129,6 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("datetime2(3)")
                         .HasColumnName("update_at")
                         .HasDefaultValueSql("(sysutcdatetime())");
-
-                    b.Property<string>("Website")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)")
-                        .HasColumnName("website");
 
                     b.HasKey("Id");
 
@@ -229,10 +217,6 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("company_id");
 
-                    b.Property<bool?>("IsDeleted")
-                        .HasColumnType("bit")
-                        .HasColumnName("is_deleted");
-
                     b.Property<DateTime>("JoinedAt")
                         .ValueGeneratedOnAdd()
                         .HasPrecision(3)
@@ -240,14 +224,10 @@ namespace Fusion.Repository.Migrations
                         .HasColumnName("joined_at")
                         .HasDefaultValueSql("(sysutcdatetime())");
 
-                    b.Property<string>("Reason")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("reason");
-
-                    b.Property<string>("Status")
+                    b.Property<bool>("Status")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("nvarchar(max)")
-                        .HasDefaultValue("True")
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true)
                         .HasColumnName("status");
 
                     b.Property<Guid?>("UserId")

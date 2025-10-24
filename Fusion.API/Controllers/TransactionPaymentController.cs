@@ -47,5 +47,16 @@ namespace Fusion.API.Controllers
                 message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "Transaction payment")
             ));
         }
+        [HttpGet("latest")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<Guid>))]
+        public async Task<IActionResult> GetLatestTransactionForCurrentUser(CancellationToken cancellationToken)
+        {
+            var result = await _transactionPaymentService.GetLasterTransactionForUserAsync(cancellationToken);
+
+            return Ok(ResponseModel<Guid>.Ok(
+                data: result,
+                message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "latest transaction")
+            ));
+        }
     }
 }

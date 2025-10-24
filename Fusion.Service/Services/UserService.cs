@@ -13,6 +13,7 @@ using Fusion.Service.ViewModels.Companies.Responses;
 using Fusion.Service.ViewModels.Users.Requests;
 using Fusion.Service.ViewModels.Users.Responses;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Cryptography;
 
 namespace Fusion.Service.Services;
 
@@ -162,6 +163,41 @@ public class UserService : IUserService
             throw;
         }
 
+    }
+
+    public async Task<bool> ChangePasswordAsync(ChangePasswordRequest request, CancellationToken cancellationToken)
+    {
+        var userId = _currentService.GetUserId();
+        if (userId == Guid.Empty)
+            throw CustomExceptionFactory.CreateBadRequestError(
+              ResponseMessages.LOGIN_REQUIRED);
+
+        var user = await _userRepository.GetUserByIdAsync(userId);
+        if (user == null)
+            throw CustomExceptionFactory.CreateNotFoundError(
+                ResponseMessages.NOT_FOUND.FormatMessage("User"));
+
+        using (var hmac = new HMACSHA512(user.PasswordSalt))
+        {
+            var computedHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(request.OldPassword));
+
+            if (computedHash.Length != user.PasswordHash.Length ||
+                !CryptographicOperations.FixedTimeEquals(computedHash, user.PasswordHash))
+            {
+                throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.INVALID_INPUT.FormatMessage("Old password incorrect!"));
+            }
+
+            using var newHmac = new HMACSHA512();
+            user.PasswordSalt = newHmac.Key;
+            user.PasswordHash = newHmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(request.NewPassword));
+
+            user.UpdateAt = DateTime.UtcNow.AddHours(7);
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            return true;
+
+        }
     }
 
     public async Task<PagedResult<SelfUserResponse>> GetAllUsersAsync(PagedRequest request, CancellationToken cancellationToken = default)

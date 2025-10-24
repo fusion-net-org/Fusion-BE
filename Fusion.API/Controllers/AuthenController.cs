@@ -50,5 +50,24 @@ namespace Fusion.API.Controllers
                 message: "Login with Google successfully"
             ));
         }
+
+
+        [HttpPost("request-password-reset")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<bool>))]
+        public async Task<IActionResult> RequestPasswordReset([FromBody] PasswordResetRequest model, CancellationToken cancellationToken)
+        {
+            var result = await _authenService.RequestPasswordResetAsync(model.Email, cancellationToken);
+            return Ok(ResponseModel<bool>.Ok(result, "Password reset link sent successfully"));
+        }
+
+        [HttpPost("reset-password")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<bool>))]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordConfirmRequest model, CancellationToken cancellationToken)
+        {
+            var result = await _authenService.ResetPasswordAsync(model.ResetToken, model.NewPassword, cancellationToken);
+            return Ok(ResponseModel<bool>.Ok(result, "Password reset successfully"));
+        }
+
+       
     }
 }

@@ -11,4 +11,5 @@ public interface ITransactionPaymentService
     Task<TransactionPaymentResponse> CreateTransactionPaymentAsync(CreateTransactionRequest request, CancellationToken cancellationToken = default);
     Task UpdateTransactionAsync(Guid id);
     Task<TransactionPaymentResponse> GetTransactionByCodeAsync(string code, CancellationToken cancellationToken = default);
+    Task<Guid> GetLasterTransactionForUserAsync(CancellationToken cancellationToken = default);
 }

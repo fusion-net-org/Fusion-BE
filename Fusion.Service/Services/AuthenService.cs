@@ -6,6 +6,7 @@ using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.IRepositories;
 using Fusion.Service.IServices;
+using Fusion.Service.ViewModels.Companies.Email;
 using Fusion.Service.ViewModels.Users.Requests;
 using Fusion.Service.ViewModels.Users.Responses;
 using Google.Apis.Auth;
@@ -19,14 +20,16 @@ public class AuthenService : IAuthenService
     private readonly IUserRepository _userRepository;
     private readonly IMapper _mapper;
     private readonly IJwtService _jwtService;
+    private readonly IMailService _mailService;
 
     public AuthenService(IUnitOfWork unitOfWork, IUserRepository userRepository,
-        IMapper mapper, IJwtService jwtService)
+        IMapper mapper, IJwtService jwtService, IMailService mailService)
     {
         _unitOfWork = unitOfWork;
         _userRepository = userRepository;
         _mapper = mapper;
         _jwtService = jwtService;
+        _mailService = mailService;
     }
     public async Task<bool> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken = default)
     {
@@ -143,4 +146,52 @@ public class AuthenService : IAuthenService
             RefreshToken = tokens.RefreshToken
         };
     }
+
+    public async Task<bool> RequestPasswordResetAsync(string email, CancellationToken cancellationToken)
+    {
+        // 1. Get user by email
+        var user = await _userRepository.GetUserByEmailAsync(email, cancellationToken);
+        if (user == null)
+            throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Email"));
+
+        // Generic token and save
+        var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+
+        user.ResetToken = token;
+        user.ResetTokenExpiry = DateTime.UtcNow.AddMinutes(15);
+
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        // create link reset password page
+        var resetLink = $"http://localhost:5173/reset-password?token={token}";
+
+        //send mail
+        var mail = new MailRequest
+        {
+            ToEmail = user.Email,
+            Subject = "Password reset request",
+            Body = $"<p>Click the link below to reset your password:</p><a href='{resetLink}'>Reset Password</a>"
+        };
+
+        await _mailService.SendEmailAsync(mail);
+
+        return true;
+    }
+
+    public async Task<bool> ResetPasswordAsync(string resetToken, string newPassword, CancellationToken cancellationToken)
+    {
+        var user = await _userRepository.GetUserByResetTokenAsync(resetToken, cancellationToken);
+        if (user == null || user.ResetTokenExpiry < DateTime.UtcNow)
+            throw CustomExceptionFactory.CreateBadRequestError("Invalid or expired token");
+
+        using var hmac = new HMACSHA512();
+        user.PasswordSalt = hmac.Key;
+        user.PasswordHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(newPassword));
+
+        user.ResetToken = null;
+
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
 }
