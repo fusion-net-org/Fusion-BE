@@ -6,4 +6,10 @@ public class PagedResult<T>
     public int TotalCount { get; set; }
     public int PageNumber { get; set; }
     public int PageSize { get; set; }
-}   
+}
+
+public class DateRange<T> where T : struct
+{
+    public T? From { get; set; }
+    public T? To { get; set; }
+}
