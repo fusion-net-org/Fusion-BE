@@ -12,6 +12,7 @@ namespace Fusion.Repository.IRepositories
     public interface IProjectMemberRepository: IGenericRepository<ProjectMember>
     {
         Task<int> GetTotalProjectsForMemberInCompanyAsync(Guid memberId, Guid companyId, CancellationToken cancellationToken = default);
+        Task<int> GetTotalProjectsForMemberAsync(Guid memberId, CancellationToken cancellationToken = default);
 
     }
 }

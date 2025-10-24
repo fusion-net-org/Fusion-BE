@@ -24,7 +24,11 @@ namespace Fusion.Service.ViewModels.Companies.Responses
 
         public int? NumberProductJoin { get; set; } = 0; //Sum of project internal and hired project of member in that company
 
-        public bool Status { get; set; } //Hien dang o trong cong ty hay khong.
+        public int? NumberCompanyJoin { get; set; } = 0;
+
+        public string? Status { get; set; } //Hien dang o trong cong ty hay khong.
+
+        public bool? IsDeleted { get; set; }
 
         public DateTime JoinedAt { get; set; }
 

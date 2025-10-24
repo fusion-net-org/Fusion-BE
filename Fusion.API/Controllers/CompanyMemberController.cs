@@ -1,7 +1,9 @@
 ﻿using Azure;
 using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.Company;
+using Fusion.Repository.Bases.Page.Company_Member;
 using Fusion.Repository.Bases.Responses;
+using Fusion.Repository.Entities;
 using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.IServices;
 using Fusion.Service.Services;
@@ -53,7 +55,7 @@ namespace Fusion.API.Controllers
 
         [HttpGet("paged/{companyId}")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PagedResult<CompanyMemberResponse>>))]
-        public async Task<IActionResult> GetPaged([FromQuery] PagedRequest request, Guid companyId, CancellationToken cancellationToken)
+        public async Task<IActionResult> GetPagedByCompanyId(Guid companyId, [FromQuery] CompanyMemberPagedSearchRequest request,  CancellationToken cancellationToken)
         {
             var emailClaim = User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email || c.Type == ClaimTypes.Email || c.Type == "email");
             var email = emailClaim?.Value; if (email == null)
@@ -69,6 +71,26 @@ namespace Fusion.API.Controllers
                 data: result,
                 message: "Get paged companies member successfully"));
         }
+
+        [HttpGet("paged")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PagedResult<CompanyMemberResponse>>))]
+        public async Task<IActionResult> GetPaged([FromQuery] CompanyMemberPagedSearchAdminRequest request, CancellationToken token)
+        {
+            //var emailClaim = User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email || c.Type == ClaimTypes.Email || c.Type == "email");
+            //var email = emailClaim?.Value; if (email == null)
+            //{
+            //    return Unauthorized(ResponseModel<string>.Error(
+            //        statusCode: StatusCodes.Status401Unauthorized,
+            //        message: "Unauthorized: User identity not found"
+            //    ));
+            //}
+
+            var result = await _companyMemberService.GetPagedCompanyMemberAsync(request, token);
+            return Ok(ResponseModel<PagedResult<CompanyMemberResponse>>.Ok(
+                data: result,
+                message: "Get paged companies member successfully"));
+        }
+
 
         [HttpPost("fired")]
         public async Task<IActionResult> FiredMemberFromCompany([FromBody] FiredMemberRequest request, CancellationToken token)
@@ -86,13 +108,59 @@ namespace Fusion.API.Controllers
             var result = await _companyMemberService.FiredMemberFromCompany(
                terminatorEmail,
                request.FiredMemberMail,
+               request.Reason,
                request.CompanyId,
                token
             );
 
             return Ok(ResponseModel<CompanyMemberResponse?>.Ok(
                  data: result,
-                 message: ResponseMessageHelper.FormatMessage(ResponseMessages.SUCCESS, "Fired Member from Company Successfully")));
+                 message: ResponseMessageHelper.FormatMessage("Fired Member from Company Successfully")));
+        }
+
+        [HttpDelete("{removeId:Guid}")]
+        public async Task<IActionResult> RemoveMemberFromCompany(Guid removeId, Guid companyId, CancellationToken token)
+        {
+
+            var emailClaim = User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email || c.Type == ClaimTypes.Email || c.Type == "email");
+            var terminatorEmail = emailClaim?.Value; if (terminatorEmail == null)
+            {
+                return Unauthorized(ResponseModel<string>.Error(
+                    statusCode: StatusCodes.Status401Unauthorized,
+                    message: "Unauthorized: User identity not found"
+                ));
+            }
+
+            var result = await _companyMemberService.RemoveMemberFromCompany(
+               terminatorEmail,
+               removeId,
+               companyId,
+               token
+            );
+
+            return Ok(ResponseModel<CompanyMemberResponse?>.Ok(
+                 data: result,
+                 message: ResponseMessageHelper.FormatMessage("Remove Member from Company Successfully")));
+        }
+
+        [HttpGet("accept")]
+        public async Task<IActionResult> AcceptJoinFromCompany([FromQuery] string tokenConfirm, CancellationToken tokenCts)
+        {
+            var result = await _companyMemberService.AcceptJoinMemberToCompany(tokenConfirm, tokenCts);
+
+            return Ok(ResponseModel<CompanyMemberResponse?>.Ok(
+                data: result,
+                message: ResponseMessageHelper.FormatMessage("Member successfully join the company")));
+        }
+
+        [HttpGet("reject")]
+        public async Task<IActionResult> RejectJoinFromCompany([FromQuery] string tokenConfirm, CancellationToken tokenCts)
+        {
+            var result = await _companyMemberService.RejectJoinMemberToCompany(tokenConfirm, tokenCts);
+
+            return Ok(ResponseModel<CompanyMemberResponse?>.Ok(
+                data: result,
+                message: ResponseMessageHelper.FormatMessage("Member reject to join the company")));
         }
     }
 }

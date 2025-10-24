@@ -17,7 +17,7 @@ using Fusion.Repository.Entities;
 using Fusion.Repository.Entities;
 using Fusion.Repository.IRepositories;
 using Fusion.Repository.Repositories;
-using Fusion.Service.Commons.Helpers; // import extension
+using Fusion.Service.Commons.Helpers;
 using Fusion.Service.IServices;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.Companies.Requests;
@@ -38,8 +38,10 @@ namespace Fusion.Service.Services
         private readonly ICompanyMemberRepository _companyMemberRepository;
         private readonly IValidator<CompanyRequest> _validator;
         private readonly ICompanyFriendshipRepository _companyFriendshipRepository;
+        private readonly IMailService _mailService;
+
         public CompanyService(IMapper mapper, ICompanyRepository companyRepository, ICloudinaryService cloudinaryService
-            , IUserRepository userRepository, ICompanyMemberRepository companyMemberRepository, IValidator<CompanyRequest> validator, ICompanyFriendshipRepository companyFriendshipRepository)
+            , IUserRepository userRepository, ICompanyMemberRepository companyMemberRepository, IValidator<CompanyRequest> validator, ICompanyFriendshipRepository companyFriendshipRepository, IMailService mailService)
         {
             _mapper = mapper;
             _companyRepository = companyRepository;
@@ -48,6 +50,7 @@ namespace Fusion.Service.Services
             _companyMemberRepository = companyMemberRepository;
             _validator = validator;
             _companyFriendshipRepository = companyFriendshipRepository;
+            _mailService = mailService;
         }
 
         public async Task<CompanyResponse> CreateCompanyAsync(CompanyRequest request, string Email, CancellationToken cancellationToken = default)
@@ -92,13 +95,24 @@ namespace Fusion.Service.Services
             {
                 CompanyId = newCompany.Id,
                 UserId = user.Id,
-                Status = true,
+                Status = "Active",
+                IsDeleted = false,
                 JoinedAt = DateTime.UtcNow.AddHours(7),
             }, cancellationToken);
 
             if (newMember == null)
                 throw CustomExceptionFactory.CreateInternalServerError(ResponseMessages.INTERNAL_SERVER_ERROR.FormatMessage("Add new member fail"));
 
+
+            var emailBody = MailUtils.CreateCompanyThankYouEmail(
+                user.UserName, newCompany.Name, "http://localhost:5173/", "http://localhost:5173/company");
+
+            await _mailService.SendEmailAsync(new ViewModels.Companies.Email.MailRequest()
+            {
+                Subject = $"Welcome {company.Name} to Fusion Platform - Manage, Collaborate, and Grow",
+                Body = emailBody,
+                ToEmail = user.Email
+            });
             return _mapper.Map<CompanyResponse>(newCompany);
 
         }
@@ -136,7 +150,6 @@ namespace Fusion.Service.Services
                 item.TotalWaitForApprove = friendships.Count(f => f.Status == "Pending");
                 item.TotalPartners = friendships.Count();
             }
-
             return list;
         }
         public async Task<PagedResult<CompanyResponseVersion2>> GetAllCompaniesAsync(
@@ -272,7 +285,7 @@ namespace Fusion.Service.Services
             var user = await _userRepository.GetUserByEmailAsync(Email, cancellationToken);
             if (user == null)
                 throw CustomExceptionFactory.
-                    CreateBadRequestError(ResponseMessages.INVALID_INPUT.FormatMessage("Email incorrect!"));
+                    CreateBadRequestError(ResponseMessages.NOT_FOUND.FormatMessage("Email!"));
 
             var company = await _companyRepository.GetCompanyByIdAsync(companyId);
             if (company == null)
@@ -280,20 +293,20 @@ namespace Fusion.Service.Services
 
             if (company.OwnerUserId != user.Id)
                 throw CustomExceptionFactory
-                    .CreateNotFoundError(ResponseMessages.BAD_REQUEST.FormatMessage($"Company is not belong to {company.OwnerUser.UserName}"));
+                    .CreateBadRequestError(ResponseMessages.BAD_REQUEST,$"Company is not belong to {company.OwnerUser.UserName}");
 
             if (!string.IsNullOrEmpty(request.Email) && request.Email != company.Email)
             {
                 var company_email_existed = await _companyRepository.GetCompanyByEmail(request.Email);
                 if (company_email_existed != null)
-                    throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.EXISTED.FormatMessage("Company Email is existed in the system"));
+                    throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.EXISTED.FormatMessage("Company Email"));
             }
 
             if (!string.IsNullOrEmpty(request.TaxCode) && request.TaxCode != company.TaxCode)
             {
                 var company_taxcode_existed = await _companyRepository.GetCompanyByTaxCode(request.TaxCode);
                 if (company_taxcode_existed != null)
-                    throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.EXISTED.FormatMessage("Tax-code is existed in the system"));
+                    throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.DUPLICATE.FormatMessage("Tax-code"));
             }
 
             var image_company = "";
@@ -338,9 +351,12 @@ namespace Fusion.Service.Services
                     CreateBadRequestError(ResponseMessages.INVALID_INPUT.FormatMessage("Email incorrect!"));
 
             var company = await _companyRepository.GetCompanyByIdAsync(companyId);
+            if (company == null)
+                throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Company"));
+
             if (company.OwnerUserId != user.Id)
                 throw CustomExceptionFactory
-                    .CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Company"));
+                    .CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Owner User in this company"));
 
             await _companyRepository.DeleteCompanyAsync(company, cancellationToken);
             return true;
