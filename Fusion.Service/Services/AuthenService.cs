@@ -163,7 +163,7 @@ public class AuthenService : IAuthenService
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         // create link reset password page
-        var resetLink = $"........../reset-password?token={token}";
+        var resetLink = $"http://localhost:5173/reset-password?token={token}";
 
         //send mail
         var mail = new MailRequest
