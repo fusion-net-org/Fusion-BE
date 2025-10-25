@@ -106,22 +106,13 @@ public class MappingProfile : Profile
              .ForMember(dest => dest.MemberAvatar, opt => opt.MapFrom(src => src.User!.Avatar))
              .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.User!.Email))
              .ForMember(dest => dest.Phone, opt => opt.MapFrom(src => src.User!.Phone))
+             .ForMember(dest => dest.MemberPhoneNumber, opt => opt.MapFrom(src => src.User!.Phone))
              .ForMember(dest => dest.Gender, opt => opt.MapFrom(src => src.User!.Gender))
              .ForMember(dest => dest.IsOwner, opt => opt.MapFrom(src =>
                  src.Company != null && src.User != null && src.Company.OwnerUser != null &&
                  src.Company.OwnerUser.UserName == src.User.UserName))
              .ForMember(dest => dest.NumberCompanyJoin,
                  opt => opt.MapFrom(src => src.User.CompanyMembers.Count(cm => cm.IsDeleted == false)));
-
-            .ForMember(dest => dest.MemberId, opt => opt.MapFrom(src => src.UserId))
-            .ForMember(dest => dest.CompanyName, opt => opt.MapFrom(src => src.Company!.Name))
-            .ForMember(dest => dest.MemberName, opt => opt.MapFrom(src => src.User!.UserName))
-            .ForMember(dest => dest.MemberPhoneNumber, opt => opt.MapFrom(src => src.User!.Phone))
-            .ForMember(dest => dest.MemberAvatar, opt => opt.MapFrom(src => src.User!.Avatar))
-            .ForMember(dest => dest.IsOwner, opt => opt.MapFrom(src =>
-                                src.Company != null && src.User != null && src.Company.OwnerUser != null &&
-                                src.Company.OwnerUser.UserName == src.User.UserName))
-            .ForMember(dest => dest.NumberCompanyJoin, opt => opt.MapFrom(src => src.User.CompanyMembers.Count(cm => cm.IsDeleted == false)));
 
         //----------------------------     entity: Ticket ---------------------------------------------
         CreateMap<Ticket, TicketResponse>().ReverseMap();
