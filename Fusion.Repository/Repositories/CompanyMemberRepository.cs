@@ -179,12 +179,13 @@ namespace Fusion.Repository.Repositories
 
             if (request.DateRange != null)
             {
-                var vnTime = DateTime.UtcNow.AddHours(7);
-
                 if (request.DateRange.From.HasValue && request.DateRange.To.HasValue)
                 {
                     var from = request.DateRange.From.Value.ToDateTime(TimeOnly.MinValue);
-                    var to = request.DateRange.To.Value.ToDateTime(TimeOnly.MaxValue);
+                    var to = request.DateRange.To.Value
+                        .ToDateTime(TimeOnly.MinValue)
+                        .AddDays(1)
+                        .AddTicks(-1);
                     query = query.Where(cm => cm.JoinedAt >= from && cm.JoinedAt <= to);
                 }
                 else if (request.DateRange.From.HasValue)
@@ -194,7 +195,10 @@ namespace Fusion.Repository.Repositories
                 }
                 else if (request.DateRange.To.HasValue)
                 {
-                    var to = request.DateRange.To.Value.ToDateTime(TimeOnly.MaxValue);
+                    var to = request.DateRange.To.Value
+                        .ToDateTime(TimeOnly.MinValue)
+                        .AddDays(1)
+                        .AddTicks(-1);
                     query = query.Where(cm => cm.JoinedAt <= to);
                 }
             }
