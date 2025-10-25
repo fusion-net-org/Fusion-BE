@@ -101,5 +101,13 @@ namespace Fusion.Repository.Repositories
         {
             return await _context.Users.FirstOrDefaultAsync(u => u.ResetToken == resetToken, cancellationToken);
         }
+
+        public async Task<User?> GetUserWithRolesAndPermissionsInCompanyAsync(Guid userId, Guid companyId)
+        {
+            return await _context.Users.Include(u => u.UserRoles.Where(ur => ur.Role.CompanyId == companyId))
+                        .ThenInclude(ur => ur.Role)
+                            .ThenInclude(r => r.RolePermissions.Where(rp => rp.CompanyId == companyId))
+                                    .ThenInclude(rp => rp.Function).FirstOrDefaultAsync(u => u.Id == userId);
+        }
     }
 }

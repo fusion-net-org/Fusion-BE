@@ -34,5 +34,7 @@ namespace Fusion.Repository.IRepositories
 
         Task<Dictionary<string, int>> GetSummaryStatusByCompanyId(Guid companyId, CancellationToken token = default);
 
+        Task<List<UserRole?>> AddRoleForMemberInCompany(Guid companyId, List<int> roleIds, Guid memberId, string inviterEmail, CancellationToken token =  default);
+
     }
 }
