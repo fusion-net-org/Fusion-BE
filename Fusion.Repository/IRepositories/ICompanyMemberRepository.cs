@@ -30,7 +30,9 @@ namespace Fusion.Repository.IRepositories
 
         Task<CompanyMember?> RemoveMemberFromCompany(string terminatorEmail, Guid userId, Guid companyId, CancellationToken token = default);
 
+        Task<List<CompanyMember>> GetMembersByStatus(Guid companyId, string status, CancellationToken token = default);
 
+        Task<Dictionary<string, int>> GetSummaryStatusByCompanyId(Guid companyId, CancellationToken token = default);
 
     }
 }
