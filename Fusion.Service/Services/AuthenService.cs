@@ -110,11 +110,7 @@ public class AuthenService : IAuthenService
         try
         {
             payload = await GoogleJsonWebSignature.ValidateAsync(request.IdToken);
-        }
-        catch (Exception)
-        {
-            throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.INVALID_INPUT.FormatMessage("Google token invalid"));
-        }
+      
 
         // Check user existed
         var user = await _userRepository.GetUserByGoogleSubAsync(payload.Subject, cancellationToken);
@@ -125,13 +121,19 @@ public class AuthenService : IAuthenService
         }
         else
         {
-            // if not, create new user
-            user = new User
+                using var rng = RandomNumberGenerator.Create();
+                var salt = new byte[128]; rng.GetBytes(salt);
+                var hash = new byte[64]; rng.GetBytes(hash);
+                // if not, create new user
+                user = new User
             {
                 UserName = payload.Name ?? payload.Email,
                 Email = payload.Email,
                 GoogleSub = payload.Subject,
                 CreateAt = DateTime.UtcNow,
+                Status = true,
+                PasswordHash = hash,
+                PasswordSalt = salt
             };
 
             await _unitOfWork.Repository<User>().AddAsync(user, cancellationToken);
@@ -145,6 +147,12 @@ public class AuthenService : IAuthenService
             AccessToken = tokens.AccessToken,
             RefreshToken = tokens.RefreshToken
         };
+        }
+        catch (Exception ex)
+        {
+            throw;
+            //throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.INVALID_INPUT.FormatMessage("Google token invalid"));
+        }
     }
 
     public async Task<bool> RequestPasswordResetAsync(string email, CancellationToken cancellationToken)

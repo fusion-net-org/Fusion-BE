@@ -43,7 +43,7 @@ namespace Fusion.API.Controllers
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<LoginResponse>))]
         public async Task<IActionResult> GoogleLoginAsync([FromBody] GoogleLoginRequest request, CancellationToken cancellationToken)
         {
-            var result = await _authenService.GoogleLoginAsync(request, cancellationToken);
+                var result = await _authenService.GoogleLoginAsync(request, cancellationToken);
 
             return Ok(ResponseModel<LoginResponse>.Ok(
                 data: result,
