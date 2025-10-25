@@ -19,5 +19,7 @@ namespace Fusion.Repository.IRepositories
         Task<User?> GetOwnerUserByCompanyIdAsync(Guid companyId, CancellationToken cancellationToken = default);
         Task<User?> GetUserByResetTokenAsync(string resetToken, CancellationToken cancellationToken = default);
 
+        Task<User?> GetUserWithRolesAndPermissionsInCompanyAsync(Guid userId, Guid companyId);
+
     }
 }

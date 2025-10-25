@@ -307,7 +307,67 @@ namespace Fusion.Repository.Repositories
 
         }
 
+        public async Task<List<UserRole?>> AddRoleForMemberInCompany(Guid companyId, List<int> roleIds, Guid memberId, string inviterEmail, CancellationToken token)
+        {
+            var company = await _context.Companies.FindAsync(companyId);
+            if (company == null)
+                throw CustomExceptionFactory.
+                     CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Company is not existed"));
 
+            var member = await _context.Users.FindAsync(memberId);
+            if (member == null)
+                throw CustomExceptionFactory.
+                     CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Member is not existed"));
+
+            var company_member = await _context.CompanyMembers.SingleOrDefaultAsync(x => x.CompanyId == companyId && x.UserId == memberId);
+            if (company_member == null)
+                throw CustomExceptionFactory.
+                     CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Member company does not existed"));
+
+            var inviter = await _context.Users.FirstOrDefaultAsync(u => u.Email == inviterEmail);
+            if (inviter == null)
+                throw CustomExceptionFactory.CreateNotFoundError(
+                    ResponseMessages.NOT_FOUND.FormatMessage("Inviter does not exist"));
+
+            var company_inviter = await _context.CompanyMembers.SingleOrDefaultAsync(x => x.CompanyId == companyId && x.UserId == inviter.Id);
+            if (company_inviter == null)
+                throw CustomExceptionFactory.
+                     CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Inivter company does not existed"));
+
+            if (company_inviter.CompanyId != company_member.CompanyId)
+                throw CustomExceptionFactory.
+                     CreateNotFoundError(ResponseMessages.BAD_REQUEST.FormatMessage("Inivter and Member not in the same company"));
+
+            var addedRoles = new List<UserRole>();
+
+            foreach (var roleId in roleIds)
+            {
+                var role = await _context.Roles.FirstOrDefaultAsync(r => r.Id == roleId && r.CompanyId == companyId);
+                if (role == null)
+                    throw CustomExceptionFactory.CreateNotFoundError(
+                        ResponseMessages.NOT_FOUND.FormatMessage($"Role {roleId} does not belong to this company"));
+
+                // check if this user already has that role
+                var exist = await _context.UserRoles.FirstOrDefaultAsync(x => x.UserId == memberId && x.RoleId == roleId);
+                if (exist != null)
+                    continue;
+
+                var newUserRole = new UserRole
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = memberId,
+                    RoleId = roleId
+                };
+
+                await _context.UserRoles.AddAsync(newUserRole, token);
+                addedRoles.Add(newUserRole);
+            }
+
+            if (addedRoles.Any())
+                await _context.SaveChangesAsync(token);
+
+            return addedRoles;
+        }
 
         public async Task<List<CompanyMember>> GetMembersByStatus(Guid companyId, string status, CancellationToken token = default)
         {

@@ -2,6 +2,7 @@
 using Fusion.Repository.Bases.Page.Company_Member;
 using Fusion.Repository.Entities;
 using Fusion.Service.ViewModels.Companies.Responses;
+using Fusion.Service.ViewModels.UserRole.Responses;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,6 +29,8 @@ namespace Fusion.Service.IServices
         Task<List<CompanyMemberResponse>> GetMembersByStatus(Guid companyId, string status, CancellationToken token = default);
 
         Task<Dictionary<string, int>> GetSummaryStatusByCompanyId(Guid companyId, CancellationToken token = default);
+
+        Task<AddMemberRoleInCompanyResponse?> AddRoleForMemberInCompany(Guid companyId, List<int> roleIds, Guid memberId, string inviterEmail, CancellationToken token = default);
 
     }
 }
