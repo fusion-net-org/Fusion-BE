@@ -74,8 +74,8 @@ namespace Fusion.Service.Services
                     orderCode: long.Parse(transaction.TransactionCode),
                     amount: (int)transaction.Amount,
                     description: $"Fusion - {transaction.SubscriptionPackage?.Name}",
-                    returnUrl: "https://........../payment/success",
-                    cancelUrl: "https://........../payment/cancel",
+                    returnUrl: "http://localhost:5173/payment-success",
+                    cancelUrl: "http://localhost:5173/payment-failed",
                     items: new List<ItemData>() { item }
                     );
 

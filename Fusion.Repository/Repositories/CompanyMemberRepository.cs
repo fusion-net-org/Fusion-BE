@@ -42,7 +42,7 @@ namespace Fusion.Repository.Repositories
                 .Include(cm => cm.User)
                 .SingleOrDefaultAsync(cm => cm.Id == id, token);
         }
- 
+
         public async Task<CompanyMember?> InviteMemberToCompany(string inviterEmail, string inviteeMemberMail, Guid companyId, CancellationToken token)
         {
             CompanyMember companyMember = null;
@@ -94,7 +94,7 @@ namespace Fusion.Repository.Repositories
                 await _context.CompanyMembers.AddAsync(companyMember, token);
             }
 
-                
+
             await _context.SaveChangesAsync(token);
 
             return await _context.CompanyMembers
@@ -127,9 +127,16 @@ namespace Fusion.Repository.Repositories
 
             query = query.Where(cm => cm.CompanyId == companyId);
 
-            if (!string.IsNullOrEmpty(request.MemberName))
+            if (!string.IsNullOrEmpty(request.KeyWord))
             {
-                query = query.Where(u => (u.User.UserName ?? "").Contains(request.MemberName));
+                var keyword = request.KeyWord.ToLower();
+
+                query = query.Where(u =>
+                    (u.User.UserName ?? "").ToLower().Contains(keyword) ||
+                    (u.User.Email ?? "").ToLower().Contains(keyword) ||
+                    (u.User.Phone ?? "").ToLower().Contains(keyword) ||
+                    (u.User.Gender ?? "").ToLower() == keyword.ToLower()
+                );
             }
 
             if (request.DateRange != null)
@@ -160,7 +167,7 @@ namespace Fusion.Repository.Repositories
 
         public async Task<PagedResult<CompanyMember>> GetPagedCompanyMemberAsync(CompanyMemberPagedSearchAdminRequest request, CancellationToken token)
         {
-          
+
             var query = _context.CompanyMembers
                 .Include(x => x.User)
                 .Include(x => x.Company)
@@ -220,7 +227,7 @@ namespace Fusion.Repository.Repositories
                 .Include(cm => cm.User)
                 .Include(cm => cm.Company)
                     .ThenInclude(c => c.OwnerUser)
-                .SingleOrDefaultAsync(cm => 
+                .SingleOrDefaultAsync(cm =>
                     cm.CompanyId == companyId
                     && cm.User.Email == firedMemberMail, token);
 
@@ -299,5 +306,30 @@ namespace Fusion.Repository.Repositories
             return companyMember;
 
         }
+
+
+
+        public async Task<List<CompanyMember>> GetMembersByStatus(Guid companyId, string status, CancellationToken token = default)
+        {
+            return await _context.CompanyMembers
+                .Include(cm => cm.User)
+                .Include(cm => cm.Company)
+                .Where(cm => cm.CompanyId == companyId && cm.Status == status)
+                .ToListAsync(token);
+        }
+
+        public async Task<Dictionary<string, int>> GetSummaryStatusByCompanyId(Guid companyId, CancellationToken token = default)
+        {
+            var query = _context.CompanyMembers
+                .Where(cm => cm.CompanyId == companyId);
+
+            var result = await query
+                .GroupBy(cm => cm.Status)
+                .Select(g => new { Status = g.Key, Count = g.Count() })
+                .ToListAsync(token);
+
+            return result.ToDictionary(x => x.Status, x => x.Count);
+        }
+
     }
 }

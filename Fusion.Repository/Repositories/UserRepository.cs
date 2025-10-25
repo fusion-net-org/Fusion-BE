@@ -96,5 +96,10 @@ namespace Fusion.Repository.Repositories
             return user;
         }
 
+
+        public async Task<User?> GetUserByResetTokenAsync(string resetToken, CancellationToken cancellationToken = default)
+        {
+            return await _context.Users.FirstOrDefaultAsync(u => u.ResetToken == resetToken, cancellationToken);
+        }
     }
 }

@@ -77,6 +77,21 @@ public class TransactionPaymentService : ITransactionPaymentService
         return response;
     }
 
+    public async Task<Guid> GetLasterTransactionForUserAsync(CancellationToken cancellationToken = default)
+    {
+        var userId = _currentService.GetUserId();
+        if (userId == Guid.Empty)
+            throw CustomExceptionFactory.CreateNotFoundError(
+                ResponseMessages.NOT_FOUND.FormatMessage("User"));
+        var transaction = await _transactionPaymentRepository.GetLasterTransactionForUserAsync(userId, cancellationToken);
+
+        if (transaction == null)
+            throw CustomExceptionFactory.CreateNotFoundError("No transaction found for this user.");
+
+        return transaction.Id;
+
+    }
+
     public async Task<TransactionPaymentResponse> GetTransactionByCodeAsync(string code, CancellationToken cancellationToken = default)
     {
         var transaction = await _transactionPayement.FindAsync(x => x.TransactionCode == code, cancellationToken);

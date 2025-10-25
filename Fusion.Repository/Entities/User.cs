@@ -51,6 +51,12 @@ public partial class User
     [Column("status")]
     public bool Status { get; set; }
 
+    [Column("resetToken")]
+    public string? ResetToken { get; set; }
+
+    [Column("resetTokenExpiry")]
+    public DateTime? ResetTokenExpiry { get; set; }
+
     [Column("create_at")]
     [Precision(3)]
     public DateTime CreateAt { get; set; }

@@ -221,6 +221,16 @@ namespace Fusion.Service.Services
             return _mapper.Map<CompanyMemberResponse>(result);
         }
 
+        public async Task<List<CompanyMemberResponse>> GetMembersByStatus(Guid companyId, string status, CancellationToken token = default)
+        {
+            var members = await _companyMemberRepository.GetMembersByStatus(companyId, status, token);
+            return _mapper.Map<List<CompanyMemberResponse>>(members);
+        }
+
+        public async Task<Dictionary<string, int>> GetSummaryStatusByCompanyId(Guid companyId, CancellationToken token = default)
+        {
+            return await _companyMemberRepository.GetSummaryStatusByCompanyId(companyId, token);
+        }
 
     }
 }

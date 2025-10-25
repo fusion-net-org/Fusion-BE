@@ -17,6 +17,7 @@ using Fusion.Service.ViewModels.SubscriptionPackage.Responses;
 using Fusion.Service.ViewModels.SubscriptionPackage.Requests;
 using Fusion.Service.ViewModels.Notifications.Responses;
 using Fusion.Service.ViewModels.Notifications.Requests;
+using Fusion.Service.ViewModels.TransactionPayment.Requests;
 
 namespace Fusion.Service.Commons.Helpers;
 
@@ -99,6 +100,19 @@ public class MappingProfile : Profile
 
         //----------------------------     entity: CompanyMember ---------------------------------------------
         CreateMap<CompanyMember, CompanyMemberResponse>()
+             .ForMember(dest => dest.MemberId, opt => opt.MapFrom(src => src.UserId))
+             .ForMember(dest => dest.CompanyName, opt => opt.MapFrom(src => src.Company!.Name))
+             .ForMember(dest => dest.MemberName, opt => opt.MapFrom(src => src.User!.UserName))
+             .ForMember(dest => dest.MemberAvatar, opt => opt.MapFrom(src => src.User!.Avatar))
+             .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.User!.Email))
+             .ForMember(dest => dest.Phone, opt => opt.MapFrom(src => src.User!.Phone))
+             .ForMember(dest => dest.Gender, opt => opt.MapFrom(src => src.User!.Gender))
+             .ForMember(dest => dest.IsOwner, opt => opt.MapFrom(src =>
+                 src.Company != null && src.User != null && src.Company.OwnerUser != null &&
+                 src.Company.OwnerUser.UserName == src.User.UserName))
+             .ForMember(dest => dest.NumberCompanyJoin,
+                 opt => opt.MapFrom(src => src.User.CompanyMembers.Count(cm => cm.IsDeleted == false)));
+
             .ForMember(dest => dest.MemberId, opt => opt.MapFrom(src => src.UserId))
             .ForMember(dest => dest.CompanyName, opt => opt.MapFrom(src => src.Company!.Name))
             .ForMember(dest => dest.MemberName, opt => opt.MapFrom(src => src.User!.UserName))
@@ -149,11 +163,7 @@ public class MappingProfile : Profile
             .ReverseMap();
 
         //--------------------------- entity: Transaction Payment ---------------------------------------------
-        CreateMap<SubscriptionRequest, SubscriptionPackage>()
-        .ForMember(dest => dest.Id, opt => opt.Ignore());
-
-        CreateMap<SubscriptionPackage, SubscriptionAdminResponse>();
-        CreateMap<SubscriptionPackage, SubscriptionResponse>();
+        CreateMap<CreateTransactionRequest, TransactionPayment>();
 
         //----------------------------     entity: Project  ---------------------------------------------
         CreateMap<Project, ProjectResponse>();
@@ -169,7 +179,6 @@ public class MappingProfile : Profile
         //----------------------------     entity: Notification ---------------------------------------------
         CreateMap<Notification, NotificationResponse>();
         CreateMap<SendNotificationRequest, Notification>();
-
 
     }
 
