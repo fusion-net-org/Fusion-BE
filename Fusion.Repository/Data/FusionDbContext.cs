@@ -59,6 +59,7 @@ public partial class FusionDbContext : DbContext
     public virtual DbSet<UserSubscription> UserSubscriptions { get; set; }
     public virtual DbSet<TransactionPayment> TransactionPayments { get; set; }
     public virtual DbSet<UserDevice> UserDevices { get; set; }
+    public virtual DbSet<CompanyActivityLog> CompanyActivityLogs { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -378,6 +379,11 @@ public partial class FusionDbContext : DbContext
                   .WithMany(e => e.TransactionPayments)
                   .HasForeignKey(e => e.PackageId)
                   .HasConstraintName("FK_TransactionPayments_SubscriptionPackage");
+        });
+
+        modelBuilder.Entity<CompanyActivityLog>(entity =>
+        {
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
         });
 
         OnModelCreatingPartial(modelBuilder);

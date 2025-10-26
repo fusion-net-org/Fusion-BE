@@ -1,4 +1,5 @@
 ﻿using Fusion.Repository.Repositories;
+using Fusion.Service.IServices;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,8 +21,13 @@ namespace Fusion.Service.Services
     public class RoleAdminService : IRoleAdminService
     {
         private readonly IRoleAdminRepository _repo;
+        private readonly ICompanyActivityService _logService;
 
-        public RoleAdminService(IRoleAdminRepository repo) => _repo = repo;
+        public RoleAdminService(IRoleAdminRepository repo, ICompanyActivityService logService)
+        {
+            _repo = repo;
+            _logService = logService;
+        }
         public Task<RoleDetailVm?> GetByIdAsync(Guid companyId, int roleId, CancellationToken ct = default)
         => _repo.GetByIdWithPermissionsAsync(companyId, roleId, ct);
         public Task UpdatePermissionsAsync(Guid companyId, int roleId, IEnumerable<int> functionIds, CancellationToken ct = default)

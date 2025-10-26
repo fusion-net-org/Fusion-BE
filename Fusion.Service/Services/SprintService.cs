@@ -1,7 +1,10 @@
-﻿using Fusion.Repository.Bases.Exceptions;
+﻿using Azure;
+using Fusion.Repository.Bases.Exceptions;
+using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.Enums;
 using Fusion.Repository.Repositories;
+using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.Sprint;
 using System;
 using System.Collections.Generic;
@@ -22,9 +25,16 @@ namespace Fusion.Service.Services
     public class SprintService : ISprintService
     {
         private readonly ISprintRepository _repo;
+        private readonly ICompanyActivityService _logService;
+        private readonly IUnitOfWork _unitOfWork;
 
 
-        public SprintService(ISprintRepository repo) => _repo = repo;
+        public SprintService(ISprintRepository repo, ICompanyActivityService logService, IUnitOfWork unitOfWork)
+        {
+            _repo = repo;
+            _logService = logService;
+            _unitOfWork = unitOfWork;
+        } 
 
 
         public async Task<SprintVm> CreateAsync(Guid currentUserId, SprintCreateRequest req, CancellationToken ct)
@@ -54,9 +64,18 @@ namespace Fusion.Service.Services
                 CreatedAt = DateTime.UtcNow
             };
 
-
             var created = await _repo.CreateAsync(sprint, req.TaskIds, currentUserId, ct);
 
+            var project = await _unitOfWork.Repository<Project>().FindAsync(c => c.Id == sprint.ProjectId);
+            var company = await _unitOfWork.Repository<Company>().FindAsync(c => c.Id == project.CompanyId);
+            var log = new CompanyActivityLog
+            {
+                CompanyId = company.Id,
+                ActorUserId = currentUserId,
+                Title = "Create sprint",
+                Description = $"user id:{currentUserId} has created sprint '{sprint.Id}' for project '{sprint.ProjectId}''",
+            };
+            await _logService.CreateLog(log);
 
             return new SprintVm
             {
