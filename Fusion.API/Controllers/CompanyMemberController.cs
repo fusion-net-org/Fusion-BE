@@ -9,6 +9,7 @@ using Fusion.Service.IServices;
 using Fusion.Service.Services;
 using Fusion.Service.ViewModels.Companies.Requests;
 using Fusion.Service.ViewModels.Companies.Responses;
+using Fusion.Service.ViewModels.UserRole.Requests;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.IdentityModel.Tokens.Jwt;
@@ -192,6 +193,30 @@ namespace Fusion.API.Controllers
                 data: result,
                 message: "Get summary status successfully"
             ));
+        }
+
+        [HttpPost("{companyId:guid}/users/roles")]
+        public async Task<IActionResult> AddUserRolesToCompany(Guid companyId, [FromBody] AddUserRoleToCompanyRequest request, CancellationToken token)
+        {
+            var emailClaim = User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email || c.Type == ClaimTypes.Email || c.Type == "email");
+            var inviterEmail = emailClaim?.Value; if (inviterEmail == null)
+            {
+                return Unauthorized(ResponseModel<string>.Error(
+                    statusCode: StatusCodes.Status401Unauthorized,
+                    message: "Unauthorized: User identity not found"
+                ));
+            }
+
+
+            var result = await _companyMemberService.AddRoleForMemberInCompany(
+                companyId,
+                request.RoleIds,
+                request.UserId,
+                inviterEmail,
+                token
+            );
+
+            return Ok(result);
         }
 
     }
