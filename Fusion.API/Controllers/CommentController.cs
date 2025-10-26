@@ -5,7 +5,6 @@ using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.Comment.Request;
 using Fusion.Service.ViewModels.Comment.Response;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Fusion.API.Controllers
