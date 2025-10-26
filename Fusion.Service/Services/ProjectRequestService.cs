@@ -30,16 +30,16 @@ namespace Fusion.Service.Services
         private readonly IMapper _mapper;
         private readonly ICurrentService _currentService;
         private readonly ICompanyActivityService _logService;
+        private readonly IMailService _mailService;
         private readonly IUnitOfWork _unitOfWork;
-
-        public ProjectRequestService(IProjectRequestRepository projectRequestRepository, INotificationService notificationService,
-            IMapper mapper, ICurrentService currentService, ICompanyActivityService logService, IUnitOfWork unitOfWork)
+        public ProjectRequestService(IProjectRequestRepository projectRequestRepository, INotificationService notificationService, IMapper mapper, ICurrentService currentService, ICompanyActivityService logService, IMailService mailService, IUnitOfWork unitOfWork)
         {
             _projectRequestRepository = projectRequestRepository;
             _notificationService = notificationService;
             _mapper = mapper;
             _currentService = currentService;
             _logService = logService;
+            _mailService = mailService;
             _unitOfWork = unitOfWork;
         }
 
@@ -58,6 +58,7 @@ namespace Fusion.Service.Services
             //    Context = result.Project.Name,
             //    NotificationType = NotificationTypeEnum.BUSINESS.ToString(),
             //});
+
 
             var log = new CompanyActivityLog
             {
@@ -88,6 +89,22 @@ namespace Fusion.Service.Services
             //    Context = null,
             //    NotificationType = NotificationTypeEnum.BUSINESS.ToString(),
             //});
+
+            var emailBody = $@"
+                <p>Dear {response.ExecutorCompany.OwnerUser.UserName},</p>
+               <p><b>{response.RequesterCompany.Name}</b> has invited your company to collaborate on the project <b>“{response.Name}”</b>.</p>
+                <p>Please log in to the Fusion platform to view and respond to the request.</p>
+                <br/>
+                <p>Best regards,<br/><b>Fusion System</b></p>
+            ";
+
+            await _mailService.SendEmailAsync(new ViewModels.Companies.Email.MailRequest()
+            {
+                Subject = $"New Project Collaboration Request from {response.RequesterCompany.Name}",
+                Body = emailBody,
+                ToEmail = response.ExecutorCompany.OwnerUser.Email
+            });
+
             var log = new CompanyActivityLog
             {
                 CompanyId = request.ExecutorCompanyId ?? Guid.Empty,
@@ -102,7 +119,7 @@ namespace Fusion.Service.Services
         public async Task<bool> DeleteProjectRequestAsync(Guid id, CancellationToken cancellationToken = default)
         {
             var result = await _projectRequestRepository.DeleteProjectRequestAsync(id, cancellationToken);
-            
+
             var projectRequest = await _projectRequestRepository.GetProjectRequestByIdAsync(id);
 
             var log = new CompanyActivityLog
