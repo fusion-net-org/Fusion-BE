@@ -93,7 +93,7 @@ namespace Fusion.API.Controllers
         }
 
 
-        [HttpPost("fired")]
+        [HttpPut("fired")]
         public async Task<IActionResult> FiredMemberFromCompany([FromBody] FiredMemberRequest request, CancellationToken token)
         {
 
