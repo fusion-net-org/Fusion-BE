@@ -23,17 +23,32 @@ namespace Fusion.API.Controllers
                 message: "Get workflows successfully"));
         }
 
-        // POST /api/companies/{companyId}/workflows
-        public record CreateWorkflowReq(string Name);
-        [HttpPost("companies/{companyId:guid}/workflows")]
+        // POST /api/companies/{companyId}/workflows/designer
+        [HttpPost("companies/{companyId:guid}/workflows/designer")]
         [Consumes("application/json")]
-        public async Task<IActionResult> Create(Guid companyId, [FromBody] CreateWorkflowReq req, CancellationToken ct)
+        public async Task<ActionResult<object>> CreateWithDesigner(
+            Guid companyId,
+            [FromBody] DesignerDto dto,
+            CancellationToken ct)
         {
-            var id = await _svc.CreateAsync(companyId, req.Name, ct);
-            return CreatedAtAction(nameof(GetDesigner), new { workflowId = id },
-                ResponseModel<object>.Ok(new { id },
-                    ResponseMessageHelper.FormatMessage(ResponseMessages.SAVE_SUCCESS, "Tạo workflow thành công")));
+            // 1) tạo workflow (chỉ cần name)
+            var workflowId = await _svc.CreateAsync(companyId, dto.Workflow.Name, ct);
+
+            // 2) ghép id vừa tạo vào payload rồi lưu designer
+            var payload = new DesignerDto(
+                new WorkflowVm(workflowId.ToString(), dto.Workflow.Name),
+                dto.Statuses ?? new(),
+                dto.Transitions ?? new()
+            );
+
+            await _svc.SaveDesignerAsync(companyId, workflowId, payload, ct);
+
+            // 201 + trả id để FE biết
+            return CreatedAtAction(nameof(GetDesigner),
+                new { companyId, workflowId },
+                new { id = workflowId });
         }
+
 
         // GET /api/workflows/{workflowId}/designer
         [HttpGet("workflows/{workflowId:guid}/designer")]

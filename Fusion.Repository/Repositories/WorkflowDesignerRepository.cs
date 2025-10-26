@@ -23,7 +23,6 @@ namespace Fusion.Repository.Repositories
         Task<List<WorkflowListItemVm>> GetAllAsync(Guid companyId, CancellationToken ct = default);
         Task<Guid> CreateAsync(Guid companyId, string name, CancellationToken ct = default);
         Task DeleteAsync(Guid companyId, Guid workflowId, CancellationToken ct = default);
-
         Task<DesignerDto> GetDesignerAsync(Guid workflowId, CancellationToken ct = default);
         Task SaveDesignerAsync(Guid companyId, Guid workflowId, DesignerDto payload, CancellationToken ct = default);
     }
@@ -66,7 +65,7 @@ namespace Fusion.Repository.Repositories
             if (wf == null || wf.CompanyId != companyId)
                 throw new KeyNotFoundException("Workflow not found.");
 
-            // Block delete if any Project is using this workflow
+            // block nếu đang được Project dùng
             var anyProjects = await _db.Projects.AsNoTracking()
                 .AnyAsync(p => p.WorkflowId == workflowId, ct);
             if (anyProjects)
@@ -74,7 +73,6 @@ namespace Fusion.Repository.Repositories
 
             using var tx = await _db.Database.BeginTransactionAsync(ct);
 
-            // Check if any status is referenced by Tickets or TaskWorkflows
             var statusIds = await _db.WorkflowStatuses.AsNoTracking()
                 .Where(s => s.WorkflowId == workflowId)
                 .Select(s => s.Id)
@@ -92,7 +90,6 @@ namespace Fusion.Repository.Repositories
                 if (usedByTaskWf)
                     throw new InvalidOperationException("Cannot delete workflow because some statuses are referenced by TaskWorkflow.");
 
-                // Remove transitions, then statuses
                 var trans = await _db.WorkflowTransitions
                     .Where(tr => tr.WorkflowId == workflowId)
                     .ToListAsync(ct);
@@ -117,18 +114,17 @@ namespace Fusion.Repository.Repositories
                 .AsNoTracking()
                 .SingleAsync(w => w.Id == workflowId, ct);
 
-            // Default layout from "Position" (DB has no x/y)
             var statuses = wf.WorkflowStatuses
                 .OrderBy(s => s.Position)
-                .Select((s, idx) => new StatusVm(
+                .Select(s => new StatusVm(
                     s.Id.ToString(),
                     s.Name ?? "",
                     s.IsStart,
                     s.IsEnd,
-                    X: 200 + idx * 320,   // default X by order
-                    Y: 320,               // default Y fixed
-                    Roles: new List<string>(), // not stored in DB
-                    Color: null                // not stored in DB
+                    X: s.X == 0 ? 200 : s.X,     // fallback nếu data cũ
+                    Y: s.Y == 0 ? 320 : s.Y,
+                    Roles: WorkflowMap.ParseList(s.RolesJson),
+                    Color: s.Color
                 ))
                 .ToList();
 
@@ -136,12 +132,12 @@ namespace Fusion.Repository.Repositories
                 .OrderBy(t => t.Id)
                 .Select(t => new TransitionVm(
                     t.Id,
-                    FromStatusId: t.FromStatusId!.Value.ToString(),
-                    ToStatusId: t.ToStatusId!.Value.ToString(),
-                    Type: "optional",      // not stored in DB
-                    Label: null,
-                    Rule: null,
-                    RoleNames: new List<string>() // not stored in DB
+                    t.FromStatusId!.Value.ToString(),
+                    t.ToStatusId!.Value.ToString(),
+                    WorkflowMap.NormalizeType(t.Type),
+                    t.Label,
+                    t.Rule,
+                    WorkflowMap.ParseList(t.RoleNamesJson)
                 ))
                 .ToList();
 
@@ -164,7 +160,7 @@ namespace Fusion.Repository.Repositories
             if (wf == null) throw new KeyNotFoundException("Workflow not found.");
             if (wf.CompanyId != companyId) throw new InvalidOperationException("Workflow does not belong to the specified company.");
 
-            // Ensure status names are unique within the workflow (case-insensitive)
+            // check trùng tên status (không phân biệt hoa thường)
             var dupCheck = payload.Statuses
                 .Where(s => !string.IsNullOrWhiteSpace(s.Name))
                 .GroupBy(s => s.Name.Trim(), StringComparer.OrdinalIgnoreCase)
@@ -174,31 +170,37 @@ namespace Fusion.Repository.Repositories
 
             using var tx = await _db.Database.BeginTransactionAsync(ct);
 
-            // ===== Upsert Statuses (by position) =====
-            var incoming = payload.Statuses ?? new();
-            // Map string id -> Guid; generate a new Guid if parsing fails
-            var normalized = incoming.Select((s, idx) =>
+            // ===== Upsert Statuses =====
+            var statusIncoming = payload.Statuses ?? new();
+
+            var normalized = statusIncoming.Select((s, idx) =>
             {
                 var ok = Guid.TryParse(s.Id, out var gid);
+                var newId = ok ? gid : Guid.NewGuid();
                 return new
                 {
-                    Id = ok ? gid : Guid.NewGuid(),
+                    OldId = s.Id,            // id FE gửi
+                    Id = newId,              // id lưu DB
                     Name = (s.Name ?? "").Trim(),
                     s.IsStart,
                     s.IsEnd,
-                    Position = idx
+                    Position = idx,
+                    s.X,
+                    s.Y,
+                    Color = WorkflowMap.NormalizeHex(s.Color),
+                    RolesJson = WorkflowMap.ToJson(s.Roles)
                 };
             }).ToList();
 
-            // Extra name-uniqueness safety
-            var names = normalized.Where(x => !string.IsNullOrWhiteSpace(x.Name))
-                                  .Select(x => x.Name).ToList();
+            // name unique
+            var names = normalized.Where(x => !string.IsNullOrWhiteSpace(x.Name)).Select(x => x.Name).ToList();
             if (names.Count != names.Distinct(StringComparer.OrdinalIgnoreCase).Count())
                 throw new InvalidOperationException("Duplicate status names (case-insensitive).");
 
+            var mapByOldId = normalized.ToDictionary(x => x.OldId, x => x.Id, StringComparer.Ordinal);
             var existById = wf.WorkflowStatuses.ToDictionary(x => x.Id, x => x);
 
-            // Delete statuses not present in payload (but only if not referenced)
+            // xoá những status không còn trong payload (kèm xoá transition liên quan)
             var keepIds = normalized.Select(x => x.Id).ToHashSet();
             var toDelete = wf.WorkflowStatuses.Where(s => !keepIds.Contains(s.Id)).ToList();
             if (toDelete.Count > 0)
@@ -215,7 +217,6 @@ namespace Fusion.Repository.Repositories
                 if (usedByTaskWf)
                     throw new InvalidOperationException("Some statuses are referenced by TaskWorkflow — deletion is not allowed.");
 
-                // Remove related transitions first
                 var transToRemove = await _db.WorkflowTransitions
                     .Where(tr => tr.WorkflowId == workflowId &&
                                  ((tr.FromStatusId != null && delIds.Contains(tr.FromStatusId.Value)) ||
@@ -226,16 +227,12 @@ namespace Fusion.Repository.Repositories
                 _db.WorkflowStatuses.RemoveRange(toDelete);
             }
 
-            // Upsert / update statuses
+            // upsert
             foreach (var s in normalized)
             {
                 if (!existById.TryGetValue(s.Id, out var entity))
                 {
-                    entity = new WorkflowStatus
-                    {
-                        Id = s.Id,
-                        WorkflowId = wf.Id
-                    };
+                    entity = new WorkflowStatus { Id = s.Id, WorkflowId = wf.Id };
                     _db.WorkflowStatuses.Add(entity);
                     wf.WorkflowStatuses.Add(entity);
                 }
@@ -244,59 +241,71 @@ namespace Fusion.Repository.Repositories
                 entity.IsStart = s.IsStart;
                 entity.IsEnd = s.IsEnd;
                 entity.Position = s.Position;
-                // guard_name_key: leave untouched (not used by the payload)
+                entity.X = s.X;
+                entity.Y = s.Y;
+                entity.Color = s.Color;
+                entity.RolesJson = s.RolesJson;
             }
             await _db.SaveChangesAsync(ct);
 
-            // ===== Upsert Transitions (by unique pair) =====
-            var nowStatusIds = await _db.WorkflowStatuses.AsNoTracking()
-                .Where(x => x.WorkflowId == workflowId)
-                .Select(x => x.Id)
+            // ===== Upsert Transitions (string type) =====
+            var existingTrans = await _db.WorkflowTransitions
+                .Where(tr => tr.WorkflowId == wf.Id)
                 .ToListAsync(ct);
-            var statusSet = nowStatusIds.ToHashSet();
 
-            var incomingPairs = (payload.Transitions ?? new())
-                .Select(t => (
-                    From: TryParseGuid(t.FromStatusId),
-                    To: TryParseGuid(t.ToStatusId)
-                ))
-                .Where(p => p.From.HasValue && p.To.HasValue)
-                .Select(p => (p.From!.Value, p.To!.Value))
-                .Where(p => statusSet.Contains(p.Item1) && statusSet.Contains(p.Item2)) // only keep valid pairs
-                .Distinct()
-                .ToHashSet();
-
-            // Remove transitions that are no longer present
-            var delTrans = wf.WorkflowTransitions
-                .Where(tr => !incomingPairs.Contains((tr.FromStatusId!.Value, tr.ToStatusId!.Value)))
-                .ToList();
-            if (delTrans.Count > 0) _db.WorkflowTransitions.RemoveRange(delTrans);
-
-            // Add missing transitions
-            foreach (var (fromId, toId) in incomingPairs)
-            {
-                var exists = wf.WorkflowTransitions.Any(tr =>
-                    tr.FromStatusId == fromId && tr.ToStatusId == toId);
-                if (!exists)
+            // map From/To bằng mapByOldId trước, nếu không có thì TryParseGuid
+            var trIncoming = (payload.Transitions ?? new())
+                .Select(t =>
                 {
-                    _db.WorkflowTransitions.Add(new WorkflowTransition
+                    Guid? f = mapByOldId.TryGetValue(t.FromStatusId, out var fId) ? fId : TryParseGuid(t.FromStatusId);
+                    Guid? o = mapByOldId.TryGetValue(t.ToStatusId, out var tId) ? tId : TryParseGuid(t.ToStatusId);
+                    return new
+                    {
+                        From = f,
+                        To = o,
+                        Type = WorkflowMap.NormalizeType(t.Type),
+                        t.Label,
+                        t.Rule,
+                        RoleNamesJson = WorkflowMap.ToJson(t.RoleNames ?? new())
+                    };
+                })
+                .Where(x => x.From.HasValue && x.To.HasValue)
+                .Select(x => new { From = x.From!.Value, To = x.To!.Value, x.Type, x.Label, x.Rule, x.RoleNamesJson })
+                .ToList();
+
+            var keepPairs = trIncoming.Select(i => (i.From, i.To)).ToHashSet();
+            var toRemoveTrans = existingTrans
+                .Where(tr => !keepPairs.Contains((tr.FromStatusId!.Value, tr.ToStatusId!.Value)))
+                .ToList();
+            if (toRemoveTrans.Count > 0) _db.WorkflowTransitions.RemoveRange(toRemoveTrans);
+
+            foreach (var inc in trIncoming)
+            {
+                var tr = existingTrans.FirstOrDefault(e => e.FromStatusId == inc.From && e.ToStatusId == inc.To);
+                if (tr == null)
+                {
+                    tr = new WorkflowTransition
                     {
                         WorkflowId = wf.Id,
-                        FromStatusId = fromId,
-                        ToStatusId = toId
-                    });
+                        FromStatusId = inc.From,
+                        ToStatusId = inc.To
+                    };
+                    _db.WorkflowTransitions.Add(tr);
+                    existingTrans.Add(tr);
                 }
+
+                tr.Type = inc.Type;          // string
+                tr.Label = inc.Label;
+                tr.Rule = inc.Rule;
+                tr.RoleNamesJson = inc.RoleNamesJson;
             }
 
             await _db.SaveChangesAsync(ct);
             await tx.CommitAsync(ct);
         }
 
-        // Helpers
         private static Guid? TryParseGuid(string? s)
-        {
-            if (string.IsNullOrWhiteSpace(s)) return null;
-            return Guid.TryParse(s, out var g) ? g : null;
-        }
+            => string.IsNullOrWhiteSpace(s) ? (Guid?)null
+             : Guid.TryParse(s, out var g) ? g : (Guid?)null;
     }
 }

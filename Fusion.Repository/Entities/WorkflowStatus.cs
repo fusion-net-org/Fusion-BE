@@ -48,4 +48,8 @@ public partial class WorkflowStatus
 
     [InverseProperty("ToStatus")]
     public virtual ICollection<WorkflowTransition> WorkflowTransitionToStatuses { get; set; } = new List<WorkflowTransition>();
+    [Column("x")] public int X { get; set; }           // default 200
+    [Column("y")] public int Y { get; set; }           // default 320
+    [Column("color"), StringLength(9)] public string? Color { get; set; } // "#RRGGBB" / "#RRGGBBAA"
+    [Column("roles_json")] public string? RolesJson { get; set; }
 }
