@@ -70,6 +70,17 @@ namespace Fusion.Service.Services
 
             await _unitOfWork.SaveChangesAsync();
 
+            var user = await _unitOfWork.Repository<User>().FindAsync(c => c.Id == currentUserId);
+
+            var log = new CompanyActivityLog
+            {
+                CompanyId = companyB.Id,
+                ActorUserId = currentUserId,
+                Title = "Accpect Company Friendship",
+                Description = $"User:'{user.UserName}' has accepted the invitation to become a partner with company '{companyA.Name}'.",
+
+            };
+            await _logService.CreateLog(log);
 
             return _mapper.Map<CompanyFriendshipResponse>(entity);
         }
@@ -102,6 +113,17 @@ namespace Fusion.Service.Services
 
             await _unitOfWork.SaveChangesAsync();
 
+            var user = await _unitOfWork.Repository<User>().FindAsync(c => c.Id == currentUserId);
+
+            var log = new CompanyActivityLog
+            {
+                CompanyId = companyB.Id,
+                ActorUserId = currentUserId,
+                Title = "Cancel Company Friendship",
+                Description = $"User:'{user.UserName}' has canceled the invitation to become a partner with company '{companyA.Name}'.",
+
+            };
+            await _logService.CreateLog(log);
             return _mapper.Map<CompanyFriendshipResponse>(entity);
         }
 
@@ -213,12 +235,14 @@ namespace Fusion.Service.Services
            style='background-color:red;color:white;padding:10px 15px;text-decoration:none;border-radius:5px;'>Reject</a>
          ",
             });
+
+            var user = await _unitOfWork.Repository<User>().FindAsync(c => c.Id == requesterId);
             var log = new CompanyActivityLog
             {
                 CompanyId = companyAId,
                 ActorUserId = requesterId,
                 Title = "Invite Company Friendship",
-                Description = $"User id:'{requesterId}' sent an invitation to partner '{companyBId}'.",
+                Description = $"User:'{user.UserName}' sent an invitation to partner '{nameCompanyB}'.",
 
             };
             await _logService.CreateLog(log);
@@ -274,12 +298,13 @@ namespace Fusion.Service.Services
 
             await _unitOfWork.SaveChangesAsync();
 
+            var user = await _unitOfWork.Repository<User>().FindAsync(c => c.Id == currentUserId);
             var log = new CompanyActivityLog
             {
                 CompanyId = companyB.Id,
                 ActorUserId = currentUserId,
                 Title = "Delete Company Friendship",
-                Description = $"User id:'{currentUserId}'  has cancelled the invitation to become a partner of the company with id:'{companyA.Id}'.",
+                Description = $"User:'{user.UserName}' has cancelled the invitation to become a partner of the company with id:'{companyA.Name}'.",
 
             };
             await _logService.CreateLog(log);
@@ -326,7 +351,6 @@ namespace Fusion.Service.Services
         {
             return await _companyFriendshipRepository.GetCompanyFriendshipStatusSummary(ownerUserId, companyId);
         }
-
       
     }
 }
