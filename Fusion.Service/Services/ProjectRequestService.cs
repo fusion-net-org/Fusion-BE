@@ -32,10 +32,7 @@ namespace Fusion.Service.Services
         private readonly ICompanyActivityService _logService;
         private readonly IMailService _mailService;
         private readonly IUnitOfWork _unitOfWork;
-
-        public ProjectRequestService(IProjectRequestRepository projectRequestRepository, INotificationService notificationService,
-            IMapper mapper, ICurrentService currentService, ICompanyActivityService logService, IUnitOfWork unitOfWork)
-        public ProjectRequestService(IProjectRequestRepository projectRequestRepository, INotificationService notificationService, IMapper mapper, ICurrentService currentService, ICompanyActivityService logService, IMailService mailService)
+        public ProjectRequestService(IProjectRequestRepository projectRequestRepository, INotificationService notificationService, IMapper mapper, ICurrentService currentService, ICompanyActivityService logService, IMailService mailService, IUnitOfWork unitOfWork)
         {
             _projectRequestRepository = projectRequestRepository;
             _notificationService = notificationService;
