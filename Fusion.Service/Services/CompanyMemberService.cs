@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using CloudinaryDotNet.Actions;
 using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.Company_Member;
@@ -200,12 +201,14 @@ namespace Fusion.Service.Services
                 ToEmail = result.User.Email
             });
 
+            string currentUserName = await GetUserName(_currentService.GetUserId());
+            string userResult = await GetUserName(result.User.Id);
             var log = new CompanyActivityLog
             {
                 CompanyId = companyId,
                 ActorUserId = _currentService.GetUserId(),
                 Title = "Invite Member To Company",
-                Description = $"User id:'{_currentService.GetUserId()}'  sent a company invitation to user with ID {result.User.Id}'.",
+                Description = $"User :'{currentUserName}' sent a company invitation to user: '{userResult}'.",
 
             };
             await _logService.CreateLog(log, cancellationToken);
@@ -226,12 +229,13 @@ namespace Fusion.Service.Services
 
             var result = await _companyMemberRepository.AcceptJoinMemberToCompany(data.UserId.Value, data.CompanyId.Value, cancellationToken);
 
+            var userResult = await GetUserName(data.UserId.Value);
             var log = new CompanyActivityLog
             {
                 CompanyId = data.CompanyId.Value,
                 ActorUserId = data.UserId.Value,
                 Title = "Accept Join Member To Company",
-                Description = $"User id:'{data.UserId.Value}' has agreed to join the company.",
+                Description = $"User '{userResult}' has agreed to join the company.",
 
             };
             await _logService.CreateLog(log, cancellationToken);
@@ -252,12 +256,13 @@ namespace Fusion.Service.Services
 
             var result = await _companyMemberRepository.RejectJoinMemberToCompany(data.UserId.Value, data.CompanyId.Value, cancellationToken);
 
+            var userResult = await GetUserName(data.UserId.Value);
             var log = new CompanyActivityLog
             {
                 CompanyId = data.CompanyId.Value,
                 ActorUserId = data.UserId.Value,
                 Title = "Reject Join Member To Company",
-                Description = $"User id:'{data.UserId.Value}' has refured to join the company.",
+                Description = $"User:'{userResult}' has refured to join the company.",
 
             };
             await _logService.CreateLog(log, cancellationToken);
@@ -268,12 +273,14 @@ namespace Fusion.Service.Services
         {
             var result = await _companyMemberRepository.RemoveMemberFromCompany(terminatorEmail, userId, companyId, token);
 
+            var currentUserName = await GetUserName(_currentService.GetUserId());
+            var userResult = await GetUserName(userId);
             var log = new CompanyActivityLog
             {
                 CompanyId = companyId,
                 ActorUserId =_currentService.GetUserId(),
                 Title = "Remove Member From Company",
-                Description = $"User id:'{_currentService.GetUserId()}' deleted member with user id '{userId}' has left the company.",
+                Description = $"User:'{currentUserName}' deleted member with user '{userResult}' has left the company.",
 
             };
             await _logService.CreateLog(log);
@@ -321,7 +328,25 @@ namespace Fusion.Service.Services
                 }).ToList()
             };
 
+            var currentUserName = await GetUserName(_currentService.GetUserId());
+            var userResult = await GetUserName(memberId);
+            var log = new CompanyActivityLog
+            {
+                CompanyId = companyId,
+                ActorUserId = _currentService.GetUserId(),
+                Title = "Add Role For Member In Company",
+                Description = $"User:'{currentUserName}'added role {response.Roles}to user  '{userResult}' has left the company.",
+
+            };
+            await _logService.CreateLog(log);
+
             return response;
+        }
+
+        public async Task<string?> GetUserName(Guid userId)
+        {
+            var user = await _userRepository.GetUserByIdAsync(userId);
+            return user.UserName;
         }
     }
 }

@@ -3,6 +3,7 @@ using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.Enums;
+using Fusion.Repository.IRepositories;
 using Fusion.Repository.Repositories;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.Sprint;
@@ -68,12 +69,14 @@ namespace Fusion.Service.Services
 
             var project = await _unitOfWork.Repository<Project>().FindAsync(c => c.Id == sprint.ProjectId);
             var company = await _unitOfWork.Repository<Company>().FindAsync(c => c.Id == project.CompanyId);
+
+            var currentUserName = await GetUserName(currentUserId);
             var log = new CompanyActivityLog
             {
                 CompanyId = company.Id,
                 ActorUserId = currentUserId,
                 Title = "Create sprint",
-                Description = $"user id:{currentUserId} has created sprint '{sprint.Id}' for project '{sprint.ProjectId}''",
+                Description = $"user:{currentUserName} has created sprint '{sprint.Name}' for project '{project.Name}''",
             };
             await _logService.CreateLog(log);
 
@@ -114,5 +117,11 @@ namespace Fusion.Service.Services
 
         public Task CompleteAsync(Guid sprintId, Guid projectId, bool carryBacklog, Guid? nextSprintId, CancellationToken ct)
         => _repo.CompleteAsync(sprintId, projectId, carryBacklog, nextSprintId, ct);
+
+        private async Task<string?> GetUserName(Guid userId)
+        {
+            var user = await _unitOfWork.Repository<User>().FindAsync(c => c.Id == userId);
+            return user.UserName;
+        }
     }
 }

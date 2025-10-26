@@ -241,8 +241,6 @@ namespace Fusion.Service.Services
             return list;
         }
 
-
-
         public async Task<Guid?> GetCompanyIdByUserId(Guid userId)
         {
             return await _companyRepository.GetCompanyIdByUserId(userId);
@@ -343,7 +341,7 @@ namespace Fusion.Service.Services
                 CompanyId = companyId,
                 ActorUserId = user.Id,
                 Title = "Update Company Information",
-                Description = $"Company '{company.Name}' information has been updated by user id:'{user.Id}'.",
+                Description = $"Company '{company.Name}' information has been updated by user id:'{user.UserName}'.",
 
             };
             await _logService.CreateLog(log, cancellationToken);
@@ -377,7 +375,7 @@ namespace Fusion.Service.Services
                 CompanyId = companyId,
                 ActorUserId = user.Id,
                 Title = "Deleted Company",
-                Description = $"Company '{company.Name}' has been deleted by user id:'{user.Id}'.",
+                Description = $"Company '{company.Name}' has been deleted by user id:'{user.UserName}'.",
 
             };
             await _logService.CreateLog(log, cancellationToken);

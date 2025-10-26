@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿
 using AutoMapper;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
@@ -10,7 +6,6 @@ using Fusion.Repository.IRepositories;
 using Fusion.Repository.Repositories;
 using Fusion.Service.Commons.Helpers;
 using Fusion.Service.IServices;
-using Fusion.Service.ViewModels.Companies.Responses;
 using Fusion.Service.ViewModels.Task.Request;
 using Fusion.Service.ViewModels.Task.Response;
 
@@ -112,6 +107,7 @@ namespace Fusion.Service.Services
 
             var companyId = await GetCompanyId(updatedEntity.ProjectId);
 
+            var currentUserName = await GetUserName(_currentService.GetUserId());
             var log = new CompanyActivityLog
             {
                 CompanyId = companyId,
@@ -130,6 +126,12 @@ namespace Fusion.Service.Services
             var company = await _unitOfWork.Repository<Company>().FindAsync(c => c.Id == project.CompanyId);
 
             return company.Id;
+        }
+
+        private async Task<string?> GetUserName(Guid userId)
+        {
+            var user = await _unitOfWork.Repository<User>().FindAsync(c => c.Id ==userId);
+            return user.UserName;
         }
     }
 }
