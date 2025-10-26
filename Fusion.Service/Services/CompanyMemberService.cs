@@ -3,7 +3,6 @@ using CloudinaryDotNet.Actions;
 using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.Company_Member;
-using Fusion.Repository.Bases.Responses;
 using Fusion.Repository.Entities;
 using Fusion.Repository.Enums;
 using Fusion.Repository.IRepositories;
