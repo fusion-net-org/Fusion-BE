@@ -88,12 +88,13 @@ namespace Fusion.Service.Services
             //    Event = "MEMBER_REMOVED",
             //    NotificationType = NotificationTypeEnum.BUSINESS.ToString()
             //});
+            var currentUserName = await GetUserName(_currentService.GetUserId());
             var log = new CompanyActivityLog
             {
                 CompanyId = companyId,
                 ActorUserId = _currentService.GetUserId(),
                 Title = "Fired Member From Company",
-                Description = $"User id:'{_currentService.GetUserId()}'  deleted member with user id '{result.User.Id}' has left the company .",
+                Description = $"User:'{currentUserName}' deleted member with user id '{result.User.Id}' has left the company .",
 
             };
             return _mapper.Map<CompanyMemberResponse>(response);

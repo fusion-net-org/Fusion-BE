@@ -64,12 +64,13 @@ namespace Fusion.Service.Services
 
 			var companyId = await GetCompanyIdAsync(newTicket.Id);
 
-			var log = new CompanyActivityLog
+            var currentUserName = await GetUserName(_currentService.GetUserId());
+            var log = new CompanyActivityLog
 			{
                 CompanyId = companyId,
                 ActorUserId = _currentService.GetUserId(),
                 Title = "Create ticket",
-                Description = $"user id:{_currentService.GetUserId()} has created ticket '{newTicket.Id}' for project '{newTicket.ProjectId}'",
+                Description = $"User:{currentUserName} has created ticket '{newTicket.TicketName}' for project '{newTicket.Project.Name}'",
             };
 			await _logService.CreateLog(log);
 			return _mapper.Map<TicketResponse>(newTicket);
