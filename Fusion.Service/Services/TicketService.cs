@@ -84,12 +84,13 @@ namespace Fusion.Service.Services
 
 			var companyId = await GetCompanyIdAsync(ticketId);
 
+            var currentUserName = await GetUserName(_currentService.GetUserId());
             var log = new CompanyActivityLog
             {
                 CompanyId = companyId,
                 ActorUserId = _currentService.GetUserId(),
                 Title = "Delete ticket",
-                Description = $"user id:{_currentService.GetUserId()} has deleted ticket '{ticket.Id}' from project '{ticket.ProjectId}'",
+                Description = $"User:{currentUserName} has deleted ticket '{ticket.TicketName}' from project '{ticket.Project.Name}'",
             };
 			await _logService.CreateLog(log);
             return true;
@@ -139,12 +140,13 @@ namespace Fusion.Service.Services
 			var result = await _ticketRepository.UpdateTicketAsync(ticketId, _mapper.Map<Ticket>(request), cancellationToken);
 
 			var companyId = await GetCompanyIdAsync(ticketId);
-			var log = new CompanyActivityLog
+            var currentUserName = await GetUserName(_currentService.GetUserId());
+            var log = new CompanyActivityLog
 			{
 				CompanyId = companyId,
 				ActorUserId = _currentService.GetUserId(),
 				Title = "Update ticket",
-				Description = $"user id:{_currentService.GetUserId()} has updated ticket '{ticketId}' from project '{request.ProjectId}'",
+				Description = $"User:{currentUserName} has updated ticket '{result.TicketName}' from project '{result.Project.Name}'",
 			};
 			await _logService.CreateLog(log);
 			return _mapper.Map<TicketResponse>(result);
@@ -156,6 +158,11 @@ namespace Fusion.Service.Services
             var company = await _unitOfWork.Repository<Company>().FindAsync(c => c.Id == project.CompanyId);
 
 			return company.Id;
+        }
+        private async Task<string?> GetUserName(Guid userId)
+        {
+            var user = await _unitOfWork.Repository<User>().FindAsync(c => c.Id == userId);
+            return user.UserName;
         }
     }
 }

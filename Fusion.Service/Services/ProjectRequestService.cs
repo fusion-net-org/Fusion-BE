@@ -4,6 +4,7 @@ using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.ProjectRequest;
 using Fusion.Repository.Bases.Responses;
+using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.Enums;
 using Fusion.Repository.IRepositories;
@@ -29,14 +30,17 @@ namespace Fusion.Service.Services
         private readonly IMapper _mapper;
         private readonly ICurrentService _currentService;
         private readonly ICompanyActivityService _logService;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public ProjectRequestService(IProjectRequestRepository projectRequestRepository, INotificationService notificationService, IMapper mapper, ICurrentService currentService, ICompanyActivityService logService)
+        public ProjectRequestService(IProjectRequestRepository projectRequestRepository, INotificationService notificationService,
+            IMapper mapper, ICurrentService currentService, ICompanyActivityService logService, IUnitOfWork unitOfWork)
         {
             _projectRequestRepository = projectRequestRepository;
             _notificationService = notificationService;
             _mapper = mapper;
             _currentService = currentService;
             _logService = logService;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task<ProjectRequestResponse> AcceptProjectRequestAsync(Guid requestId, string executorEmail, CancellationToken cancellationToken = default)
@@ -63,6 +67,7 @@ namespace Fusion.Service.Services
                 Description = $"user id: '{_currentService.GetUserId()}' has accepted project request {result.Code} for project {result.Name}",
             };
             await _logService.CreateLog(log, cancellationToken);
+
             return _mapper.Map<ProjectRequestResponse>(result);
         }
 
@@ -139,12 +144,13 @@ namespace Fusion.Service.Services
             //    NotificationType = NotificationTypeEnum.BUSINESS.ToString(),
             //});
 
+            var currentUserName = await GetUserName(_currentService.GetUserId());
             var log = new CompanyActivityLog
             {
                 CompanyId = projectRequest?.RequesterCompany.Id ?? Guid.Empty,
                 ActorUserId = _currentService.GetUserId(),
                 Title = "Reject project request",
-                Description = $"user id: '{_currentService.GetUserId()}' has rejected project request {projectRequest?.Code} for project {projectRequest?.Name}",
+                Description = $"user:'{currentUserName}' has rejected project request {projectRequest?.Code} for project {projectRequest?.Name}",
             };
             await _logService.CreateLog(log, cancellationToken);
             return new ProjectRequestRejectResponse
@@ -217,15 +223,21 @@ namespace Fusion.Service.Services
             //    Context = null,
             //    NotificationType = NotificationTypeEnum.BUSINESS.ToString(),
             //});
+            var currentUserName = await GetUserName(_currentService.GetUserId());
             var log = new CompanyActivityLog
             {
                 CompanyId = request.ExecutorCompanyId ?? Guid.Empty,
                 ActorUserId = _currentService.GetUserId(),
                 Title = "Update project request",
-                Description = $"user id: '{_currentService.GetUserId()}' has updated project request {response.Code} for project {response.Name}",
+                Description = $"user:'{currentUserName}' has updated project request {response.Code} for project {response.Name}",
             };
             await _logService.CreateLog(log, cancellationToken);
             return _mapper.Map<ProjectRequestResponse>(response);
+        }
+        private async Task<string?> GetUserName(Guid userId)
+        {
+            var user = await _unitOfWork.Repository<User>().FindAsync(c => c.Id == userId);
+            return user.UserName;
         }
     }
 }
