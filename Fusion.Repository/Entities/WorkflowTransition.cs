@@ -32,4 +32,10 @@ public partial class WorkflowTransition
     [ForeignKey("WorkflowId")]
     [InverseProperty("WorkflowTransitions")]
     public virtual Workflow? Workflow { get; set; }
+    [Column("type")]
+    [StringLength(30)]
+    public string? Type { get; set; }
+    [Column("label"), StringLength(100)] public string? Label { get; set; }
+    [Column("rule"), StringLength(400)] public string? Rule { get; set; }
+    [Column("role_names_json")] public string? RoleNamesJson { get; set; }
 }
