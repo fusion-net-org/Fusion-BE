@@ -39,9 +39,11 @@ namespace Fusion.Service.Services
         private readonly IValidator<CompanyRequest> _validator;
         private readonly ICompanyFriendshipRepository _companyFriendshipRepository;
         private readonly IMailService _mailService;
+        private readonly ICompanyActivityService _logService;
 
         public CompanyService(IMapper mapper, ICompanyRepository companyRepository, ICloudinaryService cloudinaryService
-            , IUserRepository userRepository, ICompanyMemberRepository companyMemberRepository, IValidator<CompanyRequest> validator, ICompanyFriendshipRepository companyFriendshipRepository, IMailService mailService)
+            , IUserRepository userRepository, ICompanyMemberRepository companyMemberRepository, IValidator<CompanyRequest> validator, ICompanyFriendshipRepository companyFriendshipRepository,
+            IMailService mailService, ICompanyActivityService logService)
         {
             _mapper = mapper;
             _companyRepository = companyRepository;
@@ -51,6 +53,7 @@ namespace Fusion.Service.Services
             _validator = validator;
             _companyFriendshipRepository = companyFriendshipRepository;
             _mailService = mailService;
+            _logService = logService;
         }
 
         public async Task<CompanyResponse> CreateCompanyAsync(CompanyRequest request, string Email, CancellationToken cancellationToken = default)
@@ -335,6 +338,15 @@ namespace Fusion.Service.Services
 
             var result = await _companyRepository.UpdateCompanyAsync(image_company, avatar_company, companyId, _mapper.Map<Company>(request), cancellationToken);
 
+            var log = new CompanyActivityLog
+            {
+                CompanyId = companyId,
+                ActorUserId = user.Id,
+                Title = "Update Company Information",
+                Description = $"Company '{company.Name}' information has been updated by user id:'{user.Id}'.",
+
+            };
+            await _logService.CreateLog(log, cancellationToken);
             return _mapper.Map<CompanyResponse>(result);
         }
 
@@ -359,6 +371,16 @@ namespace Fusion.Service.Services
                     .CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Owner User in this company"));
 
             await _companyRepository.DeleteCompanyAsync(company, cancellationToken);
+
+            var log = new CompanyActivityLog
+            {
+                CompanyId = companyId,
+                ActorUserId = user.Id,
+                Title = "Deleted Company",
+                Description = $"Company '{company.Name}' has been deleted by user id:'{user.Id}'.",
+
+            };
+            await _logService.CreateLog(log, cancellationToken);
             return true;
         }
 

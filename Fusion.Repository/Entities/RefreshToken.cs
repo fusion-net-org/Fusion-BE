@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace Fusion.Repository.Entities;
 
 
-[Table("refresh_tokens")]
+[Table("RefreshTokens")]
 public class RefreshToken
 {
     [Key]

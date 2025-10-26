@@ -16,7 +16,9 @@ using System.Collections.Generic;
 using System.ComponentModel.Design;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace Fusion.Service.Services
 {
@@ -27,14 +29,16 @@ namespace Fusion.Service.Services
         private readonly IMapper _mapper;
         private readonly IMailService _mailService;
         private readonly ICompanyRepository _companyRepository;
+        private readonly ICompanyActivityService _logService;
         public CompanyFriendshipService(IUnitOfWork unitOfWork, ICompanyFriendshipRepository userRepository,
-    IMapper mapper, IMailService mailService, ICompanyRepository companyRepository)
+    IMapper mapper, IMailService mailService, ICompanyRepository companyRepository, ICompanyActivityService logService)
         {
             _unitOfWork = unitOfWork;
             _companyFriendshipRepository = userRepository;
             _mapper = mapper;
             _mailService = mailService;
             _companyRepository = companyRepository;
+            _logService = logService;
         }
 
         public async Task<CompanyFriendshipResponse> AcceptCompanyFriendship(long id, Guid currentUserId)
@@ -65,6 +69,7 @@ namespace Fusion.Service.Services
             });
 
             await _unitOfWork.SaveChangesAsync();
+
 
             return _mapper.Map<CompanyFriendshipResponse>(entity);
         }
@@ -208,7 +213,15 @@ namespace Fusion.Service.Services
            style='background-color:red;color:white;padding:10px 15px;text-decoration:none;border-radius:5px;'>Reject</a>
          ",
             });
+            var log = new CompanyActivityLog
+            {
+                CompanyId = companyAId,
+                ActorUserId = requesterId,
+                Title = "Invite Company Friendship",
+                Description = $"User id:'{requesterId}' sent an invitation to partner '{companyBId}'.",
 
+            };
+            await _logService.CreateLog(log);
             return _mapper.Map<CompanyFriendshipResponse>(entity);
         }
         public async Task<CompanyFriendshipResponse?> GetCompanyFriendshipBetweenCompaniesAsync(
@@ -261,6 +274,15 @@ namespace Fusion.Service.Services
 
             await _unitOfWork.SaveChangesAsync();
 
+            var log = new CompanyActivityLog
+            {
+                CompanyId = companyB.Id,
+                ActorUserId = currentUserId,
+                Title = "Delete Company Friendship",
+                Description = $"User id:'{currentUserId}'  has cancelled the invitation to become a partner of the company with id:'{companyA.Id}'.",
+
+            };
+            await _logService.CreateLog(log);
             return _mapper.Map<CompanyFriendshipResponse>(entity);
         }
 

@@ -67,6 +67,8 @@ namespace Fusion.Service
             //user device
             services.AddScoped<IUserDeviceService, UserDeviceService>();
 
+            // company activity log
+            services.AddScoped<ICompanyActivityService, CompanyActivityLogService>();
             // PayOS
             services.AddSingleton<PayOS>(sp =>
             {

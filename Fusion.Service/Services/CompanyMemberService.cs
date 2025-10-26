@@ -19,12 +19,14 @@ using Fusion.Service.ViewModels.UserRole.Responses;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.Design;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Travelogue.Repository.Caching;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Fusion.Service.Services
 {
@@ -38,8 +40,12 @@ namespace Fusion.Service.Services
         private readonly ICompanyRepository _companyRepository;
         private readonly IMailService _mailService;
         private readonly IMapper _mapper;
+        private readonly ICompanyActivityService _logService;
+        private readonly ICurrentService _currentService;
 
-        public CompanyMemberService(ICompanyMemberRepository companyMemberRepository, IProjectMemberRepository projectMemberRepository, INotificationService notificationService, IUserRepository userRepository, ICompanyRepository companyRepository, IMapper mapper, IMailService mailService)
+        public CompanyMemberService(ICompanyMemberRepository companyMemberRepository, IProjectMemberRepository projectMemberRepository,
+            INotificationService notificationService, IUserRepository userRepository, ICompanyRepository companyRepository,
+            IMapper mapper, IMailService mailService, ICompanyActivityService logService, ICurrentService currentService)
         {
 
             _companyMemberRepository = companyMemberRepository;
@@ -49,6 +55,8 @@ namespace Fusion.Service.Services
             _companyRepository = companyRepository;
             _mailService = mailService;
             _mapper = mapper;
+            _logService = logService;
+            _currentService = currentService;
         }
 
         public async Task<CompanyMemberResponse?> FiredMemberFromCompany(string terminatorEmail, string firedMemberMail, string reason, Guid companyId, CancellationToken token = default)
@@ -80,7 +88,14 @@ namespace Fusion.Service.Services
             //    Event = "MEMBER_REMOVED",
             //    NotificationType = NotificationTypeEnum.BUSINESS.ToString()
             //});
+            var log = new CompanyActivityLog
+            {
+                CompanyId = companyId,
+                ActorUserId = _currentService.GetUserId(),
+                Title = "Fired Member From Company",
+                Description = $"User id:'{_currentService.GetUserId()}'  deleted member with user id '{result.User.Id}' has left the company .",
 
+            };
             return _mapper.Map<CompanyMemberResponse>(response);
         }
 
@@ -183,6 +198,16 @@ namespace Fusion.Service.Services
                 Body = emailBody,
                 ToEmail = result.User.Email
             });
+
+            var log = new CompanyActivityLog
+            {
+                CompanyId = companyId,
+                ActorUserId = _currentService.GetUserId(),
+                Title = "Invite Member To Company",
+                Description = $"User id:'{_currentService.GetUserId()}'  sent a company invitation to user with ID {result.User.Id}'.",
+
+            };
+            await _logService.CreateLog(log, cancellationToken);
             return _mapper.Map<CompanyMemberResponse>(response);
 
         }
@@ -199,7 +224,18 @@ namespace Fusion.Service.Services
                    CreateNotFoundError("Token is invalid");
 
             var result = await _companyMemberRepository.AcceptJoinMemberToCompany(data.UserId.Value, data.CompanyId.Value, cancellationToken);
+
+            var log = new CompanyActivityLog
+            {
+                CompanyId = data.CompanyId.Value,
+                ActorUserId = data.UserId.Value,
+                Title = "Accept Join Member To Company",
+                Description = $"User id:'{data.UserId.Value}' has agreed to join the company.",
+
+            };
+            await _logService.CreateLog(log, cancellationToken);
             return _mapper.Map<CompanyMemberResponse>(result);
+
         }
 
         public async Task<CompanyMemberResponse?> RejectJoinMemberToCompany(string tokenConfirm, CancellationToken cancellationToken = default)
@@ -214,6 +250,16 @@ namespace Fusion.Service.Services
                    CreateNotFoundError("Token is invalid");
 
             var result = await _companyMemberRepository.RejectJoinMemberToCompany(data.UserId.Value, data.CompanyId.Value, cancellationToken);
+
+            var log = new CompanyActivityLog
+            {
+                CompanyId = data.CompanyId.Value,
+                ActorUserId = data.UserId.Value,
+                Title = "Reject Join Member To Company",
+                Description = $"User id:'{data.UserId.Value}' has refured to join the company.",
+
+            };
+            await _logService.CreateLog(log, cancellationToken);
             return _mapper.Map<CompanyMemberResponse>(result);
         }
 
@@ -221,6 +267,15 @@ namespace Fusion.Service.Services
         {
             var result = await _companyMemberRepository.RemoveMemberFromCompany(terminatorEmail, userId, companyId, token);
 
+            var log = new CompanyActivityLog
+            {
+                CompanyId = companyId,
+                ActorUserId =_currentService.GetUserId(),
+                Title = "Remove Member From Company",
+                Description = $"User id:'{_currentService.GetUserId()}' deleted member with user id '{userId}' has left the company.",
+
+            };
+            await _logService.CreateLog(log);
             return _mapper.Map<CompanyMemberResponse>(result);
         }
 

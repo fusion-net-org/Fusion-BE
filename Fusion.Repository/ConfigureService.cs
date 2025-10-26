@@ -69,7 +69,12 @@ namespace Fusion.Repository
             //user device
             services.AddScoped<IUserDeviceRepository, UserDeviceRepository>();
 
+            //activity log 
+            services.AddScoped<ICompanyActivityLogRepository, CompanyActivityLogRepository>();
+
             return services;
+
+
         }
         public static void AddDatabase(this IServiceCollection services, IConfiguration configuration)
         {
