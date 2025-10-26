@@ -132,9 +132,8 @@ public class MappingProfile : Profile
             .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
 
         //----------------------------     entity: Project Request ---------------------------------------------
-        CreateMap<CreateProjectRequestRequest, ProjectRequest>()
-            .ForMember(dest => dest.Status, opt =>
-            opt.MapFrom(src => src.Status.HasValue ? src.Status.Value.ToString() : null));
+        CreateMap<CreateProjectRequestRequest, ProjectRequest>();
+          
 
         CreateMap<UpdateProjectRequestRequest, ProjectRequest>()
             .ForMember(dest => dest.Status, opt =>

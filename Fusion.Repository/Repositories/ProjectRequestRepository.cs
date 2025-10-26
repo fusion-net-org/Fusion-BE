@@ -79,6 +79,7 @@ namespace Fusion.Repository.Repositories
             request.IsDeleted = false;
             request.ConvertedProjectId = null;
             request.Code = code;
+            request.Status = "Pending";
 
             var projectRequest = await _context.ProjectRequests.AddAsync(request, cancellationToken);
             await _context.SaveChangesAsync(cancellationToken);
