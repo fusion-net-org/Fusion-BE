@@ -1,5 +1,6 @@
 ﻿
 using AutoMapper;
+using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.IRepositories;
@@ -86,11 +87,19 @@ namespace Fusion.Service.Services
 
         }
 
-        public async Task<IEnumerable<ProjectTaskResponse>> GetAllTasksAsync()
+        public async Task<PagedResult<ProjectTaskResponse>> GetAllTasksAsync(PagedRequest request, CancellationToken cancellationToken = default)
         {
-            var entity = await _taskRepository.GetAllTasksAsync();
+            var Task = await _taskRepository.GetAllTasksAsync(request,cancellationToken);
 
-            return _mapper.Map<IEnumerable<ProjectTaskResponse>>(entity);
+            var mappedItems = _mapper.Map<List<ProjectTaskResponse>>(Task.Items);
+
+            return new PagedResult<ProjectTaskResponse>
+            {
+                Items = mappedItems,
+                TotalCount = Task.TotalCount,
+                PageNumber = Task.PageNumber,
+                PageSize = Task.PageSize
+            };
         }
 
         public async Task<ProjectTaskResponse?> GetTaskByIdAsync(Guid id)
