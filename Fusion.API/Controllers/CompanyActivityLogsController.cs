@@ -3,19 +3,16 @@ using Fusion.Repository.Bases.Page.CompanyActivityLog;
 using Fusion.Repository.Entities;
 using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.IServices;
-using Fusion.Service.Services;
 using Fusion.Service.ViewModels.CompanyActivityLog.Requests;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.ComponentModel.Design;
-using System.Threading;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
+
 
 namespace Fusion.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class CompanyActivityLogsController : ControllerBase
     {
         private readonly ICompanyActivityService _service;
@@ -56,6 +53,18 @@ namespace Fusion.API.Controllers
             var log = await _service.GetByIdAsync(id, cancellationToken);
               
             return Ok(ResponseModel<CompanyActivityLog>.Ok(log, "Fetched activity log successfully"));
+        }
+
+        [HttpPut("update_isView")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<bool>))]
+        [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(ResponseModel<bool>))]
+        public async Task<IActionResult> SetVisibilityForOne(
+           bool isView,
+           Guid companyId,
+           CancellationToken ct)
+        {
+            var updated = await _service.UpdateIsView(isView, companyId, ct);
+            return Ok(ResponseModel<bool>.Ok(updated, "Visibility updated."));
         }
     }
 }

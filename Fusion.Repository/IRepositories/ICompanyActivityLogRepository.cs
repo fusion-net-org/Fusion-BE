@@ -16,4 +16,6 @@ public interface ICompanyActivityLogRepository
         CancellationToken token = default);
 
     Task<CompanyActivityLog?> GetLogByIdAsync(Guid id, CancellationToken cancellationToken = default);
+
+    Task<bool> UpdateIsViewLog(bool isView, Guid companyId, Guid userId, CancellationToken cancellationToken = default);
 }
