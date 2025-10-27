@@ -9,7 +9,10 @@ using Fusion.Repository.Entities;
 using Fusion.Repository.IRepositories;
 using Fusion.Service.Commons.Helpers;
 using Fusion.Service.IServices;
+using Fusion.Service.ViewModels.Companies.Email;
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.Design;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace Fusion.Service.Services
 {
@@ -18,12 +21,14 @@ namespace Fusion.Service.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICompanyActivityLogRepository _repo;
         private readonly ICurrentService _currentService;
+        private readonly IMailService _mailService;
 
-        public CompanyActivityLogService(IUnitOfWork unitOfWork, ICompanyActivityLogRepository repo, ICurrentService currentService)
+        public CompanyActivityLogService(IUnitOfWork unitOfWork, ICompanyActivityLogRepository repo, ICurrentService currentService, IMailService mailService)
         {
             _unitOfWork = unitOfWork;
             _repo = repo;
             _currentService = currentService;
+            _mailService = mailService;
         }
 
         public async Task<CompanyActivityLog> CreateLog(CompanyActivityLog log, CancellationToken cancellationToken = default)
@@ -92,6 +97,46 @@ namespace Fusion.Service.Services
             var result = await _repo.UpdateIsViewLog(isView, companyId, userId, ct);
 
             return result;
+        }
+        public  async Task<bool> RequestViewLog(Guid companyIdA, Guid companyIdB, CancellationToken cancellationToken = default)
+        {
+            var userId = _currentService.GetUserId();
+            if (userId == Guid.Empty)
+                throw CustomExceptionFactory.CreateUnauthorizedError();
+
+            var user = await _unitOfWork.Repository<User>().FindAsync(u => u.Id == userId);
+
+            var companyA = await _unitOfWork.Repository<Company>().FindAsync(u => u.Id == companyIdA);
+            if (companyA == null)
+                throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("CompanyA"));
+
+            var companyB = await _unitOfWork.Repository<Company>().FindAsync(u => u.Id == companyIdB);
+            if (companyA == null)
+                throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("CompanyB"));
+            try
+            {
+                await _mailService.SendEmailAsync(new MailRequest
+                {
+                    ToEmail = companyB.Email,
+                    Subject = "Yêu cầu xem log của công ty đối tác!",
+                    Body = $@"
+                        <p>Xin thông báo, yêu cầu xem log từ công ty <b>{companyA.Name}</b> tới <b>{companyB!.Name}</b>.</p>
+                        <p>Vui lòng liên hệ lại nếu cần thảo luận thêm.</p>"
+                });
+
+                var log = new CompanyActivityLog
+                {
+                    CompanyId = companyIdA,
+                    ActorUserId = user.Id,
+                    Title = "Update Company Information",
+                    Description = $"User '{user.UserName}'has sent request view log to company:'{companyB.Name}'.",
+                };
+                return true;
+            }
+            catch
+            {
+                throw;
+            }
         }
     }
 }
