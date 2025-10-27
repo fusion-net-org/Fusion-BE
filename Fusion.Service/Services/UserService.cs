@@ -12,6 +12,8 @@ using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.Companies.Responses;
 using Fusion.Service.ViewModels.Users.Requests;
 using Fusion.Service.ViewModels.Users.Responses;
+using Microsoft.EntityFrameworkCore;
+using System.Security.Cryptography;
 
 namespace Fusion.Service.Services;
 
@@ -33,7 +35,7 @@ public class UserService : IUserService
         _currentService = currentService;
     }
 
-    public async Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<SelfUserResponse?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         if (id == Guid.Empty)
             throw CustomExceptionFactory.CreateBadRequestError(
@@ -45,7 +47,8 @@ public class UserService : IUserService
             throw CustomExceptionFactory.CreateNotFoundError(
                 ResponseMessages.NOT_FOUND.FormatMessage("User"));
 
-        return user;
+        var response = _mapper.Map<SelfUserResponse>(user);
+        return response;
     }
 
     public async Task<PagedResult<CompanyUserResponse>> GetPagedCompanyUsersAsync(CompanyUserPagedRequest request, CancellationToken cancellationToken)
@@ -161,4 +164,81 @@ public class UserService : IUserService
         }
 
     }
+
+    public async Task<bool> ChangePasswordAsync(ChangePasswordRequest request, CancellationToken cancellationToken)
+    {
+        var userId = _currentService.GetUserId();
+        if (userId == Guid.Empty)
+            throw CustomExceptionFactory.CreateBadRequestError(
+              ResponseMessages.LOGIN_REQUIRED);
+
+        var user = await _userRepository.GetUserByIdAsync(userId);
+        if (user == null)
+            throw CustomExceptionFactory.CreateNotFoundError(
+                ResponseMessages.NOT_FOUND.FormatMessage("User"));
+
+        using (var hmac = new HMACSHA512(user.PasswordSalt))
+        {
+            var computedHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(request.OldPassword));
+
+            if (computedHash.Length != user.PasswordHash.Length ||
+                !CryptographicOperations.FixedTimeEquals(computedHash, user.PasswordHash))
+            {
+                throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.INVALID_INPUT.FormatMessage("Old password incorrect!"));
+            }
+
+            using var newHmac = new HMACSHA512();
+            user.PasswordSalt = newHmac.Key;
+            user.PasswordHash = newHmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(request.NewPassword));
+
+            user.UpdateAt = DateTime.UtcNow.AddHours(7);
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            return true;
+
+        }
+    }
+
+    public async Task<PagedResult<SelfUserResponse>> GetAllUsersAsync(PagedRequest request, CancellationToken cancellationToken = default)
+    {
+        if (request == null)
+            throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.INVALID_INPUT);
+
+        var result = await _userRepository.GetAllUsersAsync(request, cancellationToken);
+
+        if (result == null || result.Items.Count == 0)
+            throw CustomExceptionFactory.CreateNotFoundError(
+                ResponseMessages.NOT_FOUND.FormatMessage("Users"));
+
+        var list = new PagedResult<SelfUserResponse>
+        {
+            Items = _mapper.Map<List<SelfUserResponse>>(result.Items),
+            TotalCount = result.TotalCount,
+            PageNumber = result.PageNumber,
+            PageSize = result.PageSize
+        };
+
+        return list;
+    }
+
+    public async Task<SelfUserResponse?> GetOwnerUserByCompanyIdAsync(Guid companyId, CancellationToken cancellationToken = default)
+    {
+        if (companyId == Guid.Empty)
+            throw CustomExceptionFactory.CreateBadRequestError(
+                ResponseMessages.INVALID_INPUT.FormatMessage("Company Id"));
+
+        // Lấy User thay vì chỉ OwnerId
+        var owner = await _userRepository.GetOwnerUserByCompanyIdAsync(companyId, cancellationToken);
+
+        if (owner == null)
+            throw CustomExceptionFactory.CreateNotFoundError(
+                ResponseMessages.NOT_FOUND.FormatMessage("Owner User"));
+
+        // Map sang SelfUserResponse
+        var response = _mapper.Map<SelfUserResponse>(owner);
+
+        return response;
+    }
+
 }

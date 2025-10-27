@@ -10,7 +10,7 @@ namespace Fusion.Service.Commons.BaseResponses
         public T? Data { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        public object? AdditionalData { get; set; }
+        public object? ErrorData { get; set; }
 
         // OK response
         public static ResponseModel<T> Ok(T data, string? message = "")
@@ -33,7 +33,7 @@ namespace Fusion.Service.Commons.BaseResponses
                 StatusCode = statusCode,
                 Message = message,
                 Data = default,
-                AdditionalData = additionalData
+                ErrorData = additionalData
             };
         }
     }

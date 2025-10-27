@@ -5,6 +5,7 @@ using Fusion.Repository.Bases.Page.User;
 using Fusion.Repository.Data;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
+using Fusion.Repository.Enums;
 using Fusion.Repository.IRepositories;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.Design;
@@ -21,31 +22,145 @@ namespace Fusion.Repository.Repositories
         {
             _context = context;
         }
+        public async Task<PagedResult<Company>> GetAllCompaniesAsync(string userMail, CompanyPagedSearchRequestVersion2 request, Guid? selectedCompanyId, CancellationToken cancellationToken = default)
+        {
 
-        public async Task<PagedResult<Company>> GetPagedCompaniesAsync(CompanyPagedSearchRequest request, CancellationToken cancellationToken = default)
+
+            var query = _dbSet
+                .Include(x => x.CompanyMembers)
+                .Include(x => x.OwnerUser)
+                .Include(x => x.ProjectCompanies)
+                .Include(c => c.ProjectCompanyHireds)
+                .Include(c => c.CompanyFriendshipCompanyAs)
+                .Include(c => c.CompanyFriendshipCompanyBs)
+                .AsQueryable();
+
+            query = query.Where(c => (bool)!c.IsDeleted);
+
+
+            if (request.RelationShipEnums.HasValue)
+            {
+                switch (request.RelationShipEnums.Value)
+                {
+                    case ProjectSearchRelationShipEnums.Owner:
+                        // User là chủ sở hữu công ty
+                        query = query.Where(c => c.OwnerUser.Email == userMail);
+                        break;
+
+                    case ProjectSearchRelationShipEnums.Member:
+                        // User là chủ sở hữu hoặc thành viên công ty
+                        query = query.Where(c =>
+                            c.OwnerUser.Email == userMail ||
+                            c.CompanyMembers.Any(m => m.User.Email == userMail));
+                        break;
+                }
+            }
+
+            // search
+            if (!string.IsNullOrWhiteSpace(request.Keyword))
+            {
+                var keyword = request.Keyword.Trim().ToLower();
+                query = query.Where(u =>
+                    (u.Name ?? "").ToLower().Contains(keyword) ||
+                    (u.TaxCode ?? "").ToLower().Contains(keyword));
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.OwnerUserName))
+            {
+                query = query.Where(u => (u.OwnerUser.UserName ?? "").Contains(request.OwnerUserName));
+            }
+
+
+            return await query.ToPagedResultAsync(request, cancellationToken);
+        }
+        public async Task<PagedResult<Company>> GetPagedCompaniesAsync(string userMail, CompanyPagedSearchRequest request, CancellationToken cancellationToken = default)
         {
             var query = _dbSet
                 .Include(x => x.CompanyMembers)
                 .Include(x => x.OwnerUser)
+                .Include(x => x.ProjectCompanies)
+                .Include(c => c.ProjectCompanyHireds)
+                .Include(c => c.CompanyFriendshipCompanyAs)
+                .Include(c => c.CompanyFriendshipCompanyBs)
                 .AsQueryable();
 
-            // search
-            if (!string.IsNullOrWhiteSpace(request.Name))
+            if (request.RelationShipEnums.HasValue)
             {
-                query = query.Where(u => (u.Name ?? "").Contains(request.Name));
+                switch (request.RelationShipEnums.Value)
+                {
+                    case ProjectSearchRelationShipEnums.Owner:
+                        // User là chủ sở hữu công ty
+                        query = query.Where(c => c.OwnerUser.Email == userMail);
+                        break;
+
+                    case ProjectSearchRelationShipEnums.Member:
+                        // User là chủ sở hữu hoặc thành viên công ty
+                        query = query.Where(c =>
+                            c.OwnerUser.Email == userMail ||
+                            c.CompanyMembers.Any(m => m.User.Email == userMail));
+                        break;
+                }
+            }
+            else
+            {
+                query = query.Where(c =>
+                        c.OwnerUser.Email == userMail ||
+                        c.CompanyMembers.Any(m => m.User.Email == userMail));
             }
 
-            if (!string.IsNullOrWhiteSpace(request.TaxCode))
+
+            // search
+            if (!string.IsNullOrWhiteSpace(request.Keyword))
             {
-                query = query.Where(u => (u.TaxCode ?? "").Contains(request.TaxCode));
+                var keyword = request.Keyword.Trim().ToLower();
+                query = query.Where(u =>
+                    (u.Name ?? "").ToLower().Contains(keyword) ||
+                    (u.TaxCode ?? "").ToLower().Contains(keyword));
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.OwnerUserName))
+            {
+                query = query.Where(u => (u.OwnerUser.UserName ?? "").Contains(request.OwnerUserName));
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.Detail))
+            {
+                query = query.Where(u => (u.Detail ?? "").Contains(request.Detail));
+            }
+
+            if (request.TotalProject.HasValue)
+            {
+                if (request.SortDescending)
+                {
+                    query = query.Where(u => u.ProjectCompanies.Count + u.ProjectCompanyHireds.Count >= request.TotalProject);
+                }
+                else
+                {
+                    query = query.Where(u => u.ProjectCompanies.Count + u.ProjectCompanyHireds.Count <= request.TotalProject);
+
+                }
+            }
+
+            if (request.TotalMember.HasValue)
+            {
+                if (request.SortDescending)
+                {
+                    query = query.Where(u => u.CompanyMembers.Count >= request.TotalMember);
+                }
+                else
+                {
+                    query = query.Where(u => u.CompanyMembers.Count <= request.TotalMember);
+
+                }
             }
 
             return await query.ToPagedResultAsync(request, cancellationToken);
         }
 
-        public async Task<Company?> AddCompanyAsync(User user, string image_company, Company new_company, CancellationToken cancellationToken)
+        public async Task<Company?> AddCompanyAsync(User user, string image_company, string avatar_company, Company new_company, CancellationToken cancellationToken)
         {
             new_company.ImageCompany = image_company;
+            new_company.AvatarCompany = avatar_company;
             new_company.OwnerUserId = user.Id;
             new_company.IsDeleted = false;
             new_company.CreateAt = DateTime.UtcNow.AddHours(7);
@@ -55,7 +170,7 @@ namespace Fusion.Repository.Repositories
             return company.Entity;
         }
 
-        public async Task<Company?> UpdateCompanyAsync(string image_company, Guid companyId, Company update_company, CancellationToken cancellationToken = default)
+        public async Task<Company?> UpdateCompanyAsync(string image_company, string avatar_company, Guid companyId, Company update_company, CancellationToken cancellationToken = default)
         {
             var existed_company = await _context.Companies.FindAsync(companyId);
 
@@ -63,7 +178,11 @@ namespace Fusion.Repository.Repositories
             existed_company.TaxCode = update_company.TaxCode ?? existed_company.TaxCode;
             existed_company.Detail = update_company.Detail ?? existed_company.Detail;
             existed_company.Email = update_company.Email ?? existed_company.Email;
+            existed_company.PhoneNumber = update_company.PhoneNumber ?? existed_company.PhoneNumber;  
+            existed_company.Address = update_company.Address ?? existed_company.Address;           
+            existed_company.Website = update_company.Website ?? existed_company.Website;
             existed_company.ImageCompany = image_company;
+            existed_company.AvatarCompany = avatar_company;
             existed_company.UpdateAt = DateTime.UtcNow.AddHours(7);
 
             var company = _context.Companies.Update(existed_company);
@@ -83,6 +202,12 @@ namespace Fusion.Repository.Repositories
         public async Task<Company?> GetCompanyByTaxCode(string taxcode)
         {
             var company = await _context.Companies
+                .Include(x => x.CompanyMembers)
+                .Include(x => x.OwnerUser)
+                .Include(x => x.ProjectCompanies)
+                .Include(c => c.ProjectCompanyHireds)
+                .Include(c => c.CompanyFriendshipCompanyAs)
+                .Include(c => c.CompanyFriendshipCompanyBs)
                 .SingleOrDefaultAsync(x => x.TaxCode == taxcode);
 
             return company;
@@ -91,6 +216,12 @@ namespace Fusion.Repository.Repositories
         public async Task<Company?> GetCompanyByEmail(string email)
         {
             var company = await _context.Companies
+                .Include(x => x.CompanyMembers)
+                .Include(x => x.OwnerUser)
+                .Include(x => x.ProjectCompanies)
+                .Include(c => c.ProjectCompanyHireds)
+                .Include(c => c.CompanyFriendshipCompanyAs)
+                .Include(c => c.CompanyFriendshipCompanyBs)
                 .SingleOrDefaultAsync(x => x.Email == email);
 
             return company;
@@ -100,6 +231,12 @@ namespace Fusion.Repository.Repositories
         public async Task<Guid?> GetCompanyIdByUserId(Guid userId)
         {
             var company = await _context.Companies
+                .Include(x => x.CompanyMembers)
+                .Include(x => x.OwnerUser)
+                .Include(x => x.ProjectCompanies)
+                .Include(c => c.ProjectCompanyHireds)
+                .Include(c => c.CompanyFriendshipCompanyAs)
+                .Include(c => c.CompanyFriendshipCompanyBs)
                 .FirstOrDefaultAsync(x => x.OwnerUserId == userId);
 
             return company?.Id;
@@ -119,9 +256,16 @@ namespace Fusion.Repository.Repositories
 
         public async Task<Company?> GetCompanyByIdAsync(Guid Id)
         {
-            return await _context.Companies.Include(x => x.OwnerUser).SingleOrDefaultAsync(x => x.Id == Id);
+            return await _context.Companies
+                .Include(x => x.CompanyMembers)
+                .Include(x => x.OwnerUser)
+                .Include(x => x.ProjectCompanies)
+                .Include(c => c.ProjectCompanyHireds)
+                .Include(c => c.CompanyFriendshipCompanyAs)
+                .Include(c => c.CompanyFriendshipCompanyBs)
+                .SingleOrDefaultAsync(x => x.Id == Id);
         }
 
-        
+
     }
 }

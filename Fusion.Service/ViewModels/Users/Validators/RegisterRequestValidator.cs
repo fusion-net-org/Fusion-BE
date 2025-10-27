@@ -22,6 +22,7 @@ public class RegisterRequestValidator : AbstractValidator<RegisterRequest>
             .Matches(@"@gmail\.com$").WithMessage("Only ...@gmail.com email addresses are allowed");
 
         RuleFor(x => x.Password)
+            .Cascade(CascadeMode.Stop)
             .NotEmpty().WithMessage("Password must not br empty!")
             .MinimumLength(6).WithMessage("Password must be at least 6 characters!")
             .MaximumLength(100).WithMessage("Password must not exceed 100 characters!")

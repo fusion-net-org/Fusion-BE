@@ -1,0 +1,31 @@
+version: "3.8"
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    container_name: sqlserver
+    user: root
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=12345@abc!
+    ports:
+      - "14330:1433"   # ánh xạ port 14330 của máy host tới 1433 trong container
+    volumes:
+      - sqlvolume:/var/opt/mssql
+
+  webapi:
+    build:
+      context: .
+      dockerfile: Fusion.Api/Dockerfile
+    container_name: fusion-api
+    depends_on:
+      - sqlserver
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=Fusion;User Id=sa;Password=12345@abc!;TrustServerCertificate=True;Encrypt=False
+
+volumes:
+  sqlvolume:

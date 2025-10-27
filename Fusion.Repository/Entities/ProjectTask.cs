@@ -45,6 +45,10 @@ public partial class ProjectTask
     [Column("point")]
     public int? Point { get; set; }
 
+    [Column("status")]
+    public string? Status { get; set; }
+   
+
     [Column("due_date")]
     [Precision(3)]
     public DateTime? DueDate { get; set; }
@@ -62,8 +66,15 @@ public partial class ProjectTask
 
     [Column("create_at")]
     [Precision(3)]
-    public DateTime CreateAt { get; set; }
+    public DateTime? CreateAt { get; set; }
 
+    [Column("update_at")]
+    [Precision(3)]
+    public DateTime? UpdateAt { get; set; }
+    [Column("order_in_sprint")]
+    public int? OrderInSprint { get; set; }
+    [Column("is_deleted")]
+    public bool IsDeleted { get; set; }
     [InverseProperty("Task")]
     public virtual ICollection<Comment> Comments { get; set; } = new List<Comment>();
 

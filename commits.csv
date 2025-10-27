@@ -1,0 +1,200 @@
+3af51621924d6f6286177077740b34c8151070d8,Tuongtan,tuongtan110203@gmail.com,2025-10-24 01:30:49 +0700,"#16 fix company and partners",HEAD -> develop, origin/develop
+7455974e12bea8976403aa01dcef54811d065695,Nguyen Kien Minh,155413956+nguyenkienminh@users.noreply.github.com,2025-10-23 13:17:25 +0700,"Merge pull request #105 from fusion-net-org/feature/13-company-handle-api",
+5e5196147098900fbde1c28a81b7593e74ab3169,nguyenkienminh,kienminh04122003@gmail.com,2025-10-23 13:14:20 +0700,"Merge remote-tracking branch 'origin/develop' into feature/13-company-handle-api",origin/feature/13-company-handle-api
+b010775dfe471ba33037b20d1765050aa2c668c3,nguyenkienminh,kienminh04122003@gmail.com,2025-10-23 13:14:01 +0700,"#13 Optimize(company api): Add Mail Create Company, fix delete Company",
+7cb4beb23727ddf3f3509d1c7865466a69bcc77b,Nguyễn Duy,133040402+duyng21303@users.noreply.github.com,2025-10-23 05:10:27 +0700,"Merge pull request #104 from fusion-net-org/feature/102-workflow",
+3611f632c719516f1e8b8872f6f36a96dc970d5d,unknown,duyng21303@gmail.com,2025-10-23 05:07:17 +0700,"#102 workflow",origin/feature/102-workflow, feature/102-workflow
+64741eaddeec4dfa5a023218c0b8172117dee471,Nguyễn Duy,133040402+duyng21303@users.noreply.github.com,2025-10-23 05:03:23 +0700,"Merge pull request #103 from fusion-net-org/feature/102-workflow",
+749eb2180f7bf494a2c036aac7b4ea2429e76eab,unknown,duyng21303@gmail.com,2025-10-23 05:02:17 +0700,"workflow",fix/update/83-permission-role-global
+d02588b4f7834a4ef9eb96724a397190c79ba69d,Tuongtan,tuongtan110203@gmail.com,2025-10-23 01:25:29 +0700,"fix company",
+08832594899528aff77e000c16e4e9953b42651a,Nguyen Kien Minh,155413956+nguyenkienminh@users.noreply.github.com,2025-10-22 22:48:42 +0700,"Merge pull request #101 from fusion-net-org/feature/13-company-handle-api",
+4d0f943d1c879a6d8e87abe4a93efcfc8d75135d,nguyenkienminh,kienminh04122003@gmail.com,2025-10-22 22:46:34 +0700,"#42 Optimze(CRUD Project requeset): AcceptedRequest and GetByPartnerAndOwnerCompany",
+0d4c22a3bc07a8c55ed505c2f59ae2dfb35cf54e,Nguyen Kien Minh,155413956+nguyenkienminh@users.noreply.github.com,2025-10-22 02:31:14 +0700,"Merge pull request #100 from fusion-net-org/feature/13-company-handle-api",
+8921c7ef3cb4e814d503c2b8f27b78faa3f053f5,nguyenkienminh,kienminh04122003@gmail.com,2025-10-22 02:28:22 +0700,"Merge remote-tracking branch 'origin/develop' into feature/13-company-handle-api",
+cedf2ddd0272ccdb9f0fa86650ae756c5ef288e5,nguyenkienminh,kienminh04122003@gmail.com,2025-10-22 02:27:57 +0700,"# 26 Fix(company handle api): Fix company response and project request",
+97e8ac95a11275a8606fc4961e0e02108cff6313,Tuongtan,tuongtan110203@gmail.com,2025-10-22 01:35:14 +0700,"fix user",
+46429f0bb2d56ede823a06bca973d22f4f3a90d6,Tuongtan,tuongtan110203@gmail.com,2025-10-22 01:01:07 +0700,"fix user",
+e1a20f6842d1480818a04b14b5c8cd8642960ee2,BabyGau9,caodung832003@gmail.com,2025-10-21 15:39:01 +0700,"#2 Add_confirm_account",origin/Dung_Add_ConfirmAccount
+b39a5d5f400111ebb2331718d45a4c95a7b9a715,BabyGau9,caodung832003@gmail.com,2025-10-21 15:37:42 +0700,"Merge branch 'develop' of https://github.com/fusion-net-org/Fusion-BE into develop",
+2de5acc3b191192e3272b66f7bc27807ddd26cf4,BabyGau9,caodung832003@gmail.com,2025-10-21 15:37:30 +0700,"#2 Add_confirm_your_account",
+3b813d490c8382801ea7a2e2b3465e1680095188,Nguyễn Duy,133040402+duyng21303@users.noreply.github.com,2025-10-21 05:05:18 +0700,"Merge pull request #99 from fusion-net-org/fix/update/83-permission-role-global",
+f7cd752216d3b88631e44ec46c34d4e8f725ece8,unknown,duyng21303@gmail.com,2025-10-21 05:02:30 +0700,"#83 role delete",origin/fix/update/83-permission-role-global
+f28131238cd3b2c3f104e7115a732a1f8f4c73de,Tuongtan,tuongtan110203@gmail.com,2025-10-21 03:42:50 +0700,"Update partner",
+ae2e09f10823e77d8e91351c35b485dd1fd7b171,Tuong,166013719+Tuongtan110203@users.noreply.github.com,2025-10-21 03:36:13 +0700,"Merge pull request #98 from fusion-net-org/feature/-Update-Partner-V4",
+9848da1478c09ab9dd88c8e0d607d5681cda1059,Tuong,166013719+Tuongtan110203@users.noreply.github.com,2025-10-21 03:34:31 +0700,"Merge branch 'develop' into feature/-Update-Partner-V4",origin/feature/-Update-Partner-V4
+b9cebc03a9f8d848a7a7a4af69b279495cb5d81d,Tuongtan,tuongtan110203@gmail.com,2025-10-21 03:26:41 +0700,"#15 update logic partner",
+9944b83eb5e2d2669c219989154552be6ee28b80,Nguyen Kien Minh,155413956+nguyenkienminh@users.noreply.github.com,2025-10-21 00:16:37 +0700,"Merge pull request #97 from fusion-net-org/feature/13-company-handle-api",
+1c0d013fc964747b955e67d7023e36af49f86767,nguyenkienminh,kienminh04122003@gmail.com,2025-10-21 00:13:25 +0700,"#26 Optimize(memberInvite): Optimze Invite and Fired Memeber, Overloading function in COmpanyFreindShip",
+76f77abfe7a16f698c3b0e0dbc3516eac3065d21,BabyGau9,caodung832003@gmail.com,2025-10-20 14:49:41 +0700,"#92 fix",origin/Dung_fix
+f82b3579fce7650fb92d29a3bd60a2e9f0113a5f,Nguyễn Duy,133040402+duyng21303@users.noreply.github.com,2025-10-20 05:54:14 +0700,"Merge pull request #95 from fusion-net-org/fix/update/83-permission-role-global",
+d016dce0cfda98ef0888c81bec706c6f977c3880,unknown,duyng21303@gmail.com,2025-10-20 05:53:28 +0700,"fix/update/83-permission-role-frontend",
+5eae01f0594e8ff52711a9a39d72b1b5d5e6445e,unknown,duyng21303@gmail.com,2025-10-20 04:08:21 +0700,"#83 fix",origin/fix/update/83-permission-role-global-frontend, fix/update/83-permission-role-global-frontend
+a0f33976a0474096305fa67bac0ae604a8ffe492,Nguyễn Duy,133040402+duyng21303@users.noreply.github.com,2025-10-20 03:58:00 +0700,"Merge pull request #93 from fusion-net-org/Dung_Add_ResetPassword",backup-rollback-7c05339
+7c053397c4ae0127a09a750e4f5e2625aa78df4e,Tuong,166013719+Tuongtan110203@users.noreply.github.com,2025-10-20 01:43:59 +0700,"Merge pull request #94 from fusion-net-org/feature/update-partners-v3",
+8be953fa954b7473df091247d39c3b459627df45,Tuongtan,tuongtan110203@gmail.com,2025-10-20 01:41:37 +0700,"#12 update logic partners and company",origin/feature/update-partners-v3
+32516ad4ce15c9aadb97c8a10f6011ece27dd984,BabyGau9,caodung832003@gmail.com,2025-10-19 21:57:10 +0700,"#92 change_reset_password",origin/Dung_Add_ResetPassword
+4496beb244e67325af93cfdbaae8ecaab1f7dd5c,BabyGau9,caodung832003@gmail.com,2025-10-19 17:21:29 +0700,"Merge branch 'develop' of https://github.com/fusion-net-org/Fusion-BE into develop",
+acd5b7df1f78820ab10ef0ba9f9025823b0f082f,BabyGau9,caodung832003@gmail.com,2025-10-19 17:21:24 +0700,"oke",
+f5992295abf1b637db47f62934981648dd926f1a,Nguyen Kien Minh,155413956+nguyenkienminh@users.noreply.github.com,2025-10-19 14:51:09 +0700,"Merge pull request #91 from fusion-net-org/feature/13-company-handle-api",rollback-perm
+767359871ca04a36f1c7f928e5c491b050a61366,nguyenkienminh,kienminh04122003@gmail.com,2025-10-19 14:46:26 +0700,"#26 Optimize(company handle api): optimize compnayMember and fix  projectRequest",
+13658720c2c59796655e30671c8fb77e0232ce10,BabyGau9,caodung832003@gmail.com,2025-10-19 08:14:37 +0700,"Merge branch 'develop' of https://github.com/fusion-net-org/Fusion-BE into develop",
+49200ee4921abd4660322bc0fe5de7287d37eee5,BabyGau9,caodung832003@gmail.com,2025-10-19 08:14:22 +0700,"fix_refeshToken",
+f34ffc463d31b25a5269204c21ce850c7b84f8d9,Tuong,166013719+Tuongtan110203@users.noreply.github.com,2025-10-19 01:45:38 +0700,"Merge pull request #90 from fusion-net-org/fix/-update-logic-partners",origin/feature/16-17-18-accept-cancel-view-partner
+412739f35835b44f947789eeed85f0c077918664,Tuongtan,tuongtan110203@gmail.com,2025-10-19 01:41:58 +0700,"#12 update logic partners",origin/fix/-update-logic-partners
+08dea5ed1d9bbe3d79f9fcff157b92c7c44bde1e,Nguyen Kien Minh,155413956+nguyenkienminh@users.noreply.github.com,2025-10-18 20:58:20 +0700,"Merge pull request #89 from fusion-net-org/feature/13-company-handle-api",
+8c9270a1110b01778badc76a620dd5c1a87f100c,nguyenkienminh,kienminh04122003@gmail.com,2025-10-18 20:40:57 +0700,"#13 feature(company handle api): fix GetPaged Company",
+70ffc94ba516a58babf6d1c56155e3d0fdbebaf3,Tuong,166013719+Tuongtan110203@users.noreply.github.com,2025-10-18 01:04:51 +0700,"Merge pull request #88 from fusion-net-org/fix/Partners",
+eaffcaca753c26fdee65372002f06760c264e491,Tuongtan,tuongtan110203@gmail.com,2025-10-18 01:02:22 +0700,"#12 update logic partners",origin/fix/Partners
+eac626798e419abb58e3a05f485a87a78adf448f,Nguyen Kien Minh,155413956+nguyenkienminh@users.noreply.github.com,2025-10-16 22:25:42 +0700,"Merge pull request #87 from fusion-net-org/feature/80-notification",
+9bbca92569793f78248805bc8e4d25981cf0fe30,nguyenkienminh,kienminh04122003@gmail.com,2025-10-16 22:22:20 +0700,"#80 optimize(notification): Change UserDevice Index",origin/feature/80-notification
+2f3214bb219fb3fbef2883d6d8b902413040d422,Nguyen Kien Minh,155413956+nguyenkienminh@users.noreply.github.com,2025-10-16 20:43:57 +0700,"Merge pull request #86 from fusion-net-org/feature/80-notification",
+7d98b4b268713dfdc58f187508f6b46cab5dcb3e,nguyenkienminh,kienminh04122003@gmail.com,2025-10-16 20:41:29 +0700,"#80 fix(notification): fix program.cs",
+a7dce25f2411fafd32ddd0a7adcd711320a96bf7,nguyenkienminh,kienminh04122003@gmail.com,2025-10-16 20:35:19 +0700,"#80 fix(notification): Fix api and fix data.",
+33376cefd52d4dc5cff5ad9e20624ed468eccb3b,Nguyễn Duy,133040402+duyng21303@users.noreply.github.com,2025-10-16 15:25:34 +0700,"Merge pull request #85 from fusion-net-org/feature/80-notification",
+6ea706e1c8ad6ade7e2e25e9c8775ff1be20adec,nguyenkienminh,kienminh04122003@gmail.com,2025-10-16 15:24:10 +0700,"#80 fix(notification): fix program add isCI",
+49258ba59643308cd86edaaea4cb83d746e7b81d,nguyenkienminh,kienminh04122003@gmail.com,2025-10-16 14:40:11 +0700,"Merge remote-tracking branch 'origin/develop' into feature/80-notification",
+b71cc9a745564848b55cf492f4a9f918fbbe2274,nguyenkienminh,kienminh04122003@gmail.com,2025-10-16 14:37:40 +0700,"#80 fix(notification): fix notification bug",
+380c0131a41c3ae7f9cb74297d2df3ac46eabe61,Nguyễn Duy,133040402+duyng21303@users.noreply.github.com,2025-10-16 04:46:46 +0700,"Merge pull request #84 from fusion-net-org/fix/update/83-permission-role",
+45742e93cda13ee1cd82d576cc537d46caa58ea2,unknown,duyng21303@gmail.com,2025-10-16 04:45:31 +0700,"#83 fix/update: role permission get permission",origin/fix/update/83-permission-role, fix/update/83-permission-role
+227031452f9d210a47bc3149c96ee4dd705e3835,nguyenkienminh,kienminh04122003@gmail.com,2025-10-15 17:59:27 +0700,"Merge remote-tracking branch 'origin/develop' into feature/80-notification",
+1670c1a0d1cefaea85ca7ecfc14a86a286d5f28b,nguyenkienminh,kienminh04122003@gmail.com,2025-10-15 17:58:11 +0700,"#80 feature(notification): Notification setup and store User Device",
+05cf1fc20eba4bf70fca4804878fad5ee2adc3c9,Nguyễn Duy,133040402+duyng21303@users.noreply.github.com,2025-10-15 01:55:34 +0700,"Merge pull request #82 from fusion-net-org/feature/11-role-permission",
+d1f1202423c553fddc126cfd7463dbc1d29f9bfc,Nguyễn Duy,133040402+duyng21303@users.noreply.github.com,2025-10-15 01:54:34 +0700,"Merge pull request #81 from fusion-net-org/feature/13-company-handle-api",
+d8336f62a3b4a524e040975b29fdaa1287e89bcf,unknown,duyng21303@gmail.com,2025-10-15 01:54:07 +0700,"#11 fix",origin/feature/11-role-permission, feature/11-role-permission
+c68e7fec753fe2f6c7d48180f57f41a92472faeb,nguyenkienminh,kienminh04122003@gmail.com,2025-10-14 21:31:45 +0700,"#27 fix(company handle api): fix response message",
+988a11e78394041e6981c3658ac29762c15d63bc,Nguyễn Duy,133040402+duyng21303@users.noreply.github.com,2025-10-13 21:55:05 +0700,"Merge pull request #76 from fusion-net-org/feature/13-company-handle-api",
+94f44ce4316b6269981bdc56f57fd245ac5bfeeb,BabyGau9,caodung832003@gmail.com,2025-10-13 18:57:14 +0700,"#79 fix jwt",origin/Dung_AddTransaction
+019eea7de662df2a38f6c3f8dea81ce0d6624a6a,BabyGau9,caodung832003@gmail.com,2025-10-13 17:03:10 +0700,"#77 fix",origin/fix_bug_api
+1f7c481173a665c42001ee795532d508bd53ed1d,BabyGau9,caodung832003@gmail.com,2025-10-13 17:02:26 +0700,"Merge branch 'develop' into fix_bug_api",
+51c17691130d51ee7369f174154e0b868eddc183,BabyGau9,caodung832003@gmail.com,2025-10-13 16:44:14 +0700,"#77 fixclaim",
+9b6db27300b4d428480944f04ace1ce2832b194b,BabyGau9,caodung832003@gmail.com,2025-10-13 16:36:40 +0700,"oke",
+c8819bf695a0436edc3cbabb7f6051d4d3d669e6,BabyGau9,caodung832003@gmail.com,2025-10-13 16:34:48 +0700,"fix bug",
+4845431e58a69b5a31c7239de7da87759a7d047c,nguyenkienminh,kienminh04122003@gmail.com,2025-10-13 08:21:18 +0700,"#27 fix(company handle api): fix merge request",
+1f5a976ff941d00b2ed4afc705e7bfa52fc730c0,nguyenkienminh,kienminh04122003@gmail.com,2025-10-13 07:54:16 +0700,"Merge remote-tracking branch 'origin/develop' into feature/13-company-handle-api",
+8af2412995694bd8db915e998b73a84aeba1f44a,nguyenkienminh,kienminh04122003@gmail.com,2025-10-13 07:53:37 +0700,"#27 feature(company handle api): Update Search Company",
+e00c696f16fff790d2f57aba5440c980e0c8970a,Nguyễn Duy,133040402+duyng21303@users.noreply.github.com,2025-10-13 04:37:09 +0700,"Merge pull request #75 from fusion-net-org/feature/11-role-permission",
+4435472ed84a6b274f7d05305258424b7918ddeb,unknown,duyng21303@gmail.com,2025-10-13 04:30:53 +0700,"#11 update: update get all",
+430c4edfbe55982c35f85f4dacbc69dc320ce791,Tuong,166013719+Tuongtan110203@users.noreply.github.com,2025-10-10 00:10:44 +0700,"Merge pull request #74 from fusion-net-org/fix/comment",
+f623f4d1906fba8f5330e99f92afb672d63917e2,Tuongtan,tuongtan110203@gmail.com,2025-10-10 00:09:04 +0700,"#46 fix comment",origin/fix/comment
+d3376253cf37f0a02593f2190711b7b3c65c5f15,BabyGau9,113918778+BabyGau9@users.noreply.github.com,2025-10-09 22:41:14 +0700,"Merge pull request #73 from fusion-net-org/Dung_FixGetUserById",
+b48bbbaf3883b6282eff19a78aa64093ffd5cd3a,BabyGau9,caodung832003@gmail.com,2025-10-09 22:39:29 +0700,"#71 fixuser",origin/Dung_FixGetUserById
+985b71adf98c4efc0b9b55291576abd47c876f85,BabyGau9,caodung832003@gmail.com,2025-10-09 22:38:21 +0700,"#71 fix",
+cd491751c6e65eae1093ae81bd5c721beffe24c1,BabyGau9,caodung832003@gmail.com,2025-10-09 22:37:05 +0700,"#71 exchangeGetUserbyid",
+6e90ce2ada2af6835a498510d796a8e8699eccf7,BabyGau9,caodung832003@gmail.com,2025-10-09 22:35:29 +0700,"#71_fixgetUserById",
+de5b4682461549cae9a741c1b0a79dc00aabf44d,BabyGau9,caodung832003@gmail.com,2025-10-09 22:26:01 +0700,"fix_GETUSERID",origin/Dung_FixGetUser
+3eff9e270a03f027af0fa668dbd4522af49850ec,BabyGau9,caodung832003@gmail.com,2025-10-09 22:20:29 +0700,".",origin/Dung_Fix_GetUSerById
+2150c78f1eaada787c1b085fa9574e6e45015e82,BabyGau9,caodung832003@gmail.com,2025-10-09 22:19:09 +0700,"#70 fix getbyUserBYId",
+b914ebff8f9f26b9a51ace0ca19fa8efa70e3450,BabyGau9,caodung832003@gmail.com,2025-10-09 21:31:09 +0700,"Merge branch 'develop' into Dung_Create_PayOS_SubscrptionPackage_UserPackage",
+f7e7d8d50f8bc76c8c0e8c48775ec477abee869e,Tuong,166013719+Tuongtan110203@users.noreply.github.com,2025-10-09 21:13:19 +0700,"Merge pull request #69 from fusion-net-org/fix/cors",
+b9aa4a238726e339179fadbeb00f22541c2e5878,Tuong,166013719+Tuongtan110203@users.noreply.github.com,2025-10-09 21:12:29 +0700,"Merge pull request #68 from fusion-net-org/feature/partners",
+cf7788f54387717b4a4062bdb4abbdc4d242c16c,Tuongtan,tuongtan110203@gmail.com,2025-10-09 21:11:34 +0700,"fix cors",origin/fix/cors
+d79e09b2685dcb0d5e32a622f995a05bb3f4858b,Tuongtan,tuongtan110203@gmail.com,2025-10-09 20:12:10 +0700,"#15 fix partners",origin/feature/partners
+17973d4b32cb273e162105f4b66439077fcea4de,BabyGau9,caodung832003@gmail.com,2025-10-09 16:30:59 +0700,"Merge branch 'develop' into Dung_Create_PayOS_SubscrptionPackage_UserPackage",
+3bc482b0204e5dda5e87096e6b48c298eefbfa7b,BabyGau9,caodung832003@gmail.com,2025-10-09 16:30:31 +0700,"oke",
+a5ada3afb784aac309afd46bc98b8fb13ae8f744,Nguyễn Duy,133040402+duyng21303@users.noreply.github.com,2025-10-09 12:36:23 +0700,"Merge pull request #66 from fusion-net-org/feature/13-company-handle-api",
+d26870e1064069bc90173cd491048921c01a7322,nguyenkienminh,kienminh04122003@gmail.com,2025-10-09 11:29:04 +0700,"#27 refactor(company handle api): handle mapping profile",
+f57e99050f4c6b7ef0ecc7d63c6c1c0b31bd420f,nguyenkienminh,kienminh04122003@gmail.com,2025-10-09 11:28:30 +0700,"#27 fix(company handle api): handle merge into feature CRUD company",
+21286eaad8fe97ed7ca8c2332c90e5e4c7896901,Nguyễn Duy,133040402+duyng21303@users.noreply.github.com,2025-10-09 00:48:00 +0700,"Merge pull request #65 from fusion-net-org/Dung_Create_PayOS_SubscrptionPackage_UserPackage",
+1580aee9466f679fe1d72da1ea7316837207969f,nguyenkienminh,kienminh04122003@gmail.com,2025-10-09 00:46:07 +0700,"#27 refactor(company handle api): optimize CU Company function, Add Field in database, Optimize response",
+8e0f93b92cd9c4cfa36bc8e39db2ad3e4be5ec31,BabyGau9,caodung832003@gmail.com,2025-10-08 09:58:06 +0700,"#51_52_addPayOS_UserPackage",origin/Dung_Create_PayOS_SubscrptionPackage_UserPackage
+4a62365d9f974e1e16331181eab64d276478d456,unknown,duyng21303@gmail.com,2025-10-08 05:08:08 +0700,"fix cli",
+b561e242ad2111843e11a56128bfb87d1a7afe62,unknown,duyng21303@gmail.com,2025-10-08 05:03:09 +0700,"fix cli",
+dbdcb7287ee50c873718e9d6b7e0177e50e1bb33,unknown,duyng21303@gmail.com,2025-10-08 04:49:43 +0700,"fix cli",
+9a0c27fc9790ede1ad222925c2cbeaf47f78e1bb,unknown,duyng21303@gmail.com,2025-10-08 04:42:55 +0700,"fix cli",
+3d20183eefe00cdaff24fa603801fb1a76143f12,unknown,duyng21303@gmail.com,2025-10-08 04:29:42 +0700,"fix cli",
+87024b4804ec478d64a1d2c22db520fd7223b0ac,Nguyễn Duy,133040402+duyng21303@users.noreply.github.com,2025-10-08 04:25:09 +0700,"Merge branch 'develop' into Dung_CreatePayOS_Subscrption#51",origin/Dung_CreatePayOS_Subscrption#51
+4046d23bd1e72d69f04c928ed97dcee81f4409ba,Nguyễn Duy,133040402+duyng21303@users.noreply.github.com,2025-10-08 04:24:23 +0700,"Merge pull request #63 from fusion-net-org/feature/52-Sprint-handle",
+ec8365adb73f6e97e16cf442d0a9651b72df3627,unknown,duyng21303@gmail.com,2025-10-08 04:23:43 +0700,"fix/update github cli",origin/feature/52-Sprint-handle, feature/52-Sprint-handle
+fa8c38a53ee799fe9b631f457da883de063e3b3b,Nguyễn Duy,133040402+duyng21303@users.noreply.github.com,2025-10-08 04:05:32 +0700,"Merge pull request #62 from fusion-net-org/feature/52-Sprint-handle",
+50ddfea623b877da3278c5a2b5ce5ea832577233,unknown,duyng21303@gmail.com,2025-10-08 04:03:53 +0700,"#52 task complete",
+b30d36ed34302687cd865539db5fff21694ef93d,BabyGau9,caodung832003@gmail.com,2025-10-07 21:13:16 +0700,"#51-Handle_Confilct",
+806d3f073b495a47483de86d143be4cc41d91a90,Nguyễn Duy,133040402+duyng21303@users.noreply.github.com,2025-10-07 16:50:51 +0700,"Merge pull request #60 from fusion-net-org/add/41-fixconflict",
+69c99d66b36111d676252faad4b2996294984329,BabyGau9,caodung832003@gmail.com,2025-10-07 15:22:50 +0700,"fix-confi",origin/add/51-add-function-descreaseProjectandCompany, origin/add/41-fixconflict
+a01e0b57c794bd980f66259def8e7f77ed41dd2d,BabyGau9,caodung832003@gmail.com,2025-10-07 10:40:10 +0700,"add/51-descreasecompanyandproject",
+0c2d4fca8f29640c55efdaeb520270f01ecef141,BabyGau9,caodung832003@gmail.com,2025-10-06 16:58:55 +0700,"feature/50-51-Register subcription (PayOS)",origin/add/50-add-payos-subscription-refreshtoken
+db5e58be0ca5273721961815f069ce47bb35d8a7,Nguyen Kien Minh,155413956+nguyenkienminh@users.noreply.github.com,2025-10-05 21:07:17 +0700,"Merge pull request #57 from fusion-net-org/feature/42-CRUD-ProjectRequest",
+2d162bf267cb438c38ca2698c7a4818707550867,nguyenkienminh,kienminh04122003@gmail.com,2025-10-05 21:04:38 +0700,"#44 feature(Reject project request): Reject project request",origin/feature/42-CRUD-ProjectRequest
+d70b27251041e764e61ab81bf30027aac8a9628c,nguyenkienminh,kienminh04122003@gmail.com,2025-10-05 21:03:14 +0700,"#43 feature(Accept project request): Accept and Reject project request",
+63752fa72c3b5c5ecb3a2a2bb604d024168fa24a,nguyenkienminh,kienminh04122003@gmail.com,2025-10-04 20:10:47 +0700,"#42 feature(CRUD Project request): CRUD Project request",
+2a0d282a9bb94ef03a0663ce2dd83742a2b182ad,Tuong,166013719+Tuongtan110203@users.noreply.github.com,2025-10-04 17:13:35 +0700,"Merge pull request #56 from fusion-net-org/feature/45-46-47-48-crud-comment-assign-change-status-task",
+7c2c7a7a034d377e1edf4fd021dec7d97e833db2,Tuongtan,tuongtan110203@gmail.com,2025-10-04 17:12:37 +0700,"#45 - feature(task_comment): crud task comment assign change status",origin/feature/45-46-47-48-crud-comment-assign-change-status-task
+28d95d4f5a14d440227f910742d53d8eca244192,Nguyễn Duy,133040402+duyng21303@users.noreply.github.com,2025-10-04 02:28:09 +0700,"Merge pull request #55 from fusion-net-org/feature/11-role-permission",
+c1fea5d731704264f8424fc1d0d1ee19659babee,unknown,duyng21303@gmail.com,2025-10-04 02:27:48 +0700,"#11 fix",
+4bd6427c3d6d76441714294938b440f945c7b81f,Nguyễn Duy,133040402+duyng21303@users.noreply.github.com,2025-10-03 05:10:25 +0700,"Merge pull request #54 from fusion-net-org/feature/11-role-permission",
+e894a0856dd1c8219ad90022f4dfbc7027b9bd27,unknown,duyng21303@gmail.com,2025-10-03 05:09:48 +0700,"#11 feature complete",
+82a3c5589ab211c3c3b7f3fd7854df91c15ace61,unknown,duyng21303@gmail.com,2025-10-03 03:59:49 +0700,"#11-role",
+207748bec49e815cfa2cfeb3bf41c0f9c7e5f99e,unknown,duyng21303@gmail.com,2025-10-03 00:44:32 +0700,"13",feature/13-company-handle-api
+680f2a86a7c1f4ac75dd74640f9220b25e39fb4e,duyng21303,duyng21303@gmail.com,2025-10-02 21:05:47 +0700,"#11 role admin",
+4dc9dbfbfa83905ccbc2c36b761102d294a291b7,Nguyễn Duy,133040402+duyng21303@users.noreply.github.com,2025-09-29 12:40:44 +0700,"Merge pull request #41 from fusion-net-org/feature/13-company-handle-api",
+61525e6933f0f9fe78f03a78976d6d253f10d6c3,nguyenkienminh,kienminh04122003@gmail.com,2025-09-29 10:29:53 +0700,"#26 fix(company handle api): fix mapper",
+a9b33353d2507fa3908d129c404076225ffb8462,nguyenkienminh,kienminh04122003@gmail.com,2025-09-29 10:29:02 +0700,"#26 fix(company handle api): fix merge branch",
+3bdc891df0a830df0dc811b3f62436ae8c2036a0,nguyenkienminh,kienminh04122003@gmail.com,2025-09-29 10:19:51 +0700,"#26 refactor(company handle api): optimize join using redis and setup docker-compose",
+ad69c39ba974bec2410230f705952a6d6a35c4f2,Nguyễn Duy,133040402+duyng21303@users.noreply.github.com,2025-09-29 01:47:57 +0700,"Merge pull request #40 from fusion-net-org/feature/14-ticket-handle-api",
+266121f5ed6fa8e0cb58e3fd2e2a478cb3a8b81a,nguyenkienminh,kienminh04122003@gmail.com,2025-09-28 20:58:07 +0700,"#26 feature(company handle api): invite member",
+a203fe5acb7dccdd9388177efa597da53a06b1d5,cong-bang,13092k1lcbang@gmail.com,2025-09-28 17:23:47 +0700,"#21 feature(ticket): CRUD ticket",origin/feature/14-ticket-handle-api
+77192c2813f2ec57a9eda559df1c97727de6d2c0,Nguyễn Duy,133040402+duyng21303@users.noreply.github.com,2025-09-28 02:52:00 +0700,"Merge pull request #39 from fusion-net-org/feature/13-company-handle-api",
+5d221cc82aa0cb6bd0e7995708d4b285a9a2de50,nguyenkienminh,kienminh04122003@gmail.com,2025-09-27 23:35:12 +0700,"#27 refactor(company handle api): optimize CRUD Company",
+54a6203c609b868fd20483a4d9b657101e13506c,Nguyen Kien Minh,155413956+nguyenkienminh@users.noreply.github.com,2025-09-27 13:59:11 +0700,"Merge pull request #38 from fusion-net-org/feature/13-company-handle-api",
+d05a5d546ca0f8af00891090940f2cbbd9fdbaff,nguyenkienminh,kienminh04122003@gmail.com,2025-09-27 13:57:00 +0700,"a",
+96e627c547485d6bd43db89bfb47243dbbe870de,nguyenkienminh,kienminh04122003@gmail.com,2025-09-27 13:52:14 +0700,"#27 fix(company handle api): fix CRUD company",
+3154c7b29f9b5ec46f19729f8a2526d3b1d3d1ab,nguyenkienminh,kienminh04122003@gmail.com,2025-09-27 11:23:33 +0700,"#27 feature(company handle api): CRUD Company",
+a934117d63aff3f4c2435154a5d9900a495fdb92,Tuong,166013719+Tuongtan110203@users.noreply.github.com,2025-09-27 11:12:10 +0700,"Merge pull request #37 from fusion-net-org/fix/36-fix-ApiconfigureService",
+d0eaa110926e0fb9233dbdd48bc8c3f71288bba9,BabyGau9,caodung832003@gmail.com,2025-09-27 11:09:27 +0700,"oke",origin/fix/36-fix-ApiconfigureService
+0cfc966440d1cf5f49f1ccd027725d326b6eb422,BabyGau9,caodung832003@gmail.com,2025-09-27 10:45:04 +0700,"Merge branch 'develop' into feature/34-add-function-image",origin/feature/35-fix-configureService, origin/feature/34-add-function-image
+00b6c91b9348f0f4ef9d8711f3ff6a843f8b1892,BabyGau9,caodung832003@gmail.com,2025-09-27 10:44:54 +0700,"ok",
+99824ba6ad2f1ef904c2ce99178ed32d470415d9,BabyGau9,caodung832003@gmail.com,2025-09-27 10:30:34 +0700,"fix-configureService layer",
+bb0a70d2e0562c100d679dc650725acb0e69fc93,BabyGau9,caodung832003@gmail.com,2025-09-27 10:27:39 +0700,"fix laction mailrequest",
+373919e5b5e30988a5dc7e05e686d6d6728c4040,nguyenkienminh,kienminh04122003@gmail.com,2025-09-27 10:22:41 +0700,"#25 feature(company handle api): create company",
+dbc3fe4313009e9fc601361e1a068d4de169b9a3,BabyGau9,caodung832003@gmail.com,2025-09-27 10:10:22 +0700,"#34 feature(user): addFunctionImage-updateDatabase-getSeflUser",
+0cd4fee56998db5f328f74efcd95620b7be795ad,BabyGau9,caodung832003@gmail.com,2025-09-27 09:39:40 +0700,"oke",
+82f37b317cdb93e3d6ddfe414f6b7674e24db355,BabyGau9,caodung832003@gmail.com,2025-09-27 09:33:29 +0700,"fix conflit from git to local of dev",
+e21d0f573d94e5380891cd5daa8c60e014aa631a,BabyGau9,caodung832003@gmail.com,2025-09-27 09:28:02 +0700,"add action add image, add data",
+bd3d9674c8c5f320a1793e37b02d5b0f39d7e276,Nguyễn Duy,133040402+duyng21303@users.noreply.github.com,2025-09-27 03:47:28 +0700,"Merge pull request #33 from fusion-net-org/feature/11-role-permission",
+ed2106b44b61fff7055cf0e16e90203dc50b387b,unknown,duyng21303@gmail.com,2025-09-27 03:45:34 +0700,"#11 fix: gitignore",
+d9d14ac33bbd7f514185458157f9d691e78c1b07,Tuong,166013719+Tuongtan110203@users.noreply.github.com,2025-09-27 01:12:39 +0700,"Merge pull request #32 from fusion-net-org/feature/16-17-18-accept-cancel-view-partner",
+86d21df2d3f66ceb6ba0d3a3647acfeae5ef9304,Tuongtan,tuongtan110203@gmail.com,2025-09-27 01:10:25 +0700,"#12 feature(partner) : invite-accept-cancel-view-partner",
+c6593143bc0fd41bb4e4a9054ea7447062c6536f,Tuong,166013719+Tuongtan110203@users.noreply.github.com,2025-09-26 21:51:24 +0700,"Merge pull request #31 from fusion-net-org/fix/15-invite-partner",
+d72ba954031b7ed06410c32ba1315229a5c1f95a,Tuongtan,tuongtan110203@gmail.com,2025-09-26 21:50:52 +0700,"#15 fix(partner) : invite-partner",origin/fix/15-invite-partner
+e766969b19f5799e72415b2caf7f67d3ffb06d16,Tuong,166013719+Tuongtan110203@users.noreply.github.com,2025-09-26 21:32:50 +0700,"Merge pull request #30 from fusion-net-org/feature/15-invite-partner",
+afe00d8ba2d254e7e7e6e03891d52d90a2be23fc,Tuong,166013719+Tuongtan110203@users.noreply.github.com,2025-09-26 21:31:31 +0700,"Merge branch 'develop' into feature/15-invite-partner",origin/feature/15-invite-partner
+05f74d5be7477c83cac5590276b9098c615802d1,Tuongtan,tuongtan110203@gmail.com,2025-09-26 21:27:03 +0700,"#15 feature(partner) : invite partner",
+bb8b06864c5156356077ca2878c6df96ece15abb,BabyGau9,113918778+BabyGau9@users.noreply.github.com,2025-09-26 11:47:05 +0700,"Merge pull request #29 from fusion-net-org/Dung_feature_Uer",
+4c480b84221a4e0416f9b9ead82b49ecf0f0b20e,BabyGau9,caodung832003@gmail.com,2025-09-26 10:57:58 +0700,"#28 - fix format response api",origin/Dung_feature_Uer
+af2c89b5f9f9b393256964c77251f3a126ef3507,BabyGau9,caodung832003@gmail.com,2025-09-26 10:42:34 +0700,"fix format response",
+f3ba59bdecbfd505aa6fb4306798bf069cb43846,unknown,duyng21303@gmail.com,2025-09-26 04:11:58 +0700,"#11 fix: fix name",origin/11_duy_role-permission, 11_duy_role-permission
+054c40a6c40a69f02e4785b5086356f91643de62,unknown,duyng21303@gmail.com,2025-09-25 04:59:59 +0700,"#11 feature: role_permission",
+c44def326373b287b046e08a01a81d4df17c962f,unknown,duyng21303@gmail.com,2025-09-25 04:36:38 +0700,"#11 feature: role permission",
+eb0965e16cdaa5ec9c2d71001d72f2f68e9da14d,unknown,duyng21303@gmail.com,2025-09-25 04:34:22 +0700,"a",
+66e7e82c00a4fab2b727a5b300eecd8c4bc35f45,unknown,duyng21303@gmail.com,2025-09-24 16:47:07 +0700,"a",
+bd85f8d688a71eff99fa8c932e2120536cee8398,unknown,duyng21303@gmail.com,2025-09-24 16:46:30 +0700,"a\",
+d8bb240809569f532b8e90234dcc28d3050e8848,BabyGau9,113918778+BabyGau9@users.noreply.github.com,2025-09-24 16:44:53 +0700,"Merge pull request #10 from fusion-net-org/Dung_CreateLogin_Google-#4",
+b2ab46290143395244a443e345ec13eeadfd1589,unknown,duyng21303@gmail.com,2025-09-24 16:44:47 +0700,"a",
+571dbb77906e0e4751b5387c49da86bc1961045d,BabyGau9,caodung832003@gmail.com,2025-09-24 16:42:39 +0700,"#4 -add login google",origin/Dung_CreateLogin_Google-#4
+1332e3acc801df28b1cef25c27489f18b4f95813,BabyGau9,113918778+BabyGau9@users.noreply.github.com,2025-09-24 16:07:31 +0700,"Merge pull request #9 from fusion-net-org/Dung_CreateLogin_Google-#4",
+9379a141a565caa72cc2facd283b2dc5478c015e,BabyGau9,caodung832003@gmail.com,2025-09-24 16:07:05 +0700,"tesst2",
+4ec075ba1e7ab3d0c3dde9101f2269693fbe5314,BabyGau9,caodung832003@gmail.com,2025-09-24 16:05:07 +0700,"tesst",
+202472ca0b58a2e5931378aff73c0cb1202d266c,BabyGau9,caodung832003@gmail.com,2025-09-24 16:01:33 +0700,"a",
+fc935c061f8605f404b5b1ba2bf0ee05590b4afc,Nguyễn Duy,133040402+duyng21303@users.noreply.github.com,2025-09-24 15:19:44 +0700,"Merge pull request #8 from fusion-net-org/dung_update_vs",
+b3cd09da99a8f31a227d23812d2538407f753b81,BabyGau9,caodung832003@gmail.com,2025-09-24 15:18:53 +0700,"a",origin/dung_update_vs
+6b44d4853b460a940a9d91d756e3f53bbb8aa0eb,BabyGau9,caodung832003@gmail.com,2025-09-24 15:17:27 +0700,"a",
+b15d834a5ab045e16ae6cccd56abee6c0102cc46,BabyGau9,113918778+BabyGau9@users.noreply.github.com,2025-09-24 14:06:22 +0700,"Merge pull request #7 from fusion-net-org/dung_update_vs",
+1ef779eda93ec2be1897460f5f164078b8666b5c,BabyGau9,caodung832003@gmail.com,2025-09-24 14:05:56 +0700,"a",
+3e53c6b518c36addd99bb9be6abe90261ee592b2,BabyGau9,caodung832003@gmail.com,2025-09-24 14:02:35 +0700,"a",
+52de4c165001c93cdb0b7d6a651684b1a6b78eb9,BabyGau9,caodung832003@gmail.com,2025-09-24 13:57:38 +0700,"a",
+125a4f597dc241c6e4ae6f7055f54c4b7883eff4,unknown,duyng21303@gmail.com,2025-09-24 13:51:52 +0700,"chore: stop tracking .vs/bin/obj and ignore them",
+ef5149cc9e4517fce57cf5c4f7ce3b92e751e56a,unknown,duyng21303@gmail.com,2025-09-24 13:45:06 +0700,"remove .vs from repo; ignore going forward",
+822da82c6fd2975f3de4b48f1ab47d41737ccf92,unknown,duyng21303@gmail.com,2025-09-24 13:40:06 +0700,"a",
+f1c10adb78a7f8665ca22a262970aee537ca4b13,unknown,duyng21303@gmail.com,2025-09-24 13:37:59 +0700,"a",
+e35c6f1d4548e1da9402c57c081fc88dbeb6d41e,BabyGau9,caodung832003@gmail.com,2025-09-24 13:22:21 +0700,"fix format response api",origin/Dung_feature_login_register
+6ab36d54c1b32ca1e6717e4a44ac63e8293228d0,unknown,duyng21303@gmail.com,2025-09-24 01:37:17 +0700,"a",
+66fe7ce8a9b0ef6603b1f4605e3c97f378766259,unknown,duyng21303@gmail.com,2025-09-24 01:36:58 +0700,"a",
+689c2a7f130a4867289289fb8d82b2e1e87d8b86,unknown,duyng21303@gmail.com,2025-09-24 01:36:43 +0700,"a",
+57d70c8db9edca613c33ae7ade6b48a11eb3d0c4,unknown,duyng21303@gmail.com,2025-09-24 01:25:27 +0700,"a",main
+57426829fc4ea5ec865807cd407bbb02e84edcbe,Nguyễn Duy,133040402+duyng21303@users.noreply.github.com,2025-09-24 01:15:38 +0700,"Merge pull request #3 from fusion-net-org/Dung_feature_login_register",
+812471e149543f1d651c58e6549cbe8f05ce1cad,BabyGau9,caodung832003@gmail.com,2025-09-24 00:07:02 +0700,"#1 feature: Login_register",
+c6ddca84a1d23eb489196c6dc5ffdde7b584b98f,BabyGau9,caodung832003@gmail.com,2025-09-23 23:45:30 +0700,"create register, login exchange fluentvalidatior of viewmodel setup UOF + Generic",
+5adf6cbecb264a56ec92fea9607b657bd96ece65,unknown,duyng21303@gmail.com,2025-09-23 04:26:39 +0700,"db",origin/main, origin/HEAD
+be8cd90e68ff4a81f3830dc0bb75f67086d68957,unknown,duyng21303@gmail.com,2025-09-22 19:13:36 +0700,"a",
+866ccef9eb1b89ee28c31f8e29bad293e0f461d6,unknown,duyng21303@gmail.com,2025-09-22 18:40:44 +0700,"a",
+7e588227488edc6e6c8074723a7ef978b790c997,duyng21303,duyng21303@gmail.com,2025-09-22 17:16:02 +0700,"a",
+55ee5d2266f8beab64c1168bd3d7bcabc2cf3a3f,unknown,duyng21303@gmail.com,2025-09-22 03:57:24 +0700,"first commit",

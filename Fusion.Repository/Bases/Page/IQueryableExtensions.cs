@@ -20,6 +20,12 @@ public static class IQueryableExtensions
             var sort = request.SortColumn + (request.SortDescending ? " desc" : " asc");
             query = query.OrderBy(sort);
         }
+        else
+        {
+            var firstProperty = typeof(T).GetProperties().FirstOrDefault();
+            if (firstProperty != null)
+                query = query.OrderBy(firstProperty.Name);
+        }
 
         // paging
         var items = await query

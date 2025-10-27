@@ -15,6 +15,11 @@ namespace Fusion.Repository.IRepositories
         Task<User?> GetUserByEmailAsync(string email, CancellationToken cancellationToken = default);
         Task<User?> GetUserByGoogleSubAsync(string googleSub, CancellationToken cancellationToken = default);
         Task<bool> CheckEmailExistAsync(string email, CancellationToken cancellationToken = default);
+        Task<PagedResult<User>> GetAllUsersAsync(PagedRequest request,CancellationToken cancellationToken = default);
+        Task<User?> GetOwnerUserByCompanyIdAsync(Guid companyId, CancellationToken cancellationToken = default);
+        Task<User?> GetUserByResetTokenAsync(string resetToken, CancellationToken cancellationToken = default);
+
+        Task<User?> GetUserWithRolesAndPermissionsInCompanyAsync(Guid userId, Guid companyId);
 
     }
 }

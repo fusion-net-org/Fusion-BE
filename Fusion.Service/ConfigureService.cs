@@ -5,6 +5,7 @@ using Fusion.Service.IServices;
 using Fusion.Service.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Net.payOS;
 
 namespace Fusion.Service
 {
@@ -14,13 +15,15 @@ namespace Fusion.Service
         {
             // register autoMapper
             services.AddAutoMapper(typeof(MappingProfile));
-
+            services.AddScoped<IRoleAdminService, RoleAdminService>();
+            services.AddScoped<IMemberRoleService, MemberRoleService>();
+            services.AddScoped<ISprintService, SprintService>();
             //register service entities
             services.AddScoped<IAuthenService, AuthenService>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<ICloudinaryService, CloudinaryService>();
             services.AddScoped<IJwtService, JwtService>();
-
+            services.AddScoped<IWorkflowDesignerService, WorkflowDesignerService>();
             // register other services
             services.AddScoped<ICurrentService, CurrentService>();
             services.AddScoped<ICloudinaryService, CloudinaryService>();
@@ -30,10 +33,58 @@ namespace Fusion.Service
             //company
             services.AddScoped<ICompanyService, CompanyService>();
             services.AddScoped<ICompanyMemberService, CompanyMemberService>();
-            return services;
+
+            //task
+            services.AddScoped<ITaskService, TaskService>();
+
 			//ticket
 			services.AddScoped<ITicketService, TicketService>();
-			return services;
+
+            //comment
+            services.AddScoped<ICommentService, CommentService>();
+
+            //project request
+            services.AddScoped<IProjectRequestService , ProjectRequestService>();
+
+            //Subscription package
+            services.AddScoped<ISubscriptionPackageService, SubscriptionPackageService>();
+
+            //transaction payment
+            services.AddScoped<ITransactionPaymentService, TransactionPaymentService>();
+
+            //refesh token
+            services.AddScoped<IRefreshTokenService, RefreshTokenService>();
+
+            //user subscrption
+            services.AddScoped<IUserSubscriptionService, UserSubscriptionService>();
+
+            //notification
+            services.AddScoped<INotificationService, NotificationService>();
+
+            //firebase cloud message
+            services.AddScoped<IFcmService, FcmService>();
+
+            //user device
+            services.AddScoped<IUserDeviceService, UserDeviceService>();
+
+            // company activity log
+            services.AddScoped<ICompanyActivityService, CompanyActivityLogService>();
+            // PayOS
+            services.AddSingleton<PayOS>(sp =>
+            {
+                var clientId = configuration["PayOS:ClientId"];
+                var apiKey = configuration["PayOS:ApiKey"];
+                var checksumKey = configuration["PayOS:ChecksumKey"];
+
+                if (string.IsNullOrEmpty(clientId) || string.IsNullOrEmpty(apiKey) || string.IsNullOrEmpty(checksumKey))
+                {
+                    throw new InvalidOperationException("Missing PayOS configuration in appsettings.json");
+                }
+
+                return new PayOS(clientId, apiKey, checksumKey);
+            });
+            services.AddScoped<IPayOSService, PayOSService>();
+            return services;
         }
      }
 }

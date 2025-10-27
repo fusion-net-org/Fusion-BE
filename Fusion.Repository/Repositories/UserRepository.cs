@@ -69,5 +69,45 @@ namespace Fusion.Repository.Repositories
             // dùng extension để phân trang + sort
             return await query.ToPagedResultAsync(request, cancellationToken);
         }
+
+        public async Task<PagedResult<User>> GetAllUsersAsync(PagedRequest request, CancellationToken cancellationToken = default)
+        {
+            var query = _dbSet.AsQueryable();
+
+
+            return await query.ToPagedResultAsync(request, cancellationToken);
+        }
+
+        public async Task<User?> GetOwnerUserByCompanyIdAsync(Guid companyId, CancellationToken cancellationToken = default)
+        {
+            var ownerUserId = await _context.Companies
+                .AsNoTracking()
+                .Where(c => c.Id == companyId)
+                .Select(c => c.OwnerUserId)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (ownerUserId == null)
+                return null;
+
+            var user = await _context.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Id == ownerUserId, cancellationToken);
+
+            return user;
+        }
+
+
+        public async Task<User?> GetUserByResetTokenAsync(string resetToken, CancellationToken cancellationToken = default)
+        {
+            return await _context.Users.FirstOrDefaultAsync(u => u.ResetToken == resetToken, cancellationToken);
+        }
+
+        public async Task<User?> GetUserWithRolesAndPermissionsInCompanyAsync(Guid userId, Guid companyId)
+        {
+            return await _context.Users.Include(u => u.UserRoles.Where(ur => ur.Role.CompanyId == companyId))
+                        .ThenInclude(ur => ur.Role)
+                            .ThenInclude(r => r.RolePermissions.Where(rp => rp.CompanyId == companyId))
+                                    .ThenInclude(rp => rp.Function).FirstOrDefaultAsync(u => u.Id == userId);
+        }
     }
 }

@@ -1,4 +1,9 @@
-﻿using Fusion.Repository.Repositories;
+﻿using Fusion.Repository.Data;
+using Fusion.Repository.Entities;
+using Fusion.Repository.IRepositories;
+using Fusion.Repository.Repositories;
+using Fusion.Service.Commons.Helpers;
+using Fusion.Service.IServices;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -33,10 +38,16 @@ namespace Fusion.Service.Services
     {
         private readonly IUserRoleRepository _repo;
         private readonly IPermissionCache _cache;
+        private readonly ICompanyActivityService _logService;
+        private readonly ICurrentService _currentService;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public MemberRoleService(IUserRoleRepository repo, IPermissionCache cache)
+        public MemberRoleService(IUserRoleRepository repo, IPermissionCache cache, ICompanyActivityService logService, ICurrentService currentService, IUnitOfWork unitOfWork)
         {
             _repo = repo; _cache = cache;
+            _logService = logService;
+            _currentService = currentService;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task<List<RoleVm>> GetAsync(Guid companyId, Guid userId, CancellationToken ct)
@@ -54,6 +65,18 @@ namespace Fusion.Service.Services
             if (ids.Count == 0) return;
 
             await _repo.AddAsync(companyId, userId, ids, ct);
+
+            var currentUserName = await GetUserName(_currentService.GetUserId());
+            var userResult = await GetUserName(userId);
+            var log = new CompanyActivityLog
+            {
+                CompanyId = companyId,
+                ActorUserId = _currentService.GetUserId(),
+                Title = "Add role to member",
+                Description = $"User:'{currentUserName}' has added role id: {ids} for user:'{userResult}'.",
+
+            };
+            await _logService.CreateLog(log);
             await _cache.InvalidateAsync(userId, companyId);
         }
 
@@ -65,13 +88,42 @@ namespace Fusion.Service.Services
             var ids = dto?.RoleIds ?? new List<int>();
 
             await _repo.ReplaceAsync(companyId, userId, ids, ct);
+
+
+            var currentUserName = await GetUserName(_currentService.GetUserId());
+            var userResult = await GetUserName(userId);
+            var log = new CompanyActivityLog
+            {
+                CompanyId = companyId,
+                ActorUserId = _currentService.GetUserId(),
+                Title = "Replace member roles",
+                Description = $"User:'{currentUserName}' has replaced roles to: {ids} for user:'{userResult}'.",
+            };
+            await _logService.CreateLog(log);
             await _cache.InvalidateAsync(userId, companyId);
         }
 
         public async Task RemoveAsync(Guid companyId, Guid userId, int roleId, CancellationToken ct)
         {
             await _repo.RemoveAsync(companyId, userId, roleId, ct);
+
+            var currentUserName = await GetUserName(_currentService.GetUserId());
+            var userResult = await GetUserName(userId);
+            var log = new CompanyActivityLog
+            {
+                CompanyId = companyId,
+                ActorUserId = _currentService.GetUserId(),
+                Title = "Remove role from member",
+                Description = $"User:'{currentUserName}' has removed role id: {roleId} from user: '{userResult}'.",
+            };
+            await _logService.CreateLog(log);
             await _cache.InvalidateAsync(userId, companyId);
+        }
+
+        private async Task<string?> GetUserName(Guid userId)
+        {
+            var user = await _unitOfWork.Repository<User>().FindAsync(c => c.Id == userId);
+            return user.UserName;
         }
     }
 }

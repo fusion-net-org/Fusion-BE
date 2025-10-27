@@ -51,6 +51,12 @@ public partial class User
     [Column("status")]
     public bool Status { get; set; }
 
+    [Column("resetToken")]
+    public string? ResetToken { get; set; }
+
+    [Column("resetTokenExpiry")]
+    public DateTime? ResetTokenExpiry { get; set; }
+
     [Column("create_at")]
     [Precision(3)]
     public DateTime CreateAt { get; set; }
@@ -103,4 +109,12 @@ public partial class User
 
     [InverseProperty("User")]
     public virtual ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
+    [InverseProperty("User")]
+    public virtual ICollection<UserSubscription> UserSubscriptions { get; set; } = new List<UserSubscription>();
+
+    [InverseProperty("User")]
+    public virtual ICollection<TransactionPayment> TransactionPayments { get; set; } = new List<TransactionPayment>();
+
+    [InverseProperty("User")]
+    public virtual ICollection<UserDevice> UserDevices { get; set; } = new List<UserDevice>();
 }

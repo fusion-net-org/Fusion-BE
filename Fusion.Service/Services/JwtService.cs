@@ -42,7 +42,11 @@ public class JwtService : IJwtService
 
         if (user.IsSystemAdmin)
         {
-            claims.Add(new Claim("isAdmin", "true"));
+            claims.Add(new Claim(ClaimTypes.Role, "Admin"));
+        }
+        else
+        {
+            claims.Add(new Claim(ClaimTypes.Role, "User"));
         }
 
 
