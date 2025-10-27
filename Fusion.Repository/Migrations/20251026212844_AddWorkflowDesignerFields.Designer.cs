@@ -4,6 +4,7 @@ using Fusion.Repository.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Fusion.Repository.Migrations
 {
     [DbContext(typeof(FusionDbContext))]
-    partial class FusionDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251026212844_AddWorkflowDesignerFields")]
+    partial class AddWorkflowDesignerFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -178,10 +181,6 @@ namespace Fusion.Repository.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit")
                         .HasColumnName("is_deleted");
-
-                    b.Property<bool>("IsView")
-                        .HasColumnType("bit")
-                        .HasColumnName("is_view");
 
                     b.Property<string>("Title")
                         .HasMaxLength(200)
@@ -1573,8 +1572,8 @@ namespace Fusion.Repository.Migrations
                         .HasColumnName("to_status_id");
 
                     b.Property<string>("Type")
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("type");
 
                     b.Property<Guid?>("WorkflowId")
