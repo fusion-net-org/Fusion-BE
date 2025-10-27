@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Fusion.Repository.Bases.Exceptions;
+using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Responses;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
@@ -59,13 +60,19 @@ namespace Fusion.Repository.Repositories
             return taskById;
         }
 
-        public async Task<IEnumerable<ProjectTask>> GetAllTasksAsync()
+        public async Task<PagedResult<ProjectTask>> GetAllTasksAsync(
+             PagedRequest request,
+             CancellationToken cancellationToken = default)
         {
-            return await _context.ProjectTasks
+            var query = _context.ProjectTasks
                 .Include(t => t.Project)
                 .Include(t => t.Sprint)
-                .ToListAsync();
+                .AsQueryable();
+
+
+            return await query.ToPagedResultAsync(request, cancellationToken);
         }
+
 
         public async Task<ProjectTask?> UpdateTaskAsync(ProjectTask task, Guid userId)
         {

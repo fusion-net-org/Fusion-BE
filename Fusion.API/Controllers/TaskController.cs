@@ -1,5 +1,6 @@
 ﻿using System.Security.Claims;
 using System.Threading.Tasks;
+using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Responses;
 using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.IServices;
@@ -47,14 +48,17 @@ namespace Fusion.API.Controllers
         }
 
         /// <summary>
-        /// Get all tasks
+        /// Get all tasks (with pagination)
         /// </summary>
         [HttpGet]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<IEnumerable<ProjectTaskResponse>>))]
-        public async Task<IActionResult> GetAllTasks()
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PagedResult<ProjectTaskResponse>>))]
+        public async Task<IActionResult> GetAllTasks(
+            [FromQuery] PagedRequest request,
+            CancellationToken cancellationToken = default)
         {
-            var result = await _taskService.GetAllTasksAsync();
-            return Ok(ResponseModel<IEnumerable<ProjectTaskResponse>>.Ok(
+            var result = await _taskService.GetAllTasksAsync(request, cancellationToken);
+
+            return Ok(ResponseModel<PagedResult<ProjectTaskResponse>>.Ok(
                 data: result,
                 message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "tasks")));
         }

@@ -56,7 +56,15 @@ namespace Fusion.API.Controllers
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<bool>))]
         public async Task<IActionResult> RequestPasswordReset([FromBody] PasswordResetRequest model, CancellationToken cancellationToken)
         {
-            var result = await _authenService.RequestPasswordResetAsync(model.Email, cancellationToken);
+            var result = await _authenService.RequestPasswordResetAsync(model.Email, "web", cancellationToken);
+            return Ok(ResponseModel<bool>.Ok(result, "Password reset link sent successfully"));
+        }
+
+        [HttpPost("request-password-reset/mobile")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<bool>))]
+        public async Task<IActionResult> RequestPasswordResetMobile([FromBody] PasswordResetRequest model, CancellationToken cancellationToken)
+        {
+            var result = await _authenService.RequestPasswordResetAsync(model.Email, "mobile", cancellationToken);
             return Ok(ResponseModel<bool>.Ok(result, "Password reset link sent successfully"));
         }
 
