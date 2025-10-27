@@ -69,6 +69,9 @@ namespace Fusion.Service
 
             // company activity log
             services.AddScoped<ICompanyActivityService, CompanyActivityLogService>();
+
+            // project
+            services.AddScoped<IProjectService, ProjectService>();
             // PayOS
             services.AddSingleton<PayOS>(sp =>
             {

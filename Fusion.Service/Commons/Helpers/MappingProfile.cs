@@ -5,19 +5,21 @@ using Fusion.Service.ViewModels.Comment.Request;
 using Fusion.Service.ViewModels.Comment.Response;
 using Fusion.Service.ViewModels.Companies.Requests;
 using Fusion.Service.ViewModels.Companies.Responses;
-using Fusion.Service.ViewModels.Task.Request;
-using Fusion.Service.ViewModels.Task.Response;
+using Fusion.Service.ViewModels.Notifications.Requests;
+using Fusion.Service.ViewModels.Notifications.Responses;
+using Fusion.Service.ViewModels.Project.Requests;
+using Fusion.Service.ViewModels.Project.Responses;
 using Fusion.Service.ViewModels.Projects.Requests;
 using Fusion.Service.ViewModels.Projects.Responses;
+using Fusion.Service.ViewModels.SubscriptionPackage.Requests;
+using Fusion.Service.ViewModels.SubscriptionPackage.Responses;
+using Fusion.Service.ViewModels.Task.Request;
+using Fusion.Service.ViewModels.Task.Response;
 using Fusion.Service.ViewModels.Tickets.Requests;
 using Fusion.Service.ViewModels.Tickets.Responses;
+using Fusion.Service.ViewModels.TransactionPayment.Requests;
 using Fusion.Service.ViewModels.Users.Requests;
 using Fusion.Service.ViewModels.Users.Responses;
-using Fusion.Service.ViewModels.SubscriptionPackage.Responses;
-using Fusion.Service.ViewModels.SubscriptionPackage.Requests;
-using Fusion.Service.ViewModels.Notifications.Responses;
-using Fusion.Service.ViewModels.Notifications.Requests;
-using Fusion.Service.ViewModels.TransactionPayment.Requests;
 
 namespace Fusion.Service.Commons.Helpers;
 
@@ -170,6 +172,24 @@ public class MappingProfile : Profile
         CreateMap<Notification, NotificationResponse>();
         CreateMap<SendNotificationRequest, Notification>();
 
+        //----------------------------     entity: Project ---------------------------------------------
+        CreateMap<CreateProjectRequest, Project>()
+                 .ForMember(d => d.IsHired, o => o.MapFrom(s => s.isHired))
+                 .ForMember(d => d.CompanyHiredId, o => o.MapFrom(s =>
+                     s.CompanyHiredId.HasValue && s.CompanyHiredId.Value != Guid.Empty ? s.CompanyHiredId : (Guid?)null))
+                 .ForMember(d => d.ProjectRequestId, o => o.MapFrom(s =>
+                     s.ProjectRequestId.HasValue && s.ProjectRequestId.Value != Guid.Empty ? s.ProjectRequestId : (Guid?)null))
+                 .ForMember(d => d.StartDate, o => o.MapFrom(s => s.StartDate.HasValue ? DateOnly.FromDateTime(s.StartDate.Value) : (DateOnly?)null))
+                 .ForMember(d => d.EndDate, o => o.MapFrom(s => s.EndDate.HasValue ? DateOnly.FromDateTime(s.EndDate.Value) : (DateOnly?)null))
+                 .ForMember(d => d.CreatedBy, o => o.Ignore())
+                 .ForMember(d => d.CreateAt, o => o.Ignore())
+                 .ForMember(d => d.UpdateAt, o => o.Ignore())
+                 .ForMember(d => d.Id, o => o.Ignore());
+
+        CreateMap<Project, ProjectsResponse>()
+            .ForMember(d => d.isHired, o => o.MapFrom(s => s.IsHired))
+            .ForMember(d => d.StartDate, opt => opt.MapFrom(s => s.StartDate.HasValue ? s.StartDate.Value.ToDateTime(TimeOnly.MinValue) : (DateTime?)null))
+            .ForMember(d => d.EndDate, opt => opt.MapFrom(s => s.EndDate.HasValue ? s.EndDate.Value.ToDateTime(TimeOnly.MinValue) : (DateTime?)null)); 
     }
 
 }
