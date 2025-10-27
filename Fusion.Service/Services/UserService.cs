@@ -211,6 +211,41 @@ public class UserService : IUserService
         }
 
     }
+    public async Task<SelfUserResponse?> UpdateStatus(Guid id, bool Status, CancellationToken cancellationToken)
+    {
+        var user = await _userRepository.GetUserByIdAsync(id);
+        if (user == null)
+            throw CustomExceptionFactory.CreateNotFoundError(
+                ResponseMessages.NOT_FOUND.FormatMessage("User"));
+
+        await _unitOfWork.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            user.Status = Status;
+
+            _unitOfWork.Repository<User>().Update(user);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.CommitTransactionAsync(cancellationToken);
+
+            var result = new SelfUserResponse
+            {
+                UserName = user.UserName,
+                Email = user.Email,
+                Phone = user.Phone,
+                Avatar = user.Avatar,
+                Address = user.Address,
+                Gender = user.Gender
+            };
+
+            return result;
+        }
+        catch
+        {
+            await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+            throw;
+        }
+
+    }
     public async Task<bool> ChangePasswordAsync(ChangePasswordRequest request, CancellationToken cancellationToken)
     {
         var userId = _currentService.GetUserId();
