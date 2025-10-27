@@ -8,6 +8,7 @@ using Fusion.Service.Commons.Helpers;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.Task.Request;
 using Fusion.Service.ViewModels.Task.Response;
+using Pipelines.Sockets.Unofficial.Arenas;
 
 namespace Fusion.Service.Services
 {
@@ -19,11 +20,14 @@ namespace Fusion.Service.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICurrentService _currentService;
 
-        public TaskService(ITaskRepository taskRepository, IMapper mapper, ICompanyActivityService logService)
+        public TaskService(ITaskRepository taskRepository, IMapper mapper, ICompanyActivityService logService,
+            IUnitOfWork unitOfWork, ICurrentService currentService)
         {
             _taskRepository = taskRepository;
             _mapper = mapper;
             _logService = logService;
+            _unitOfWork = unitOfWork;
+            _currentService = currentService;
         }
 
         public async Task<ProjectTaskResponse> ChangeStatus(Guid id, string status, Guid userId)
@@ -48,10 +52,10 @@ namespace Fusion.Service.Services
             var entity = _mapper.Map<ProjectTask>(task);
 
             var created = await _taskRepository.CreateTaskAsync(entity, UserId);
-
+            var currentUserName = await GetUserName(_currentService.GetUserId());
             var companyId = await GetCompanyId(created.ProjectId);
 
-            var currentUserName = await GetUserName(_currentService.GetUserId());
+           
             var log = new CompanyActivityLog
             {
                 CompanyId = companyId,
@@ -122,7 +126,7 @@ namespace Fusion.Service.Services
 
         private async Task<Guid> GetCompanyId(Guid? id)
         {
-            var project = await _unitOfWork.Repository<Project>().FindAsync(c => c.Id == id);
+            var project = await _unitOfWork.Repository<Project>().FindAsync(c => c.Id == id);       
             var company = await _unitOfWork.Repository<Company>().FindAsync(c => c.Id == project.CompanyId);
 
             return company.Id;
