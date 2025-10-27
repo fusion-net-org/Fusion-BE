@@ -83,9 +83,6 @@ namespace Fusion.Repository.Repositories
             // 6) Friend (không phải member) => chỉ xem public (IsView = true)
             if (!isMember && hasFriendAccess)
             {
-                // Nếu bạn có thêm param lọc IsView ở request và client cố ý yêu cầu IsView=false,
-                // thì ném 403 tại đây (ví dụ):
-                // if (request?.IsView == false) throw CustomExceptionFactory.CreateForbiddenError();
 
                 query = query.Where(l => l.IsView);
             }
