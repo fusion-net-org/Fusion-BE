@@ -22,7 +22,14 @@ namespace Fusion.API.Controllers
                 data: items,
                 message: "Get workflows successfully"));
         }
-
+        [HttpGet("companies/{companyId:guid}/workflows/previews")]
+        public async Task<IActionResult> GetPreviews(Guid companyId, CancellationToken ct)
+        {
+            var items = await _svc.GetPreviewsAsync(companyId, ct);
+            return Ok(ResponseModel<List<WorkflowPreviewVm>>.Ok(
+                data: items,
+                message: "Get workflow previews successfully"));
+        }
         // POST /api/companies/{companyId}/workflows/designer
         [HttpPost("companies/{companyId:guid}/workflows/designer")]
         [Consumes("application/json")]

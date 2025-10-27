@@ -10,6 +10,8 @@ namespace Fusion.Service.Services
 
         Task<DesignerDto> GetDesignerAsync(Guid workflowId, CancellationToken ct = default);
         Task SaveDesignerAsync(Guid companyId, Guid workflowId, DesignerDto payload, CancellationToken ct = default);
+        Task<List<WorkflowPreviewVm>> GetPreviewsAsync(Guid companyId, CancellationToken ct = default);
+
     }
 
     public class WorkflowDesignerService : IWorkflowDesignerService
@@ -31,7 +33,8 @@ namespace Fusion.Service.Services
 
         public Task<DesignerDto> GetDesignerAsync(Guid workflowId, CancellationToken ct = default)
             => _repo.GetDesignerAsync(workflowId, ct);
-
+        public Task<List<WorkflowPreviewVm>> GetPreviewsAsync(Guid companyId, CancellationToken ct = default)
+        => _repo.GetPreviewsAsync(companyId, ct);
         public async Task SaveDesignerAsync(Guid companyId, Guid workflowId, DesignerDto payload, CancellationToken ct = default)
         {
             // Chuẩn hoá sơ bộ type
