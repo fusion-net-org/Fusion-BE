@@ -58,14 +58,13 @@ namespace Fusion.Service.Services
             //    Context = result.Project.Name,
             //    NotificationType = NotificationTypeEnum.BUSINESS.ToString(),
             //});
-
-
+            var currentUserName = await GetUserName(_currentService.GetUserId());
             var log = new CompanyActivityLog
             {
-                CompanyId = result.RequesterCompanyId ?? Guid.Empty,
+                CompanyId = result.ExecutorCompanyId ?? Guid.Empty,
                 ActorUserId = _currentService.GetUserId(),
                 Title = "Accept project request",
-                Description = $"user id: '{_currentService.GetUserId()}' has accepted project request {result.Code} for project {result.Name}",
+                Description = $"User: '{currentUserName}' has accepted project request {result.Code} for project {result.Name}",
             };
             await _logService.CreateLog(log, cancellationToken);
 
@@ -89,6 +88,7 @@ namespace Fusion.Service.Services
             //    Context = null,
             //    NotificationType = NotificationTypeEnum.BUSINESS.ToString(),
             //});
+            var currentUserName = await GetUserName(_currentService.GetUserId());
 
             var emailBody = $@"
                 <p>Dear {response.ExecutorCompany.OwnerUser.UserName},</p>
@@ -107,10 +107,10 @@ namespace Fusion.Service.Services
 
             var log = new CompanyActivityLog
             {
-                CompanyId = request.ExecutorCompanyId ?? Guid.Empty,
+                CompanyId = request.RequesterCompanyId ?? Guid.Empty,
                 ActorUserId = _currentService.GetUserId(),
                 Title = "Create project request",
-                Description = $"user id: '{_currentService.GetUserId()}' has created project request {response.Code} for project {response.Name}",
+                Description = $"User:'{currentUserName}' has created project request {response.Code} for project {response.Name}",
             };
             await _logService.CreateLog(log, cancellationToken);
             return _mapper.Map<ProjectRequestResponse>(response);
@@ -121,13 +121,13 @@ namespace Fusion.Service.Services
             var result = await _projectRequestRepository.DeleteProjectRequestAsync(id, cancellationToken);
 
             var projectRequest = await _projectRequestRepository.GetProjectRequestByIdAsync(id);
-
+            var currentUserName = await GetUserName(_currentService.GetUserId());
             var log = new CompanyActivityLog
             {
-                CompanyId = projectRequest?.RequesterCompany.Id ?? Guid.Empty,
+                CompanyId = projectRequest?.RequesterCompanyId ?? Guid.Empty,
                 ActorUserId = _currentService.GetUserId(),
                 Title = "Delete project request",
-                Description = $"user id: '{_currentService.GetUserId()}' has deleted project request {projectRequest?.Code} for project {projectRequest?.Name}",
+                Description = $"User:'{currentUserName}' has deleted project request {projectRequest?.Code} for project {projectRequest?.Name}",
             };
             await _logService.CreateLog(log, cancellationToken);
             return result;
@@ -164,10 +164,10 @@ namespace Fusion.Service.Services
             var currentUserName = await GetUserName(_currentService.GetUserId());
             var log = new CompanyActivityLog
             {
-                CompanyId = projectRequest?.RequesterCompany.Id ?? Guid.Empty,
+                CompanyId = projectRequest?.ExecutorCompanyId ?? Guid.Empty,
                 ActorUserId = _currentService.GetUserId(),
                 Title = "Reject project request",
-                Description = $"user:'{currentUserName}' has rejected project request {projectRequest?.Code} for project {projectRequest?.Name}",
+                Description = $"User:'{currentUserName}' has rejected project request {projectRequest?.Code} for project {projectRequest?.Name}",
             };
             await _logService.CreateLog(log, cancellationToken);
             return new ProjectRequestRejectResponse
@@ -243,10 +243,10 @@ namespace Fusion.Service.Services
             var currentUserName = await GetUserName(_currentService.GetUserId());
             var log = new CompanyActivityLog
             {
-                CompanyId = request.ExecutorCompanyId ?? Guid.Empty,
+                CompanyId = request.RequesterCompanyId ?? Guid.Empty,
                 ActorUserId = _currentService.GetUserId(),
                 Title = "Update project request",
-                Description = $"user:'{currentUserName}' has updated project request {response.Code} for project {response.Name}",
+                Description = $"User:'{currentUserName}' has updated project request {response.Code} for project {response.Name}",
             };
             await _logService.CreateLog(log, cancellationToken);
             return _mapper.Map<ProjectRequestResponse>(response);

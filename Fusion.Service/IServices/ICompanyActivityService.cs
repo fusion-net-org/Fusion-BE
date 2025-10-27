@@ -14,4 +14,6 @@ public interface ICompanyActivityService
        Guid companyId, CompanyActivityLogPagedSearchRequest? request, CancellationToken ct = default);
 
     Task<CompanyActivityLog?> GetByIdAsync(Guid id, CancellationToken ct = default);
+
+    Task<bool> UpdateIsView(bool isView, Guid companyId, CancellationToken ct = default);
 }

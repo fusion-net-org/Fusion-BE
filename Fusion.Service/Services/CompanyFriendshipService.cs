@@ -243,7 +243,6 @@ namespace Fusion.Service.Services
                 ActorUserId = requesterId,
                 Title = "Invite Company Friendship",
                 Description = $"User:'{user.UserName}' sent an invitation to partner '{nameCompanyB}'.",
-
             };
             await _logService.CreateLog(log);
             return _mapper.Map<CompanyFriendshipResponse>(entity);

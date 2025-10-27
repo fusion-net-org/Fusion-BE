@@ -3,11 +3,9 @@ using CloudinaryDotNet.Actions;
 using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.Company_Member;
-using Fusion.Repository.Bases.Responses;
 using Fusion.Repository.Entities;
 using Fusion.Repository.Enums;
 using Fusion.Repository.IRepositories;
-using Fusion.Repository.Repositories;
 using Fusion.Service.Commons.Helpers;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.Companies.Email;
@@ -89,13 +87,13 @@ namespace Fusion.Service.Services
             //    Event = "MEMBER_REMOVED",
             //    NotificationType = NotificationTypeEnum.BUSINESS.ToString()
             //});
-            
+            var currentUserName = await GetUserName(_currentService.GetUserId());
             var log = new CompanyActivityLog
             {
                 CompanyId = companyId,
                 ActorUserId = _currentService.GetUserId(),
                 Title = "Fired Member From Company",
-                Description = $"User id:'{_currentService.GetUserId()}'  deleted member with user id '{result.User.Id}' has left the company .",
+                Description = $"User:'{currentUserName}' deleted member with user id '{result.User.Id}' has left the company .",
 
             };
             return _mapper.Map<CompanyMemberResponse>(response);

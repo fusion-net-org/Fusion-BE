@@ -164,7 +164,53 @@ public class UserService : IUserService
         }
 
     }
+    public async Task<SelfUserResponse?> UpdateSelfUserByAdminAsync(Guid id, UpdateSelfUserRequest request, CancellationToken cancellationToken)
+    {
+        var user = await _userRepository.GetUserByIdAsync(id);
+        if (user == null)
+            throw CustomExceptionFactory.CreateNotFoundError(
+                ResponseMessages.NOT_FOUND.FormatMessage("User"));
 
+        await _unitOfWork.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            // Hanlde avatar and map fields from request to user entity
+            if (request.Avatar != null)
+            {
+                if (!string.IsNullOrEmpty(user.Avatar))
+                {
+                    string publicId = _cloudinaryService.ExtractPublicIdFromUrl(user.Avatar);
+                    await _cloudinaryService.DeleteImageAsync(publicId);
+                }
+                string avatarUrl = await _cloudinaryService.UploadImageAsync(request.Avatar, "avatar-images");
+                user.Avatar = avatarUrl;
+            }
+
+            _mapper.Map(request, user);
+
+            _unitOfWork.Repository<User>().Update(user);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.CommitTransactionAsync(cancellationToken);
+
+            var result = new SelfUserResponse
+            {
+                UserName = user.UserName,
+                Email = user.Email,
+                Phone = user.Phone,
+                Avatar = user.Avatar,
+                Address = user.Address,
+                Gender = user.Gender
+            };
+
+            return result;
+        }
+        catch
+        {
+            await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+            throw;
+        }
+
+    }
     public async Task<bool> ChangePasswordAsync(ChangePasswordRequest request, CancellationToken cancellationToken)
     {
         var userId = _currentService.GetUserId();

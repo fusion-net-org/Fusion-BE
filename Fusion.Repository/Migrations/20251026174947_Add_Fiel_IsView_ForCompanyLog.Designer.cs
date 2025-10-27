@@ -4,6 +4,7 @@ using Fusion.Repository.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Fusion.Repository.Migrations
 {
     [DbContext(typeof(FusionDbContext))]
-    partial class FusionDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251026174947_Add_Fiel_IsView_ForCompanyLog")]
+    partial class Add_Fiel_IsView_ForCompanyLog
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1489,11 +1492,6 @@ namespace Fusion.Repository.Migrations
                         .HasColumnName("id")
                         .HasDefaultValueSql("(newid())");
 
-                    b.Property<string>("Color")
-                        .HasMaxLength(9)
-                        .HasColumnType("nvarchar(9)")
-                        .HasColumnName("color");
-
                     b.Property<string>("GuardNameKey")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)")
@@ -1516,21 +1514,9 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("int")
                         .HasColumnName("position");
 
-                    b.Property<string>("RolesJson")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("roles_json");
-
                     b.Property<Guid?>("WorkflowId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("workflow_id");
-
-                    b.Property<int>("X")
-                        .HasColumnType("int")
-                        .HasColumnName("x");
-
-                    b.Property<int>("Y")
-                        .HasColumnType("int")
-                        .HasColumnName("y");
 
                     b.HasKey("Id");
 
@@ -1554,28 +1540,9 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("from_status_id");
 
-                    b.Property<string>("Label")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)")
-                        .HasColumnName("label");
-
-                    b.Property<string>("RoleNamesJson")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("role_names_json");
-
-                    b.Property<string>("Rule")
-                        .HasMaxLength(400)
-                        .HasColumnType("nvarchar(400)")
-                        .HasColumnName("rule");
-
                     b.Property<Guid?>("ToStatusId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("to_status_id");
-
-                    b.Property<string>("Type")
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)")
-                        .HasColumnName("type");
 
                     b.Property<Guid?>("WorkflowId")
                         .HasColumnType("uniqueidentifier")
