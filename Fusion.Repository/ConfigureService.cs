@@ -72,6 +72,9 @@ namespace Fusion.Repository
             //activity log 
             services.AddScoped<ICompanyActivityLogRepository, CompanyActivityLogRepository>();
 
+            //project
+            services.AddScoped<IProjectRepository, ProjectRepository>();
+
             return services;
 
 
