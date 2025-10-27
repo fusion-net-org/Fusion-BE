@@ -13,6 +13,8 @@ public partial class CompanyActivityLog
     [Column("id")]
     public Guid Id { get; set; }
 
+    [Column("is_view")]
+    public bool IsView { get; set; }
     [Column("company_id")]
     public Guid CompanyId { get; set; }
 

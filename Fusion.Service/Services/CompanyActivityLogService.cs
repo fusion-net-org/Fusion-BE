@@ -36,6 +36,7 @@ namespace Fusion.Service.Services
             {
                 log.CreatedAt = DateTime.UtcNow;
                 log.IsDeleted = false;
+                log.IsView = false;
                 await _unitOfWork.Repository<CompanyActivityLog>().AddAsync(log);
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
                 return log;
@@ -84,6 +85,13 @@ namespace Fusion.Service.Services
             }
             return await _repo.GetPagedLogsByCompanyIdAsync(companyId, userId, request, ct);
         }
-           
+
+        public async Task<bool> UpdateIsView(bool isView,Guid companyId, CancellationToken ct = default)
+        {
+            var userId = _currentService.GetUserId();
+            var result = await _repo.UpdateIsViewLog(isView, companyId, userId, ct);
+
+            return result;
+        }
     }
 }
