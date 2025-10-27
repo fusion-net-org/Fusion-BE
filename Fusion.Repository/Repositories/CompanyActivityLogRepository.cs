@@ -59,7 +59,7 @@ namespace Fusion.Repository.Repositories
             bool hasFriendAccess = false;
             if (!isMember && myCompanyIds.Count > 0)
             {
-                const string Accepted = "Accepted"; // đổi theo chuẩn trạng thái của bạn nếu khác
+                const string Accepted = "Active"; // đổi theo chuẩn trạng thái của bạn nếu khác
                 hasFriendAccess = await _context.CompanyFriendships
                     .AsNoTracking()
                     .AnyAsync(cf =>
