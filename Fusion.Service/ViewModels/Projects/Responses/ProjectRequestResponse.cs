@@ -16,10 +16,13 @@ namespace Fusion.Service.ViewModels.Projects.Responses
         public Guid? RequesterCompanyId { get; set; } //MEGA 
 
         public string? RequesterCompanyName { get; set; }
+        public string? RequesterCompanyLogoUrl { get; set; }
 
         public Guid? ExecutorCompanyId { get; set; } //GOOGOLE
 
-        public string? ExecutorCompanyName { get; set; }    
+        public string? ExecutorCompanyName { get; set; }
+
+        public string? ExecutorCompanyLogoUrl { get; set; }
 
         public Guid? CreatedBy { get; set; }
 

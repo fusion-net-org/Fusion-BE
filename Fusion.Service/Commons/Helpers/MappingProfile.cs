@@ -152,6 +152,12 @@ public class MappingProfile : Profile
                     opt => opt.MapFrom(src => src.Name)) // Name trong ProjectRequest map sang ProjectName
             .ForMember(dest => dest.ConvertedProjectId,
                     opt => opt.MapFrom(src => src.Project != null ? src.Project.Id : (Guid?)null))
+            .ForMember(dest => dest.RequesterCompanyLogoUrl,
+                    opt => opt.MapFrom(src =>
+                    src.RequesterCompany != null ? src.RequesterCompany.AvatarCompany : null))
+            .ForMember(dest => dest.ExecutorCompanyLogoUrl,
+                    opt => opt.MapFrom(src =>
+                    src.ExecutorCompany != null ? src.ExecutorCompany.AvatarCompany : null))
             .ReverseMap();
 
         //--------------------------- entity: Transaction Payment ---------------------------------------------
