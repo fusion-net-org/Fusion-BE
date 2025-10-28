@@ -66,5 +66,17 @@ namespace Fusion.API.Controllers
             var updated = await _service.UpdateIsView(isView, companyId, ct);
             return Ok(ResponseModel<bool>.Ok(updated, "Visibility updated."));
         }
+
+        [HttpPost("request_viewLog")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<bool>))]
+        [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(ResponseModel<bool>))]
+        public async Task<IActionResult> RequestViewLog(
+           Guid companyIdA,
+           Guid companyIdB,
+           CancellationToken ct)
+        {
+            var request = await _service.RequestViewLog(companyIdA, companyIdB, ct);
+            return Ok(ResponseModel<bool>.Ok(request, "Request success."));
+        }
     }
 }

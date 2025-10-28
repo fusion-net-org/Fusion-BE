@@ -16,11 +16,15 @@ namespace Fusion.Service.ViewModels.Projects.Requests
 
         public Guid? ExecutorCompanyId { get; set; }
 
+        [Required(ErrorMessage = "Name can not empty")]
         public string? Name { get; set; }
 
         public string? Description { get; set; }
 
+        [Required(ErrorMessage = "Start Date can not empty")]
         public DateOnly? StartDate { get; set; }
+
+        [Required(ErrorMessage = "End Date can not empty")]
 
         public DateOnly? EndDate { get; set; }
     }

@@ -155,8 +155,10 @@ public class AuthenService : IAuthenService
         }
     }
 
-    public async Task<bool> RequestPasswordResetAsync(string email, CancellationToken cancellationToken)
+    public async Task<bool> RequestPasswordResetAsync(string email, string device, CancellationToken cancellationToken)
     {
+        var resetLink = "";
+
         // 1. Get user by email
         var user = await _userRepository.GetUserByEmailAsync(email, cancellationToken);
         if (user == null)
@@ -171,7 +173,14 @@ public class AuthenService : IAuthenService
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         // create link reset password page
-        var resetLink = $"http://localhost:5173/reset-password?token={token}";
+        if (device.ToLower().Equals("mobile"))
+        {
+            resetLink = $"https://unsincerely-curly-rosenda.ngrok-free.dev/reset-password?token={token}";
+        }
+        else
+        {
+            resetLink = $"http://localhost:5173/reset-password?token={token}";
+        }
 
         //send mail
         var mail = new MailRequest

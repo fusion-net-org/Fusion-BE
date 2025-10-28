@@ -23,5 +23,7 @@ public interface IUserService
     Task<PagedResult<SelfUserResponse>> GetAllUsersAsync(PagedRequest request, CancellationToken cancellationToken = default);
     Task<SelfUserResponse?> GetOwnerUserByCompanyIdAsync(Guid companyId, CancellationToken cancellationToken = default);
     Task<bool> ChangePasswordAsync(ChangePasswordRequest request, CancellationToken cancellationToken);
+    Task<SelfUserResponse?> UpdateSelfUserByAdminAsync(Guid id, UpdateSelfUserRequest request, CancellationToken cancellationToken);
+    Task<SelfUserResponse?> UpdateStatus(Guid id, bool Status, CancellationToken cancellationToken);
 
 }

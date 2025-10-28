@@ -63,6 +63,34 @@ namespace Fusion.API.Controllers
                 message: "Update self user successfully"));
         }
 
+
+        [Authorize(Roles = "Admin")]
+        [HttpPut("{id:guid}/self-user-admin")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<SelfUserResponse>))]
+        public async Task<IActionResult> UpdateSelfUserByAdmin(
+            [FromRoute] Guid id,
+            [FromForm] UpdateSelfUserRequest request,
+            CancellationToken cancellationToken)
+        {
+            var result = await _userService.UpdateSelfUserByAdminAsync(id, request, cancellationToken);
+            return Ok(ResponseModel<SelfUserResponse>.Ok(
+                data: result,
+                message: "Update self user successfully"));
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPut("{id:guid}/update-status-admin")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<SelfUserResponse>))]
+        public async Task<IActionResult> UpdateStatusByAdmin(
+            [FromRoute] Guid id,
+            [FromForm] bool status,
+            CancellationToken cancellationToken)
+        {
+            var result = await _userService.UpdateStatus(id, status, cancellationToken);
+            return Ok(ResponseModel<SelfUserResponse>.Ok(
+                data: result,
+                message: "Update self user successfully"));
+        }
         [HttpPost("change-password")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<bool>))]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest model, CancellationToken cancellationToken)
@@ -99,7 +127,6 @@ namespace Fusion.API.Controllers
                 data: owner,
                 message: "Get owner user by company successfully"));
         }
-
 
     }
 }
