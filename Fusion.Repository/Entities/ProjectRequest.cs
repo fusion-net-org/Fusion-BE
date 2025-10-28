@@ -33,6 +33,10 @@ public partial class ProjectRequest
     [Column("description")]
     public string? Description { get; set; }
 
+
+    [Column("reason")]
+    public string? Reason { get; set; }
+
     [Column("status")]
     [StringLength(20)]
     [Unicode(false)]

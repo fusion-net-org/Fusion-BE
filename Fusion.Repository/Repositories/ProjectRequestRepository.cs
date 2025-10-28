@@ -32,8 +32,7 @@ namespace Fusion.Repository.Repositories
             var companyRequester = await _context.CompanyMembers.FirstOrDefaultAsync(v => v.UserId == vendor.Id && v.CompanyId == request.RequesterCompanyId, cancellationToken);
 
             if (companyRequester == null)
-                throw CustomExceptionFactory.CreateBadRequestError(
-                    ResponseMessages.INVALID_INPUT.FormatMessage("Vendor is not a member of the requested company"));
+                throw CustomExceptionFactory.CreateBadRequestError("Vendor is not a member of the requested company");
 
             var companyExecutor = await _context.Companies.SingleOrDefaultAsync(e => e.Id == request.ExecutorCompanyId, cancellationToken);
             if (companyExecutor == null)
@@ -41,8 +40,7 @@ namespace Fusion.Repository.Repositories
                     CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Company Executor"));
 
             if (companyRequester.CompanyId == request.ExecutorCompanyId)
-                throw CustomExceptionFactory.CreateBadRequestError(
-                    ResponseMessages.INVALID_INPUT.FormatMessage("Executor company cannot be the same as requester company"));
+                throw CustomExceptionFactory.CreateBadRequestError("Executor company cannot be the same as requester company");
 
             var isFriendShip = await _context.CompanyFriendships.SingleOrDefaultAsync(v =>
                     ((v.CompanyAId == companyRequester.CompanyId && v.CompanyBId == request.ExecutorCompanyId) ||
@@ -52,11 +50,10 @@ namespace Fusion.Repository.Repositories
 
             if (isFriendShip == null)
                 throw CustomExceptionFactory.
-                       CreateBadRequestError(ResponseMessages.INVALID_INPUT.FormatMessage("Invalid Company"), "Company friendship not found between requester and executor");
+                       CreateBadRequestError("Company friendship not found between requester and executor");
 
             if (request.StartDate.HasValue && request.EndDate.HasValue && request.StartDate > request.EndDate)
-                throw CustomExceptionFactory.CreateBadRequestError(
-                    ResponseMessages.INVALID_INPUT.FormatMessage("Invalid Date"), "StartDate must be before EndDate");
+                throw CustomExceptionFactory.CreateBadRequestError("StartDate must be before EndDate");
 
 
             /*Kiểm tra xem cái dự án tạo có trùng tên hay code hay ko*/
@@ -70,8 +67,7 @@ namespace Fusion.Repository.Repositories
                 x.Status == ProjectRequestStatusEnum.Pending.ToString(), cancellationToken);
 
             if (existingRequest)
-                throw CustomExceptionFactory.CreateBadRequestError(
-                    ResponseMessages.DUPLICATE.FormatMessage("A pending request with the same project already exists"));
+                throw CustomExceptionFactory.CreateBadRequestError("A pending request with the same project already exists");
 
             request.RequesterCompanyId = companyRequester.CompanyId;
             request.CreatedBy = vendor.Id;
@@ -104,12 +100,12 @@ namespace Fusion.Repository.Repositories
 
             if (existingRequest == null)
                 throw CustomExceptionFactory.CreateNotFoundError(
-                    ResponseMessages.NOT_FOUND.FormatMessage("Project request not found"));
+                    "Project request not found");
 
             // Rule: chỉ cho xóa khi Pending
             if (existingRequest.Status != ProjectRequestStatusEnum.Pending.ToString())
                 throw CustomExceptionFactory.CreateBadRequestError(
-                    ResponseMessages.INVALID_INPUT.FormatMessage("Invalid status"),
+                    "Invalid status",
                     "Only pending requests can be deleted");
 
             existingRequest.IsDeleted = true;
@@ -125,19 +121,19 @@ namespace Fusion.Repository.Repositories
             // Lấy vendor theo email
             var vendor = await _context.Users.SingleOrDefaultAsync(x => x.Email == vendorEmail, cancellationToken);
             if (vendor == null)
-                throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Vendor not found"));
+                throw CustomExceptionFactory.CreateNotFoundError("Vendor not found");
 
             var companyRequester = await _context.CompanyMembers.SingleOrDefaultAsync(v => v.UserId == vendor.Id && v.CompanyId == request.RequesterCompanyId, cancellationToken);
             if (companyRequester == null)
-                throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Company Vendor not found"));
+                throw CustomExceptionFactory.CreateNotFoundError("Company Vendor not found");
 
             var existingRequest = await _context.ProjectRequests.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
             if (existingRequest == null)
-                throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Project request not found"));
+                throw CustomExceptionFactory.CreateNotFoundError("Project request not found");
 
             // Rule: chỉ Requester mới được update
             if (existingRequest.RequesterCompanyId != companyRequester.CompanyId)
-                throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.FORBIDDEN.FormatMessage("You are not allowed to update this project request"));
+                throw CustomExceptionFactory.CreateBadRequestError("You are not allowed to update this project request");
 
             //// Rule: chỉ được update khi đang Pending
             //if (existingRequest.Status != ProjectRequestStatusEnum.Pending.ToString())
@@ -151,7 +147,7 @@ namespace Fusion.Repository.Repositories
             {
                 if (existingRequest.Status == ProjectRequestStatusEnum.Rejected.ToString())
                 {
-                    throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.FORBIDDEN.FormatMessage("Cannot change executor because the request has been rejected"));
+                    throw CustomExceptionFactory.CreateBadRequestError("Cannot change executor because the request has been rejected");
                 }
 
                 // Check friendship khi đổi executor
@@ -218,6 +214,10 @@ namespace Fusion.Repository.Repositories
                 else if (filter.ViewMode == ProjectRequestViewMode.AsExecutor)
                     query = query.Where(x => x.ExecutorCompanyId == userCompanyId);
             }
+            else
+            {
+                query = query.Where(x => x.RequesterCompanyId == userCompanyId);
+            }
 
             // Keyword
             if (!string.IsNullOrWhiteSpace(filter.Keyword))
@@ -227,56 +227,63 @@ namespace Fusion.Repository.Repositories
             if (filter.Status.HasValue)
                 query = query.Where(x => x.Status == filter.Status.Value.ToString());
 
-            if (filter.DateRange?.From != null && filter.DateRange?.To != null)
+            if (filter.DateFilterType.HasValue)
             {
-                var from = filter.DateRange.From.Value.ToDateTime(TimeOnly.MinValue);
-                var to = filter.DateRange.To.Value.ToDateTime(TimeOnly.MaxValue);
-
-                query = filter.DateFilterType switch
+                if (filter.DateRange?.From != null && filter.DateRange?.To != null)
                 {
-                    DateFilterType.CreatedDate =>
-                        query.Where(x =>
-                            x.CreateAt >= from &&
-                            x.CreateAt <= to
-                        ),
+                    var from = filter.DateRange.From.Value.ToDateTime(TimeOnly.MinValue);
+                    var to = filter.DateRange.To.Value.ToDateTime(TimeOnly.MaxValue);
 
-                    DateFilterType.StartEndDate =>
-                        query.Where(x =>
-                            x.StartDate <= filter.DateRange.To &&
-                            x.EndDate >= filter.DateRange.From
-                        ),
+                    query = filter.DateFilterType switch
+                    {
+                        DateFilterType.CreatedDate =>
+                            query.Where(x =>
+                                x.CreateAt >= from &&
+                                x.CreateAt <= to
+                            ),
 
-                    DateFilterType.ApprovedDate =>
-                        query.Where(x =>
-                            x.UpdateAt != null &&
-                            x.UpdateAt >= from &&
-                            x.UpdateAt <= to &&
-                            x.Status == ProjectRequestStatusEnum.Accepted.ToString()
-                        ),
+                        DateFilterType.StartEndDate =>
+                            query.Where(x =>
+                                x.StartDate >= filter.DateRange.From &&
+                                x.EndDate <= filter.DateRange.To),
 
-                    DateFilterType.RejectedDate =>
-                        query.Where(x =>
-                            x.UpdateAt != null &&
-                            x.UpdateAt >= from &&
-                            x.UpdateAt <= to &&
-                            x.Status == ProjectRequestStatusEnum.Rejected.ToString()
-                        ),
-                    DateFilterType.PendingDate =>
-                        query.Where(x =>
-                            x.CreateAt != null &&
-                            x.CreateAt >= from &&
-                            x.CreateAt <= to &&
-                            x.Status == ProjectRequestStatusEnum.Pending.ToString()
-                        ),
+                        DateFilterType.ApprovedDate =>
+                            query.Where(x =>
+                                x.UpdateAt != null &&
+                                x.UpdateAt >= from &&
+                                x.UpdateAt <= to &&
+                                x.Status == ProjectRequestStatusEnum.Accepted.ToString()
+                            ),
 
-                    _ => query
-                }; 
+                        DateFilterType.RejectedDate =>
+                            query.Where(x =>
+                                x.UpdateAt != null &&
+                                x.UpdateAt >= from &&
+                                x.UpdateAt <= to &&
+                                x.Status == ProjectRequestStatusEnum.Rejected.ToString()
+                            ),
+                        DateFilterType.PendingDate =>
+                            query.Where(x =>
+                                x.CreateAt != null &&
+                                x.CreateAt >= from &&
+                                x.CreateAt <= to &&
+                                x.Status == ProjectRequestStatusEnum.Pending.ToString()
+                            ),
+
+                        _ => query
+                    };
+                }
+            }
+            else
+            {
+                if (filter.DateRange?.From != null || filter.DateRange?.To != null)
+                    throw CustomExceptionFactory.CreateBadRequestError("Must choose DateFilterType when using date range filter.");
             }
 
             return await query.ToPagedResultAsync(
-                filter,
-                cancellationToken
-                );
+                    filter,
+                    cancellationToken
+                    );
         }
 
         public async Task<PagedResult<ProjectRequest>> SearchProjectRequestAsync(ProjectRequestSearchRequest filter, Guid userCompanyId, Guid partnerId, CancellationToken cancellationToken = default)
@@ -308,55 +315,63 @@ namespace Fusion.Repository.Repositories
             if (filter.Status.HasValue)
                 query = query.Where(x => x.Status == filter.Status.Value.ToString());
 
-            if (filter.DateRange?.From != null && filter.DateRange?.To != null)
+            if (filter.DateFilterType.HasValue)
             {
-                var from = filter.DateRange.From.Value.ToDateTime(TimeOnly.MinValue);
-                var to = filter.DateRange.To.Value.ToDateTime(TimeOnly.MaxValue);
-
-                query = filter.DateFilterType switch
+                if (filter.DateRange?.From != null && filter.DateRange?.To != null)
                 {
-                    DateFilterType.CreatedDate =>
-                        query.Where(x =>
-                            x.CreateAt >= from &&
-                            x.CreateAt <= to
-                        ),
+                    var from = filter.DateRange.From.Value.ToDateTime(TimeOnly.MinValue);
+                    var to = filter.DateRange.To.Value.ToDateTime(TimeOnly.MaxValue);
 
-                    DateFilterType.StartEndDate =>
-                        query.Where(x =>
-                            x.StartDate <= filter.DateRange.To &&
-                            x.EndDate >= filter.DateRange.From),
+                    query = filter.DateFilterType switch
+                    {
+                        DateFilterType.CreatedDate =>
+                            query.Where(x =>
+                                x.CreateAt >= from &&
+                                x.CreateAt <= to
+                            ),
 
-                    DateFilterType.ApprovedDate =>
-                        query.Where(x =>
-                            x.UpdateAt != null &&
-                            x.UpdateAt >= from &&
-                            x.UpdateAt <= to &&
-                            x.Status == ProjectRequestStatusEnum.Accepted.ToString()
-                        ),
+                        DateFilterType.StartEndDate =>
+                            query.Where(x =>
+                                x.StartDate >= filter.DateRange.From &&
+                                x.EndDate <= filter.DateRange.To),
 
-                    DateFilterType.RejectedDate =>
-                        query.Where(x =>
-                            x.UpdateAt != null &&
-                            x.UpdateAt >= from &&
-                            x.UpdateAt <= to &&
-                            x.Status == ProjectRequestStatusEnum.Rejected.ToString()
-                        ),
-                    DateFilterType.PendingDate =>
-                        query.Where(x =>
-                            x.CreateAt != null &&
-                            x.CreateAt >= from &&
-                            x.CreateAt <= to &&
-                            x.Status == ProjectRequestStatusEnum.Pending.ToString()
-                        ),
+                        DateFilterType.ApprovedDate =>
+                            query.Where(x =>
+                                x.UpdateAt != null &&
+                                x.UpdateAt >= from &&
+                                x.UpdateAt <= to &&
+                                x.Status == ProjectRequestStatusEnum.Accepted.ToString()
+                            ),
 
-                    _ => query
-                };
+                        DateFilterType.RejectedDate =>
+                            query.Where(x =>
+                                x.UpdateAt != null &&
+                                x.UpdateAt >= from &&
+                                x.UpdateAt <= to &&
+                                x.Status == ProjectRequestStatusEnum.Rejected.ToString()
+                            ),
+                        DateFilterType.PendingDate =>
+                            query.Where(x =>
+                                x.CreateAt != null &&
+                                x.CreateAt >= from &&
+                                x.CreateAt <= to &&
+                                x.Status == ProjectRequestStatusEnum.Pending.ToString()
+                            ),
 
+                        _ => query
+                    };
+
+                }
+            }
+            else
+            {
+                if (filter.DateRange?.From != null || filter.DateRange?.To != null)
+                    throw CustomExceptionFactory.CreateBadRequestError("Must choose DateFilterType when using date range filter.");
             }
             return await query.ToPagedResultAsync(filter, cancellationToken);
 
         }
-
+            
 
         public async Task<ProjectRequest?> GetProjectRequestByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
@@ -415,11 +430,15 @@ namespace Fusion.Repository.Repositories
             return request;
         }
 
-        public async Task<bool> RejectProjectRequestAsync(Guid requestId, string executorEmail, CancellationToken cancellationToken = default)
+        public async Task<ProjectRequest> RejectProjectRequestAsync(Guid requestId, string executorEmail, string reason, CancellationToken cancellationToken = default)
         {
             var request = await _context.ProjectRequests
-                .Include(x => x.ExecutorCompany)
                 .Include(x => x.RequesterCompany)
+                    .ThenInclude(rc => rc.OwnerUser)
+                .Include(x => x.ExecutorCompany)
+                    .ThenInclude(ec => ec.OwnerUser)
+                .Include(x => x.CreatedByNavigation)
+                .Include(x => x.Project)
                 .SingleOrDefaultAsync(x => x.Id == requestId && x.IsDeleted == false, cancellationToken);
 
             if (request == null)
@@ -444,10 +463,11 @@ namespace Fusion.Repository.Repositories
             // ✅ Cập nhật trạng thái Reject
             request.Status = ProjectRequestStatusEnum.Rejected.ToString();
             request.UpdateAt = DateTime.UtcNow.AddHours(7);
+            request.Reason = reason;
 
             await _context.SaveChangesAsync(cancellationToken);
 
-            return true;
+            return request;
         }
     }
 }
