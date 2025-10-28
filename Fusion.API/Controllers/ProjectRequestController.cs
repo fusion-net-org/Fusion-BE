@@ -129,7 +129,7 @@ namespace Fusion.API.Controllers
 
         [HttpPost("{id:guid}/reject")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<ProjectRequestRejectResponse>))]
-        public async Task<IActionResult> RejectProjectRequest(Guid id, string reason, CancellationToken cancellationToken)
+        public async Task<IActionResult> RejectProjectRequest(Guid id, string? reason, CancellationToken cancellationToken)
         {
             var emailClaim = User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email || c.Type == ClaimTypes.Email || c.Type == "email");
             var executorEmail = emailClaim?.Value; if (executorEmail == null)
