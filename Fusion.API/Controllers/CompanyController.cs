@@ -132,5 +132,26 @@ namespace Fusion.API.Controllers
                 data: result,
                 message: "Delete company successfully"));
         }
+
+        [HttpGet("{companyId:guid}/summary")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<CompanySummaryResponse>))]
+        public async Task<IActionResult> GetCompanySummary(Guid companyId)
+        {
+            var result = await _companyService.GetCompanySummaryAsync(companyId);
+            return Ok(ResponseModel<CompanySummaryResponse>.Ok(
+                 data: result,
+                 message: "Fetch Company Summary successfully"));
+        }
+
+        [HttpGet("{companyId:guid}/performance")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<CompanyPerformanceResponse>))]
+
+        public async Task<IActionResult> GetCompanyPerformance(Guid companyId)
+        {
+            var result = await _companyService.GetCompanyPerformanceAsync(companyId);
+            return Ok(ResponseModel<CompanyPerformanceResponse>.Ok(
+                 data: result,
+                 message: "Fetch Company Performance successfully"));
+        }
     }
 }

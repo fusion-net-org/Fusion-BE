@@ -266,6 +266,53 @@ namespace Fusion.Repository.Repositories
                 .SingleOrDefaultAsync(x => x.Id == Id);
         }
 
+        public async Task<List<object>> GetCompanyProjectSummaryAsync(Guid companyId)
+        {
+            var projects = await _context.Projects
+                .Include(x => x.Sprints)
+                    .ThenInclude(x => x.ProjectTasks)
+                .Where(p => p.CompanyId == companyId)
+                .Select(p => new
+                {
+                    ProjectId = p.Id,
+                    ProjectName = p.Name,
+                    Sprints = p.Sprints.Select(s => new
+                    {
+                        SprintId = s.Id,
+                        SprintName = s.Name,
+                        ProjectTasks = s.ProjectTasks.Select(t => new
+                        {
+                            TaskId = t.Id,
+                            Title = t.Title,
+                            Point = t.Point
+                        }).ToList()
+                    }).ToList()
+                })
+                .ToListAsync();
 
+            return projects.Cast<object>().ToList();
+        }
+
+        public async Task<List<object>> GetCompanyUserTasksAsync(Guid companyId)
+        {
+            var data = await _context.ProjectTasks
+                .Include(t => t.Project)
+                .Include(t => t.TaskWorkflows)
+                    .ThenInclude(w => w.AssignUser)
+                .Where(t => t.Project.CompanyId == companyId && !t.IsDeleted)
+                .SelectMany(
+                    t => t.TaskWorkflows.Select(w => new
+                    {
+                        UserId = w.AssignUserId,
+                        UserName = w.AssignUser.UserName,
+                        TaskStatus = t.Status,
+                        DueDate = t.DueDate,
+                        UpdateAt = t.UpdateAt
+                    })
+                )
+                .ToListAsync();
+
+            return data.Cast<object>().ToList();
+        }
     }
 }
