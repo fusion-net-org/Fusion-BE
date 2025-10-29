@@ -1,6 +1,7 @@
 ﻿using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace Fusion.Repository.Repositories
 {
@@ -17,6 +18,9 @@ namespace Fusion.Repository.Repositories
     );
     public record DesignerDto(WorkflowVm Workflow, List<StatusVm> Statuses, List<TransitionVm> Transitions);
     public record WorkflowListItemVm(string Id, string Name);
+    public record StatusPreviewVm(string Id, string Name, bool IsStart, bool IsEnd, int X, int Y, string? Color, List<string> Roles);
+    public record TransitionPreviewVm(string FromStatusId, string ToStatusId, string Type, string? Label);
+    public record WorkflowPreviewVm(string Id, string Name, List<StatusPreviewVm> Statuses, List<TransitionPreviewVm> Transitions);
 
     public interface IWorkflowDesignerRepository
     {
@@ -25,6 +29,8 @@ namespace Fusion.Repository.Repositories
         Task DeleteAsync(Guid companyId, Guid workflowId, CancellationToken ct = default);
         Task<DesignerDto> GetDesignerAsync(Guid workflowId, CancellationToken ct = default);
         Task SaveDesignerAsync(Guid companyId, Guid workflowId, DesignerDto payload, CancellationToken ct = default);
+        Task<List<WorkflowPreviewVm>> GetPreviewsAsync(Guid companyId, CancellationToken ct = default);
+
     }
 
     public sealed class WorkflowDesignerRepository : IWorkflowDesignerRepository
@@ -303,9 +309,74 @@ namespace Fusion.Repository.Repositories
             await _db.SaveChangesAsync(ct);
             await tx.CommitAsync(ct);
         }
+        public async Task<List<WorkflowPreviewVm>> GetPreviewsAsync(Guid companyId, CancellationToken ct = default)
+        {
+            var workflows = await _db.Workflows.AsNoTracking()
+                .Where(w => w.CompanyId == companyId)
+                .OrderByDescending(w => w.IsDefault).ThenBy(w => w.Name)
+                .Select(w => new { w.Id, w.Name })
+                .ToListAsync(ct);
+
+            var wfIds = workflows.Select(w => w.Id).ToList();
+
+            var statuses = await _db.WorkflowStatuses.AsNoTracking()
+      .Where(s => s.WorkflowId.HasValue && wfIds.Contains(s.WorkflowId.Value))
+      .Select(s => new
+      {
+          s.WorkflowId,
+          s.Id,
+          s.Name,
+          s.IsStart,
+          s.IsEnd,
+          s.X,
+          s.Y,
+          s.Color,
+          Roles = WorkflowMap.ParseList(s.RolesJson)   // ⭐ lấy roles
+      })
+      .ToListAsync(ct);
+
+            var transitions = await _db.WorkflowTransitions.AsNoTracking()
+                .Where(t => t.WorkflowId.HasValue
+                         && wfIds.Contains(t.WorkflowId.Value)
+                         && t.FromStatusId.HasValue
+                         && t.ToStatusId.HasValue)
+                .Select(t => new
+                {
+                    WorkflowId = t.WorkflowId!.Value,
+                    From = t.FromStatusId!.Value,
+                    To = t.ToStatusId!.Value,
+                    t.Type,
+                    t.Label
+                })
+                .ToListAsync(ct);
+
+            var map = workflows.Select(w => new WorkflowPreviewVm(
+                w.Id.ToString(),
+                w.Name ?? "",
+               statuses.Where(s => s.WorkflowId == w.Id)
+    .OrderBy(s => s.Name)
+    .Select(s => new StatusPreviewVm(
+        s.Id.ToString(), s.Name ?? "", s.IsStart, s.IsEnd,
+        s.X == 0 ? 200 : s.X,
+        s.Y == 0 ? 320 : s.Y,
+        s.Color,
+        s.Roles
+    )).ToList(),
+                transitions.Where(t => t.WorkflowId == w.Id)
+                           .Select(t => new TransitionPreviewVm(
+                               t.From.ToString(),
+                               t.To.ToString(),
+                               WorkflowMap.NormalizeType(t.Type),
+                               t.Label
+                           )).ToList()
+            )).ToList();
+
+            return map;
+        }
 
         private static Guid? TryParseGuid(string? s)
             => string.IsNullOrWhiteSpace(s) ? (Guid?)null
              : Guid.TryParse(s, out var g) ? g : (Guid?)null;
     }
+
 }
