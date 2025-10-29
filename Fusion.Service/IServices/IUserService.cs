@@ -25,5 +25,6 @@ public interface IUserService
     Task<bool> ChangePasswordAsync(ChangePasswordRequest request, CancellationToken cancellationToken);
     Task<SelfUserResponse?> UpdateSelfUserByAdminAsync(Guid id, UpdateSelfUserRequest request, CancellationToken cancellationToken);
     Task<SelfUserResponse?> UpdateStatus(Guid id, bool Status, CancellationToken cancellationToken);
+    Task<User?> GetFullInfoByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
 }

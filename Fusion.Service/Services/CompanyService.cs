@@ -43,10 +43,11 @@ namespace Fusion.Service.Services
         private readonly ICompanyFriendshipRepository _companyFriendshipRepository;
         private readonly IMailService _mailService;
         private readonly ICompanyActivityService _logService;
+        private readonly ICurrentService _currentService;
 
         public CompanyService(IMapper mapper, ICompanyRepository companyRepository, ICloudinaryService cloudinaryService
             , IUserRepository userRepository, ICompanyMemberRepository companyMemberRepository, IValidator<CompanyRequest> validator, ICompanyFriendshipRepository companyFriendshipRepository,
-            IMailService mailService, ICompanyActivityService logService)
+            IMailService mailService, ICompanyActivityService logService, ICurrentService currentService)
         {
             _mapper = mapper;
             _companyRepository = companyRepository;
@@ -57,6 +58,7 @@ namespace Fusion.Service.Services
             _companyFriendshipRepository = companyFriendshipRepository;
             _mailService = mailService;
             _logService = logService;
+            _currentService = currentService;
         }
 
         public async Task<CompanyResponse> CreateCompanyAsync(CompanyRequest request, string Email, CancellationToken cancellationToken = default)
@@ -526,6 +528,93 @@ namespace Fusion.Service.Services
             };
         }
 
+        public async Task<bool> DeleteCompanyByAdminAsync(Guid companyId, CancellationToken cancellationToken = default)
+        {
 
+            var company = await _companyRepository.GetCompanyByIdAsync(companyId);
+            if (company == null)
+                throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Company"));
+
+            await _companyRepository.DeleteCompanyAsync(company, cancellationToken);
+
+            var userId = _currentService.GetUserId();
+            var log = new CompanyActivityLog
+            {
+                CompanyId = companyId,
+                ActorUserId = userId,
+                Title = "Deleted Company",
+                Description = $"Company '{company.Name}' has been deleted by admin.",
+
+            };
+            await _logService.CreateLog(log, cancellationToken);
+            return true;
+        }
+        public async Task<CompanyResponse> UpdateCompanyByAdminAsync(Guid companyId, CompanyRequest request, CancellationToken cancellationToken = default)
+        {
+            if (request == null)
+                throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.INVALID_INPUT);
+
+            // false: không bắt buộc ImageCompany
+            await _validator.ValidateAndThrowAsync(
+                request,
+                opts => opts.IncludeRuleSets("Update"),
+                cancellationToken);
+
+
+            var company = await _companyRepository.GetCompanyByIdAsync(companyId);
+            if (company == null)
+                throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Company"));
+
+            if (!string.IsNullOrEmpty(request.Email) && request.Email != company.Email)
+            {
+                var company_email_existed = await _companyRepository.GetCompanyByEmail(request.Email);
+                if (company_email_existed != null)
+                    throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.EXISTED.FormatMessage("Company Email"));
+            }
+
+            if (!string.IsNullOrEmpty(request.TaxCode) && request.TaxCode != company.TaxCode)
+            {
+                var company_taxcode_existed = await _companyRepository.GetCompanyByTaxCode(request.TaxCode);
+                if (company_taxcode_existed != null)
+                    throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.DUPLICATE.FormatMessage("Tax-code"));
+            }
+
+            var image_company = "";
+            var avatar_company = "";
+
+            if (request.ImageCompany != null && request.ImageCompany.Length > 0)
+            {
+                await _cloudinaryService.DeleteImageAsync(_cloudinaryService.ExtractPublicIdFromUrl(company.ImageCompany), cancellationToken);
+                image_company = await _cloudinaryService.UploadImageAsync(request.ImageCompany, "CompanyBanner", cancellationToken);
+            }
+            else
+            {
+                image_company = company.ImageCompany;
+            }
+
+            if (request.AvatarCompany != null && request.AvatarCompany.Length > 0)
+            {
+                await _cloudinaryService.DeleteImageAsync(_cloudinaryService.ExtractPublicIdFromUrl(company.AvatarCompany), cancellationToken);
+                avatar_company = await _cloudinaryService.UploadImageAsync(request.AvatarCompany, "CompanyAvatar", cancellationToken);
+            }
+            else
+            {
+                avatar_company = company.AvatarCompany;
+            }
+
+            var result = await _companyRepository.UpdateCompanyAsync(image_company, avatar_company, companyId, _mapper.Map<Company>(request), cancellationToken);
+
+            var userId = _currentService.GetUserId();
+            var log = new CompanyActivityLog
+            {
+                CompanyId = companyId,
+                ActorUserId = userId,
+                Title = "Update Company Information",
+                Description = $"Company '{company.Name}' information has been updated by admin.",
+
+            };
+            await _logService.CreateLog(log, cancellationToken);
+            return _mapper.Map<CompanyResponse>(result);
+        }
     }
 }
