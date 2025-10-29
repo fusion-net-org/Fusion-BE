@@ -1,9 +1,9 @@
-﻿using Fusion.Repository.Bases.Responses;
+﻿using Fusion.Repository.Bases.Page;
+using Fusion.Repository.Bases.Page.ProjectMember;
+using Fusion.Repository.Bases.Responses;
 using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.IServices;
-using Fusion.Service.Services;
 using Fusion.Service.ViewModels.ProjectMembers.Responses;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Fusion.API.Controllers
@@ -19,11 +19,24 @@ namespace Fusion.API.Controllers
             _projectMemberService = projectMemberService;
         }
 
+        /// <summary>
+        /// GetProjectsByMember
+        /// </summary>
         [HttpGet("{companyId:guid}/{memberId:guid}")]
-        public async Task<IActionResult> GetProjectsByMember(Guid companyId, Guid memberId)
+        public async Task<IActionResult> GetProjectsByMember(
+            Guid companyId,
+            Guid memberId,
+            [FromQuery] ProjectMemberSearchRequest request,
+            CancellationToken cancellationToken)
         {
-            var result = await _projectMemberService.GetProjectsByMemberAsync(companyId, memberId);
-            return Ok(ResponseModel<MemberProjectListResponse>.Ok(
+            var result = await _projectMemberService.GetProjectsByMemberAsync(
+                companyId,
+                memberId,
+                request,
+                cancellationToken
+            );
+
+            return Ok(ResponseModel<PagedResult<MemberProjectListResponse>>.Ok(
                 data: result,
                 message: ResponseMessageHelper.FormatMessage(ResponseMessages.SUCCESS, "Successfully retrieved member's projects")
             ));
