@@ -218,6 +218,36 @@ namespace Fusion.API.Controllers
 
             return Ok(result);
         }
+        /// <summary>
+        /// Get company member detail by companyId + userId
+        /// </summary>
+        [HttpGet("member/{companyId:guid}/{userId:guid}")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<CompanyMemberResponse>))]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetCompanyMemberByCompanyAndUser(Guid companyId, Guid userId, CancellationToken token = default)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var tokenUserId))
+            {
+                return Unauthorized(ResponseModel<string>.Error(
+                    StatusCodes.Status401Unauthorized,
+                    "Don't find token!"));
+            }
+
+            var result = await _companyMemberService.GetCompanyMemberByCompanyIdAndUserIdAsync(companyId, userId, token);
+
+            if (result == null)
+            {
+                return NotFound(ResponseModel<string>.Error(
+                    StatusCodes.Status404NotFound,
+                    "Company member not found"));
+            }
+
+            return Ok(ResponseModel<CompanyMemberResponse>.Ok(
+                data: result,
+                message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "company member by companyId & userId")));
+        }
 
     }
 }

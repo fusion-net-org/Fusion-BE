@@ -307,7 +307,8 @@ namespace Fusion.API.Controllers
                 data: summary,
                 message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "friendship status summary")));
         }
-       
+
+
 
     }
 }
