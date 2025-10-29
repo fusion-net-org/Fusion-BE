@@ -33,6 +33,16 @@ namespace Fusion.API.Controllers
                 message: "Get user successfully"));
         }
 
+        [HttpGet("fullInfor/{id:guid}")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<User>))]
+        public async Task<IActionResult> GetFullInfoById(Guid id, CancellationToken cancellationToken)
+        {
+            var user = await _userService.GetFullInfoByIdAsync(id, cancellationToken);
+            return Ok(ResponseModel<User>.Ok(
+                data: user,
+                message: "Get user successfully"));
+        }
+
         [HttpGet("paged-admin")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PagedResult<AdminUserResponse>>))]
         public async Task<IActionResult> GetUserAdminPaged([FromQuery] AdminUserPagedRequest request, CancellationToken cancellationToken)

@@ -51,6 +51,20 @@ public class UserService : IUserService
         return response;
     }
 
+    public async Task<User?> GetFullInfoByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        if (id == Guid.Empty)
+            throw CustomExceptionFactory.CreateBadRequestError(
+                ResponseMessages.INVALID_INPUT.FormatMessage("User Id"));
+
+        var user = await _userRepository.GetUserByIdAsync(id, cancellationToken);
+
+        if (user == null)
+            throw CustomExceptionFactory.CreateNotFoundError(
+                ResponseMessages.NOT_FOUND.FormatMessage("User"));
+
+        return user;
+    }
     public async Task<PagedResult<CompanyUserResponse>> GetPagedCompanyUsersAsync(CompanyUserPagedRequest request, CancellationToken cancellationToken)
     {
         if (request == null)

@@ -9,6 +9,7 @@ using Fusion.Service.Services;
 using Fusion.Service.ViewModels.Companies.Requests;
 using Fusion.Service.ViewModels.Companies.Responses;
 using Fusion.Service.ViewModels.Users.Responses;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.IdentityModel.Tokens.Jwt;
@@ -152,6 +153,28 @@ namespace Fusion.API.Controllers
             return Ok(ResponseModel<CompanyPerformanceResponse>.Ok(
                  data: result,
                  message: "Fetch Company Performance successfully"));
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPut("admin/{id:guid}")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<CompanyResponse>))]
+        public async Task<IActionResult> UpdateByAdmin(Guid id, CompanyRequest request, CancellationToken cancellationToken)
+        {
+            var result = await _companyService.UpdateCompanyByAdminAsync(id, request, cancellationToken);
+            return Ok(ResponseModel<CompanyResponse>.Ok(
+                data: result,
+                message: "Update company successfully"));
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpDelete("admin/{id:guid}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public async Task<IActionResult> DeleteByAdmin(Guid id, CancellationToken cancellationToken)
+        {
+            var result = await _companyService.DeleteCompanyByAdminAsync(id, cancellationToken);
+            return Ok(ResponseModel<bool>.Ok(
+                data: result,
+                message: "Delete company successfully"));
         }
     }
 }

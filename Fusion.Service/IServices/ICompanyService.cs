@@ -28,5 +28,8 @@ namespace Fusion.Service.IServices
         Task<CompanySummaryResponse> GetCompanySummaryAsync(Guid companyId);
 
         Task<CompanyPerformanceResponse> GetCompanyPerformanceAsync(Guid companyId);
+
+        Task<bool> DeleteCompanyByAdminAsync(Guid companyId, CancellationToken cancellationToken = default);
+        Task<CompanyResponse> UpdateCompanyByAdminAsync(Guid companyId, CompanyRequest request, CancellationToken cancellationToken = default);
     }
 }
