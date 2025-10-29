@@ -23,6 +23,9 @@ using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.Companies.Requests;
 using Fusion.Service.ViewModels.Companies.Responses;
 using Fusion.Service.ViewModels.Companies.Validators;
+using Fusion.Service.ViewModels.Project.Responses;
+using Fusion.Service.ViewModels.Sprint.Responses;
+using Fusion.Service.ViewModels.Task.Response;
 using Fusion.Service.ViewModels.Users.Responses;
 using Microsoft.EntityFrameworkCore;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
@@ -382,6 +385,79 @@ namespace Fusion.Service.Services
             return true;
         }
 
+        public async Task<CompanySummaryResponse> GetCompanySummaryAsync(Guid companyId)
+        {
+            var rawProjects = await _companyRepository.GetCompanyProjectSummaryAsync(companyId);
+
+            var projectSummary = new List<ProjectSummaryResponse>();
+
+            foreach (var projObj in rawProjects)
+            {
+                var projType = projObj.GetType();
+                var sprintsProp = projType.GetProperty("Sprints");
+
+                if (sprintsProp == null)
+                    continue;
+
+                var sprints = sprintsProp.GetValue(projObj) as IEnumerable<object>;
+                var projId = (Guid)(projType.GetProperty("ProjectId")?.GetValue(projObj) ?? Guid.Empty);
+                var projName = projType.GetProperty("ProjectName")?.GetValue(projObj)?.ToString() ?? string.Empty;
+
+                var sprintSummaryList = new List<SprintSummaryResponse>();
+
+                foreach (var sprintObj in sprints)
+                {
+                    var sprintType = sprintObj.GetType();
+                    var sprintId = (Guid)(sprintType.GetProperty("SprintId")?.GetValue(sprintObj) ?? Guid.Empty);
+                    var sprintName = sprintType.GetProperty("SprintName")?.GetValue(sprintObj)?.ToString() ?? string.Empty;
+                    var tasks = sprintType.GetProperty("ProjectTasks")?.GetValue(sprintObj) as IEnumerable<object>;
+
+                    var taskSummaryList = new List<TaskSummaryResponse>();
+                    if (tasks != null)
+                    {
+                        foreach (var taskObj in tasks)
+                        {
+                            var taskType = taskObj.GetType();
+                            taskSummaryList.Add(new TaskSummaryResponse
+                            {
+                                Id = (Guid)(taskType.GetProperty("TaskId")?.GetValue(taskObj) ?? Guid.Empty),
+                                Title = taskType.GetProperty("Title")?.GetValue(taskObj)?.ToString() ?? string.Empty,
+                                Point = (int?)(taskType.GetProperty("Point")?.GetValue(taskObj) ?? 0)
+                            });
+                        }
+                    }
+
+                    sprintSummaryList.Add(new SprintSummaryResponse
+                    {
+                        Id = sprintId,
+                        Name = sprintName,
+                        TaskCount = taskSummaryList.Count,
+                        TotalPoint = taskSummaryList.Sum(t => t.Point ?? 0),
+                        Tasks = taskSummaryList
+                    });
+                }
+
+                projectSummary.Add(new ProjectSummaryResponse
+                {
+                    Id = projId,
+                    Name = projName,
+                    SprintCount = sprintSummaryList.Count,
+                    TotalTask = sprintSummaryList.Sum(s => s.TaskCount),
+                    TotalPoint = sprintSummaryList.Sum(s => s.TotalPoint),
+                    Sprints = sprintSummaryList
+                });
+            }
+
+            return new CompanySummaryResponse
+            {
+                CompanyId = companyId,
+                TotalProject = projectSummary.Count,
+                TotalSprint = projectSummary.Sum(p => p.SprintCount),
+                TotalTask = projectSummary.Sum(p => p.TotalTask),
+                TotalPoint = projectSummary.Sum(p => p.TotalPoint),
+                Projects = projectSummary
+            };
+        }
 
     }
 }

@@ -58,7 +58,7 @@ namespace Fusion.Service.Services
 
                 var prInUse = await _unitOfWork.Repository<Project>().FindAsync(
                     x => x.ProjectRequestId == request.ProjectRequestId, cancellationToken);
-                if (prInUse == null) throw CustomExceptionFactory.CreateBadRequestError("This ProjectRequest is already linked to another Project.");
+                if (prInUse != null) throw CustomExceptionFactory.CreateBadRequestError("This ProjectRequest is already linked to another Project.");
             }
             else
             {
@@ -77,5 +77,6 @@ namespace Fusion.Service.Services
             var created = await _repo.CreateProjectAsync(currentId, project, cancellationToken);
             return _mapper.Map<ProjectsResponse>(created);
         }
+
     }
 }

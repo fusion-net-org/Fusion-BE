@@ -44,5 +44,17 @@ namespace Fusion.Repository.Repositories
             return totalProjects;
         }
 
+        public async Task<List<Project>> GetProjectsByMemberAsync(Guid companyId, Guid userId)
+        {
+            return await _context.Projects
+                .Include(p => p.ProjectMembers)
+                    .ThenInclude(pm => pm.User)
+                .Where(p =>
+                    (p.CompanyId == companyId || p.CompanyHiredId == companyId) &&
+                    p.ProjectMembers.Any(pm => pm.UserId == userId))
+                .ToListAsync();
+        }
+
+
     }
 }

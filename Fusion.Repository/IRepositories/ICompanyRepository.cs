@@ -25,5 +25,8 @@ namespace Fusion.Repository.IRepositories
         Task<string> GetMailCompanyByGuid(Guid company);
         Task<string> GetCompanyNameByGuid(Guid company);
         Task<Guid?> GetCompanyIdByUserId(Guid userId);
+
+        Task<List<object>> GetCompanyProjectSummaryAsync(Guid companyId);
+
     }
 }

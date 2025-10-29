@@ -266,6 +266,31 @@ namespace Fusion.Repository.Repositories
                 .SingleOrDefaultAsync(x => x.Id == Id);
         }
 
+        public async Task<List<object>> GetCompanyProjectSummaryAsync(Guid companyId)
+        {
+            var projects = await _context.Projects
+                .Include(x => x.Sprints)
+                    .ThenInclude(x => x.ProjectTasks)
+                .Where(p => p.CompanyId == companyId)
+                .Select(p => new
+                {
+                    ProjectId = p.Id,
+                    ProjectName = p.Name,
+                    Sprints = p.Sprints.Select(s => new
+                    {
+                        SprintId = s.Id,
+                        SprintName = s.Name,
+                        ProjectTasks = s.ProjectTasks.Select(t => new
+                        {
+                            TaskId = t.Id,
+                            Title = t.Title,
+                            Point = t.Point
+                        }).ToList()
+                    }).ToList()
+                })
+                .ToListAsync();
 
+            return projects.Cast<object>().ToList();
+        }
     }
 }
