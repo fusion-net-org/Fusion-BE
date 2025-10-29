@@ -128,5 +128,16 @@ namespace Fusion.API.Controllers
                 message: "Get owner user by company successfully"));
         }
 
+        [HttpGet("fullInfor/{id:guid}")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<User>))]
+        public async Task<IActionResult> GetFullInfoById(Guid id, CancellationToken cancellationToken)
+        {
+            var user = await _userService.GetFullInfoByIdAsync(id, cancellationToken);
+            return Ok(ResponseModel<User>.Ok(
+                data: user,
+                message: "Get user successfully"));
+        }
+
+
     }
 }
