@@ -28,5 +28,7 @@ namespace Fusion.Repository.IRepositories
 
         Task<List<object>> GetCompanyProjectSummaryAsync(Guid companyId);
 
+        Task<List<object>> GetCompanyUserTasksAsync(Guid companyId);
+
     }
 }

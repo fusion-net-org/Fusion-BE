@@ -142,5 +142,16 @@ namespace Fusion.API.Controllers
                  data: result,
                  message: "Fetch Company Summary successfully"));
         }
+
+        [HttpGet("{companyId:guid}/performance")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<CompanyPerformanceResponse>))]
+
+        public async Task<IActionResult> GetCompanyPerformance(Guid companyId)
+        {
+            var result = await _companyService.GetCompanyPerformanceAsync(companyId);
+            return Ok(ResponseModel<CompanyPerformanceResponse>.Ok(
+                 data: result,
+                 message: "Fetch Company Performance successfully"));
+        }
     }
 }

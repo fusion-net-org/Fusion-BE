@@ -54,7 +54,5 @@ namespace Fusion.Repository.Repositories
                     p.ProjectMembers.Any(pm => pm.UserId == userId))
                 .ToListAsync();
         }
-
-
     }
 }

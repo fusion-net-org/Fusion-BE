@@ -361,7 +361,7 @@ namespace Fusion.Service.Services
             var user = await _userRepository.GetUserByEmailAsync(Email, cancellationToken);
             if (user == null)
                 throw CustomExceptionFactory.
-                    CreateBadRequestError(ResponseMessages.INVALID_INPUT.FormatMessage("Email incorrect!"));
+                    CreateBadRequestError("Email incorrect!");
 
             var company = await _companyRepository.GetCompanyByIdAsync(companyId);
             if (company == null)
@@ -369,7 +369,7 @@ namespace Fusion.Service.Services
 
             if (company.OwnerUserId != user.Id)
                 throw CustomExceptionFactory
-                    .CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Owner User in this company"));
+                    .CreateNotFoundError("Owner User in this company");
 
             await _companyRepository.DeleteCompanyAsync(company, cancellationToken);
 
@@ -458,6 +458,74 @@ namespace Fusion.Service.Services
                 Projects = projectSummary
             };
         }
+
+        public async Task<CompanyPerformanceResponse> GetCompanyPerformanceAsync(Guid companyId)
+        {
+            var rawData = await _companyRepository.GetCompanyUserTasksAsync(companyId);
+
+            if (rawData == null || !rawData.Any())
+                throw CustomExceptionFactory.CreateNotFoundError("No task data found for this company.");
+
+            // Gom nhóm theo user để tính hiệu suất từng người
+            var userPerformanceList = rawData
+                .GroupBy(d =>
+                {
+                    dynamic item = d;
+                    return new { item.UserId, item.UserName };
+                })
+                .Select(g =>
+                {
+                    int onTime = 0;
+                    int late = 0;
+                    int notCompleted = 0;
+
+                    foreach (dynamic t in g)
+                    {
+                        string status = (string)(t.TaskStatus ?? "");
+                        DateTime? due = (DateTime?)t.DueDate;
+                        DateTime? updated = (DateTime?)t.UpdateAt;
+
+                        if (status.Equals("Done", StringComparison.OrdinalIgnoreCase))
+                        {
+                            if (due.HasValue && updated.HasValue && updated <= due)
+                                onTime++;
+                            else
+                                late++;
+                        }
+                        else
+                        {
+                            notCompleted++;
+                        }
+                    }
+
+                    var totalCompleted = onTime + late;
+
+                    return new UserPerformanceResponse
+                    {
+                        UserId = g.Key.UserId,
+                        UserName = g.Key.UserName,
+                        OnTimeCount = onTime,
+                        LateCount = late,
+                        NotCompletedCount = notCompleted,
+                        OnTimePercent = totalCompleted > 0
+                            ? Math.Round((double)onTime / totalCompleted * 100, 2)
+                            : 0,
+                        LatePercent = totalCompleted > 0
+                            ? Math.Round((double)late / totalCompleted * 100, 2)
+                            : 0
+                    };
+                })
+                .ToList();
+
+            // Trả kết quả tổng hợp toàn công ty
+            return new CompanyPerformanceResponse
+            {
+                CompanyId = companyId,
+                TotalMembers = userPerformanceList.Count,
+                Data = userPerformanceList
+            };
+        }
+
 
     }
 }

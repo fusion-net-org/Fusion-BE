@@ -292,5 +292,27 @@ namespace Fusion.Repository.Repositories
 
             return projects.Cast<object>().ToList();
         }
+
+        public async Task<List<object>> GetCompanyUserTasksAsync(Guid companyId)
+        {
+            var data = await _context.ProjectTasks
+                .Include(t => t.Project)
+                .Include(t => t.TaskWorkflows)
+                    .ThenInclude(w => w.AssignUser)
+                .Where(t => t.Project.CompanyId == companyId && !t.IsDeleted)
+                .SelectMany(
+                    t => t.TaskWorkflows.Select(w => new
+                    {
+                        UserId = w.AssignUserId,
+                        UserName = w.AssignUser.UserName,
+                        TaskStatus = t.Status,
+                        DueDate = t.DueDate,
+                        UpdateAt = t.UpdateAt
+                    })
+                )
+                .ToListAsync();
+
+            return data.Cast<object>().ToList();
+        }
     }
 }

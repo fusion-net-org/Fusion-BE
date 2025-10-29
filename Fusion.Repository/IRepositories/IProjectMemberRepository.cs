@@ -15,6 +15,5 @@ namespace Fusion.Repository.IRepositories
         Task<int> GetTotalProjectsForMemberAsync(Guid memberId, CancellationToken cancellationToken = default);
 
         Task<List<Project>> GetProjectsByMemberAsync(Guid companyId, Guid userId);
-
     }
 }
