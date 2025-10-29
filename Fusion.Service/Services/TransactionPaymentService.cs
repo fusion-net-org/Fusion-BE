@@ -2,6 +2,8 @@
 
 using AutoMapper;
 using Fusion.Repository.Bases.Exceptions;
+using Fusion.Repository.Bases.Page;
+using Fusion.Repository.Bases.Page.TransactionPayment;
 using Fusion.Repository.Bases.Responses;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
@@ -77,6 +79,29 @@ public class TransactionPaymentService : ITransactionPaymentService
         return response;
     }
 
+    public async Task<PagedResult<TransactionForAdminResponse>> GetAllTransactionForAdminAsync(
+    AdminTransactionSearch request,
+    CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.SortColumn))
+        {
+            request.SortColumn = nameof(TransactionForAdminResponse.CreatedAt);
+            request.SortDescending = true;
+        }
+
+        // Lấy query chưa materialize từ repo
+        var baseQuery = _transactionPaymentRepository.GetListPaymentForAdminQuery(request);
+
+        // ProjectTo -> IQueryable<TransactionForAdminResponse>
+        var projected = _mapper.ProjectTo<TransactionForAdminResponse>(
+            baseQuery,
+            parameters: null);
+
+        // Phân trang + sort dùng extension có sẵn
+        var paged = await projected.ToPagedResultAsync(request, cancellationToken);
+        return paged;
+    }
+
     public async Task<Guid> GetLasterTransactionForUserAsync(CancellationToken cancellationToken = default)
     {
         var userId = _currentService.GetUserId();
@@ -126,8 +151,4 @@ public class TransactionPaymentService : ITransactionPaymentService
         return response;
     }
        
-    public Task UpdateTransactionAsync(Guid id)
-    {
-        throw new NotImplementedException();
-    }
 }

@@ -1,11 +1,15 @@
 ﻿
+using Fusion.Repository.Bases.Page;
+using Fusion.Repository.Bases.Page.TransactionPayment;
 using Fusion.Repository.Bases.Responses;
 using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.TransactionPayment.Requests;
 using Fusion.Service.ViewModels.TransactionPayment.Responses;
+using Fusion.Service.ViewModels.Users.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace Fusion.API.Controllers
 {
@@ -57,6 +61,19 @@ namespace Fusion.API.Controllers
                 data: result,
                 message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "latest transaction")
             ));
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpGet("getAllForAdmin")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PagedResult<TransactionForAdminResponse>>))]
+        public async Task<IActionResult> GetAllTransactionForAdmin(
+            [FromQuery] AdminTransactionSearch request,
+            CancellationToken cancellationToken = default)
+        {
+            var data = await _transactionPaymentService.GetAllTransactionForAdminAsync(request, cancellationToken);
+            return Ok(ResponseModel<PagedResult<TransactionForAdminResponse>>.Ok(
+                data: data,
+                message: "Get transactions for admin successfully"));
         }
     }
 }
