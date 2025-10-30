@@ -1,52 +1,55 @@
 ﻿using Fusion.Repository.Bases.Exceptions;
+using Fusion.Repository.Bases.Page;
+using Fusion.Repository.Bases.Page.ProjectMember;
 using Fusion.Repository.IRepositories;
-using Fusion.Repository.Repositories;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.ProjectMembers.Responses;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Fusion.Service.Services
+public class ProjectMemberService : IProjectMemberService
 {
-    public class ProjectMemberService: IProjectMemberService
+    private readonly IProjectMemberRepository _projectMemberRepository;
+
+    public ProjectMemberService(IProjectMemberRepository projectMemberRepository)
     {
-        public readonly IProjectMemberRepository _projectMemberRepository;
+        _projectMemberRepository = projectMemberRepository;
+    }
 
-        public ProjectMemberService(IProjectMemberRepository projectMemberRepository)
+    public async Task<PagedResult<MemberProjectListResponse>> GetProjectsByMemberAsync(
+        Guid companyId,
+        Guid userId,
+        ProjectMemberSearchRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var projectsPaged = await _projectMemberRepository.GetProjectsByMemberAsync(companyId, userId, request, cancellationToken);
+
+        if (projectsPaged == null || !projectsPaged.Items.Any())
+            throw CustomExceptionFactory.CreateNotFoundError("No projects found for this member in the specified company.");
+
+        var projectResponses = projectsPaged.Items.Select(p => new ProjectBelongToMemberResponse
         {
-            _projectMemberRepository = projectMemberRepository;
-        }
+            Id = p.Id,
+            Name = p.Name,
+            Code = p.Code,
+            Status = p.Status,
+            StartDate = p.StartDate,
+            EndDate = p.EndDate,
+            IsHired = p.IsHired
+        }).ToList();
 
-        public async Task<MemberProjectListResponse> GetProjectsByMemberAsync(Guid companyId, Guid userId)
+        var result = new MemberProjectListResponse
         {
-            var projects = await _projectMemberRepository.GetProjectsByMemberAsync(companyId, userId);
+            CompanyId = companyId,
+            UserId = userId,
+            TotalProject = projectsPaged.TotalCount,
+            Projects = projectResponses
+        };
 
-            if (projects == null || !projects.Any())
-                throw CustomExceptionFactory.CreateNotFoundError("No projects found for this member in the specified company.");
-
-            var projectResponse = projects.Select(p => new ProjectBelongToMemberResponse
-            {
-                Id = p.Id,
-                Name = p.Name,
-                Code = p.Code,
-                Status = p.Status,
-                StartDate = p.StartDate,
-                EndDate = p.EndDate,
-                //Xác định công ty này là chủ hay là đối tác
-                IsHired = p.IsHired,
-            }).ToList();
-
-            return new MemberProjectListResponse
-            {
-                CompanyId = companyId,
-                UserId = userId,
-                TotalProject = projectResponse.Count,
-                Projects = projectResponse
-            };
-        }
-
+        return new PagedResult<MemberProjectListResponse>
+        {
+            Items = new List<MemberProjectListResponse> { result },
+            TotalCount = projectsPaged.TotalCount,
+            PageNumber = projectsPaged.PageNumber,
+            PageSize = projectsPaged.PageSize
+        };
     }
 }

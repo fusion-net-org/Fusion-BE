@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Fusion.Repository.Bases.Page;
 
 namespace Fusion.Repository.Bases.Page.Company_Member
 {

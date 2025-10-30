@@ -1,4 +1,6 @@
-﻿using Fusion.Repository.Data;
+﻿using Fusion.Repository.Bases.Page;
+using Fusion.Repository.Bases.Page.ProjectMember;
+using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -14,6 +16,7 @@ namespace Fusion.Repository.IRepositories
         Task<int> GetTotalProjectsForMemberInCompanyAsync(Guid memberId, Guid companyId, CancellationToken cancellationToken = default);
         Task<int> GetTotalProjectsForMemberAsync(Guid memberId, CancellationToken cancellationToken = default);
 
-        Task<List<Project>> GetProjectsByMemberAsync(Guid companyId, Guid userId);
+        Task<PagedResult<Project>> GetProjectsByMemberAsync(Guid companyId, Guid userId, ProjectMemberSearchRequest request, CancellationToken cancellationToken = default);
+
     }
 }

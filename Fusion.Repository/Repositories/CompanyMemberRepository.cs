@@ -390,6 +390,15 @@ namespace Fusion.Repository.Repositories
 
             return result.ToDictionary(x => x.Status, x => x.Count);
         }
+        public async Task<CompanyMember?> GetCompanyMemberByCompanyIdAndUserIdAsync(Guid companyId, Guid userId, CancellationToken token = default)
+        {
+            return await _context.CompanyMembers
+                .Include(cm => cm.User)
+                .Include(cm => cm.Company)
+                .SingleOrDefaultAsync(cm => cm.CompanyId == companyId
+                                        && cm.UserId == userId
+                                        && cm.IsDeleted == false, token);
+        }
 
     }
 }
