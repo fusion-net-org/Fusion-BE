@@ -18,6 +18,7 @@ using Fusion.Service.ViewModels.Task.Response;
 using Fusion.Service.ViewModels.Tickets.Requests;
 using Fusion.Service.ViewModels.Tickets.Responses;
 using Fusion.Service.ViewModels.TransactionPayment.Requests;
+using Fusion.Service.ViewModels.TransactionPayment.Responses;
 using Fusion.Service.ViewModels.Users.Requests;
 using Fusion.Service.ViewModels.Users.Responses;
 
@@ -162,6 +163,18 @@ public class MappingProfile : Profile
 
         //--------------------------- entity: Transaction Payment ---------------------------------------------
         CreateMap<CreateTransactionRequest, TransactionPayment>();
+        CreateMap<TransactionPayment, TransactionForAdminResponse>()
+           .ForMember(d => d.UserName, opt => opt.MapFrom(s => s.User.UserName))
+           .ForMember(d => d.PackageName, opt => opt.MapFrom(s => s.SubscriptionPackage.Name))
+           .ForMember(d => d.Id, opt => opt.MapFrom(s => s.Id))
+           .ForMember(d => d.UserId, opt => opt.MapFrom(s => s.UserId))
+           .ForMember(d => d.PackageId, opt => opt.MapFrom(s => s.PackageId))
+           .ForMember(d => d.TransactionCode, opt => opt.MapFrom(s => s.TransactionCode))
+           .ForMember(d => d.Amount, opt => opt.MapFrom(s => s.Amount))
+           .ForMember(d => d.PaymentMethod, opt => opt.MapFrom(s => s.PaymentMethod))
+           .ForMember(d => d.Status, opt => opt.MapFrom(s => s.Status))
+           .ForMember(d => d.CreatedAt, opt => opt.MapFrom(s => s.CreatedAt))
+           .ForMember(d => d.UpdatedAt, opt => opt.MapFrom(s => s.UpdatedAt));
 
         //----------------------------     entity: Project  ---------------------------------------------
         CreateMap<Project, ProjectResponse>();
