@@ -16,4 +16,11 @@ public interface ITransactionPaymentService
     Task<PagedResult<TransactionForAdminResponse>> GetAllTransactionForAdminAsync(
         AdminTransactionSearch request,
         CancellationToken cancellationToken = default);
+
+    Task<PackagePurchaseStatsResponse> GetPackagePurchaseStatsAsync(AdminTransactionSearch request, CancellationToken cancellationToken = default);
+    Task<YearlyRevenueResponse> GetMonthlyRevenueByYearAsync(
+        int year,
+        string status = "=Suceess",
+        CancellationToken cancellationToken = default);
+
 }
