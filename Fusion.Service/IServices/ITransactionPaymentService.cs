@@ -22,5 +22,6 @@ public interface ITransactionPaymentService
         int year,
         string status = "=Suceess",
         CancellationToken cancellationToken = default);
+    Task<TransactionStatusCountsResponse> CountTransactionByStatusAsync(CancellationToken cancellationToken = default);
 
 }

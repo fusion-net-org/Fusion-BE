@@ -1,28 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿
 using AutoMapper;
 using FluentValidation;
-using FluentValidation.Results;
 using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.Company;
-using Fusion.Repository.Bases.Page.User;
 using Fusion.Repository.Bases.Responses;
-using Fusion.Repository.Data;
-using Fusion.Repository.Entities;
 using Fusion.Repository.Entities;
 using Fusion.Repository.IRepositories;
-using Fusion.Repository.Repositories;
 using Fusion.Service.Commons.Helpers;
-using Fusion.Service.IServices;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.Companies.Requests;
 using Fusion.Service.ViewModels.Companies.Responses;
-using Fusion.Service.ViewModels.Companies.Validators;
 using Fusion.Service.ViewModels.Project.Responses;
 using Fusion.Service.ViewModels.Sprint.Responses;
 using Fusion.Service.ViewModels.Task.Response;
@@ -299,7 +287,7 @@ namespace Fusion.Service.Services
 
             if (company.OwnerUserId != user.Id)
                 throw CustomExceptionFactory
-                    .CreateBadRequestError(ResponseMessages.BAD_REQUEST,$"Company is not belong to {company.OwnerUser.UserName}");
+                    .CreateBadRequestError(ResponseMessages.BAD_REQUEST, $"Company is not belong to {company.OwnerUser.UserName}");
 
             if (!string.IsNullOrEmpty(request.Email) && request.Email != company.Email)
             {
@@ -615,6 +603,39 @@ namespace Fusion.Service.Services
             };
             await _logService.CreateLog(log, cancellationToken);
             return _mapper.Map<CompanyResponse>(result);
+        }
+
+        public async Task<CompanyStatusCountsVm> GetCompanyStatusCountsAsync(CancellationToken cancellationToken = default)
+        {
+            var result = await _companyRepository.GetCompanyStatusCountsAsync(cancellationToken);
+
+            return new CompanyStatusCountsVm
+            {
+                Active = result.Active,
+                Inactive = result.Inactive,
+            };
+        }
+        public async Task<CompanyMonthlyStatsVm> GetCompaniesCreatedByMonthAsync(int year, CancellationToken ct = default)
+        {
+            if (year <= 0) year = DateTime.UtcNow.Year;
+
+            var companies = await _companyRepository.GetCompaniesCreatedInYearAsync(year, ct);
+
+            var counts = new int[12];
+            foreach (var c in companies)
+            {
+                var month = c.CreateAt.Month;
+
+                if (month is >= 1 and <= 12)
+                    counts[month - 1]++;
+            }
+
+            return new CompanyMonthlyStatsVm
+            {
+                Year = year,
+                MonthlyCounts = counts,
+                Total = counts.Sum() 
+            };
         }
     }
 }

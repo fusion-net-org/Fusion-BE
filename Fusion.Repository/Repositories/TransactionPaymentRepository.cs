@@ -61,7 +61,6 @@ namespace Fusion.Repository.Repositories
             
             return query;
         }
-
         public async Task<TransactionPayment?> GetLasterTransactionForUserAsync(Guid id, CancellationToken cancellationToken = default)
         {
             var transaction = await _context.TransactionPayments
@@ -72,5 +71,33 @@ namespace Fusion.Repository.Repositories
             return transaction!;
 
         }
+        public async Task<decimal> GetTotalRevenueSuccessAsync(CancellationToken cancellationToken = default)
+        {
+            var sum = await _context.TransactionPayments
+                .AsNoTracking()
+                .Where(t => t.Status == "Success")               
+                .Select(t => (decimal?)t.Amount)                
+                .SumAsync(cancellationToken);                                   
+
+            return sum ?? 0m;
+        }
+        public async Task<(int Cancel, int Pending, int Success)> CountTransactionByStatusAsync(CancellationToken cancellationToken = default)
+        {
+            var row = await _context.TransactionPayments
+                .AsNoTracking()
+                .GroupBy(_ => 1)
+                .Select(g => new
+                {
+                    Cancel = g.Sum(t => (((t.Status ?? "").Trim().ToLower() == "cancel" ||
+                                    (t.Status ?? "").Trim().ToLower() == "canceled" ||
+                                    (t.Status ?? "").Trim().ToLower() == "cancelled") ? 1 : 0)),
+                    Pending = g.Sum(t => ((t.Status ?? "").Trim().ToLower() == "pending") ? 1 : 0),
+                    Success = g.Sum(t => ((t.Status ?? "").Trim().ToLower() == "success") ? 1 : 0),
+                })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            return (row?.Cancel ?? 0, row?.Pending ?? 0, row?.Success ?? 0);
+        }
+
     }
 }
