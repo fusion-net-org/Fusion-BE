@@ -35,5 +35,11 @@ namespace Fusion.Repository.Repositories
                 throw;
             }
         }
+        public Task<int> GetAllProjectCountAsync(CancellationToken cancellationToken = default)
+        {
+            return _context.Projects
+                .AsNoTracking()
+                .CountAsync(cancellationToken);
+        }
     }
 }

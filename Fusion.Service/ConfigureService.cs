@@ -76,6 +76,8 @@ namespace Fusion.Service
             // project member
             services.AddScoped<IProjectMemberService, ProjectMemberService>();
 
+            // admin
+            services.AddScoped<IAdminService, AdminService>();
             // PayOS
             services.AddSingleton<PayOS>(sp =>
             {

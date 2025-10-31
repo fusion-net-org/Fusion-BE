@@ -118,7 +118,6 @@ namespace Fusion.Service.Services
 
             // 4. Update trạng thái
             transaction.Status = webhookData.success ? "Success" : "Failed";
-            transaction.Status = webhookData.success ? "Success" : "Failed";
             transaction.UpdatedAt = DateTime.UtcNow;
 
             _unitOfWork.Repository<TransactionPayment>().Update(transaction);

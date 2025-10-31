@@ -1,4 +1,4 @@
-﻿
+﻿    
 
 using AutoMapper;
 using Fusion.Repository.Bases.Exceptions;
@@ -202,7 +202,7 @@ public class TransactionPaymentService : ITransactionPaymentService
         };
     }
 
-    public async Task<YearlyRevenueResponse> GetMonthlyRevenueByYearAsync(int year, string status = "=Suceess", CancellationToken cancellationToken = default)
+    public async Task<YearlyRevenueResponse> GetMonthlyRevenueByYearAsync(int year, string status = "Suceess", CancellationToken cancellationToken = default)
     {
         if(year <= 0) year = DateTime.UtcNow.Year;
 
@@ -243,6 +243,18 @@ public class TransactionPaymentService : ITransactionPaymentService
             Year = year,
             TotalRevenue = months.Sum(x => x.Revenue),
             Moths = months
+        };
+    }
+
+    public async Task<TransactionStatusCountsResponse> CountTransactionByStatusAsync(CancellationToken cancellationToken = default)
+    {
+        var result = await _transactionPaymentRepository.CountTransactionByStatusAsync();
+
+        return new TransactionStatusCountsResponse
+        {
+            Cancel = result.Cancel,
+            Success = result.Success,
+            Pending = result.Pending,
         };
     }
 }

@@ -157,6 +157,35 @@ namespace Fusion.Repository.Repositories
             return await query.ToPagedResultAsync(request, cancellationToken);
         }
 
+        public async Task<(int Active, int Inactive)> GetCompanyStatusCountsAsync(
+     CancellationToken cancellationToken = default)
+        {
+            var row = await _context.Companies
+                .AsNoTracking()
+                .GroupBy(_ => 1)
+                .Select(g => new
+                {
+                    // null => coi như false (active)
+                    Active = g.Count(x => !(x.IsDeleted ?? false)),
+                    Inactive = g.Count(x => (x.IsDeleted ?? false))
+                })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            return (row?.Active ?? 0, row?.Inactive ?? 0);
+        }
+
+        public async Task<List<Company>> GetCompaniesCreatedInYearAsync(int year, CancellationToken ct = default)
+        {
+            var start = new DateTime(year, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var end = start.AddYears(1);
+
+            // Nếu CreatedAt là DateTime?:
+            return await _context.Companies
+                .AsNoTracking()
+                .Where(c => c.CreateAt != null &&
+                            c.CreateAt >= start && c.CreateAt < end)
+                .ToListAsync(ct);
+        }
         public async Task<Company?> AddCompanyAsync(User user, string image_company, string avatar_company, Company new_company, CancellationToken cancellationToken)
         {
             new_company.ImageCompany = image_company;
@@ -226,7 +255,6 @@ namespace Fusion.Repository.Repositories
 
             return company;
         }
-
 
         public async Task<Guid?> GetCompanyIdByUserId(Guid userId)
         {
@@ -313,6 +341,13 @@ namespace Fusion.Repository.Repositories
                 .ToListAsync();
 
             return data.Cast<object>().ToList();
+        }
+
+        public Task<int> GetAllCompanyAsync(CancellationToken cancellationToken = default)
+        {
+            return _context.Companies
+                 .AsNoTracking()
+                 .CountAsync(cancellationToken);
         }
     }
 }

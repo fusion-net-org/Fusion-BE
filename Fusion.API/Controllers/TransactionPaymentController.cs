@@ -9,7 +9,6 @@ using Fusion.Service.ViewModels.TransactionPayment.Responses;
 using Fusion.Service.ViewModels.Users.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace Fusion.API.Controllers
 {
@@ -93,6 +92,17 @@ namespace Fusion.API.Controllers
             return Ok(ResponseModel<YearlyRevenueResponse>.Ok(
                 data: data,
                 message: $"Get monthly revenue for {data.Year} successfully"));
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpGet("stats/status-counts")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<TransactionStatusCountsResponse>))]
+        public async Task<IActionResult> GetTransactionStatusCounts( CancellationToken ct)
+        {
+            var data = await _transactionPaymentService.CountTransactionByStatusAsync(ct);
+            return Ok(ResponseModel<TransactionStatusCountsResponse>.Ok(
+                data: data,
+                message: $"Transaction status counts retrieved successfully."));
         }
     }
 }

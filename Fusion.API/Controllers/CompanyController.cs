@@ -176,5 +176,28 @@ namespace Fusion.API.Controllers
                 data: result,
                 message: "Delete company successfully"));
         }
+
+        [Authorize(Roles = "Admin")]
+        [HttpDelete("getCompanyStatusCounts")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<CompanyStatusCountsVm>))]
+        public async Task<IActionResult> GetCompanyStatusCounts(CancellationToken cancellationToken)
+        {
+            var result = await _companyService.GetCompanyStatusCountsAsync(cancellationToken);
+            return Ok(ResponseModel<CompanyStatusCountsVm>.Ok(
+                data: result,
+                message: "Get compnay with status success."));
+        }
+        [Authorize(Roles = "Admin")]
+        [HttpGet("stats/created-by-month")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<CompanyMonthlyStatsVm>))]
+        public async Task<IActionResult> GetCompaniesCreatedByMonth([FromQuery] int year, CancellationToken cancellationToken)
+        {
+            var result = await _companyService.GetCompaniesCreatedByMonthAsync(year, cancellationToken);
+
+            return Ok(ResponseModel<CompanyMonthlyStatsVm>.Ok(
+                data: result,
+                message: $"Companies created per month for {result.Year}"));
+        }
     }
 }
