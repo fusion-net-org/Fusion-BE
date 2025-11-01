@@ -110,5 +110,21 @@ namespace Fusion.Repository.Repositories
                 .AsNoTracking()
                 .CountAsync(cancellationToken);
         }
+
+        public async Task<(int False, int True)> GetCountUserByStatusAsync(
+            CancellationToken cancellationToken = default)
+        {
+            var row = await _context.Users
+                .AsNoTracking()
+                .GroupBy(_ => 1)
+                .Select(g => new
+                {
+                    False = g.Count(u => u.Status == false),
+                    True = g.Count(u => u.Status == true)
+                })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            return (row?.False ?? 0, row?.True ?? 0);
+        }
     }
 }

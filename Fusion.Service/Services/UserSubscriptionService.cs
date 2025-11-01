@@ -17,16 +17,18 @@ namespace Fusion.Service.Services
     public class UserSubscriptionService : IUserSubscriptionService
     {
         private readonly IUserSubscriptionRepository _repository;
-        private readonly IUnitOfWork unitOfWork;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly ICurrentService _currentService;
+        private readonly IUserLogService _userLogService;
 
-        public UserSubscriptionService(IUserSubscriptionRepository repository, IUnitOfWork unitOfWork, IMapper mapper, ICurrentService currentService)
+        public UserSubscriptionService(IUserSubscriptionRepository repository, IUnitOfWork unitOfWork, IMapper mapper, ICurrentService currentService, IUserLogService userLogService)
         {
             _repository = repository;
-            this.unitOfWork = unitOfWork;
+            _unitOfWork = unitOfWork;
             _mapper = mapper;
             _currentService = currentService;
+            _userLogService = userLogService;
         }
 
         public async Task<UserSubscription> CreateUserSubscriptionAsync(Guid userId, CreateUserSubscriptionRequest request, CancellationToken cancellationToken = default)
@@ -46,19 +48,43 @@ namespace Fusion.Service.Services
             };
 
             await _repository.AddAsync(entity, cancellationToken);
-            await unitOfWork.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+            var user = await _unitOfWork.Repository<User>().FindAsync(x => x.Id == userId);
+            var userLog = new UserLog
+            {
+                ActorUserId = user.Id,
+                Title = "Create User Subscription",
+                Description = $"The system has created a new Subsciption {entity.SubscriptionPackage.Name} for the user {user.UserName}."
+            };
+            await _userLogService.CreateLog(userLog);
             return entity;
         }
 
         public async Task DecreaseCompanyQuotaAsync(Guid userId, CancellationToken cancellationToken = default)
         {
             await _repository.DecreaseCompanyQuotaAsync(userId, cancellationToken);
+            var user = await _unitOfWork.Repository<User>().FindAsync(x => x.Id == userId);
+            var userLog = new UserLog
+            {
+                ActorUserId = user.Id,
+                Title = "Decrease Company Quota",
+                Description = $"User {user.UserName} has created new a company."
+            };
+            await _userLogService.CreateLog(userLog);
         }
 
         public async Task DecreaseProjectQuotaAsync(Guid userId, CancellationToken cancellationToken = default)
         {
             await _repository.DecreaseProjectQuotaAsync(userId, cancellationToken);
+            var user = await _unitOfWork.Repository<User>().FindAsync(x => x.Id == userId);
+            var userLog = new UserLog
+            {
+                ActorUserId = user.Id,
+                Title = "Decrease Project Quota",
+                Description = $"User {user.UserName} has created new a project."
+            };
+            await _userLogService.CreateLog(userLog);
         }
 
         public async Task<PagedResult<UserSubscriptionResponse>> GetAllUserSubscrptionByUserIdAsync(PagedRequest request, CancellationToken cancellationToken = default)

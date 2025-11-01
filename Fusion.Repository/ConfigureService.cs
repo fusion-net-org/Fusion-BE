@@ -75,6 +75,8 @@ namespace Fusion.Repository
             //project
             services.AddScoped<IProjectRepository, ProjectRepository>();
 
+            //user log
+            services.AddScoped<IUserLogRepository, UserLogRepository>();
             return services;
 
 

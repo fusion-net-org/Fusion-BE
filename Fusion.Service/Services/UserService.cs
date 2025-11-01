@@ -12,7 +12,6 @@ using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.Companies.Responses;
 using Fusion.Service.ViewModels.Users.Requests;
 using Fusion.Service.ViewModels.Users.Responses;
-using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
 
 namespace Fusion.Service.Services;
@@ -24,15 +23,17 @@ public class UserService : IUserService
     private readonly IMapper _mapper;
     private readonly ICloudinaryService _cloudinaryService;
     private readonly ICurrentService _currentService;
+    private readonly IUserLogService _userLog;
 
     public UserService(IUnitOfWork unitOfWork, IUserRepository userRepository, IMapper mapper,
-        ICloudinaryService cloudinaryService, ICurrentService currentService)
+        ICloudinaryService cloudinaryService, ICurrentService currentService, IUserLogService userLog)
     {
         _unitOfWork = unitOfWork;
         _userRepository = userRepository;
         _mapper = mapper;
         _cloudinaryService = cloudinaryService;
         _currentService = currentService;
+        _userLog = userLog;
     }
 
     public async Task<SelfUserResponse?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -50,7 +51,6 @@ public class UserService : IUserService
         var response = _mapper.Map<SelfUserResponse>(user);
         return response;
     }
-
     public async Task<User?> GetFullInfoByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         if (id == Guid.Empty)
@@ -86,7 +86,6 @@ public class UserService : IUserService
         };
         return list;
     }
-
     public async Task<PagedResult<AdminUserResponse>> GetPagedAdminUsersAsync(AdminUserPagedRequest request, CancellationToken cancellationToken)
     {
         if (request == null)
@@ -108,7 +107,6 @@ public class UserService : IUserService
         };
         return list;
     }
-
     public async Task<SelfUserResponse?> GetSelfUserAsync(CancellationToken cancellationToken = default)
     {
         var userId = _currentService.GetUserId();
@@ -125,7 +123,6 @@ public class UserService : IUserService
 
         return response;
     }
-
     public async Task<SelfUserResponse?> UpdateSelfUserAsync(UpdateSelfUserRequest request, CancellationToken cancellationToken)
     {
         var userId = _currentService.GetUserId();
@@ -159,6 +156,13 @@ public class UserService : IUserService
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             await _unitOfWork.CommitTransactionAsync(cancellationToken);
 
+            var userLog = new UserLog
+            {
+                ActorUserId = userId,
+                Title = "Update self user",
+                Description = $"User {user.UserName} has updated profile."
+            };
+            await _userLog.CreateLog(userLog);
             var result = new SelfUserResponse
             {
                 UserName = user.UserName,
@@ -180,6 +184,7 @@ public class UserService : IUserService
     }
     public async Task<SelfUserResponse?> UpdateSelfUserByAdminAsync(Guid id, UpdateSelfUserRequest request, CancellationToken cancellationToken)
     {
+        var adminId = _currentService.GetUserId();
         var user = await _userRepository.GetUserByIdAsync(id);
         if (user == null)
             throw CustomExceptionFactory.CreateNotFoundError(
@@ -215,7 +220,13 @@ public class UserService : IUserService
                 Address = user.Address,
                 Gender = user.Gender
             };
-
+            var userLog = new UserLog
+            {
+                ActorUserId = adminId,
+                Title = "Update profile",
+                Description = $"Admin has updated profile {user.UserName} with id {user.Id}."
+            };
+            await _userLog.CreateLog(userLog);
             return result;
         }
         catch
@@ -227,6 +238,7 @@ public class UserService : IUserService
     }
     public async Task<SelfUserResponse?> UpdateStatus(Guid id, bool Status, CancellationToken cancellationToken)
     {
+        var adminId = _currentService.GetUserId();
         var user = await _userRepository.GetUserByIdAsync(id);
         if (user == null)
             throw CustomExceptionFactory.CreateNotFoundError(
@@ -251,6 +263,13 @@ public class UserService : IUserService
                 Gender = user.Gender
             };
 
+            var userLog = new UserLog
+            {
+                ActorUserId = adminId,
+                Title = "Update status",
+                Description = $"Admin has updated status of profile {user.UserName} with id {user.Id} / status = '{user.Status}'."
+            };
+            await _userLog.CreateLog(userLog);
             return result;
         }
         catch
@@ -289,12 +308,17 @@ public class UserService : IUserService
             user.UpdateAt = DateTime.UtcNow.AddHours(7);
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
-
+            var userLog = new UserLog
+            {
+                ActorUserId = user.Id,
+                Title = "Change password",
+                Description = $"User {user.UserName} has updated password."
+            };
+            await _userLog.CreateLog(userLog);
             return true;
 
         }
     }
-
     public async Task<PagedResult<SelfUserResponse>> GetAllUsersAsync(PagedRequest request, CancellationToken cancellationToken = default)
     {
         if (request == null)
@@ -316,7 +340,6 @@ public class UserService : IUserService
 
         return list;
     }
-
     public async Task<SelfUserResponse?> GetOwnerUserByCompanyIdAsync(Guid companyId, CancellationToken cancellationToken = default)
     {
         if (companyId == Guid.Empty)
@@ -335,5 +358,15 @@ public class UserService : IUserService
 
         return response;
     }
+    public async Task<UserStatusResponse> GetCountUserByStatusAsync(CancellationToken cancellationToken = default)
+    {
+        var result = await _userRepository.GetCountUserByStatusAsync(cancellationToken);
 
+        return new UserStatusResponse
+        {
+            CountFalse = result.False,
+            CountTrue = result.True,
+        };
+
+    }
 }

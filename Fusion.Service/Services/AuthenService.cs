@@ -21,15 +21,17 @@ public class AuthenService : IAuthenService
     private readonly IMapper _mapper;
     private readonly IJwtService _jwtService;
     private readonly IMailService _mailService;
+    private readonly IUserLogService _userLogService;
 
     public AuthenService(IUnitOfWork unitOfWork, IUserRepository userRepository,
-        IMapper mapper, IJwtService jwtService, IMailService mailService)
+        IMapper mapper, IJwtService jwtService, IMailService mailService, IUserLogService userLogService)
     {
         _unitOfWork = unitOfWork;
         _userRepository = userRepository;
         _mapper = mapper;
         _jwtService = jwtService;
         _mailService = mailService;
+        _userLogService = userLogService;
     }
     public async Task<bool> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken = default)
     {
@@ -98,6 +100,13 @@ public class AuthenService : IAuthenService
             AccessToken = tokens.AccessToken,
             RefreshToken = tokens.RefreshToken
         };
+        var userLog = new UserLog
+        {
+            ActorUserId = user.Id,
+            Title = "Login",
+            Description = $"User {user.UserName} logged into the system."
+        };
+        await _userLogService.CreateLog(userLog);
         return response;
     }
     public async Task<LoginResponse> GoogleLoginAsync(GoogleLoginRequest request, CancellationToken cancellationToken = default)
@@ -138,7 +147,14 @@ public class AuthenService : IAuthenService
 
             await _unitOfWork.Repository<User>().AddAsync(user, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
-        }
+                var userLog = new UserLog
+                {
+                    ActorUserId = user.Id,
+                    Title = "Login-Google",
+                    Description = $"User {user.UserName} logged into the system"
+                };
+                await _userLogService.CreateLog(userLog);
+            }
 
         var tokens = await _jwtService.GenerateTokensAsync(user);
         return new LoginResponse
@@ -191,7 +207,13 @@ public class AuthenService : IAuthenService
         };
 
         await _mailService.SendEmailAsync(mail);
-
+        var userLog = new UserLog
+        {
+            ActorUserId = user.Id,
+            Title = "Request password",
+            Description = $"User {user.UserName} has requested to reset password."
+        };
+        await _userLogService.CreateLog(userLog);
         return true;
     }
 
@@ -208,6 +230,13 @@ public class AuthenService : IAuthenService
         user.ResetToken = null;
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+        var userLog = new UserLog
+        {
+            ActorUserId = user.Id,
+            Title = "Reset password",
+            Description = $"User {user.UserName} changed password."
+        };
+        await _userLogService.CreateLog(userLog);
         return true;
     }
 

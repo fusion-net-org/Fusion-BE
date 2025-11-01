@@ -60,7 +60,7 @@ public partial class FusionDbContext : DbContext
     public virtual DbSet<TransactionPayment> TransactionPayments { get; set; }
     public virtual DbSet<UserDevice> UserDevices { get; set; }
     public virtual DbSet<CompanyActivityLog> CompanyActivityLogs { get; set; }
-
+    public virtual DbSet<UserLog> UserLogs { get; set; }
     public virtual DbSet<CompanySubscriptionAssignment> CompanySubscriptionAssignments { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -384,6 +384,10 @@ public partial class FusionDbContext : DbContext
         });
 
         modelBuilder.Entity<CompanyActivityLog>(entity =>
+        {
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
+        });
+        modelBuilder.Entity<UserLog>(entity =>
         {
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
         });

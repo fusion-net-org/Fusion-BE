@@ -138,6 +138,16 @@ namespace Fusion.API.Controllers
                 message: "Get user successfully"));
         }
 
-
+        [Authorize(Roles = "Admin")]
+        [HttpPut("count-status-user")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<UserStatusResponse>))]
+        public async Task<IActionResult> GetCountUserByStatus(
+           CancellationToken cancellationToken)
+        {
+            var result = await _userService.GetCountUserByStatusAsync( cancellationToken);
+            return Ok(ResponseModel<UserStatusResponse>.Ok(
+                data: result,
+                message: "Get user with status successfully"));
+        }
     }
 }
