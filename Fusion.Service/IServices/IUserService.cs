@@ -26,5 +26,5 @@ public interface IUserService
     Task<SelfUserResponse?> UpdateSelfUserByAdminAsync(Guid id, UpdateSelfUserRequest request, CancellationToken cancellationToken);
     Task<SelfUserResponse?> UpdateStatus(Guid id, bool Status, CancellationToken cancellationToken);
     Task<User?> GetFullInfoByIdAsync(Guid id, CancellationToken cancellationToken = default);
-
+    Task<UserStatusResponse> GetCountUserByStatusAsync(CancellationToken cancellationToken = default);
 }

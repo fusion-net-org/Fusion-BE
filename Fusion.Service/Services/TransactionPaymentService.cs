@@ -26,10 +26,11 @@ public class TransactionPaymentService : ITransactionPaymentService
     private readonly IGenericRepository<TransactionPayment> _transactionPayement;
     private readonly IUserService _userService;
     private readonly ISubscriptionPackageService _subscriptionPackageService;
+    private readonly IUserLogService _userLogService;
 
     public TransactionPaymentService(IUnitOfWork unitOfWork, ICurrentService currentService,
         ITransactionPaymentRepository transactionPaymentRepository, IMapper mapper, IUserService userService,
-        ISubscriptionPackageService subscriptionPackageService)
+        ISubscriptionPackageService subscriptionPackageService, IUserLogService userLogService)
     {
         _unitOfWork = unitOfWork;
         _currentService = currentService;
@@ -38,6 +39,7 @@ public class TransactionPaymentService : ITransactionPaymentService
         _transactionPayement = _unitOfWork.Repository<TransactionPayment>();
         _userService = userService;
         _subscriptionPackageService = subscriptionPackageService;
+        _userLogService = userLogService;
     }
 
     public async Task<TransactionPaymentResponse> CreateTransactionPaymentAsync(CreateTransactionRequest request, CancellationToken cancellationToken = default)
@@ -77,7 +79,13 @@ public class TransactionPaymentService : ITransactionPaymentService
             CreatedAt = entity.CreatedAt,
             UpdatedAt = entity.UpdatedAt,
         };
-
+        var userLog = new UserLog
+        {
+            ActorUserId = userId,
+            Title = "Create transaction",
+            Description = $"User {user.UserName} has create transaction."
+        };
+        await _userLogService.CreateLog(userLog);
         return response;
     }
 

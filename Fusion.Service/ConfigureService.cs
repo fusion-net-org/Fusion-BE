@@ -78,6 +78,10 @@ namespace Fusion.Service
 
             // admin
             services.AddScoped<IAdminService, AdminService>();
+
+            //userlog 
+            services.AddScoped<IUserLogService, UserLogService>();
+
             // PayOS
             services.AddSingleton<PayOS>(sp =>
             {
