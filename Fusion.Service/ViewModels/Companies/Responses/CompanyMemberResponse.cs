@@ -26,6 +26,7 @@ namespace Fusion.Service.ViewModels.Companies.Responses
         public string? Gender { get; set; }
 
         public string? MemberPhoneNumber { get; set; }
+        public string? roleName { get; set; }
 
         public int? NumberProductJoin { get; set; } = 0; //Sum of project internal and hired project of member in that company
 

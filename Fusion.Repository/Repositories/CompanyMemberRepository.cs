@@ -20,7 +20,11 @@ namespace Fusion.Repository.Repositories
     public class CompanyMemberRepository : GenericRepository<CompanyMember>, ICompanyMemberRepository
     {
         private readonly FusionDbContext _context;
-
+        public sealed class UserRoleLite
+        {
+            public int? RoleId { get; set; }
+            public string? RoleName { get; set; }
+        }
         public CompanyMemberRepository(FusionDbContext context) : base(context)
         {
             _context = context;
@@ -103,6 +107,51 @@ namespace Fusion.Repository.Repositories
                 .Include(cm => cm.User)
                 .SingleOrDefaultAsync(cm => cm.Id == companyMember.Id, token);
         }
+        public async Task<Dictionary<Guid, UserRoleLite>> GetUserRoleMapInCompanyAsync(
+     Guid companyId, IEnumerable<Guid> userIds, CancellationToken token = default)
+        {
+            var result = new Dictionary<Guid, UserRoleLite>();
+            var uidList = (userIds ?? Array.Empty<Guid>()).Distinct().ToList();
+            if (uidList.Count == 0) return result;
+
+            var roles = await _context.Roles
+                .AsNoTracking()
+                .Where(r => (r.CompanyId.HasValue && r.CompanyId.Value == companyId) || r.CompanyId == companyId)
+                .ToListAsync(token);
+            if (roles.Count == 0) return result;
+
+            var roleMap = new Dictionary<int, string>(roles.Count);
+            foreach (var r in roles)
+                roleMap[r.Id] = r.RoleName ?? string.Empty;
+
+            var userRoles = await _context.UserRoles
+                .AsNoTracking()
+                .Where(ur => ur.UserId.HasValue && uidList.Contains(ur.UserId.Value) && ur.RoleId.HasValue)
+                .ToListAsync(token);
+
+            foreach (var ur in userRoles)
+            {
+                if (!ur.UserId.HasValue || !ur.RoleId.HasValue) continue;
+
+                var uid = ur.UserId.Value;    
+                var rid = ur.RoleId.Value;    
+
+                if (!roleMap.TryGetValue(rid, out var roleName)) continue;
+
+                if (result.TryGetValue(uid, out var cur))
+                {
+                    var curId = cur.RoleId ?? int.MaxValue;
+                    if (rid < curId) result[uid] = new UserRoleLite { RoleId = rid, RoleName = roleName };
+                }
+                else
+                {
+                    result[uid] = new UserRoleLite { RoleId = rid, RoleName = roleName };
+                }
+            }
+
+            return result;
+        }
+
 
         public async Task<PagedResult<CompanyMember>> GetPagedCompanyMemberByCompanyIdAsync(Guid companyId, string mail, CompanyMemberPagedSearchRequest request, CancellationToken token)
         {
