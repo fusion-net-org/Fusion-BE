@@ -11,5 +11,7 @@ namespace Fusion.Repository.IRepositories
     public interface IProjectRepository : IGenericRepository<Project>
     {
         Task<Project> CreateProjectAsync(Guid userId, Project request, CancellationToken cancellationToken = default);
+        Task<int> GetAllProjectCountAsync(CancellationToken cancellationToken = default);
+
     }
 }

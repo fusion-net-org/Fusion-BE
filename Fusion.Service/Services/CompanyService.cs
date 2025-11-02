@@ -1,28 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿
 using AutoMapper;
 using FluentValidation;
-using FluentValidation.Results;
 using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.Company;
-using Fusion.Repository.Bases.Page.User;
 using Fusion.Repository.Bases.Responses;
-using Fusion.Repository.Data;
-using Fusion.Repository.Entities;
 using Fusion.Repository.Entities;
 using Fusion.Repository.IRepositories;
-using Fusion.Repository.Repositories;
 using Fusion.Service.Commons.Helpers;
-using Fusion.Service.IServices;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.Companies.Requests;
 using Fusion.Service.ViewModels.Companies.Responses;
-using Fusion.Service.ViewModels.Companies.Validators;
+using Fusion.Service.ViewModels.Project.Responses;
+using Fusion.Service.ViewModels.Sprint.Responses;
+using Fusion.Service.ViewModels.Task.Response;
 using Fusion.Service.ViewModels.Users.Responses;
 using Microsoft.EntityFrameworkCore;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
@@ -40,10 +31,11 @@ namespace Fusion.Service.Services
         private readonly ICompanyFriendshipRepository _companyFriendshipRepository;
         private readonly IMailService _mailService;
         private readonly ICompanyActivityService _logService;
+        private readonly ICurrentService _currentService;
 
         public CompanyService(IMapper mapper, ICompanyRepository companyRepository, ICloudinaryService cloudinaryService
             , IUserRepository userRepository, ICompanyMemberRepository companyMemberRepository, IValidator<CompanyRequest> validator, ICompanyFriendshipRepository companyFriendshipRepository,
-            IMailService mailService, ICompanyActivityService logService)
+            IMailService mailService, ICompanyActivityService logService, ICurrentService currentService)
         {
             _mapper = mapper;
             _companyRepository = companyRepository;
@@ -54,6 +46,7 @@ namespace Fusion.Service.Services
             _companyFriendshipRepository = companyFriendshipRepository;
             _mailService = mailService;
             _logService = logService;
+            _currentService = currentService;
         }
 
         public async Task<CompanyResponse> CreateCompanyAsync(CompanyRequest request, string Email, CancellationToken cancellationToken = default)
@@ -294,7 +287,7 @@ namespace Fusion.Service.Services
 
             if (company.OwnerUserId != user.Id)
                 throw CustomExceptionFactory
-                    .CreateBadRequestError(ResponseMessages.BAD_REQUEST,$"Company is not belong to {company.OwnerUser.UserName}");
+                    .CreateBadRequestError(ResponseMessages.BAD_REQUEST, $"Company is not belong to {company.OwnerUser.UserName}");
 
             if (!string.IsNullOrEmpty(request.Email) && request.Email != company.Email)
             {
@@ -358,7 +351,7 @@ namespace Fusion.Service.Services
             var user = await _userRepository.GetUserByEmailAsync(Email, cancellationToken);
             if (user == null)
                 throw CustomExceptionFactory.
-                    CreateBadRequestError(ResponseMessages.INVALID_INPUT.FormatMessage("Email incorrect!"));
+                    CreateBadRequestError("Email incorrect!");
 
             var company = await _companyRepository.GetCompanyByIdAsync(companyId);
             if (company == null)
@@ -366,7 +359,7 @@ namespace Fusion.Service.Services
 
             if (company.OwnerUserId != user.Id)
                 throw CustomExceptionFactory
-                    .CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Owner User in this company"));
+                    .CreateNotFoundError("Owner User in this company");
 
             await _companyRepository.DeleteCompanyAsync(company, cancellationToken);
 
@@ -382,6 +375,267 @@ namespace Fusion.Service.Services
             return true;
         }
 
+        public async Task<CompanySummaryResponse> GetCompanySummaryAsync(Guid companyId)
+        {
+            var rawProjects = await _companyRepository.GetCompanyProjectSummaryAsync(companyId);
 
+            var projectSummary = new List<ProjectSummaryResponse>();
+
+            foreach (var projObj in rawProjects)
+            {
+                var projType = projObj.GetType();
+                var sprintsProp = projType.GetProperty("Sprints");
+
+                if (sprintsProp == null)
+                    continue;
+
+                var sprints = sprintsProp.GetValue(projObj) as IEnumerable<object>;
+                var projId = (Guid)(projType.GetProperty("ProjectId")?.GetValue(projObj) ?? Guid.Empty);
+                var projName = projType.GetProperty("ProjectName")?.GetValue(projObj)?.ToString() ?? string.Empty;
+
+                var sprintSummaryList = new List<SprintSummaryResponse>();
+
+                foreach (var sprintObj in sprints)
+                {
+                    var sprintType = sprintObj.GetType();
+                    var sprintId = (Guid)(sprintType.GetProperty("SprintId")?.GetValue(sprintObj) ?? Guid.Empty);
+                    var sprintName = sprintType.GetProperty("SprintName")?.GetValue(sprintObj)?.ToString() ?? string.Empty;
+                    var tasks = sprintType.GetProperty("ProjectTasks")?.GetValue(sprintObj) as IEnumerable<object>;
+
+                    var taskSummaryList = new List<TaskSummaryResponse>();
+                    if (tasks != null)
+                    {
+                        foreach (var taskObj in tasks)
+                        {
+                            var taskType = taskObj.GetType();
+                            taskSummaryList.Add(new TaskSummaryResponse
+                            {
+                                Id = (Guid)(taskType.GetProperty("TaskId")?.GetValue(taskObj) ?? Guid.Empty),
+                                Title = taskType.GetProperty("Title")?.GetValue(taskObj)?.ToString() ?? string.Empty,
+                                Point = (int?)(taskType.GetProperty("Point")?.GetValue(taskObj) ?? 0)
+                            });
+                        }
+                    }
+
+                    sprintSummaryList.Add(new SprintSummaryResponse
+                    {
+                        Id = sprintId,
+                        Name = sprintName,
+                        TaskCount = taskSummaryList.Count,
+                        TotalPoint = taskSummaryList.Sum(t => t.Point ?? 0),
+                        Tasks = taskSummaryList
+                    });
+                }
+
+                projectSummary.Add(new ProjectSummaryResponse
+                {
+                    Id = projId,
+                    Name = projName,
+                    SprintCount = sprintSummaryList.Count,
+                    TotalTask = sprintSummaryList.Sum(s => s.TaskCount),
+                    TotalPoint = sprintSummaryList.Sum(s => s.TotalPoint),
+                    Sprints = sprintSummaryList
+                });
+            }
+
+            return new CompanySummaryResponse
+            {
+                CompanyId = companyId,
+                TotalProject = projectSummary.Count,
+                TotalSprint = projectSummary.Sum(p => p.SprintCount),
+                TotalTask = projectSummary.Sum(p => p.TotalTask),
+                TotalPoint = projectSummary.Sum(p => p.TotalPoint),
+                Projects = projectSummary
+            };
+        }
+
+        public async Task<CompanyPerformanceResponse> GetCompanyPerformanceAsync(Guid companyId)
+        {
+            var rawData = await _companyRepository.GetCompanyUserTasksAsync(companyId);
+
+            if (rawData == null || !rawData.Any())
+                throw CustomExceptionFactory.CreateNotFoundError("No task data found for this company.");
+
+            // Gom nhóm theo user để tính hiệu suất từng người
+            var userPerformanceList = rawData
+                .GroupBy(d =>
+                {
+                    dynamic item = d;
+                    return new { item.UserId, item.UserName };
+                })
+                .Select(g =>
+                {
+                    int onTime = 0;
+                    int late = 0;
+                    int notCompleted = 0;
+
+                    foreach (dynamic t in g)
+                    {
+                        string status = (string)(t.TaskStatus ?? "");
+                        DateTime? due = (DateTime?)t.DueDate;
+                        DateTime? updated = (DateTime?)t.UpdateAt;
+
+                        if (status.Equals("Done", StringComparison.OrdinalIgnoreCase))
+                        {
+                            if (due.HasValue && updated.HasValue && updated <= due)
+                                onTime++;
+                            else
+                                late++;
+                        }
+                        else
+                        {
+                            notCompleted++;
+                        }
+                    }
+
+                    var totalCompleted = onTime + late;
+
+                    return new UserPerformanceResponse
+                    {
+                        UserId = g.Key.UserId,
+                        UserName = g.Key.UserName,
+                        OnTimeCount = onTime,
+                        LateCount = late,
+                        NotCompletedCount = notCompleted,
+                        OnTimePercent = totalCompleted > 0
+                            ? Math.Round((double)onTime / totalCompleted * 100, 2)
+                            : 0,
+                        LatePercent = totalCompleted > 0
+                            ? Math.Round((double)late / totalCompleted * 100, 2)
+                            : 0
+                    };
+                })
+                .ToList();
+
+            // Trả kết quả tổng hợp toàn công ty
+            return new CompanyPerformanceResponse
+            {
+                CompanyId = companyId,
+                TotalMembers = userPerformanceList.Count,
+                Data = userPerformanceList
+            };
+        }
+
+        public async Task<bool> DeleteCompanyByAdminAsync(Guid companyId, CancellationToken cancellationToken = default)
+        {
+
+            var company = await _companyRepository.GetCompanyByIdAsync(companyId);
+            if (company == null)
+                throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Company"));
+
+            await _companyRepository.DeleteCompanyAsync(company, cancellationToken);
+
+            var userId = _currentService.GetUserId();
+            var log = new CompanyActivityLog
+            {
+                CompanyId = companyId,
+                ActorUserId = userId,
+                Title = "Deleted Company",
+                Description = $"Company '{company.Name}' has been deleted by admin.",
+
+            };
+            await _logService.CreateLog(log, cancellationToken);
+            return true;
+        }
+        public async Task<CompanyResponse> UpdateCompanyByAdminAsync(Guid companyId, CompanyRequest request, CancellationToken cancellationToken = default)
+        {
+            if (request == null)
+                throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.INVALID_INPUT);
+
+            // false: không bắt buộc ImageCompany
+            await _validator.ValidateAndThrowAsync(
+                request,
+                opts => opts.IncludeRuleSets("Update"),
+                cancellationToken);
+
+
+            var company = await _companyRepository.GetCompanyByIdAsync(companyId);
+            if (company == null)
+                throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Company"));
+
+            if (!string.IsNullOrEmpty(request.Email) && request.Email != company.Email)
+            {
+                var company_email_existed = await _companyRepository.GetCompanyByEmail(request.Email);
+                if (company_email_existed != null)
+                    throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.EXISTED.FormatMessage("Company Email"));
+            }
+
+            if (!string.IsNullOrEmpty(request.TaxCode) && request.TaxCode != company.TaxCode)
+            {
+                var company_taxcode_existed = await _companyRepository.GetCompanyByTaxCode(request.TaxCode);
+                if (company_taxcode_existed != null)
+                    throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.DUPLICATE.FormatMessage("Tax-code"));
+            }
+
+            var image_company = "";
+            var avatar_company = "";
+
+            if (request.ImageCompany != null && request.ImageCompany.Length > 0)
+            {
+                await _cloudinaryService.DeleteImageAsync(_cloudinaryService.ExtractPublicIdFromUrl(company.ImageCompany), cancellationToken);
+                image_company = await _cloudinaryService.UploadImageAsync(request.ImageCompany, "CompanyBanner", cancellationToken);
+            }
+            else
+            {
+                image_company = company.ImageCompany;
+            }
+
+            if (request.AvatarCompany != null && request.AvatarCompany.Length > 0)
+            {
+                await _cloudinaryService.DeleteImageAsync(_cloudinaryService.ExtractPublicIdFromUrl(company.AvatarCompany), cancellationToken);
+                avatar_company = await _cloudinaryService.UploadImageAsync(request.AvatarCompany, "CompanyAvatar", cancellationToken);
+            }
+            else
+            {
+                avatar_company = company.AvatarCompany;
+            }
+
+            var result = await _companyRepository.UpdateCompanyAsync(image_company, avatar_company, companyId, _mapper.Map<Company>(request), cancellationToken);
+
+            var userId = _currentService.GetUserId();
+            var log = new CompanyActivityLog
+            {
+                CompanyId = companyId,
+                ActorUserId = userId,
+                Title = "Update Company Information",
+                Description = $"Company '{company.Name}' information has been updated by admin.",
+
+            };
+            await _logService.CreateLog(log, cancellationToken);
+            return _mapper.Map<CompanyResponse>(result);
+        }
+
+        public async Task<CompanyStatusCountsVm> GetCompanyStatusCountsAsync(CancellationToken cancellationToken = default)
+        {
+            var result = await _companyRepository.GetCompanyStatusCountsAsync(cancellationToken);
+
+            return new CompanyStatusCountsVm
+            {
+                Active = result.Active,
+                Inactive = result.Inactive,
+            };
+        }
+        public async Task<CompanyMonthlyStatsVm> GetCompaniesCreatedByMonthAsync(int year, CancellationToken ct = default)
+        {
+            if (year <= 0) year = DateTime.UtcNow.Year;
+
+            var companies = await _companyRepository.GetCompaniesCreatedInYearAsync(year, ct);
+
+            var counts = new int[12];
+            foreach (var c in companies)
+            {
+                var month = c.CreateAt.Month;
+
+                if (month is >= 1 and <= 12)
+                    counts[month - 1]++;
+            }
+
+            return new CompanyMonthlyStatsVm
+            {
+                Year = year,
+                MonthlyCounts = counts,
+                Total = counts.Sum() 
+            };
+        }
     }
 }

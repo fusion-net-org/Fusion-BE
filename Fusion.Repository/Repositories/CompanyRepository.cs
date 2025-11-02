@@ -157,6 +157,35 @@ namespace Fusion.Repository.Repositories
             return await query.ToPagedResultAsync(request, cancellationToken);
         }
 
+        public async Task<(int Active, int Inactive)> GetCompanyStatusCountsAsync(
+     CancellationToken cancellationToken = default)
+        {
+            var row = await _context.Companies
+                .AsNoTracking()
+                .GroupBy(_ => 1)
+                .Select(g => new
+                {
+                    // null => coi như false (active)
+                    Active = g.Count(x => !(x.IsDeleted ?? false)),
+                    Inactive = g.Count(x => (x.IsDeleted ?? false))
+                })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            return (row?.Active ?? 0, row?.Inactive ?? 0);
+        }
+
+        public async Task<List<Company>> GetCompaniesCreatedInYearAsync(int year, CancellationToken ct = default)
+        {
+            var start = new DateTime(year, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var end = start.AddYears(1);
+
+            // Nếu CreatedAt là DateTime?:
+            return await _context.Companies
+                .AsNoTracking()
+                .Where(c => c.CreateAt != null &&
+                            c.CreateAt >= start && c.CreateAt < end)
+                .ToListAsync(ct);
+        }
         public async Task<Company?> AddCompanyAsync(User user, string image_company, string avatar_company, Company new_company, CancellationToken cancellationToken)
         {
             new_company.ImageCompany = image_company;
@@ -227,7 +256,6 @@ namespace Fusion.Repository.Repositories
             return company;
         }
 
-
         public async Task<Guid?> GetCompanyIdByUserId(Guid userId)
         {
             var company = await _context.Companies
@@ -266,6 +294,60 @@ namespace Fusion.Repository.Repositories
                 .SingleOrDefaultAsync(x => x.Id == Id);
         }
 
+        public async Task<List<object>> GetCompanyProjectSummaryAsync(Guid companyId)
+        {
+            var projects = await _context.Projects
+                .Include(x => x.Sprints)
+                    .ThenInclude(x => x.ProjectTasks)
+                .Where(p => p.CompanyId == companyId)
+                .Select(p => new
+                {
+                    ProjectId = p.Id,
+                    ProjectName = p.Name,
+                    Sprints = p.Sprints.Select(s => new
+                    {
+                        SprintId = s.Id,
+                        SprintName = s.Name,
+                        ProjectTasks = s.ProjectTasks.Select(t => new
+                        {
+                            TaskId = t.Id,
+                            Title = t.Title,
+                            Point = t.Point
+                        }).ToList()
+                    }).ToList()
+                })
+                .ToListAsync();
 
+            return projects.Cast<object>().ToList();
+        }
+
+        public async Task<List<object>> GetCompanyUserTasksAsync(Guid companyId)
+        {
+            var data = await _context.ProjectTasks
+                .Include(t => t.Project)
+                .Include(t => t.TaskWorkflows)
+                    .ThenInclude(w => w.AssignUser)
+                .Where(t => t.Project.CompanyId == companyId && !t.IsDeleted)
+                .SelectMany(
+                    t => t.TaskWorkflows.Select(w => new
+                    {
+                        UserId = w.AssignUserId,
+                        UserName = w.AssignUser.UserName,
+                        TaskStatus = t.Status,
+                        DueDate = t.DueDate,
+                        UpdateAt = t.UpdateAt
+                    })
+                )
+                .ToListAsync();
+
+            return data.Cast<object>().ToList();
+        }
+
+        public Task<int> GetAllCompanyAsync(CancellationToken cancellationToken = default)
+        {
+            return _context.Companies
+                 .AsNoTracking()
+                 .CountAsync(cancellationToken);
+        }
     }
 }

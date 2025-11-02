@@ -27,7 +27,7 @@ namespace Fusion.Repository.IRepositories
 
         Task<ProjectRequest> AcceptProjectRequestAsync(Guid requestId, string executorEmail, CancellationToken cancellationToken = default);
 
-        Task<bool> RejectProjectRequestAsync(Guid requestId, string executorEmail, CancellationToken cancellationToken = default);
+        Task<ProjectRequest?> RejectProjectRequestAsync(Guid requestId, string executorEmail, string reason, CancellationToken cancellationToken = default);
 
     }
 }

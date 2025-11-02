@@ -60,6 +60,8 @@ public partial class FusionDbContext : DbContext
     public virtual DbSet<TransactionPayment> TransactionPayments { get; set; }
     public virtual DbSet<UserDevice> UserDevices { get; set; }
     public virtual DbSet<CompanyActivityLog> CompanyActivityLogs { get; set; }
+    public virtual DbSet<UserLog> UserLogs { get; set; }
+    public virtual DbSet<CompanySubscriptionAssignment> CompanySubscriptionAssignments { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -384,6 +386,28 @@ public partial class FusionDbContext : DbContext
         modelBuilder.Entity<CompanyActivityLog>(entity =>
         {
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
+        });
+        modelBuilder.Entity<UserLog>(entity =>
+        {
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
+        });
+
+        modelBuilder.Entity<CompanySubscriptionAssignment>(entity =>
+        {
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
+
+            entity.Property(e => e.AssignedAt).HasDefaultValueSql("(sysutcdatetime())");
+
+            entity.Property(e => e.IsEnabled).HasDefaultValue(true);
+
+            entity.HasOne(e => e.Member)
+                  .WithMany()
+                  .HasForeignKey(e => e.MemberId)
+                  .HasConstraintName("FK_CompanySubscriptionAssignments_User");
+
+            entity.HasIndex(e => new { e.CompanyId, e.MemberId, e.Code }, "UX_CompanySubscriptionAssignments_Unique")
+                  .IsUnique()
+                  .HasFilter("([company_id] IS NOT NULL AND [member_id] IS NOT NULL AND [code_transaction] IS NOT NULL)");
         });
 
         OnModelCreatingPartial(modelBuilder);

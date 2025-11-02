@@ -18,8 +18,9 @@ namespace Fusion.Repository.IRepositories
         Task<PagedResult<User>> GetAllUsersAsync(PagedRequest request,CancellationToken cancellationToken = default);
         Task<User?> GetOwnerUserByCompanyIdAsync(Guid companyId, CancellationToken cancellationToken = default);
         Task<User?> GetUserByResetTokenAsync(string resetToken, CancellationToken cancellationToken = default);
-
         Task<User?> GetUserWithRolesAndPermissionsInCompanyAsync(Guid userId, Guid companyId);
+        Task<int> GetAllUserAsync(CancellationToken cancellationToken = default);
+        Task<(int False, int True)> GetCountUserByStatusAsync(CancellationToken cancellationToken = default);
 
     }
 }

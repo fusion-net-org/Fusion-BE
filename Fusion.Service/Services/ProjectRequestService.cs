@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Google.Apis.Requests.BatchRequest;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace Fusion.Service.Services
@@ -58,6 +59,26 @@ namespace Fusion.Service.Services
             //    Context = result.Project.Name,
             //    NotificationType = NotificationTypeEnum.BUSINESS.ToString(),
             //});
+
+            var emailBody = $@"
+               <h3>Dear {result.RequesterCompany?.Name},</h3>
+                <p>Your project request <strong>{result?.Name}</strong> 
+                has been <b style='color:green;'>ACCEPTED</b> by 
+                {result.ExecutorCompany?.Name}.</p>
+                <p>Start Date: {result.StartDate:dd/MM/yyyy}<br/>
+                End Date: {result.EndDate:dd/MM/yyyy}</p>
+                <p>You can now proceed with the project coordination.</p>
+                <hr/>
+                <small>Fusion System Notification</small>"";
+            ";
+
+            await _mailService.SendEmailAsync(new ViewModels.Companies.Email.MailRequest()
+            {
+                Subject = $"Your project request \"{result?.Name}\" has been accepted!",
+                Body = emailBody,
+                ToEmail = result.ExecutorCompany.OwnerUser.Email
+            });
+
             var currentUserName = await GetUserName(_currentService.GetUserId());
             var log = new CompanyActivityLog
             {
@@ -141,13 +162,30 @@ namespace Fusion.Service.Services
 
         public async Task<ProjectRequestRejectResponse> RejectProjectRequestAsync(Guid requestId, string executorEmail, string reason, CancellationToken cancellationToken = default)
         {
-            var result = await _projectRequestRepository.RejectProjectRequestAsync(requestId, executorEmail, cancellationToken);
+            var result = await _projectRequestRepository.RejectProjectRequestAsync(requestId, executorEmail, reason, cancellationToken);
 
-            if (!result)
-                throw CustomExceptionFactory.CreateBadRequestError(
-                    ResponseMessages.FAILED.FormatMessage("Reject project request failed"));
+            if (result == null)
+                throw CustomExceptionFactory.CreateBadRequestError("Reject project request failed");
 
             var projectRequest = await _projectRequestRepository.GetProjectRequestByIdAsync(requestId);
+
+            var emailBody = $@"
+                <h3>Dear {result.RequesterCompany?.Name},</h3>
+                <p>Your project request <strong>{result?.Name}</strong> 
+                has been <b style='color:red;'>REJECTED</b> by 
+                {result.ExecutorCompany?.Name}.</p>
+                <p><b>Reason:</b> {result.Reason ?? "No specific reason provided."}</p>
+                <p>Please review your project details and resubmit if needed.</p>
+                <hr/>
+                <small>Fusion System Notification</small>"";
+            ";
+
+            await _mailService.SendEmailAsync(new ViewModels.Companies.Email.MailRequest()
+            {
+                Subject = $"Your project request \"{result?.Name}\" has been rejected.",
+                Body = emailBody,
+                ToEmail = result.ExecutorCompany.OwnerUser.Email
+            });
 
             //await _notificationService.CreateNotificationAsync(new ViewModels.Notifications.Requests.SendNotificationRequest
             //{

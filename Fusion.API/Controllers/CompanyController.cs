@@ -9,6 +9,7 @@ using Fusion.Service.Services;
 using Fusion.Service.ViewModels.Companies.Requests;
 using Fusion.Service.ViewModels.Companies.Responses;
 using Fusion.Service.ViewModels.Users.Responses;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.IdentityModel.Tokens.Jwt;
@@ -131,6 +132,72 @@ namespace Fusion.API.Controllers
             return Ok(ResponseModel<bool>.Ok(
                 data: result,
                 message: "Delete company successfully"));
+        }
+
+        [HttpGet("{companyId:guid}/summary")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<CompanySummaryResponse>))]
+        public async Task<IActionResult> GetCompanySummary(Guid companyId)
+        {
+            var result = await _companyService.GetCompanySummaryAsync(companyId);
+            return Ok(ResponseModel<CompanySummaryResponse>.Ok(
+                 data: result,
+                 message: "Fetch Company Summary successfully"));
+        }
+
+        [HttpGet("{companyId:guid}/performance")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<CompanyPerformanceResponse>))]
+
+        public async Task<IActionResult> GetCompanyPerformance(Guid companyId)
+        {
+            var result = await _companyService.GetCompanyPerformanceAsync(companyId);
+            return Ok(ResponseModel<CompanyPerformanceResponse>.Ok(
+                 data: result,
+                 message: "Fetch Company Performance successfully"));
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPut("admin/{id:guid}")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<CompanyResponse>))]
+        public async Task<IActionResult> UpdateByAdmin(Guid id, CompanyRequest request, CancellationToken cancellationToken)
+        {
+            var result = await _companyService.UpdateCompanyByAdminAsync(id, request, cancellationToken);
+            return Ok(ResponseModel<CompanyResponse>.Ok(
+                data: result,
+                message: "Update company successfully"));
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpDelete("admin/{id:guid}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public async Task<IActionResult> DeleteByAdmin(Guid id, CancellationToken cancellationToken)
+        {
+            var result = await _companyService.DeleteCompanyByAdminAsync(id, cancellationToken);
+            return Ok(ResponseModel<bool>.Ok(
+                data: result,
+                message: "Delete company successfully"));
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpDelete("getCompanyStatusCounts")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<CompanyStatusCountsVm>))]
+        public async Task<IActionResult> GetCompanyStatusCounts(CancellationToken cancellationToken)
+        {
+            var result = await _companyService.GetCompanyStatusCountsAsync(cancellationToken);
+            return Ok(ResponseModel<CompanyStatusCountsVm>.Ok(
+                data: result,
+                message: "Get compnay with status success."));
+        }
+        [Authorize(Roles = "Admin")]
+        [HttpGet("stats/created-by-month")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<CompanyMonthlyStatsVm>))]
+        public async Task<IActionResult> GetCompaniesCreatedByMonth([FromQuery] int year, CancellationToken cancellationToken)
+        {
+            var result = await _companyService.GetCompaniesCreatedByMonthAsync(year, cancellationToken);
+
+            return Ok(ResponseModel<CompanyMonthlyStatsVm>.Ok(
+                data: result,
+                message: $"Companies created per month for {result.Year}"));
         }
     }
 }

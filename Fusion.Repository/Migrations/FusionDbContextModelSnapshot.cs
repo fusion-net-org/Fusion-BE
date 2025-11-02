@@ -314,6 +314,61 @@ namespace Fusion.Repository.Migrations
                     b.ToTable("CompanyMembers");
                 });
 
+            modelBuilder.Entity("Fusion.Repository.Entities.CompanySubscriptionAssignment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("(newid())");
+
+                    b.Property<DateTime>("AssignedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(3)
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("assigned_at")
+                        .HasDefaultValueSql("(sysutcdatetime())");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)")
+                        .HasColumnName("code_transaction");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("company_id");
+
+                    b.Property<long?>("CompanyMemberId")
+                        .HasColumnType("bigint");
+
+                    b.Property<bool>("IsEnabled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_enabled");
+
+                    b.Property<Guid>("MemberId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("member_id");
+
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("revoked_at");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyMemberId");
+
+                    b.HasIndex("MemberId");
+
+                    b.HasIndex(new[] { "CompanyId", "MemberId", "Code" }, "UX_CompanySubscriptionAssignments_Unique")
+                        .IsUnique()
+                        .HasFilter("([company_id] IS NOT NULL AND [member_id] IS NOT NULL AND [code_transaction] IS NOT NULL)");
+
+                    b.ToTable("CompanySubscriptionAssignments");
+                });
+
             modelBuilder.Entity("Fusion.Repository.Entities.FunctionInPage", b =>
                 {
                     b.Property<int>("Id")
@@ -595,6 +650,10 @@ namespace Fusion.Repository.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)")
                         .HasColumnName("name");
+
+                    b.Property<string>("Reason")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("reason");
 
                     b.Property<Guid?>("RequesterCompanyId")
                         .HasColumnType("uniqueidentifier")
@@ -1373,6 +1432,47 @@ namespace Fusion.Repository.Migrations
                     b.ToTable("UserDevices");
                 });
 
+            modelBuilder.Entity("Fusion.Repository.Entities.UserLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("ActorUserId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("actor_user_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(3)
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("(sysutcdatetime())");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("description");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit")
+                        .HasColumnName("is_deleted");
+
+                    b.Property<string>("Title")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("title");
+
+                    b.Property<DateTime?>("UpdateAt")
+                        .HasPrecision(3)
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("update_at");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("UserLogs");
+                });
+
             modelBuilder.Entity("Fusion.Repository.Entities.UserRole", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1660,6 +1760,22 @@ namespace Fusion.Repository.Migrations
                     b.Navigation("Company");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Fusion.Repository.Entities.CompanySubscriptionAssignment", b =>
+                {
+                    b.HasOne("Fusion.Repository.Entities.CompanyMember", null)
+                        .WithMany("SubscriptionAssignments")
+                        .HasForeignKey("CompanyMemberId");
+
+                    b.HasOne("Fusion.Repository.Entities.User", "Member")
+                        .WithMany()
+                        .HasForeignKey("MemberId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_CompanySubscriptionAssignments_User");
+
+                    b.Navigation("Member");
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.Notification", b =>
@@ -2048,6 +2164,11 @@ namespace Fusion.Repository.Migrations
                     b.Navigation("Roles");
 
                     b.Navigation("Workflows");
+                });
+
+            modelBuilder.Entity("Fusion.Repository.Entities.CompanyMember", b =>
+                {
+                    b.Navigation("SubscriptionAssignments");
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.FunctionInPage", b =>

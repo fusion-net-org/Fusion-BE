@@ -7,8 +7,10 @@ namespace Fusion.Repository.IRepositories
 {
     public interface ITransactionPaymentRepository : IGenericRepository<TransactionPayment>
     {
-        Task<IEnumerable<TransactionPayment>> GetListPaymentForAdminAsync(AdminTransactionSearch request, CancellationToken cancellationToken = default);
+        IQueryable<TransactionPayment> GetListPaymentForAdminQuery(AdminTransactionSearch request);
         Task<IEnumerable<TransactionPayment>> GetListPaymentForCurrentUserAsync(Guid id, CancellationToken cancellationToken = default);
         Task<TransactionPayment?> GetLasterTransactionForUserAsync(Guid id, CancellationToken cancellationToken = default);
+        Task<decimal> GetTotalRevenueSuccessAsync(CancellationToken cancellationToken = default);
+        Task<(int Cancel, int Pending, int Success)> CountTransactionByStatusAsync(CancellationToken cancellationToken = default);
     }
 }

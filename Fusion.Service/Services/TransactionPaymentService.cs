@@ -1,7 +1,9 @@
-﻿
+﻿    
 
 using AutoMapper;
 using Fusion.Repository.Bases.Exceptions;
+using Fusion.Repository.Bases.Page;
+using Fusion.Repository.Bases.Page.TransactionPayment;
 using Fusion.Repository.Bases.Responses;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
@@ -11,6 +13,7 @@ using Fusion.Service.Commons.Helpers;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.TransactionPayment.Requests;
 using Fusion.Service.ViewModels.TransactionPayment.Responses;
+using Microsoft.EntityFrameworkCore;
 
 namespace Fusion.Service.Services;
 
@@ -23,10 +26,11 @@ public class TransactionPaymentService : ITransactionPaymentService
     private readonly IGenericRepository<TransactionPayment> _transactionPayement;
     private readonly IUserService _userService;
     private readonly ISubscriptionPackageService _subscriptionPackageService;
+    private readonly IUserLogService _userLogService;
 
     public TransactionPaymentService(IUnitOfWork unitOfWork, ICurrentService currentService,
         ITransactionPaymentRepository transactionPaymentRepository, IMapper mapper, IUserService userService,
-        ISubscriptionPackageService subscriptionPackageService)
+        ISubscriptionPackageService subscriptionPackageService, IUserLogService userLogService)
     {
         _unitOfWork = unitOfWork;
         _currentService = currentService;
@@ -35,7 +39,9 @@ public class TransactionPaymentService : ITransactionPaymentService
         _transactionPayement = _unitOfWork.Repository<TransactionPayment>();
         _userService = userService;
         _subscriptionPackageService = subscriptionPackageService;
+        _userLogService = userLogService;
     }
+
     public async Task<TransactionPaymentResponse> CreateTransactionPaymentAsync(CreateTransactionRequest request, CancellationToken cancellationToken = default)
     {
         var userId = _currentService.GetUserId();
@@ -73,8 +79,37 @@ public class TransactionPaymentService : ITransactionPaymentService
             CreatedAt = entity.CreatedAt,
             UpdatedAt = entity.UpdatedAt,
         };
-
+        var userLog = new UserLog
+        {
+            ActorUserId = userId,
+            Title = "Create transaction",
+            Description = $"User {user.UserName} has create transaction."
+        };
+        await _userLogService.CreateLog(userLog);
         return response;
+    }
+
+    public async Task<PagedResult<TransactionForAdminResponse>> GetAllTransactionForAdminAsync(
+    AdminTransactionSearch request,
+    CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.SortColumn))
+        {
+            request.SortColumn = nameof(TransactionForAdminResponse.CreatedAt);
+            request.SortDescending = true;
+        }
+
+        // Lấy query chưa materialize từ repo
+        var baseQuery = _transactionPaymentRepository.GetListPaymentForAdminQuery(request);
+
+        // ProjectTo -> IQueryable<TransactionForAdminResponse>
+        var projected = _mapper.ProjectTo<TransactionForAdminResponse>(
+            baseQuery,
+            parameters: null);
+
+        // Phân trang + sort dùng extension có sẵn
+        var paged = await projected.ToPagedResultAsync(request, cancellationToken);
+        return paged;
     }
 
     public async Task<Guid> GetLasterTransactionForUserAsync(CancellationToken cancellationToken = default)
@@ -125,9 +160,109 @@ public class TransactionPaymentService : ITransactionPaymentService
 
         return response;
     }
-       
-    public Task UpdateTransactionAsync(Guid id)
+
+
+    // Status: Success, Cancel, Pending. Default: success
+    public async Task<PackagePurchaseStatsResponse> GetPackagePurchaseStatsAsync(
+        AdminTransactionSearch request,
+        CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        // Mặc định chỉ tính các giao dịch thành công nếu FE không truyền
+        if (string.IsNullOrWhiteSpace(request.Status))
+        {
+            request.Status = "Success";
+        }
+
+        // Tận dụng filter có sẵn
+        var baseQuery = _transactionPaymentRepository.GetListPaymentForAdminQuery(request);
+
+        // Group theo gói (PackageId + PackageName)
+        var grouped = await baseQuery
+            .GroupBy(t => new { t.PackageId, PackageName = t.SubscriptionPackage.Name })
+            .Select(g => new
+            {
+                g.Key.PackageId,
+                g.Key.PackageName,
+                Orders = g.Count(),
+                Revenue = g.Sum(x => x.Amount)
+            })
+            .OrderByDescending(x => x.Orders) // sắp theo số đơn
+            .ToListAsync(cancellationToken);
+
+        var totalOrders = grouped.Sum(x => x.Orders);
+        var totalRevenue = grouped.Sum(x => x.Revenue);
+
+        var items = grouped.Select(x => new PackagePurchaseStatsItem
+        {
+            PackageId = x.PackageId,
+            PackageName = x.PackageName ?? string.Empty,
+            Orders = x.Orders,
+            Revenue = x.Revenue,
+            OrderShare = totalOrders > 0 ? (double)x.Orders / totalOrders : 0.0,
+            RevenueShare = totalRevenue > 0 ? (double)x.Revenue / (double)totalRevenue : 0.0
+        }).ToList();
+
+        return new PackagePurchaseStatsResponse
+        {
+            TotalOrders = totalOrders,
+            TotalRevenue = totalRevenue,
+            Items = items
+        };
+    }
+
+    public async Task<YearlyRevenueResponse> GetMonthlyRevenueByYearAsync(int year, string status = "Suceess", CancellationToken cancellationToken = default)
+    {
+        if(year <= 0) year = DateTime.UtcNow.Year;
+
+        var start = new DateTime(year, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        var end = start.AddYears(1); // {year-01-01, nextyear-01-01}
+
+        var filter = new AdminTransactionSearch
+        {
+            Status = status,
+            PaymentDateFrom = start,
+            PaymentDateTo = end.AddTicks(-1), // inclusive
+        };
+
+        var baseQuery = _transactionPaymentRepository.GetListPaymentForAdminQuery(filter);
+
+        // Group allow month in year
+        var grouped = await baseQuery
+            .Where(t => t.CreatedAt >= start && t.CreatedAt <= end)
+            .GroupBy(t => t.CreatedAt.Month)
+            .Select(g => new {Month = g.Key, Revenue = g.Sum( x => x.Amount) })
+            .ToListAsync(cancellationToken);
+
+        // Get all moths. if moth has not revenue  => display = 0
+        var months = Enumerable.Range(1, 12)
+            .Select(m =>
+            {
+                var hit = grouped.FirstOrDefault(x => x.Month == m);
+                return new MonthlyRevenueItem
+                {
+                    Month = m,
+                    Revenue = hit?.Revenue ?? 0m
+                };
+            })
+            .ToList();
+
+        return new YearlyRevenueResponse
+        {
+            Year = year,
+            TotalRevenue = months.Sum(x => x.Revenue),
+            Moths = months
+        };
+    }
+
+    public async Task<TransactionStatusCountsResponse> CountTransactionByStatusAsync(CancellationToken cancellationToken = default)
+    {
+        var result = await _transactionPaymentRepository.CountTransactionByStatusAsync();
+
+        return new TransactionStatusCountsResponse
+        {
+            Cancel = result.Cancel,
+            Success = result.Success,
+            Pending = result.Pending,
+        };
     }
 }

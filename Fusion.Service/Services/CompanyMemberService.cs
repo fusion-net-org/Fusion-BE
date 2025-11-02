@@ -359,5 +359,23 @@ namespace Fusion.Service.Services
             var user = await _userRepository.GetUserByIdAsync(userId);
             return user.UserName;
         }
+
+        public async Task<CompanyMemberResponse?> GetCompanyMemberByCompanyIdAndUserIdAsync(Guid companyId, Guid userId, CancellationToken token = default)
+        {
+            var member = await _companyMemberRepository
+                .GetCompanyMemberByCompanyIdAndUserIdAsync(companyId, userId, token);
+
+            if (member == null)
+                return null;
+
+            var dto = _mapper.Map<CompanyMemberResponse>(member);
+
+            // Optional: tính số dự án user tham gia trong công ty (đồng bộ với API khác)
+            var numberProjectJoin = await _projectMemberRepository.GetTotalProjectsForMemberInCompanyAsync(userId, companyId, token);
+            dto.NumberProductJoin = numberProjectJoin;
+
+            return dto;
+        }
+
     }
 }

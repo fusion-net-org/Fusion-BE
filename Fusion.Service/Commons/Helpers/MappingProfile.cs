@@ -18,6 +18,7 @@ using Fusion.Service.ViewModels.Task.Response;
 using Fusion.Service.ViewModels.Tickets.Requests;
 using Fusion.Service.ViewModels.Tickets.Responses;
 using Fusion.Service.ViewModels.TransactionPayment.Requests;
+using Fusion.Service.ViewModels.TransactionPayment.Responses;
 using Fusion.Service.ViewModels.Users.Requests;
 using Fusion.Service.ViewModels.Users.Responses;
 
@@ -152,10 +153,30 @@ public class MappingProfile : Profile
                     opt => opt.MapFrom(src => src.Name)) // Name trong ProjectRequest map sang ProjectName
             .ForMember(dest => dest.ConvertedProjectId,
                     opt => opt.MapFrom(src => src.Project != null ? src.Project.Id : (Guid?)null))
+            .ForMember(dest => dest.RequesterCompanyLogoUrl,
+                    opt => opt.MapFrom(src =>
+                    src.RequesterCompany != null ? src.RequesterCompany.AvatarCompany : null))
+            .ForMember(dest => dest.ExecutorCompanyLogoUrl,
+                    opt => opt.MapFrom(src =>
+                    src.ExecutorCompany != null ? src.ExecutorCompany.AvatarCompany : null))
+            .ForMember(dest => dest.isHaveProject,
+                    opt => opt.MapFrom(src => src.Project != null && src.Project.Id != Guid.Empty))
             .ReverseMap();
 
         //--------------------------- entity: Transaction Payment ---------------------------------------------
         CreateMap<CreateTransactionRequest, TransactionPayment>();
+        CreateMap<TransactionPayment, TransactionForAdminResponse>()
+           .ForMember(d => d.UserName, opt => opt.MapFrom(s => s.User.UserName))
+           .ForMember(d => d.PackageName, opt => opt.MapFrom(s => s.SubscriptionPackage.Name))
+           .ForMember(d => d.Id, opt => opt.MapFrom(s => s.Id))
+           .ForMember(d => d.UserId, opt => opt.MapFrom(s => s.UserId))
+           .ForMember(d => d.PackageId, opt => opt.MapFrom(s => s.PackageId))
+           .ForMember(d => d.TransactionCode, opt => opt.MapFrom(s => s.TransactionCode))
+           .ForMember(d => d.Amount, opt => opt.MapFrom(s => s.Amount))
+           .ForMember(d => d.PaymentMethod, opt => opt.MapFrom(s => s.PaymentMethod))
+           .ForMember(d => d.Status, opt => opt.MapFrom(s => s.Status))
+           .ForMember(d => d.CreatedAt, opt => opt.MapFrom(s => s.CreatedAt))
+           .ForMember(d => d.UpdatedAt, opt => opt.MapFrom(s => s.UpdatedAt));
 
         //----------------------------     entity: Project  ---------------------------------------------
         CreateMap<Project, ProjectResponse>();
@@ -169,7 +190,9 @@ public class MappingProfile : Profile
         CreateMap<SubscriptionPackage, SubscriptionResponse>();
 
         //----------------------------     entity: Notification ---------------------------------------------
-        CreateMap<Notification, NotificationResponse>();
+        CreateMap<Notification, NotificationResponse>()
+            .ForMember(dest => dest.LinkUrl, opt => opt.MapFrom(src => src.LinkUrlMobile)) 
+            .ForMember(dest => dest.LinkUrlWeb, opt => opt.MapFrom(src => src.LinkUrlWeb));
         CreateMap<SendNotificationRequest, Notification>();
 
         //----------------------------     entity: Project ---------------------------------------------

@@ -128,5 +128,26 @@ namespace Fusion.API.Controllers
                 message: "Get owner user by company successfully"));
         }
 
+        [HttpGet("fullInfor/{id:guid}")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<User>))]
+        public async Task<IActionResult> GetFullInfoById(Guid id, CancellationToken cancellationToken)
+        {
+            var user = await _userService.GetFullInfoByIdAsync(id, cancellationToken);
+            return Ok(ResponseModel<User>.Ok(
+                data: user,
+                message: "Get user successfully"));
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPut("count-status-user")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<UserStatusResponse>))]
+        public async Task<IActionResult> GetCountUserByStatus(
+           CancellationToken cancellationToken)
+        {
+            var result = await _userService.GetCountUserByStatusAsync( cancellationToken);
+            return Ok(ResponseModel<UserStatusResponse>.Ok(
+                data: result,
+                message: "Get user with status successfully"));
+        }
     }
 }
