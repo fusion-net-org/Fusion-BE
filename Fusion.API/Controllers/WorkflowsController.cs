@@ -50,7 +50,6 @@ namespace Fusion.API.Controllers
 
             await _svc.SaveDesignerAsync(companyId, workflowId, payload, ct);
 
-            // 201 + trả id để FE biết
             return CreatedAtAction(nameof(GetDesigner),
                 new { companyId, workflowId },
                 new { id = workflowId });
