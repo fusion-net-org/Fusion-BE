@@ -159,6 +159,8 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.ExecutorCompanyLogoUrl,
                     opt => opt.MapFrom(src =>
                     src.ExecutorCompany != null ? src.ExecutorCompany.AvatarCompany : null))
+            .ForMember(dest => dest.isHaveProject,
+                    opt => opt.MapFrom(src => src.Project != null && src.Project.Id != Guid.Empty))
             .ReverseMap();
 
         //--------------------------- entity: Transaction Payment ---------------------------------------------
@@ -188,7 +190,9 @@ public class MappingProfile : Profile
         CreateMap<SubscriptionPackage, SubscriptionResponse>();
 
         //----------------------------     entity: Notification ---------------------------------------------
-        CreateMap<Notification, NotificationResponse>();
+        CreateMap<Notification, NotificationResponse>()
+            .ForMember(dest => dest.LinkUrl, opt => opt.MapFrom(src => src.LinkUrlMobile)) 
+            .ForMember(dest => dest.LinkUrlWeb, opt => opt.MapFrom(src => src.LinkUrlWeb));
         CreateMap<SendNotificationRequest, Notification>();
 
         //----------------------------     entity: Project ---------------------------------------------

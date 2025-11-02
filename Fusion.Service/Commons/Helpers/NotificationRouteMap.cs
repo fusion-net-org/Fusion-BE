@@ -12,6 +12,7 @@ namespace Fusion.Service.Commons.Helpers
         public static readonly Dictionary<string, (string? Web, string? Mobile)> Routes = new()
         {
             ["HOME_PAGE"] = ("/company", "/(tabs)/home"),
+            ["COMPANY_DETAIL_PAGE"] = ("/company/{id}", null),
             ["PROJECT_DETAIL"] = ("/company/project/{id}", null),
         };
 
@@ -20,16 +21,18 @@ namespace Fusion.Service.Commons.Helpers
         /// Nếu có id → thay {id}, nếu không có thì giữ nguyên route.
         /// </summary>
         public static (string? Web, string? Mobile) Resolve(
-            string key,
-            Guid? id = null)
+           string key,
+           Guid? id = null)
         {
             if (!Routes.TryGetValue(key, out var route))
                 return (null, null);
 
-            string ReplaceId(string text) =>
-                id.HasValue ? text.Replace("{id}", id.ToString()) : text.Replace("/{id}", "");
+            string ReplaceId(string? text) =>
+                string.IsNullOrEmpty(text) ? null :
+                (id.HasValue ? text.Replace("{id}", id.ToString()) : text.Replace("/{id}", ""));
 
             return (ReplaceId(route.Web), ReplaceId(route.Mobile));
         }
+
     }
 }
