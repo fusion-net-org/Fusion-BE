@@ -16,6 +16,7 @@ using Fusion.Service.ViewModels.Sprint.Responses;
 using Fusion.Service.ViewModels.Task.Response;
 using Fusion.Service.ViewModels.Users.Responses;
 using Microsoft.EntityFrameworkCore;
+using Org.BouncyCastle.Asn1;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace Fusion.Service.Services
@@ -148,6 +149,7 @@ namespace Fusion.Service.Services
             }
             return list;
         }
+
         public async Task<PagedResult<CompanyResponseVersion2>> GetAllCompaniesAsync(
     string userMail,
     CompanyPagedSearchRequestVersion2 request,
@@ -231,6 +233,42 @@ namespace Fusion.Service.Services
                 item.TotalPartners = friendships.Count();
             }
 
+            return list;
+        }
+
+        public async Task<PagedResult<CompanyResponse>> GetPagedCompaniesAdminAsync(string adminEmail, CompanyPagedSearchRequest request, CancellationToken cancellationToken = default)
+        {
+            if (request == null)
+                throw CustomExceptionFactory.CreateBadRequestError(
+                    ResponseMessages.INVALID_INPUT);
+
+            var result = await _companyRepository.GetPagedCompaniesAdminAsync(adminEmail, request, cancellationToken);
+
+            if (result == null || result.Items.Count == 0)
+                throw CustomExceptionFactory.CreateNotFoundError(
+                    ResponseMessages.NOT_FOUND.FormatMessage("Companies"));
+
+            var list = new PagedResult<CompanyResponse>
+            {
+                Items = _mapper.Map<List<CompanyResponse>>(result.Items),
+                TotalCount = result.TotalCount,
+                PageNumber = result.PageNumber,
+                PageSize = result.PageSize
+            };
+
+            foreach (var item in list.Items)
+            {
+                var company = result.Items.FirstOrDefault(c => c.Id == item.Id);
+                if (company == null) continue;
+
+                var friendships = company.CompanyFriendshipCompanyAs
+                    .Concat(company.CompanyFriendshipCompanyBs)
+                    .ToList();
+
+                item.TotalApproved = friendships.Count(f => f.Status == "Active");
+                item.TotalWaitForApprove = friendships.Count(f => f.Status == "Pending");
+                item.TotalPartners = friendships.Count();
+            }
             return list;
         }
 
