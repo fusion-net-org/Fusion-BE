@@ -45,6 +45,7 @@ namespace Fusion.Service.ViewModels.Projects.Responses
         public DateTime UpdateAt { get; set; }
 
         public bool? IsDeleted { get; set; }
+        public bool? isHaveProject { get; set; }
 
         public Guid? ConvertedProjectId { get; set; }
     }

@@ -9,6 +9,11 @@ namespace Fusion.Repository.Enums
     public enum NotificationTypeEnum
     {
         BUSINESS,
-        SYSTEM
+        SYSTEM,
+        PROJECT,
+        TASK,
+        COMPANY,
+        WARNING,
+        INFO
     }
 }

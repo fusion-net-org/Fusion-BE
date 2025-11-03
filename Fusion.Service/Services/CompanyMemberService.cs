@@ -99,18 +99,30 @@ namespace Fusion.Service.Services
             return _mapper.Map<CompanyMemberResponse>(response);
         }
 
-        public async Task<PagedResult<CompanyMemberResponse>> GetPagedCompanyMemberByCompanyIdAsync(Guid companyId, string mail, CompanyMemberPagedSearchRequest request, CancellationToken token = default)
+        public async Task<PagedResult<CompanyMemberResponse>> GetPagedCompanyMemberByCompanyIdAsync(
+         Guid companyId, string mail, CompanyMemberPagedSearchRequest request, CancellationToken token = default)
         {
+            var result = await _companyMemberRepository
+                .GetPagedCompanyMemberByCompanyIdAsync(companyId, mail, request, token);
 
-            var result = await _companyMemberRepository.GetPagedCompanyMemberByCompanyIdAsync(companyId, mail, request, token);
+            var userIds = result.Items.Where(m => m.User != null).Select(m => m.User.Id).Distinct().ToList();
+            var rolesByUser = await _companyMemberRepository
+                .GetUserRoleMapInCompanyAsync(companyId, userIds, token);
 
-            var memberResponses = new List<CompanyMemberResponse>();
+            var memberResponses = new List<CompanyMemberResponse>(result.Items.Count);
+
             foreach (var member in result.Items)
             {
-                var numberProjectJoin = await _projectMemberRepository.GetTotalProjectsForMemberInCompanyAsync(member.User.Id, companyId, token);
+                var numberProjectJoin = await _projectMemberRepository
+                    .GetTotalProjectsForMemberInCompanyAsync(member.User.Id, companyId, token);
 
                 var dto = _mapper.Map<CompanyMemberResponse>(member);
                 dto.NumberProductJoin = numberProjectJoin;
+
+                if (member.User != null && rolesByUser.TryGetValue(member.User.Id, out var role))
+                {
+                    dto.roleName = role.RoleName;
+                }
 
                 memberResponses.Add(dto);
             }
@@ -123,6 +135,7 @@ namespace Fusion.Service.Services
                 PageSize = result.PageSize
             };
         }
+
 
         public async Task<PagedResult<CompanyMemberResponse>> GetPagedCompanyMemberAsync(CompanyMemberPagedSearchAdminRequest request, CancellationToken token = default)
         {
