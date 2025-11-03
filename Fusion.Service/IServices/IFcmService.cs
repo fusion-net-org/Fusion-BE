@@ -11,5 +11,7 @@ namespace Fusion.Service.IServices
     {
         public Task SendToUserAsync(FCMNotificationRequest request, CancellationToken cancellationToken = default);
 
+        Task SendToAllAsync(FCMNotificationRequest request, CancellationToken cancellationToken = default);
+
     }
 }

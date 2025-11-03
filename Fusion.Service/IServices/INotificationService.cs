@@ -13,7 +13,6 @@ namespace Fusion.Service.IServices
         public Task<IEnumerable<NotificationResponse>> GetUserNotificationsAsync(Guid userId, CancellationToken cancellationToken = default);
         public Task MarkAsReadAsync(Guid userId, Guid notificationId, CancellationToken cancellationToken = default);
         public Task CreateNotificationAsync(SendNotificationRequest request, CancellationToken cancellationToken = default);
-
-
+        public Task SendAllNotificationAsync(SendAllNotificationRequest request, CancellationToken cancellationToken = default);
     }
 }

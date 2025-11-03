@@ -9,7 +9,7 @@ namespace Fusion.Service.ViewModels.Notifications.Requests
     public class FCMNotificationRequest
     {
         public Guid NotificationId { get; set; }   // Id của notification trong DB
-        public Guid UserId { get; set; }           // User nhận notification
+        public Guid? UserId { get; set; }           // User nhận notification
         public string Title { get; set; }          // Tiêu đề notification
         public string? Body { get; set; }          // Nội dung notification (optional)
         public string? Type { get; set; }          // SYSTEM / BUSINESS / ... (optional)
