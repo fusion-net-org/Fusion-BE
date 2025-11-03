@@ -2,12 +2,6 @@
 using Fusion.Repository.Bases.Page.Company;
 using Fusion.Service.ViewModels.Companies.Requests;
 using Fusion.Service.ViewModels.Companies.Responses;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Fusion.Repository.Entities;
 
 namespace Fusion.Service.IServices
 {
@@ -28,5 +22,7 @@ namespace Fusion.Service.IServices
         Task<CompanyResponse> UpdateCompanyByAdminAsync(Guid companyId, CompanyRequest request, CancellationToken cancellationToken = default);
         Task<CompanyStatusCountsVm> GetCompanyStatusCountsAsync(CancellationToken cancellationToken = default);
         Task<CompanyMonthlyStatsVm> GetCompaniesCreatedByMonthAsync(int year, CancellationToken ct = default);
+        Task<PagedResult<CompanyOfOwnerResponse>> GetAllCompanyOfOwnerAsync(Guid userId, CancellationToken ct = default);
+        Task<PagedResult<CompanyOfUserResponse>> GetAllCompanyOfMemberAsync(Guid userId, CancellationToken ct = default);
     }
 }

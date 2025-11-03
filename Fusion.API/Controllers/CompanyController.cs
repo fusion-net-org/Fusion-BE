@@ -1,16 +1,12 @@
 ﻿using Fusion.API.Auth;
 using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.Company;
-using Fusion.Repository.Bases.Page.User;
 using Fusion.Repository.Bases.Responses;
 using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.IServices;
-using Fusion.Service.Services;
 using Fusion.Service.ViewModels.Companies.Requests;
 using Fusion.Service.ViewModels.Companies.Responses;
-using Fusion.Service.ViewModels.Users.Responses;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -178,7 +174,7 @@ namespace Fusion.API.Controllers
         }
 
         [Authorize(Roles = "Admin")]
-        [HttpDelete("getCompanyStatusCounts")]
+        [HttpGet("getCompanyStatusCounts")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<CompanyStatusCountsVm>))]
         public async Task<IActionResult> GetCompanyStatusCounts(CancellationToken cancellationToken)
@@ -188,6 +184,8 @@ namespace Fusion.API.Controllers
                 data: result,
                 message: "Get compnay with status success."));
         }
+
+
         [Authorize(Roles = "Admin")]
         [HttpGet("stats/created-by-month")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<CompanyMonthlyStatsVm>))]
@@ -198,6 +196,30 @@ namespace Fusion.API.Controllers
             return Ok(ResponseModel<CompanyMonthlyStatsVm>.Ok(
                 data: result,
                 message: $"Companies created per month for {result.Year}"));
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpGet("owner/all-company")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PagedResult<CompanyOfOwnerResponse>>))]
+        public async Task<IActionResult> GetAllCompanyOfOwner([FromQuery] Guid userId, CancellationToken cancellationToken)
+        {
+            var result = await _companyService.GetAllCompanyOfOwnerAsync(userId, cancellationToken);
+
+            return Ok(ResponseModel<PagedResult<CompanyOfOwnerResponse>>.Ok(
+                data: result,
+                message: $"Get company of owner success"));
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpGet("member/all-company")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PagedResult<CompanyOfUserResponse>>))]
+        public async Task<IActionResult> GetAllCompanyOfMember([FromQuery] Guid userId, CancellationToken cancellationToken)
+        {
+            var result = await _companyService.GetAllCompanyOfMemberAsync(userId, cancellationToken);
+
+            return Ok(ResponseModel<PagedResult<CompanyOfUserResponse>>.Ok(
+                data: result,
+                message: $"Get company of member success"));
         }
     }
 }

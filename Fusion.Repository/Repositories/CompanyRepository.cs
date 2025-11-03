@@ -349,5 +349,38 @@ namespace Fusion.Repository.Repositories
                  .AsNoTracking()
                  .CountAsync(cancellationToken);
         }
+
+        public async Task<PagedResult<Company>> GetAllCompanyOfOwnerAsync(Guid userId, CancellationToken ct = default)
+        {
+            var query = _context.Companies
+         .AsNoTracking()
+         .Where(c => c.OwnerUserId == userId);
+            var req = new CompanyPagedSearchRequest
+            {
+                PageNumber = 1,
+                PageSize = int.MaxValue,
+                SortColumn = nameof(Company.Id),
+                SortDescending = false
+            };
+
+            return await query.ToPagedResultAsync(req, ct);
+        }
+
+        public async Task<PagedResult<Company>> GetAllCompanyOfMemberAsync(Guid userId, CancellationToken ct = default)
+        {
+            var query = _context.Companies
+          .AsNoTracking()
+          .Where(c => c.CompanyMembers.Any(m => m.UserId == userId));
+
+            var req = new CompanyPagedSearchRequest
+            {
+                PageNumber = 1,
+                PageSize = int.MaxValue,
+                SortColumn = nameof(Company.Id),
+                SortDescending = false
+            };
+
+            return await query.ToPagedResultAsync(req, ct);
+        }
     }
 }
