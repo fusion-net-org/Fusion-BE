@@ -64,6 +64,26 @@ namespace Fusion.Service.Services
 
         }
 
+        public async Task SendAllNotificationAsync(SendAllNotificationRequest request, CancellationToken cancellationToken = default)
+        {
+
+            var notification = _mapper.Map<Notification>(request);
+
+            var notificationReceive = await _notificationRepository.CreateAdminNotificationAsync(notification,cancellationToken);
+
+            await _fcmService.SendToAllAsync(new FCMNotificationRequest
+            {
+                NotificationId = notificationReceive.Id,
+                Body = request.Body,
+                Title = request.Title,
+                LinkUrlMobile = notificationReceive.LinkUrlMobile,
+                LinkUrlWeb = notificationReceive.LinkUrlWeb,
+                Type = notificationReceive.LinkUrlWeb,
+            }, cancellationToken);
+
+
+        }
+
         public async Task<IEnumerable<NotificationResponse>> GetUserNotificationsAsync(Guid userId, CancellationToken cancellationToken = default)
         {
             var result = await _notificationRepository.GetUserNotificationsAsync(userId, cancellationToken);

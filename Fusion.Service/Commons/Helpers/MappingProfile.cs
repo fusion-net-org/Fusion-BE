@@ -194,6 +194,7 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.LinkUrl, opt => opt.MapFrom(src => src.LinkUrlMobile)) 
             .ForMember(dest => dest.LinkUrlWeb, opt => opt.MapFrom(src => src.LinkUrlWeb));
         CreateMap<SendNotificationRequest, Notification>();
+        CreateMap<SendAllNotificationRequest, Notification>();
 
         //----------------------------     entity: Project ---------------------------------------------
         CreateMap<CreateProjectRequest, Project>()
