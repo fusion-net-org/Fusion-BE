@@ -66,6 +66,25 @@ namespace Fusion.API.Controllers
                 message: "Get paged companies successfully"));
         }
 
+        [HttpGet("admin/paged")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PagedResult<CompanyResponse>>))]
+        public async Task<IActionResult> GetAllCompaniesAdmin([FromQuery] CompanyPagedSearchRequest request, CancellationToken cancellationToken)
+        {
+            var emailClaim = User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email || c.Type == ClaimTypes.Email || c.Type == "email");
+            var email = emailClaim?.Value; if (email == null)
+            {
+                return Unauthorized(ResponseModel<CompanyResponse>.Error(
+                    statusCode: StatusCodes.Status401Unauthorized,
+                    message: "Unauthorized: User identity not found"
+                ));
+            }
+
+            var result = await _companyService.GetPagedCompaniesAdminAsync(email, request, cancellationToken);
+            return Ok(ResponseModel<PagedResult<CompanyResponse>>.Ok(
+                data: result,
+                message: "Get paged companies successfully"));
+        }
+
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(ResponseModel<CompanyResponse>))]
         public async Task<IActionResult> CreateCompany(CompanyRequest request, CancellationToken cancellationToken)
