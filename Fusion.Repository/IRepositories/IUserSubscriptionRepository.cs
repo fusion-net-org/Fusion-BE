@@ -11,4 +11,6 @@ public interface IUserSubscriptionRepository : IGenericRepository<UserSubscripti
     Task DecreaseCompanyQuotaAsync(Guid userId, CancellationToken cancellationToken = default);
     Task DecreaseProjectQuotaAsync(Guid userId, CancellationToken cancellationToken = default);
     Task<PagedResult<UserSubscription>> GetPagedSubscriptionsByUserIdAsync(Guid userId, PagedRequest request, CancellationToken cancellationToken = default);
+    Task<PagedResult<UserSubscription>> GetAllSubscription();
+    Task<int> DeactivateExpiredOrDepletedAsync(DateTime utcNow, CancellationToken ct = default);
 }

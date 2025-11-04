@@ -2,11 +2,7 @@
 using Fusion.Repository.Bases.Page.Project;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Fusion.Repository.ViewModels;
 
 namespace Fusion.Repository.IRepositories
 {
@@ -17,8 +13,7 @@ namespace Fusion.Repository.IRepositories
         Task<Project?> GetProjectDetailAsync(Guid id, CancellationToken ct = default);
         Task<PagedResult<Project>> GetProjectByMemberIdAsync(Guid userId, ProjectSearchRequest req, CancellationToken ct = default);
         Task<PagedResult<Project>> GetProjectByActorIdAsync(Guid userId, ProjectSearchRequest req, CancellationToken ct = default);
-        //Task<PagedResult<Project>> GetProjectByStatusAsync(string status, ProjectSearchRequest req, CancellationToken ct = default);
-        Task<(int Todo, int Cancel, int Finish)> GetCountProjectByStatusAsync(CancellationToken ct = default);
+        Task<List<StatusCountResponse>> GetCountProjectByStatusAsync(CancellationToken ct = default);
         Task<int> GetAllProjectCountAsync(CancellationToken cancellationToken = default);
 
     }

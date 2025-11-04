@@ -10,6 +10,8 @@ using Fusion.Service.ViewModels.Companies.Email;
 using Fusion.Service.ViewModels.Users.Requests;
 using Fusion.Service.ViewModels.Users.Responses;
 using Google.Apis.Auth;
+using Microsoft.Extensions.Configuration;
+using System.Net;
 using System.Security.Cryptography;
 
 namespace Fusion.Service.Services;
@@ -22,9 +24,10 @@ public class AuthenService : IAuthenService
     private readonly IJwtService _jwtService;
     private readonly IMailService _mailService;
     private readonly IUserLogService _userLogService;
+    private readonly IConfiguration _config;
 
     public AuthenService(IUnitOfWork unitOfWork, IUserRepository userRepository,
-        IMapper mapper, IJwtService jwtService, IMailService mailService, IUserLogService userLogService)
+        IMapper mapper, IJwtService jwtService, IMailService mailService, IUserLogService userLogService, IConfiguration configuration)
     {
         _unitOfWork = unitOfWork;
         _userRepository = userRepository;
@@ -32,6 +35,7 @@ public class AuthenService : IAuthenService
         _jwtService = jwtService;
         _mailService = mailService;
         _userLogService = userLogService;
+        _config = configuration;
     }
     public async Task<bool> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken = default)
     {
@@ -53,6 +57,7 @@ public class AuthenService : IAuthenService
         var passwordSalt = hmac.Key;
         var passwordHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(request.Password));
 
+        user.Status = false;
         user.PasswordSalt = passwordSalt;
         user.PasswordHash = passwordHash;
         user.CreateAt = DateTime.UtcNow.AddHours(7);
@@ -60,7 +65,77 @@ public class AuthenService : IAuthenService
         await _unitOfWork.Repository<User>().AddAsync(user, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+        try
+        {
+            await SendVerificationEmailAsync(user.Id, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            throw;
+        }
         return true;
+    }
+    public async Task<bool> SendVerificationEmailAsync(Guid userId, CancellationToken ct = default)
+    {
+        // Get user (tracking to update)
+        var user = await _userRepository.GetUserByIdAsync(userId, ct);
+        if (user == null)
+            throw CustomExceptionFactory.CreateNotFoundError("Not found user.");
+
+        var rawToken = GenerateUrlSafeToken(32);
+        user.ResetToken = rawToken;                         
+
+        await _unitOfWork.SaveChangesAsync(ct);
+
+        // Build verify URL cho FE: FE sẽ đọc ?vtoken=... rồi gọi API /auth/verify
+        var origin = "https://localhost:5173";
+
+        var verifyUrl = $"{origin}/?vtoken={Uri.EscapeDataString(rawToken)}";
+
+        var displayName = WebUtility.HtmlEncode(user.UserName ?? user.Email ?? "there");
+        var subject = "[FUSION] Confirm Account";
+        var html = $@"
+<!doctype html>
+<html>
+  <body style='font-family:Inter,Arial,sans-serif;background:#f7f9fb;padding:24px;color:#0f172a'>
+    <div style='max-width:560px;margin:auto;background:#fff;border-radius:12px;padding:24px;box-shadow:0 10px 30px rgba(46,139,255,0.15)'>
+      <h2 style='margin:0 0 12px;color:#1e293b'>Confirm your account</h2>
+      <p>Hello {displayName},</p>
+      <p>Click the button below to verify your email and activate your FUSION account:</p>
+      <p style='margin:20px 0'>
+        <a href='{verifyUrl}' style='background:#2E8BFF;color:white;padding:12px 18px;border-radius:10px;text-decoration:none;display:inline-block'>
+          Verify now
+        </a>
+      </p>
+      <p>If the button doesn't work, paste the link into your browser: <br/><a href='{verifyUrl}'>{verifyUrl}</a></p>
+      <p style='margin-top:24px;color:#475569;font-size:12px'>Link will expire after <b>24 hours</b>.</p>
+    </div>
+  </body>
+</html>";
+
+        try
+        {
+            // Nếu IMailService dùng MailRequest:
+            var mail = new MailRequest
+            {
+                ToEmail = user.Email ?? "",
+                Subject = subject,
+                Body = html,
+                Attachments = null
+            };
+            await _mailService.SendEmailAsync(mail);  
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            return false;
+        }
+    }
+    public async Task<bool> EmailVerificationAsync(string token, CancellationToken cancellationToken = default)
+    {
+        var result = await _userRepository.EmailVerificationAsync(token, cancellationToken);
+        return result;
     }
     public async Task<LoginResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken)
     {
@@ -74,6 +149,8 @@ public class AuthenService : IAuthenService
         if (user == null)
             throw CustomExceptionFactory.
                 CreateBadRequestError(ResponseMessages.INVALID_INPUT.FormatMessage("Email incorrect!"));
+        if (user.Status == false)
+            throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.BAD_REQUEST,"Please verify gmail");
 
         //3. vertify password
         using var hmac = new HMACSHA512(user.PasswordSalt);
@@ -170,7 +247,6 @@ public class AuthenService : IAuthenService
             //throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.INVALID_INPUT.FormatMessage("Google token invalid"));
         }
     }
-
     public async Task<bool> RequestPasswordResetAsync(string email, string device, CancellationToken cancellationToken)
     {
         var resetLink = "";
@@ -216,7 +292,6 @@ public class AuthenService : IAuthenService
         await _userLogService.CreateLog(userLog);
         return true;
     }
-
     public async Task<bool> ResetPasswordAsync(string resetToken, string newPassword, CancellationToken cancellationToken)
     {
         var user = await _userRepository.GetUserByResetTokenAsync(resetToken, cancellationToken);
@@ -238,6 +313,12 @@ public class AuthenService : IAuthenService
         };
         await _userLogService.CreateLog(userLog);
         return true;
+    }
+    private static string GenerateUrlSafeToken(int bytes = 32)
+    {
+        var data = new byte[bytes];
+        System.Security.Cryptography.RandomNumberGenerator.Fill(data);
+        return Convert.ToBase64String(data).TrimEnd('=').Replace('+', '-').Replace('/', '_');
     }
 
 }

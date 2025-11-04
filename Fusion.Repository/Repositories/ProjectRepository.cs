@@ -4,6 +4,7 @@ using Fusion.Repository.Bases.Page.Project;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.IRepositories;
+using Fusion.Repository.ViewModels;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fusion.Repository.Repositories
@@ -35,7 +36,6 @@ namespace Fusion.Repository.Repositories
                 throw;
             }
         }
-
         public async Task<PagedResult<Project>> GetAllProjectAsync(ProjectSearchRequest req, CancellationToken ct = default)
         {
             req ??= new ProjectSearchRequest();
@@ -86,23 +86,21 @@ namespace Fusion.Repository.Repositories
             return await q.ToPagedResultAsync(req, ct);
 
         }
-
-        public async Task<(int Todo, int Cancel, int Finish)> GetCountProjectByStatusAsync(CancellationToken ct = default)
+        public async Task<List<StatusCountResponse>> GetCountProjectByStatusAsync(CancellationToken ct = default)
         {
-            var row = await _context.Projects
-                 .AsNoTracking()
-                 .GroupBy(_ => 1)
-                 .Select(g => new
-                 {
-                     Todo = g.Count(p => (p.Status ?? "").Trim().ToLower() == "todo"),
-                     Cancel = g.Count(p => (p.Status ?? "").Trim().ToLower() == "cancel"),
-                     Finish = g.Count(p => (p.Status ?? "").Trim().ToLower() == "finish"),
-                 })
-                 .FirstOrDefaultAsync(ct);
+            var rows = await _context.Projects
+                        .AsNoTracking()
+                        .GroupBy(p => (p.Status ?? "").Trim().ToLower())
+                        .Select(g => new StatusCountResponse
+                         {
+                               Status = string.IsNullOrWhiteSpace(g.Key) ? "(none)" : g.Key,
+                               Count = g.Count()
+                         })
+                         .OrderByDescending(x => x.Count)  
+                         .ToListAsync(ct);
 
-            return (row?.Todo ?? 0, row?.Cancel ?? 0, row?.Finish ?? 0);
+            return rows;
         }
-
         public async Task<PagedResult<Project>> GetProjectByMemberIdAsync(Guid userId, ProjectSearchRequest req, CancellationToken ct = default)
         {
             req ??= new ProjectSearchRequest();

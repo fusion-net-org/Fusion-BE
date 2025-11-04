@@ -5,6 +5,7 @@ using Fusion.API.Auth;
 using Fusion.API.Middlewares;
 using Fusion.Repository;
 using Fusion.Service;
+using Fusion.Service.Commons.Background;
 using Fusion.Service.Commons.BaseResponses;
 using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.Builder.Extensions;
@@ -63,6 +64,7 @@ if (!isCi)
 builder.Services.ConfigureRepositoryLayerService(builder.Configuration);
 builder.Services.ConfigureServiceLayerService(builder.Configuration);
 builder.Services.ConfigureApiLayerServices(builder.Configuration);
+builder.Services.AddHostedService<SchedulerHostedService>();
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.Configure<MailSettings>(builder.Configuration.GetSection("MailSettings"));

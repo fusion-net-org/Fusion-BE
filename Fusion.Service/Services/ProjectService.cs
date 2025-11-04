@@ -5,6 +5,7 @@ using Fusion.Repository.Bases.Page.Project;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.IRepositories;
+using Fusion.Repository.ViewModels;
 using Fusion.Service.Commons.Helpers;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.Project.Requests;
@@ -86,9 +87,10 @@ namespace Fusion.Service.Services
             //return result.Map(p => _mapper.Map<ProjectListResponse>(p));
             throw new NotImplementedException();
         }
-        public Task<(int Todo, int Cancel, int Finish)> GetCountProjectByStatusAsync(CancellationToken ct = default)
+        public async Task<List<StatusCountResponse>> GetCountProjectByStatusAsync(CancellationToken ct = default)
         {
-            throw new NotImplementedException();
+            var rows = await _repo.GetCountProjectByStatusAsync(ct);
+            return rows ?? new List<StatusCountResponse>();
         }
         public async Task<PagedResult<AllProjectOfMememberResponse>> GetProjectByMemberIdAsync(Guid userId, ProjectSearchRequest req, CancellationToken ct = default)
         {
@@ -129,23 +131,15 @@ namespace Fusion.Service.Services
         {
             var projectsPaged = await _repo.GetProjectByActorIdAsync(userId, req, ct);
 
-            if (projectsPaged == null || !projectsPaged.Items.Any())
-                throw CustomExceptionFactory.CreateNotFoundError("No projects found for this member in the specified company.");
+            if (projectsPaged == null || projectsPaged.Items == null || projectsPaged.Items.Count == 0)
+                throw CustomExceptionFactory.CreateNotFoundError("No projects created by this user.");
 
-            var items = projectsPaged.Items.Select(p =>
+            var items = projectsPaged.Items.Select(p => new AllProjectOfMememberResponse
             {
-                var me = p.ProjectMembers?.FirstOrDefault(pm => pm.UserId == userId);
-
-
-                var isViewAll = me?.IsViewAll ?? false;
-
-                return new AllProjectOfMememberResponse
-                {
-                    Id = p.Id,
-                    Name = p.Name ?? string.Empty,
-                    Code = p.Code ?? string.Empty,
-                    Status = p.Status ?? string.Empty,
-                };
+                Id = p.Id,
+                Name = p.Name ?? string.Empty,
+                Code = p.Code ?? string.Empty,
+                Status = p.Status ?? string.Empty
             }).ToList();
 
             return new PagedResult<AllProjectOfMememberResponse>
@@ -155,8 +149,6 @@ namespace Fusion.Service.Services
                 PageNumber = projectsPaged.PageNumber,
                 PageSize = projectsPaged.PageSize
             };
-
-
         }
         public Task<ProjectDetailResponse> GetProjectDetailAsync(Guid id, CancellationToken ct = default)
         {

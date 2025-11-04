@@ -1,7 +1,10 @@
 ﻿using Fusion.Repository.IRepositories;
 using Fusion.Repository.Repositories;
+using Fusion.Service.Commons.Background;
+using Fusion.Service.Commons.Background.Locks;
 using Fusion.Service.Commons.Helpers;
 using Fusion.Service.IServices;
+using Fusion.Service.Jobs;
 using Fusion.Service.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -97,6 +100,24 @@ namespace Fusion.Service
                 return new PayOS(clientId, apiKey, checksumKey);
             });
             services.AddScoped<IPayOSService, PayOSService>();
+
+            //background
+            services.AddSingleton<IJobLock, SqlServerJobLock>();
+
+            services.AddTransient<CheckUserSubscriptionJob>();
+            services.Configure<JobRegistryOptions>(opt =>
+            {
+                opt.TimeZone = "Asia/Ho_Chi_Minh";
+                opt.Jobs.Add(new JobRegistration
+                {
+                    Key = "subscription.check",
+                    JobType = typeof(CheckUserSubscriptionJob),
+                    Schedule = new IntervalSchedule(TimeSpan.FromMinutes(30), RunOnStartup: true),
+                    SingleInstance = true,
+                    Enabled = true
+                });
+            });
+
             return services;
         }
      }

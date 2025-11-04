@@ -84,7 +84,7 @@ namespace Fusion.Repository
         public static void AddDatabase(this IServiceCollection services, IConfiguration configuration)
         {
 
-            services.AddDbContext<FusionDbContext>(options =>
+            services.AddDbContextFactory<FusionDbContext>(options =>
                     options.UseSqlServer(
                         configuration.GetConnectionString("DefaultConnection"),
                         sqlOptions => sqlOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)

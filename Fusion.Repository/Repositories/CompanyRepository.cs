@@ -157,8 +157,7 @@ namespace Fusion.Repository.Repositories
             return await query.ToPagedResultAsync(request, cancellationToken);
         }
 
-        public async Task<(int Active, int Inactive)> GetCompanyStatusCountsAsync(
-     CancellationToken cancellationToken = default)
+        public async Task<(int Active, int Inactive)> GetCompanyStatusCountsAsync(CancellationToken cancellationToken = default)
         {
             var row = await _context.Companies
                 .AsNoTracking()
