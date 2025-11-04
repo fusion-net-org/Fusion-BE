@@ -4,8 +4,15 @@ using Fusion.Service.ViewModels.Project.Responses;
 
 namespace Fusion.Service.IServices
 {
-    public interface IProjectService 
+    public interface IProjectService
     {
-        Task<ProjectsResponse> CreateProjectAsync(CreateProjectRequest request, CancellationToken cancellationToken = default);
+        Task<ProjectDetailResponse> CreateProjectAsync(
+            Guid companyId,
+            ProjectCreateRequest request,
+            Guid actorUserId,
+            CancellationToken ct = default);
+        Task<ProjectListResult> GetProjectsForCompanyAsync(
+        Guid companyId, ProjectListSearchRequest req, CancellationToken ct = default);
     }
+   
 }

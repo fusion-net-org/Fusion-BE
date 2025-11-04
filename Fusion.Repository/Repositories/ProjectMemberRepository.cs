@@ -88,6 +88,26 @@ namespace Fusion.Repository.Repositories
 
             return await query.ToPagedResultAsync(request, cancellationToken);
         }
+        public async Task AddIfNotExistsAsync(Guid projectId, Guid userId, bool isPartner, bool isViewAll, CancellationToken ct = default)
+        {
+            var exists = await _context.ProjectMembers.AnyAsync(pm => pm.ProjectId == projectId && pm.UserId == userId, ct);
+            if (exists) return;
 
+            await _context.ProjectMembers.AddAsync(new ProjectMember
+            {
+                ProjectId = projectId,
+                UserId = userId,
+                IsPartner = isPartner,
+                IsViewAll = isViewAll,
+                JoinedAt = DateTime.UtcNow
+            }, ct);
+        }
+
+        public Task<bool> UserBelongsToCompanyAsync(Guid userId, Guid companyId, CancellationToken ct = default)
+            => _context.CompanyMembers.AnyAsync(cm =>
+                    cm.CompanyId == companyId &&
+                    cm.UserId == userId &&
+                    cm.Status == "Active" &&
+                    !(cm.IsDeleted ?? false), ct);
     }
 }
