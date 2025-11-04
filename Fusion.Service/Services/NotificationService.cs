@@ -42,7 +42,7 @@ namespace Fusion.Service.Services
 
             if (!Enum.TryParse<NotificationTypeEnum>(request.NotificationType, true, out var typeEnum))
             {
-                throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.INVALID_INPUT, $"Invalid type: {request.NotificationType}");
+                throw CustomExceptionFactory.CreateBadRequestError($"Invalid type: {request.NotificationType}");
             }
 
             var notification = _mapper.Map<Notification>(request);
@@ -77,7 +77,7 @@ namespace Fusion.Service.Services
                 Title = request.Title,
                 LinkUrlMobile = notificationReceive.LinkUrlMobile,
                 LinkUrlWeb = notificationReceive.LinkUrlWeb,
-                Type = notificationReceive.LinkUrlWeb,
+                Type = notificationReceive.NotificationType,
             }, cancellationToken);
 
 
