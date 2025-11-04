@@ -17,6 +17,7 @@ using Fusion.Service.ViewModels.Task.Response;
 using Fusion.Service.ViewModels.Users.Responses;
 using Microsoft.EntityFrameworkCore;
 using Org.BouncyCastle.Asn1;
+using System.ComponentModel.Design;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace Fusion.Service.Services
@@ -282,6 +283,29 @@ namespace Fusion.Service.Services
             var friendships = company.CompanyFriendshipCompanyAs
                 .Concat(company.CompanyFriendshipCompanyBs)
                 .ToList();
+
+            var partners = new List<PartnerResponse>();
+            var addedCompanyIds = new HashSet<Guid>();
+
+            foreach (var friendship in friendships)
+            {
+                var partnerCompany = friendship.CompanyAId == companyId ? friendship.CompanyB : friendship.CompanyA;
+
+                if (partnerCompany != null && partnerCompany.Id != companyId && addedCompanyIds.Add(partnerCompany.Id))
+                {
+                    partners.Add(new PartnerResponse
+                    {
+                        CompanyId = partnerCompany.Id,
+                        Name = partnerCompany.Name,
+                        OwnerUserName = partnerCompany.OwnerUser?.UserName,
+                        TaxCode = partnerCompany.TaxCode,
+                        RespondedAt = friendship.RespondedAt,
+                        CreatedAt = friendship.CreatedAt,
+                        TotalProject = partnerCompany.ProjectCompanies.Count + partnerCompany.ProjectCompanyHireds.Count,
+                    });
+                }
+            }
+
             if (company == null)
                 throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Company"));
 
@@ -290,6 +314,7 @@ namespace Fusion.Service.Services
             result.TotalApproved = friendships.Count(f => f.Status == "Active");
             result.TotalWaitForApprove = friendships.Count(f => f.Status == "Pending");
             result.TotalPartners = friendships.Count();
+            result.ListPartners = partners;
 
             return result;
         }
