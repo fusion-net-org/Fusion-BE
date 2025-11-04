@@ -1,11 +1,21 @@
 ﻿
+using Fusion.Repository.Bases.Page;
+using Fusion.Repository.Bases.Page.Project;
+using Fusion.Repository.ViewModels;
 using Fusion.Service.ViewModels.Project.Requests;
 using Fusion.Service.ViewModels.Project.Responses;
+using Fusion.Service.ViewModels.ProjectMembers.Responses;
 
 namespace Fusion.Service.IServices
 {
     public interface IProjectService
     {
+        Task<PagedResult<ProjectListResponse>> GetAllProjectAsync(ProjectSearchRequest req, CancellationToken ct = default);
+        Task<ProjectDetailResponse> GetProjectDetailAsync(Guid id, CancellationToken ct = default); 
+        Task<PagedResult<AllProjectOfMememberResponse>> GetProjectByMemberIdAsync(Guid userId, ProjectSearchRequest req, CancellationToken ct = default);
+        Task<PagedResult<AllProjectOfMememberResponse>> GetProjectByActorIdAsync(Guid userId, ProjectSearchRequest req, CancellationToken ct = default);
+        Task<List<StatusCountResponse>> GetCountProjectByStatusAsync(CancellationToken ct = default);
+
         Task<ProjectDetailResponse> CreateProjectAsync(
             Guid companyId,
             ProjectCreateRequest request,

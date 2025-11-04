@@ -34,5 +34,36 @@ namespace Fusion.Service.ViewModels.Project.Responses
 
         // ---- Sprint ----
         public List<SprintDto> Sprints { get; set; } = new();
+        public List<ProjectTaskDto> Tasks { get; set; } = new();
+    }
+
+    public class SprintDto
+    {
+        public Guid Id { get; set; }
+        public string? Name { get; set; }
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
+        public string? Color { get; set; }
+        public string? Goal { get; set; }
+        public string? Status { get; set; }
+        public bool IsDeleted { get; set; }
+    }
+
+    public class ProjectTaskDto
+    {
+        public Guid Id { get; set; }
+        public Guid? SprintId { get; set; }
+        public string? Title { get; set; }
+        public string? Type { get; set; }
+        public string? Priority { get; set; }
+        public string? Status { get; set; }
+        public bool IsBacklog { get; set; }
+        public int? Point { get; set; }
+        public DateTime? DueDate { get; set; }
+        public bool IsDeleted { get; set; }
+        public string? Img { get; set; }
+
+        public int? OrderInSprint { get; set; }
+        public string? Source { get; set; }
     }
 }

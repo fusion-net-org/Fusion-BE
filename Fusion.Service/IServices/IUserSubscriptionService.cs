@@ -12,4 +12,5 @@ public interface IUserSubscriptionService
     Task<PagedResult<UserSubscriptionResponse>> GetAllUserSubscrptionByUserIdAsync(PagedRequest request, CancellationToken cancellationToken = default);
     Task DecreaseCompanyQuotaAsync(Guid userId, CancellationToken cancellationToken = default);
     Task DecreaseProjectQuotaAsync(Guid userId, CancellationToken cancellationToken = default);
+    Task<int> DeactiveExpiredOrDepleteAsync(CancellationToken ct = default);
 }

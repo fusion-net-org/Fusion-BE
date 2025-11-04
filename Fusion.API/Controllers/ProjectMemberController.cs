@@ -41,5 +41,23 @@ namespace Fusion.API.Controllers
                 message: ResponseMessageHelper.FormatMessage(ResponseMessages.SUCCESS, "Successfully retrieved member's projects")
             ));
         }
-    }
+
+        [HttpGet("{memberId:guid}")]
+        public async Task<IActionResult> GetProjectsByMemberId(
+           Guid memberId,
+           [FromQuery] ProjectMemberSearchRequest request,
+           CancellationToken cancellationToken)
+        {
+            var result = await _projectMemberService.GetAllProjectsByMemberIdAsync(
+                memberId,
+                request,
+                cancellationToken
+            );
+
+            return Ok(ResponseModel<PagedResult<AllProjectOfMememberResponse>>.Ok(
+                data: result,
+                message: ResponseMessageHelper.FormatMessage(ResponseMessages.SUCCESS, "Successfully retrieved member's projects")
+            ));
+        }
+     }
 }

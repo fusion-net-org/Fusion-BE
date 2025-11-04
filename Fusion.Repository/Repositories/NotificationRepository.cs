@@ -41,9 +41,29 @@ namespace Fusion.Repository.Repositories
                 notification.IsRead = false;
             }
 
+            notification.NotificationType = type;
             notification.CreateAt = DateTime.UtcNow.AddHours(7);
             notification.LinkUrlWeb = linkUrlWeb;
             notification.LinkUrlMobile = linkUrlMobile;
+
+            _context.Notifications.Add(notification);
+            await _context.SaveChangesAsync();
+
+            return notification;
+        }
+
+        public async Task<Notification> CreateAdminNotificationAsync(Notification notification, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(notification.Title))
+                throw CustomExceptionFactory.CreateBadRequestError("Notification Title does not exist");
+       
+
+            notification.IsRead = true;
+            notification.NotificationType = NotificationTypeEnum.INFO.ToString();
+            notification.ReadAt = DateTime.UtcNow.AddHours(7);
+            notification.CreateAt = DateTime.UtcNow.AddHours(7);
+            notification.LinkUrlWeb = null;
+            notification.LinkUrlMobile = null;
 
             _context.Notifications.Add(notification);
             await _context.SaveChangesAsync();

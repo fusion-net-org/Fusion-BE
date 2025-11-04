@@ -28,15 +28,7 @@ namespace Fusion.Service.ViewModels.Project.Requests
         // Các user (thuộc công ty chính hoặc công ty thuê nếu IsHired)
         public List<Guid> MemberIds { get; set; } = new();
     }
-    public class SprintDto
-    {
-        public Guid Id { get; set; }
-        public string? Name { get; set; }
-        public DateTime? StartDate { get; set; }   // map thẳng kiểu DateTime? để tránh mismatch
-        public DateTime? EndDate { get; set; }
-        public int? Status { get; set; }           // nếu Sprint.Status đang là int
-        public int? TotalTask { get; set; }        // optional, có thể null nếu chưa tính
-    }
+   
 
    
 }

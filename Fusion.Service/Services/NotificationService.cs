@@ -14,7 +14,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Fusion.Service.Services
 {
@@ -43,7 +42,7 @@ namespace Fusion.Service.Services
 
             if (!Enum.TryParse<NotificationTypeEnum>(request.NotificationType, true, out var typeEnum))
             {
-                throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.INVALID_INPUT, $"Invalid type: {request.NotificationType}");
+                throw CustomExceptionFactory.CreateBadRequestError($"Invalid type: {request.NotificationType}");
             }
 
             var notification = _mapper.Map<Notification>(request);
@@ -59,6 +58,26 @@ namespace Fusion.Service.Services
                 LinkUrlWeb = linkUrlWeb,
                 Type = request.NotificationType,
                 UserId = request.UserId,
+            }, cancellationToken);
+
+
+        }
+
+        public async Task SendAllNotificationAsync(SendAllNotificationRequest request, CancellationToken cancellationToken = default)
+        {
+
+            var notification = _mapper.Map<Notification>(request);
+
+            var notificationReceive = await _notificationRepository.CreateAdminNotificationAsync(notification,cancellationToken);
+
+            await _fcmService.SendToAllAsync(new FCMNotificationRequest
+            {
+                NotificationId = notificationReceive.Id,
+                Body = request.Body,
+                Title = request.Title,
+                LinkUrlMobile = notificationReceive.LinkUrlMobile,
+                LinkUrlWeb = notificationReceive.LinkUrlWeb,
+                Type = notificationReceive.NotificationType,
             }, cancellationToken);
 
 

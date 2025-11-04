@@ -7,8 +7,6 @@ using Fusion.Repository;
 using Fusion.Service;
 using Fusion.Service.Commons.BaseResponses;
 using Google.Apis.Auth.OAuth2;
-using Microsoft.AspNetCore.Builder.Extensions;
-using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using System.Net;
 

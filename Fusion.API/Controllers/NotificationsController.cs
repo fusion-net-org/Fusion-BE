@@ -76,5 +76,17 @@ namespace Fusion.API.Controllers
                 message: "Send Notification success"
                 ));
         }
+
+        [HttpPost("send/all")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<string>))]
+        public async Task<IActionResult> SendAllNotification([FromBody] SendAllNotificationRequest request)
+        {
+            await _notificationService.SendAllNotificationAsync(request);
+
+            return Ok(ResponseModel<string>.Ok(
+                data: null,
+                message: "Send Notification success"
+                ));
+        }
     }
 }

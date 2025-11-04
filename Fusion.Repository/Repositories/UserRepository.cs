@@ -1,6 +1,8 @@
 ﻿
+using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.User;
+using Fusion.Repository.Bases.Responses;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.IRepositories;
@@ -110,9 +112,7 @@ namespace Fusion.Repository.Repositories
                 .AsNoTracking()
                 .CountAsync(cancellationToken);
         }
-
-        public async Task<(int False, int True)> GetCountUserByStatusAsync(
-            CancellationToken cancellationToken = default)
+        public async Task<(int False, int True)> GetCountUserByStatusAsync(CancellationToken cancellationToken = default)
         {
             var row = await _context.Users
                 .AsNoTracking()
@@ -125,6 +125,26 @@ namespace Fusion.Repository.Repositories
                 .FirstOrDefaultAsync(cancellationToken);
 
             return (row?.False ?? 0, row?.True ?? 0);
+        }
+
+        public async Task<bool> EmailVerificationAsync(string token, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(token))
+                throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.INVALID_INPUT);
+
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.ResetToken == token, cancellationToken);
+            if(user == null)
+               throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Token"));
+
+            if (user.Status)
+                return true;
+
+            user.Status = true;                       
+            user.UpdateAt = DateTime.UtcNow.AddHours(7);
+            user.ResetToken = null;
+
+            await _context.SaveChangesAsync(cancellationToken);
+            return true;
         }
     }
 }

@@ -2,12 +2,6 @@
 using Fusion.Repository.Bases.Page.Company;
 using Fusion.Service.ViewModels.Companies.Requests;
 using Fusion.Service.ViewModels.Companies.Responses;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Fusion.Repository.Entities;
 
 namespace Fusion.Service.IServices
 {
@@ -18,6 +12,7 @@ namespace Fusion.Service.IServices
         Task<Guid?> GetCompanyIdByUserId(Guid userId);
         Task<PagedResult<CompanyResponse>> GetPagedCompaniesAsync(string userMail, CompanyPagedSearchRequest request, CancellationToken cancellationToken = default);
         Task<PagedResult<CompanyResponseVersion2>> GetAllCompaniesAsync(string userMail, CompanyPagedSearchRequestVersion2 request, Guid? selectedCompanyId, CancellationToken cancellationToken = default);
+        Task<PagedResult<CompanyResponse>> GetPagedCompaniesAdminAsync(string adminEmail, CompanyPagedSearchRequest request, CancellationToken cancellationToken = default);
         Task<CompanyResponse> CreateCompanyAsync(CompanyRequest request, string Email, CancellationToken cancellationToken = default);
         Task<CompanyResponse> GetCompanyByIdAsync(Guid companyId, CancellationToken cancellationToken = default);
         Task<CompanyResponse> UpdateCompanyAsync(Guid companyId, CompanyRequest request, string Email, CancellationToken cancellationToken = default);
@@ -28,5 +23,7 @@ namespace Fusion.Service.IServices
         Task<CompanyResponse> UpdateCompanyByAdminAsync(Guid companyId, CompanyRequest request, CancellationToken cancellationToken = default);
         Task<CompanyStatusCountsVm> GetCompanyStatusCountsAsync(CancellationToken cancellationToken = default);
         Task<CompanyMonthlyStatsVm> GetCompaniesCreatedByMonthAsync(int year, CancellationToken ct = default);
+        Task<PagedResult<CompanyOfOwnerResponse>> GetAllCompanyOfOwnerAsync(Guid userId, CancellationToken ct = default);
+        Task<PagedResult<CompanyOfUserResponse>> GetAllCompanyOfMemberAsync(Guid userId, CancellationToken ct = default);
     }
 }

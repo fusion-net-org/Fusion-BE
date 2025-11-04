@@ -1,4 +1,5 @@
 ﻿
+using System.ComponentModel.Design;
 using AutoMapper;
 using FluentValidation;
 using Fusion.Repository.Bases.Exceptions;
@@ -11,11 +12,13 @@ using Fusion.Service.Commons.Helpers;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.Companies.Requests;
 using Fusion.Service.ViewModels.Companies.Responses;
+using Fusion.Service.ViewModels.Notifications.Requests;
 using Fusion.Service.ViewModels.Project.Responses;
 using Fusion.Service.ViewModels.Sprint.Responses;
 using Fusion.Service.ViewModels.Task.Response;
 using Fusion.Service.ViewModels.Users.Responses;
 using Microsoft.EntityFrameworkCore;
+using Org.BouncyCastle.Asn1;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace Fusion.Service.Services
@@ -32,10 +35,11 @@ namespace Fusion.Service.Services
         private readonly IMailService _mailService;
         private readonly ICompanyActivityService _logService;
         private readonly ICurrentService _currentService;
+        private readonly INotificationService _notificationService;
 
         public CompanyService(IMapper mapper, ICompanyRepository companyRepository, ICloudinaryService cloudinaryService
             , IUserRepository userRepository, ICompanyMemberRepository companyMemberRepository, IValidator<CompanyRequest> validator, ICompanyFriendshipRepository companyFriendshipRepository,
-            IMailService mailService, ICompanyActivityService logService, ICurrentService currentService)
+            IMailService mailService, ICompanyActivityService logService, ICurrentService currentService, INotificationService notificationService)
         {
             _mapper = mapper;
             _companyRepository = companyRepository;
@@ -47,6 +51,7 @@ namespace Fusion.Service.Services
             _mailService = mailService;
             _logService = logService;
             _currentService = currentService;
+            _notificationService = notificationService;
         }
 
         public async Task<CompanyResponse> CreateCompanyAsync(CompanyRequest request, string Email, CancellationToken cancellationToken = default)
@@ -87,6 +92,18 @@ namespace Fusion.Service.Services
             if (newCompany == null)
                 throw CustomExceptionFactory.CreateInternalServerError(ResponseMessages.INTERNAL_SERVER_ERROR.FormatMessage("Add Company fail"));
 
+            //await _notificationService.CreateNotificationAsync(new SendNotificationRequest
+            //{
+            //    UserId = user.Id,
+            //    Title = $"Công ty {newCompany.Name} đã được tạo thành công!",
+            //    Body = $"Bạn vừa tạo công ty mới với mã số thuế {newCompany.TaxCode}. Bạn có thể bắt đầu quản lý ngay.",
+            //    LinkKey = "COMPANY_DETAIL",
+            //    IdLink = newCompany.Id,
+            //    Event = "CompanyCreated",
+            //    NotificationType = "Info",
+            //}, cancellationToken);
+
+
             var newMember = await _companyMemberRepository.AddCompanyMemberAsync(new CompanyMember
             {
                 CompanyId = newCompany.Id,
@@ -112,7 +129,6 @@ namespace Fusion.Service.Services
             return _mapper.Map<CompanyResponse>(newCompany);
 
         }
-
         public async Task<PagedResult<CompanyResponse>> GetPagedCompaniesAsync(string userMail, CompanyPagedSearchRequest request, CancellationToken cancellationToken = default)
         {
             if (request == null)
@@ -148,11 +164,12 @@ namespace Fusion.Service.Services
             }
             return list;
         }
+
         public async Task<PagedResult<CompanyResponseVersion2>> GetAllCompaniesAsync(
-    string userMail,
-    CompanyPagedSearchRequestVersion2 request,
-    Guid? selectedCompanyId = null,
-    CancellationToken cancellationToken = default)
+                                                                                    string userMail,
+                                                                                    CompanyPagedSearchRequestVersion2 request,
+                                                                                    Guid? selectedCompanyId = null,
+                                                                                    CancellationToken cancellationToken = default)
         {
             var currentUser = await _userRepository.GetUserByEmailAsync(userMail);
             if (currentUser == null)
@@ -234,11 +251,45 @@ namespace Fusion.Service.Services
             return list;
         }
 
+        public async Task<PagedResult<CompanyResponse>> GetPagedCompaniesAdminAsync(string adminEmail, CompanyPagedSearchRequest request, CancellationToken cancellationToken = default)
+        {
+            if (request == null)
+                throw CustomExceptionFactory.CreateBadRequestError(
+                    ResponseMessages.INVALID_INPUT);
+
+            var result = await _companyRepository.GetPagedCompaniesAdminAsync(adminEmail, request, cancellationToken);
+
+            if (result == null || result.Items.Count == 0)
+                throw CustomExceptionFactory.CreateNotFoundError(
+                    ResponseMessages.NOT_FOUND.FormatMessage("Companies"));
+
+            var list = new PagedResult<CompanyResponse>
+            {
+                Items = _mapper.Map<List<CompanyResponse>>(result.Items),
+                TotalCount = result.TotalCount,
+                PageNumber = result.PageNumber,
+                PageSize = result.PageSize
+            };
+
+            foreach (var item in list.Items)
+            {
+                var company = result.Items.FirstOrDefault(c => c.Id == item.Id);
+                if (company == null) continue;
+
+                var friendships = company.CompanyFriendshipCompanyAs
+                    .Concat(company.CompanyFriendshipCompanyBs)
+                    .ToList();
+
+                item.TotalApproved = friendships.Count(f => f.Status == "Active");
+                item.TotalWaitForApprove = friendships.Count(f => f.Status == "Pending");
+                item.TotalPartners = friendships.Count();
+            }
+            return list;
+        }
         public async Task<Guid?> GetCompanyIdByUserId(Guid userId)
         {
             return await _companyRepository.GetCompanyIdByUserId(userId);
         }
-
         public async Task<CompanyResponse> GetCompanyByIdAsync(Guid companyId, CancellationToken cancellationToken = default)
         {
             var company = await _companyRepository.GetCompanyByIdAsync(companyId);
@@ -247,6 +298,29 @@ namespace Fusion.Service.Services
             var friendships = company.CompanyFriendshipCompanyAs
                 .Concat(company.CompanyFriendshipCompanyBs)
                 .ToList();
+
+            var partners = new List<PartnerResponse>();
+            var addedCompanyIds = new HashSet<Guid>();
+
+            foreach (var friendship in friendships)
+            {
+                var partnerCompany = friendship.CompanyAId == companyId ? friendship.CompanyB : friendship.CompanyA;
+
+                if (partnerCompany != null && partnerCompany.Id != companyId && addedCompanyIds.Add(partnerCompany.Id))
+                {
+                    partners.Add(new PartnerResponse
+                    {
+                        CompanyId = partnerCompany.Id,
+                        Name = partnerCompany.Name,
+                        OwnerUserName = partnerCompany.OwnerUser?.UserName,
+                        TaxCode = partnerCompany.TaxCode,
+                        RespondedAt = friendship.RespondedAt,
+                        CreatedAt = friendship.CreatedAt,
+                        TotalProject = partnerCompany.ProjectCompanies.Count + partnerCompany.ProjectCompanyHireds.Count,
+                    });
+                }
+            }
+
             if (company == null)
                 throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Company"));
 
@@ -255,15 +329,14 @@ namespace Fusion.Service.Services
             result.TotalApproved = friendships.Count(f => f.Status == "Active");
             result.TotalWaitForApprove = friendships.Count(f => f.Status == "Pending");
             result.TotalPartners = friendships.Count();
+            result.ListPartners = partners;
 
             return result;
         }
-
         public async Task<string> GetCompanyNameByGuid(Guid company)
         {
             return await _companyRepository.GetCompanyNameByGuid(company);
         }
-
         public async Task<CompanyResponse> UpdateCompanyAsync(Guid companyId, CompanyRequest request, string Email, CancellationToken cancellationToken = default)
         {
             if (request == null)
@@ -340,12 +413,10 @@ namespace Fusion.Service.Services
             await _logService.CreateLog(log, cancellationToken);
             return _mapper.Map<CompanyResponse>(result);
         }
-
         public async Task<string> GetMailCompanyByGuid(Guid company)
         {
             return await _companyRepository.GetMailCompanyByGuid(company);
         }
-
         public async Task<bool> DeleteCompanyAsync(Guid companyId, string Email, CancellationToken cancellationToken = default)
         {
             var user = await _userRepository.GetUserByEmailAsync(Email, cancellationToken);
@@ -374,7 +445,6 @@ namespace Fusion.Service.Services
             await _logService.CreateLog(log, cancellationToken);
             return true;
         }
-
         public async Task<CompanySummaryResponse> GetCompanySummaryAsync(Guid companyId)
         {
             var rawProjects = await _companyRepository.GetCompanyProjectSummaryAsync(companyId);
@@ -448,7 +518,6 @@ namespace Fusion.Service.Services
                 Projects = projectSummary
             };
         }
-
         public async Task<CompanyPerformanceResponse> GetCompanyPerformanceAsync(Guid companyId)
         {
             var rawData = await _companyRepository.GetCompanyUserTasksAsync(companyId);
@@ -515,7 +584,6 @@ namespace Fusion.Service.Services
                 Data = userPerformanceList
             };
         }
-
         public async Task<bool> DeleteCompanyByAdminAsync(Guid companyId, CancellationToken cancellationToken = default)
         {
 
@@ -604,7 +672,6 @@ namespace Fusion.Service.Services
             await _logService.CreateLog(log, cancellationToken);
             return _mapper.Map<CompanyResponse>(result);
         }
-
         public async Task<CompanyStatusCountsVm> GetCompanyStatusCountsAsync(CancellationToken cancellationToken = default)
         {
             var result = await _companyRepository.GetCompanyStatusCountsAsync(cancellationToken);
@@ -613,6 +680,7 @@ namespace Fusion.Service.Services
             {
                 Active = result.Active,
                 Inactive = result.Inactive,
+                Total = result.Active + result.Inactive,
             };
         }
         public async Task<CompanyMonthlyStatsVm> GetCompaniesCreatedByMonthAsync(int year, CancellationToken ct = default)
@@ -635,6 +703,61 @@ namespace Fusion.Service.Services
                 Year = year,
                 MonthlyCounts = counts,
                 Total = counts.Sum() 
+            };
+        }
+        public async Task<PagedResult<CompanyOfOwnerResponse>> GetAllCompanyOfOwnerAsync(Guid userId, CancellationToken ct = default)
+        {
+            var result = await _companyRepository.GetAllCompanyOfOwnerAsync(userId, ct);
+
+            if (result == null || result.Items.Count == 0)
+                throw CustomExceptionFactory.CreateNotFoundError(
+                    ResponseMessages.NOT_FOUND.FormatMessage("Companies"));
+
+            return new PagedResult<CompanyOfOwnerResponse>
+            {
+                Items = result.Items.Select(c => new CompanyOfOwnerResponse
+                {
+                    Id = c.Id,
+                    Name = c.Name ?? string.Empty,
+                    TaxCode = c.TaxCode ?? string.Empty,
+                    CreateAt = c.CreateAt
+                }).ToList(),
+                TotalCount = result.TotalCount,
+                PageNumber = result.PageNumber,
+                PageSize = result.PageSize
+            };
+
+        }
+        public async Task<PagedResult<CompanyOfUserResponse>> GetAllCompanyOfMemberAsync(Guid userId, CancellationToken ct = default)
+        {
+            var result = await _companyRepository.GetAllCompanyOfMemberAsync(userId, ct);
+
+            if (result == null || result.Items.Count == 0)
+                throw CustomExceptionFactory.CreateNotFoundError(
+                    ResponseMessages.NOT_FOUND.FormatMessage("Companies"));
+
+            var items = result.Items.Select(c =>
+            {
+                var joinedAt = c.CompanyMembers?
+                                   .FirstOrDefault(m => m.UserId == userId && m.IsDeleted != true)
+                                   ?.JoinedAt
+                               ?? c.CreateAt; 
+
+                return new CompanyOfUserResponse
+                {
+                    Id = c.Id,
+                    Name = c.Name ?? string.Empty,
+                    TaxCode = c.TaxCode ?? string.Empty,
+                    JoinAt = joinedAt
+                };
+            }).ToList();
+
+            return new PagedResult<CompanyOfUserResponse>
+            {
+                Items = items,
+                TotalCount = result.TotalCount,
+                PageNumber = result.PageNumber,
+                PageSize = result.PageSize
             };
         }
     }

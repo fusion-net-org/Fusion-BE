@@ -4,6 +4,7 @@ using Fusion.Repository.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Fusion.Repository.Migrations
 {
     [DbContext(typeof(FusionDbContext))]
-    partial class FusionDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251104135443_AddNotificationTypeInNotification")]
+    partial class AddNotificationTypeInNotification
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1411,8 +1414,8 @@ namespace Fusion.Repository.Migrations
 
                     b.Property<string>("DeviceToken")
                         .IsRequired()
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
                         .HasColumnName("device_token");
 
                     b.Property<bool?>("IsActive")
