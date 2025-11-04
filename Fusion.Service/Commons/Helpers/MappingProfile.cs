@@ -197,28 +197,35 @@ public class MappingProfile : Profile
         CreateMap<SendAllNotificationRequest, Notification>();
 
         //----------------------------     entity: Project ---------------------------------------------
+        // ===================== Project (Create) =====================
         CreateMap<CreateProjectRequest, Project>()
-                 .ForMember(d => d.IsHired, o => o.MapFrom(s => s.isHired))
-                 .ForMember(d => d.CompanyHiredId, o => o.MapFrom(s =>
-                     s.CompanyHiredId.HasValue && s.CompanyHiredId.Value != Guid.Empty ? s.CompanyHiredId : (Guid?)null))
-                 .ForMember(d => d.ProjectRequestId, o => o.MapFrom(s =>
-                     s.ProjectRequestId.HasValue && s.ProjectRequestId.Value != Guid.Empty ? s.ProjectRequestId : (Guid?)null))
-                 .ForMember(d => d.StartDate, o => o.MapFrom(s => s.StartDate.HasValue ? DateOnly.FromDateTime(s.StartDate.Value) : (DateOnly?)null))
-                 .ForMember(d => d.EndDate, o => o.MapFrom(s => s.EndDate.HasValue ? DateOnly.FromDateTime(s.EndDate.Value) : (DateOnly?)null))
-                 .ForMember(d => d.CreatedBy, o => o.Ignore())
-                 .ForMember(d => d.CreateAt, o => o.Ignore())
-                 .ForMember(d => d.UpdateAt, o => o.Ignore())
-                 .ForMember(d => d.Id, o => o.Ignore());
+            .ForMember(d => d.IsHired, o => o.MapFrom(s => s.isHired))
+            .ForMember(d => d.CompanyHiredId, o => o.MapFrom(s =>
+                s.CompanyHiredId.HasValue && s.CompanyHiredId.Value != Guid.Empty ? s.CompanyHiredId : (Guid?)null))
+            .ForMember(d => d.ProjectRequestId, o => o.MapFrom(s =>
+                s.ProjectRequestId.HasValue && s.ProjectRequestId.Value != Guid.Empty ? s.ProjectRequestId : (Guid?)null))
+            .ForMember(d => d.CreatedBy, o => o.Ignore())
+            .ForMember(d => d.CreateAt, o => o.Ignore())
+            .ForMember(d => d.UpdateAt, o => o.Ignore())
+            .ForMember(d => d.Id, o => o.Ignore());
 
+        // ===================== Project (List) =====================
         CreateMap<Project, ProjectsResponse>()
-            .ForMember(d => d.isHired, o => o.MapFrom(s => s.IsHired))
-            .ForMember(d => d.StartDate, opt => opt.MapFrom(s => s.StartDate.HasValue ? s.StartDate.Value.ToDateTime(TimeOnly.MinValue) : (DateTime?)null))
-            .ForMember(d => d.EndDate, opt => opt.MapFrom(s => s.EndDate.HasValue ? s.EndDate.Value.ToDateTime(TimeOnly.MinValue) : (DateTime?)null));
+            .ForMember(d => d.isHired, o => o.MapFrom(s => s.IsHired));
 
-        CreateMap<Project, ProjectListResponse>();
-        CreateMap<Project, ProjectDetailResponse>();
+        // ===================== Sprint =====================
         CreateMap<Sprint, SprintDto>();
-        CreateMap<ProjectTask, ProjectTaskDto>();
+
+        // ===================== Project (Detail) =====================
+        CreateMap<Project, ProjectDetailResponse>()
+     .ForMember(d => d.IsHired, o => o.MapFrom(s => s.IsHired))
+     .ForMember(d => d.CompanyName, o => o.MapFrom(s => s.Company != null ? s.Company.Name : null))
+     .ForMember(d => d.CompanyHiredName, o => o.MapFrom(s => s.CompanyHired != null ? s.CompanyHired.Name : null))
+     .ForMember(d => d.CreatedByName, o => o.MapFrom(s => s.CreatedByNavigation != null ? s.CreatedByNavigation.UserName : null))
+
+   
+
+     .ForMember(d => d.Sprints, o => o.MapFrom(s => s.Sprints.Where(x => !x.IsDeleted)));
     }
 
 }

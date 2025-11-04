@@ -25,6 +25,7 @@ namespace Fusion.Repository.Repositories
         Task<int> AddTasksAsync(Guid sprintId, Guid projectId, IEnumerable<Guid> taskIds, Guid userId, CancellationToken ct);
         Task<int> RemoveTasksAsync(Guid sprintId, Guid projectId, IEnumerable<Guid> taskIds, CancellationToken ct);
         Task ReorderAsync(Guid sprintId, Guid projectId, IReadOnlyList<(Guid taskId, int order)> orders, CancellationToken ct);
+        Task AddRangeAsync(IEnumerable<Sprint> sprints, CancellationToken ct = default);
     }
     public class SprintRepository : ISprintRepository
     {
@@ -35,7 +36,11 @@ namespace Fusion.Repository.Repositories
         public Task<Sprint?> GetAsync(Guid sprintId, Guid projectId, CancellationToken ct) =>
         _db.Set<Sprint>().FirstOrDefaultAsync(x => x.Id == sprintId && x.ProjectId == projectId, ct);
 
-
+        public Task AddRangeAsync(IEnumerable<Sprint> sprints, CancellationToken ct = default)
+        {
+            _db.Sprints.AddRange(sprints);
+            return Task.CompletedTask;
+        }
         public Task<SprintVmData?> GetVmAsync(Guid sprintId, Guid projectId, CancellationToken ct) =>
         _db.Set<Sprint>()
         .Where(x => x.Id == sprintId && x.ProjectId == projectId)

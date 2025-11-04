@@ -30,6 +30,7 @@ namespace Fusion.Repository.Repositories
         Task<DesignerDto> GetDesignerAsync(Guid workflowId, CancellationToken ct = default);
         Task SaveDesignerAsync(Guid companyId, Guid workflowId, DesignerDto payload, CancellationToken ct = default);
         Task<List<WorkflowPreviewVm>> GetPreviewsAsync(Guid companyId, CancellationToken ct = default);
+        Task<bool> ExistsInCompanyAsync(Guid workflowId, Guid companyId, CancellationToken ct = default);
 
     }
 
@@ -44,7 +45,8 @@ namespace Fusion.Repository.Repositories
                 .OrderByDescending(w => w.IsDefault).ThenBy(w => w.Name)
                 .Select(w => new WorkflowListItemVm(w.Id.ToString(), w.Name ?? ""))
                 .ToListAsync(ct);
-
+        public Task<bool> ExistsInCompanyAsync(Guid workflowId, Guid companyId, CancellationToken ct = default)
+           => _db.Workflows.AnyAsync(w => w.Id == workflowId && w.CompanyId == companyId, ct);
         public async Task<Guid> CreateAsync(Guid companyId, string name, CancellationToken ct = default)
         {
             if (string.IsNullOrWhiteSpace(name))
