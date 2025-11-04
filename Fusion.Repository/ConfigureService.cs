@@ -79,17 +79,15 @@ namespace Fusion.Repository
             services.AddScoped<IUserLogRepository, UserLogRepository>();
             return services;
 
-
         }
         public static void AddDatabase(this IServiceCollection services, IConfiguration configuration)
         {
-
-            services.AddDbContextFactory<FusionDbContext>(options =>
+            services.AddDbContext<FusionDbContext>(options =>
                     options.UseSqlServer(
-                        configuration.GetConnectionString("DefaultConnection"),
-                        sqlOptions => sqlOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)
+                           configuration.GetConnectionString("DefaultConnection"),
+                           sqlOptions => sqlOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)
                     )
-                );
+         );
         }
     }
 }
