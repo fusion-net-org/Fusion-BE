@@ -20,7 +20,7 @@ namespace Fusion.Repository.Entities
         public Guid UserId { get; set; }
 
         [Column("device_token")]
-        [Required, MaxLength(500)]
+        [Required, MaxLength(2000)]
         public string DeviceToken { get; set; } = default!;
 
         [Column("platform")]
