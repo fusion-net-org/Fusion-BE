@@ -102,7 +102,7 @@ namespace Fusion.Service.Services
             //    Event = "CompanyCreated",
             //    NotificationType = "Info",
             //}, cancellationToken);
-
+            //s
 
             var newMember = await _companyMemberRepository.AddCompanyMemberAsync(new CompanyMember
             {
