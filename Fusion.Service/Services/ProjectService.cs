@@ -1,13 +1,16 @@
 ﻿using AutoMapper;
 using Fusion.Repository.Bases.Exceptions;
+using Fusion.Repository.Bases.Page;
+using Fusion.Repository.Bases.Page.Project;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.IRepositories;
+using Fusion.Repository.ViewModels;
 using Fusion.Service.Commons.Helpers;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.Project.Requests;
 using Fusion.Service.ViewModels.Project.Responses;
-using Fusion.Service.ViewModels.Projects.Responses;
+using Fusion.Service.ViewModels.ProjectMembers.Responses;
 
 
 namespace Fusion.Service.Services
@@ -78,5 +81,78 @@ namespace Fusion.Service.Services
             return _mapper.Map<ProjectsResponse>(created);
         }
 
+        public async Task<PagedResult<ProjectListResponse>> GetAllProjectAsync(ProjectSearchRequest req, CancellationToken ct = default)
+        {
+            //var result = await _repo.GetAllProjectAsync(req, ct);
+            //return result.Map(p => _mapper.Map<ProjectListResponse>(p));
+            throw new NotImplementedException();
+        }
+        public async Task<List<StatusCountResponse>> GetCountProjectByStatusAsync(CancellationToken ct = default)
+        {
+            var rows = await _repo.GetCountProjectByStatusAsync(ct);
+            return rows ?? new List<StatusCountResponse>();
+        }
+        public async Task<PagedResult<AllProjectOfMememberResponse>> GetProjectByMemberIdAsync(Guid userId, ProjectSearchRequest req, CancellationToken ct = default)
+        {
+            var projectsPaged = await _repo.GetProjectByMemberIdAsync(userId, req, ct);
+
+            if (projectsPaged == null || !projectsPaged.Items.Any())
+                throw CustomExceptionFactory.CreateNotFoundError("No projects found for this member in the specified company.");
+
+            var items = projectsPaged.Items.Select(p =>
+            {
+                // Lấy membership hiện tại của user (repo đã Include ProjectMembers)
+                var me = p.ProjectMembers?.FirstOrDefault(pm => pm.UserId == userId);
+
+
+                // Nếu entity ProjectMember có IsViewAll -> lấy; nếu không bạn thay theo field thực tế
+                var isViewAll = me?.IsViewAll ?? false;
+
+                return new AllProjectOfMememberResponse
+                {
+                    Id = p.Id,
+                    Name = p.Name ?? string.Empty,
+                    Code = p.Code ?? string.Empty,
+                    Status = p.Status ?? string.Empty,
+                };
+            }).ToList();
+
+            return new PagedResult<AllProjectOfMememberResponse>
+            {
+                Items = items,
+                TotalCount = projectsPaged.TotalCount,
+                PageNumber = projectsPaged.PageNumber,
+                PageSize = projectsPaged.PageSize
+            };
+
+
+        }
+        public async Task<PagedResult<AllProjectOfMememberResponse>> GetProjectByActorIdAsync(Guid userId, ProjectSearchRequest req, CancellationToken ct = default)
+        {
+            var projectsPaged = await _repo.GetProjectByActorIdAsync(userId, req, ct);
+
+            if (projectsPaged == null || projectsPaged.Items == null || projectsPaged.Items.Count == 0)
+                throw CustomExceptionFactory.CreateNotFoundError("No projects created by this user.");
+
+            var items = projectsPaged.Items.Select(p => new AllProjectOfMememberResponse
+            {
+                Id = p.Id,
+                Name = p.Name ?? string.Empty,
+                Code = p.Code ?? string.Empty,
+                Status = p.Status ?? string.Empty
+            }).ToList();
+
+            return new PagedResult<AllProjectOfMememberResponse>
+            {
+                Items = items,
+                TotalCount = projectsPaged.TotalCount,
+                PageNumber = projectsPaged.PageNumber,
+                PageSize = projectsPaged.PageSize
+            };
+        }
+        public Task<ProjectDetailResponse> GetProjectDetailAsync(Guid id, CancellationToken ct = default)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

@@ -1,8 +1,6 @@
 ﻿
 using AutoMapper;
-using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Bases.Page;
-using Fusion.Repository.Bases.Responses;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.IRepositories;
@@ -10,6 +8,7 @@ using Fusion.Service.Commons.Helpers;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.UserSubscription.Requests;
 using Fusion.Service.ViewModels.UserSubscription.Responses;
+using System.Threading;
 
 
 namespace Fusion.Service.Services
@@ -43,7 +42,7 @@ namespace Fusion.Service.Services
                 QuotaProjectAdded = request.QuotaProjectAdded,
                 QuotaCompanyRemaining = request.QuotaCompanyAdded,
                 QuotaProjectRemaining = request.QuotaProjectAdded,
-                ExpiryDate = DateTime.UtcNow.AddMonths(1), 
+                ExpiryDate = DateTime.UtcNow.AddMonths(4), 
                 IsActive = true
             };
 
@@ -61,6 +60,18 @@ namespace Fusion.Service.Services
             return entity;
         }
 
+        public async Task<PagedResult<UserSubscription>> GetAllSubscription()
+        {
+            var result = await _repository.GetAllSubscription();
+
+            return result ?? new PagedResult<UserSubscription>
+            {
+                Items = new List<UserSubscription>(),
+                TotalCount = 0,
+                PageNumber = 1,
+                PageSize = 0
+            };
+        }
         public async Task DecreaseCompanyQuotaAsync(Guid userId, CancellationToken cancellationToken = default)
         {
             await _repository.DecreaseCompanyQuotaAsync(userId, cancellationToken);
@@ -104,6 +115,13 @@ namespace Fusion.Service.Services
             };
 
             return list;
+        }
+
+        public async Task<int> DeactiveExpiredOrDepleteAsync(CancellationToken ct = default)
+        {
+           var now = DateTime.UtcNow;
+           var affected = await _repository.DeactivateExpiredOrDepletedAsync(now, ct);
+           return affected;
         }
     }
 }

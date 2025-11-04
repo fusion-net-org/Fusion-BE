@@ -213,7 +213,12 @@ public class MappingProfile : Profile
         CreateMap<Project, ProjectsResponse>()
             .ForMember(d => d.isHired, o => o.MapFrom(s => s.IsHired))
             .ForMember(d => d.StartDate, opt => opt.MapFrom(s => s.StartDate.HasValue ? s.StartDate.Value.ToDateTime(TimeOnly.MinValue) : (DateTime?)null))
-            .ForMember(d => d.EndDate, opt => opt.MapFrom(s => s.EndDate.HasValue ? s.EndDate.Value.ToDateTime(TimeOnly.MinValue) : (DateTime?)null)); 
+            .ForMember(d => d.EndDate, opt => opt.MapFrom(s => s.EndDate.HasValue ? s.EndDate.Value.ToDateTime(TimeOnly.MinValue) : (DateTime?)null));
+
+        CreateMap<Project, ProjectListResponse>();
+        CreateMap<Project, ProjectDetailResponse>();
+        CreateMap<Sprint, SprintDto>();
+        CreateMap<ProjectTask, ProjectTaskDto>();
     }
 
 }

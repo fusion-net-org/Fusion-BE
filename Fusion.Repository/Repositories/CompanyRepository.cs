@@ -227,8 +227,7 @@ namespace Fusion.Repository.Repositories
             return await query.ToPagedResultAsync(request, cancellationToken);
         }
 
-        public async Task<(int Active, int Inactive)> GetCompanyStatusCountsAsync(
-     CancellationToken cancellationToken = default)
+        public async Task<(int Active, int Inactive)> GetCompanyStatusCountsAsync(CancellationToken cancellationToken = default)
         {
             var row = await _context.Companies
                 .AsNoTracking()
@@ -418,6 +417,39 @@ namespace Fusion.Repository.Repositories
             return _context.Companies
                  .AsNoTracking()
                  .CountAsync(cancellationToken);
+        }
+
+        public async Task<PagedResult<Company>> GetAllCompanyOfOwnerAsync(Guid userId, CancellationToken ct = default)
+        {
+            var query = _context.Companies
+         .AsNoTracking()
+         .Where(c => c.OwnerUserId == userId);
+            var req = new CompanyPagedSearchRequest
+            {
+                PageNumber = 1,
+                PageSize = int.MaxValue,
+                SortColumn = nameof(Company.Id),
+                SortDescending = false
+            };
+
+            return await query.ToPagedResultAsync(req, ct);
+        }
+
+        public async Task<PagedResult<Company>> GetAllCompanyOfMemberAsync(Guid userId, CancellationToken ct = default)
+        {
+            var query = _context.Companies
+          .AsNoTracking()
+          .Where(c => c.CompanyMembers.Any(m => m.UserId == userId));
+
+            var req = new CompanyPagedSearchRequest
+            {
+                PageNumber = 1,
+                PageSize = int.MaxValue,
+                SortColumn = nameof(Company.Id),
+                SortDescending = false
+            };
+
+            return await query.ToPagedResultAsync(req, ct);
         }
     }
 }

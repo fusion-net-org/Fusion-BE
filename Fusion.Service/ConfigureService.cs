@@ -97,6 +97,7 @@ namespace Fusion.Service
                 return new PayOS(clientId, apiKey, checksumKey);
             });
             services.AddScoped<IPayOSService, PayOSService>();
+
             return services;
         }
      }

@@ -32,5 +32,7 @@ namespace Fusion.Repository.IRepositories
         Task<List<Company>> GetCompaniesCreatedInYearAsync(int year, CancellationToken ct = default);
         Task<int> GetAllCompanyAsync(CancellationToken cancellationToken = default);
 
+        Task<PagedResult<Company>> GetAllCompanyOfOwnerAsync(Guid userId, CancellationToken ct = default);
+        Task<PagedResult<Company>> GetAllCompanyOfMemberAsync(Guid userId, CancellationToken ct = default);
     }
 }
