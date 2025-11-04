@@ -1,7 +1,9 @@
 ﻿using Azure.Core;
+using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.Company;
 using Fusion.Repository.Bases.Page.User;
+using Fusion.Repository.Bases.Responses;
 using Fusion.Repository.Data;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
@@ -155,6 +157,74 @@ namespace Fusion.Repository.Repositories
             }
 
             return await query.ToPagedResultAsync(request, cancellationToken);
+
+        }
+
+        public async Task<PagedResult<Company>> GetPagedCompaniesAdminAsync(string adminEmail, CompanyPagedSearchRequest request, CancellationToken cancellationToken = default)
+        {
+            var isAdmin = _context.Users
+                    .Include(u => u.UserRoles)
+                        .ThenInclude(ur => ur.Role)
+                    .Any(u => u.Email == adminEmail &&
+                            u.UserRoles.Any(ur => ur.Role.RoleName == "Admin"));
+            if (!isAdmin)
+                throw CustomExceptionFactory.CreateNotFoundError("Admin is not existed in company");
+
+            var query = _dbSet
+                .Include(x => x.CompanyMembers)
+                .Include(x => x.OwnerUser)
+                .Include(x => x.ProjectCompanies)
+                .Include(c => c.ProjectCompanyHireds)
+                .Include(c => c.CompanyFriendshipCompanyAs)
+                .Include(c => c.CompanyFriendshipCompanyBs)
+                .AsQueryable();
+
+            // search
+            if (!string.IsNullOrWhiteSpace(request.Keyword))
+            {
+                var keyword = request.Keyword.Trim().ToLower();
+                query = query.Where(u =>
+                    (u.Name ?? "").ToLower().Contains(keyword) ||
+                    (u.TaxCode ?? "").ToLower().Contains(keyword));
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.OwnerUserName))
+            {
+                query = query.Where(u => (u.OwnerUser.UserName ?? "").Contains(request.OwnerUserName));
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.Detail))
+            {
+                query = query.Where(u => (u.Detail ?? "").Contains(request.Detail));
+            }
+
+            if (request.TotalProject.HasValue)
+            {
+                if (request.SortDescending)
+                {
+                    query = query.Where(u => u.ProjectCompanies.Count + u.ProjectCompanyHireds.Count >= request.TotalProject);
+                }
+                else
+                {
+                    query = query.Where(u => u.ProjectCompanies.Count + u.ProjectCompanyHireds.Count <= request.TotalProject);
+
+                }
+            }
+
+            if (request.TotalMember.HasValue)
+            {
+                if (request.SortDescending)
+                {
+                    query = query.Where(u => u.CompanyMembers.Count >= request.TotalMember);
+                }
+                else
+                {
+                    query = query.Where(u => u.CompanyMembers.Count <= request.TotalMember);
+
+                }
+            }
+
+            return await query.ToPagedResultAsync(request, cancellationToken);
         }
 
         public async Task<(int Active, int Inactive)> GetCompanyStatusCountsAsync(CancellationToken cancellationToken = default)
@@ -206,8 +276,8 @@ namespace Fusion.Repository.Repositories
             existed_company.TaxCode = update_company.TaxCode ?? existed_company.TaxCode;
             existed_company.Detail = update_company.Detail ?? existed_company.Detail;
             existed_company.Email = update_company.Email ?? existed_company.Email;
-            existed_company.PhoneNumber = update_company.PhoneNumber ?? existed_company.PhoneNumber;  
-            existed_company.Address = update_company.Address ?? existed_company.Address;           
+            existed_company.PhoneNumber = update_company.PhoneNumber ?? existed_company.PhoneNumber;
+            existed_company.Address = update_company.Address ?? existed_company.Address;
             existed_company.Website = update_company.Website ?? existed_company.Website;
             existed_company.ImageCompany = image_company;
             existed_company.AvatarCompany = avatar_company;
