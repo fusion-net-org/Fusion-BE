@@ -41,6 +41,7 @@ namespace Fusion.Repository.Repositories
                 notification.IsRead = false;
             }
 
+            notification.NotificationType = type;
             notification.CreateAt = DateTime.UtcNow.AddHours(7);
             notification.LinkUrlWeb = linkUrlWeb;
             notification.LinkUrlMobile = linkUrlMobile;
@@ -58,7 +59,7 @@ namespace Fusion.Repository.Repositories
        
 
             notification.IsRead = true;
-            notification.Title = NotificationTypeEnum.SYSTEM.ToString();
+            notification.NotificationType = NotificationTypeEnum.INFO.ToString();
             notification.ReadAt = DateTime.UtcNow.AddHours(7);
             notification.CreateAt = DateTime.UtcNow.AddHours(7);
             notification.LinkUrlWeb = null;

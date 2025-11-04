@@ -57,6 +57,8 @@ namespace Fusion.Service.ViewModels.Companies.Responses
 
         public ICollection<CompanyMemberResponse>? ListMembers { get; set; }
         public ICollection<ProjectResponse>? ListProjects { get; set; }
+
+        public ICollection<PartnerResponse>? ListPartners { get; set; }
     }
 
     public class CompanyResponseVersion2
