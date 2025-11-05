@@ -62,6 +62,8 @@ public partial class FusionDbContext : DbContext
     public virtual DbSet<CompanyActivityLog> CompanyActivityLogs { get; set; }
     public virtual DbSet<UserLog> UserLogs { get; set; }
     public virtual DbSet<CompanySubscriptionAssignment> CompanySubscriptionAssignments { get; set; }
+    public virtual DbSet<UserNotificationSetting> UserNotificationSettings { get; set; }
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -16,4 +16,10 @@ namespace Fusion.Repository.Enums
         WARNING,
         INFO
     }
+
+    public enum NotificationStatusEnum
+    {
+        TURN_OFF,
+        TURN_ON
+    }
 }

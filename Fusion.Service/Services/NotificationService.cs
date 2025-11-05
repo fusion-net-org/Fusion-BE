@@ -58,7 +58,7 @@ namespace Fusion.Service.Services
                 LinkUrlWeb = linkUrlWeb,
                 Type = request.NotificationType,
                 UserId = request.UserId,
-            }, cancellationToken);
+            }, request.NotificationType, cancellationToken);
 
 
         }
@@ -93,6 +93,21 @@ namespace Fusion.Service.Services
         public async Task MarkAsReadAsync(Guid userId, Guid notificationId, CancellationToken cancellationToken = default)
         {
             await _notificationRepository.MarkAsReadAsync(userId, notificationId, cancellationToken);
+        }
+
+        public async Task DeleteNotificationAsync(Guid userId, Guid notificationId, CancellationToken cancellationToken = default)
+        {
+            await _notificationRepository.DeleteNotificationAsync(userId,notificationId, cancellationToken);
+        }
+
+        public async Task DeleteAllNotificationByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
+        {
+            await _notificationRepository.DeleteAllNotificationByUserIdAsync(userId,cancellationToken);
+        }
+
+        public async Task ToggleNotificationByTypeAsync(Guid userId, ToggleNotificationRequest? request, CancellationToken cancellationToken = default)
+        {
+            await _notificationRepository.ToggleNotificationByTypeAsync(userId, request.type.Value, request.isEnable, cancellationToken);
         }
     }
 }

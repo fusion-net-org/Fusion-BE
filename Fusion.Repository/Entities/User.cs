@@ -117,4 +117,7 @@ public partial class User
 
     [InverseProperty("User")]
     public virtual ICollection<UserDevice> UserDevices { get; set; } = new List<UserDevice>();
+
+    [InverseProperty("User")]
+    public virtual ICollection<UserNotificationSetting> UserNotificationSettings { get; set; } = new List<UserNotificationSetting>();
 }

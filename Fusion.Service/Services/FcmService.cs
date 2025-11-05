@@ -6,6 +6,7 @@ using Fusion.Repository.Repositories;
 using Fusion.Service.Commons.Helpers;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.Notifications.Requests;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,17 +18,27 @@ namespace Fusion.Service.Services
     public class FcmService : IFcmService
     {
         private readonly IUserDeviceRepository _userDeviceRepository;
+        private readonly IUserNotificationSettingRepository _userNotificationSettingRepository;
 
-        public FcmService(IUserDeviceRepository userDeviceRepository)
+        public FcmService(IUserDeviceRepository userDeviceRepository, IUserNotificationSettingRepository userNotificationSettingRepository)
         {
             _userDeviceRepository = userDeviceRepository;
+            _userNotificationSettingRepository = userNotificationSettingRepository;
         }
 
-        public async Task SendToUserAsync(FCMNotificationRequest request, CancellationToken cancellationToken = default)
+        public async Task SendToUserAsync(FCMNotificationRequest request, string notificationType, CancellationToken cancellationToken = default)
         {
 
             if(request.UserId == null)
                 throw CustomExceptionFactory.CreateNotFoundError("User not found to send notification");
+
+            var userNotificationSetting = await _userNotificationSettingRepository.GetUserNotificationByType(request.UserId.Value, notificationType, cancellationToken);
+
+            if (userNotificationSetting != null && !userNotificationSetting.IsEnabled.Value)
+            {
+                Console.WriteLine($"User {request.UserId} has turned off notification type {request.Type}. Skipping FCM send.");
+                return;
+            }
 
             var tokens = await _userDeviceRepository.GetTokensByUserIdAsync(request.UserId.Value);
 
