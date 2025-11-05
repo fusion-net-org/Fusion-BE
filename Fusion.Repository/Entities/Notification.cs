@@ -30,6 +30,9 @@ public partial class Notification
     [Column("context")]
     public string? Context { get; set; }
 
+    [Column("notification_type")]
+    public string? NotificationType { get; set; }
+
     [Column("link_url_web")]
     [StringLength(500)]
     public string? LinkUrlWeb { get; set; }

@@ -8,14 +8,21 @@ using Fusion.Service.ViewModels.ProjectMembers.Responses;
 
 namespace Fusion.Service.IServices
 {
-    public interface IProjectService 
+    public interface IProjectService
     {
-        Task<ProjectsResponse> CreateProjectAsync(CreateProjectRequest request, CancellationToken cancellationToken = default);
         Task<PagedResult<ProjectListResponse>> GetAllProjectAsync(ProjectSearchRequest req, CancellationToken ct = default);
         Task<ProjectDetailResponse> GetProjectDetailAsync(Guid id, CancellationToken ct = default); 
         Task<PagedResult<AllProjectOfMememberResponse>> GetProjectByMemberIdAsync(Guid userId, ProjectSearchRequest req, CancellationToken ct = default);
         Task<PagedResult<AllProjectOfMememberResponse>> GetProjectByActorIdAsync(Guid userId, ProjectSearchRequest req, CancellationToken ct = default);
         Task<List<StatusCountResponse>> GetCountProjectByStatusAsync(CancellationToken ct = default);
 
+        Task<ProjectDetailResponse> CreateProjectAsync(
+            Guid companyId,
+            ProjectCreateRequest request,
+            Guid actorUserId,
+            CancellationToken ct = default);
+        Task<ProjectListResult> GetProjectsForCompanyAsync(
+        Guid companyId, ProjectListSearchRequest req, CancellationToken ct = default);
     }
+   
 }

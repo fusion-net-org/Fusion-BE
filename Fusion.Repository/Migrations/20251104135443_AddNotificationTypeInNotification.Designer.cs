@@ -4,6 +4,7 @@ using Fusion.Repository.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Fusion.Repository.Migrations
 {
     [DbContext(typeof(FusionDbContext))]
-    partial class FusionDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251104135443_AddNotificationTypeInNotification")]
+    partial class AddNotificationTypeInNotification
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -329,16 +332,16 @@ namespace Fusion.Repository.Migrations
                         .HasColumnName("assigned_at")
                         .HasDefaultValueSql("(sysutcdatetime())");
 
-                    b.Property<string>("CodeTransaction")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)")
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)")
                         .HasColumnName("code_transaction");
 
-                    b.Property<long>("CompanyMemberId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("company_member_id");
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("company_id");
 
-                    b.Property<long?>("CompanyMemberId1")
+                    b.Property<long?>("CompanyMemberId")
                         .HasColumnType("bigint");
 
                     b.Property<bool>("IsEnabled")
@@ -347,24 +350,24 @@ namespace Fusion.Repository.Migrations
                         .HasDefaultValue(true)
                         .HasColumnName("is_enabled");
 
+                    b.Property<Guid>("MemberId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("member_id");
+
                     b.Property<DateTime?>("RevokedAt")
                         .HasPrecision(3)
                         .HasColumnType("datetime2(3)")
                         .HasColumnName("revoked_at");
 
-                    b.Property<Guid>("UserSubscriptionId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("user_subscription_id");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("CompanyMemberId1");
+                    b.HasIndex("CompanyMemberId");
 
-                    b.HasIndex("UserSubscriptionId");
+                    b.HasIndex("MemberId");
 
-                    b.HasIndex(new[] { "CompanyMemberId", "CodeTransaction" }, "UX_CompanySubscriptionAssignments_Unique")
+                    b.HasIndex(new[] { "CompanyId", "MemberId", "Code" }, "UX_CompanySubscriptionAssignments_Unique")
                         .IsUnique()
-                        .HasFilter("([company_member_id] IS NOT NULL AND [code_transaction] IS NOT NULL)");
+                        .HasFilter("([company_id] IS NOT NULL AND [member_id] IS NOT NULL AND [code_transaction] IS NOT NULL)");
 
                     b.ToTable("CompanySubscriptionAssignments");
                 });
@@ -1411,8 +1414,8 @@ namespace Fusion.Repository.Migrations
 
                     b.Property<string>("DeviceToken")
                         .IsRequired()
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
                         .HasColumnName("device_token");
 
                     b.Property<bool?>("IsActive")
@@ -1768,27 +1771,18 @@ namespace Fusion.Repository.Migrations
 
             modelBuilder.Entity("Fusion.Repository.Entities.CompanySubscriptionAssignment", b =>
                 {
-                    b.HasOne("Fusion.Repository.Entities.CompanyMember", "Member")
-                        .WithMany()
-                        .HasForeignKey("CompanyMemberId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("FK_CompanySubscriptionAssignments_CompanyMember");
-
                     b.HasOne("Fusion.Repository.Entities.CompanyMember", null)
                         .WithMany("SubscriptionAssignments")
-                        .HasForeignKey("CompanyMemberId1");
+                        .HasForeignKey("CompanyMemberId");
 
-                    b.HasOne("Fusion.Repository.Entities.UserSubscription", "OwnerSubscription")
+                    b.HasOne("Fusion.Repository.Entities.User", "Member")
                         .WithMany()
-                        .HasForeignKey("UserSubscriptionId")
+                        .HasForeignKey("MemberId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("FK_CompanySubscriptionAssignments_UserSubscription");
+                        .HasConstraintName("FK_CompanySubscriptionAssignments_User");
 
                     b.Navigation("Member");
-
-                    b.Navigation("OwnerSubscription");
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.Notification", b =>

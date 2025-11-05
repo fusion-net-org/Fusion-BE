@@ -87,6 +87,20 @@ namespace Fusion.Repository.Repositories
 
             return await query.ToPagedResultAsync(request, cancellationToken);
         }
+        public async Task AddIfNotExistsAsync(Guid projectId, Guid userId, bool isPartner, bool isViewAll, CancellationToken ct = default)
+        {
+            var exists = await _context.ProjectMembers.AnyAsync(pm => pm.ProjectId == projectId && pm.UserId == userId, ct);
+            if (exists) return;
+
+            await _context.ProjectMembers.AddAsync(new ProjectMember
+            {
+                ProjectId = projectId,
+                UserId = userId,
+                IsPartner = isPartner,
+                IsViewAll = isViewAll,
+                JoinedAt = DateTime.UtcNow
+            }, ct);
+        }
         public async Task<PagedResult<Project>> GetAllProjectsByMemberIdAsync(Guid userId, ProjectMemberSearchRequest request, CancellationToken cancellationToken = default)
         {
             var query = _context.Projects
@@ -128,5 +142,11 @@ namespace Fusion.Repository.Repositories
 
             return await query.ToPagedResultAsync(request, cancellationToken);
         }
+        public Task<bool> UserBelongsToCompanyAsync(Guid userId, Guid companyId, CancellationToken ct = default)
+            => _context.CompanyMembers.AnyAsync(cm =>
+                    cm.CompanyId == companyId &&
+                    cm.UserId == userId &&
+                    cm.Status == "Active" &&
+                    !(cm.IsDeleted ?? false), ct);
     }
 }

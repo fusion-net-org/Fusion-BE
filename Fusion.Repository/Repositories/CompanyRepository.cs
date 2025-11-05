@@ -354,13 +354,24 @@ namespace Fusion.Repository.Repositories
         public async Task<Company?> GetCompanyByIdAsync(Guid Id)
         {
             return await _context.Companies
-                .Include(x => x.CompanyMembers)
-                .Include(x => x.OwnerUser)
-                .Include(x => x.ProjectCompanies)
-                .Include(c => c.ProjectCompanyHireds)
-                .Include(c => c.CompanyFriendshipCompanyAs)
-                .Include(c => c.CompanyFriendshipCompanyBs)
-                .SingleOrDefaultAsync(x => x.Id == Id);
+                    .Include(c => c.OwnerUser)
+                    .Include(c => c.ProjectCompanies)
+                    .Include(c => c.ProjectCompanyHireds)
+                    .Include(c => c.CompanyFriendshipCompanyAs)
+            .ThenInclude(cf => cf.CompanyB)
+                .ThenInclude(c => c.OwnerUser)
+        .Include(c => c.CompanyFriendshipCompanyAs)
+            .ThenInclude(cf => cf.CompanyB.ProjectCompanies)
+        .Include(c => c.CompanyFriendshipCompanyAs)
+            .ThenInclude(cf => cf.CompanyB.ProjectCompanyHireds)
+        .Include(c => c.CompanyFriendshipCompanyBs)
+            .ThenInclude(cf => cf.CompanyA)
+                .ThenInclude(c => c.OwnerUser)
+        .Include(c => c.CompanyFriendshipCompanyBs)
+            .ThenInclude(cf => cf.CompanyA.ProjectCompanies)
+        .Include(c => c.CompanyFriendshipCompanyBs)
+            .ThenInclude(cf => cf.CompanyA.ProjectCompanyHireds)
+        .FirstOrDefaultAsync(c => c.Id == Id);
         }
 
         public async Task<List<object>> GetCompanyProjectSummaryAsync(Guid companyId)

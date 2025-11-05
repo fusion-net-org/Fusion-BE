@@ -1,4 +1,5 @@
 ﻿
+using System.ComponentModel.Design;
 using AutoMapper;
 using FluentValidation;
 using Fusion.Repository.Bases.Exceptions;
@@ -11,6 +12,7 @@ using Fusion.Service.Commons.Helpers;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.Companies.Requests;
 using Fusion.Service.ViewModels.Companies.Responses;
+using Fusion.Service.ViewModels.Notifications.Requests;
 using Fusion.Service.ViewModels.Project.Responses;
 using Fusion.Service.ViewModels.Sprint.Responses;
 using Fusion.Service.ViewModels.Task.Response;
@@ -33,10 +35,11 @@ namespace Fusion.Service.Services
         private readonly IMailService _mailService;
         private readonly ICompanyActivityService _logService;
         private readonly ICurrentService _currentService;
+        private readonly INotificationService _notificationService;
 
         public CompanyService(IMapper mapper, ICompanyRepository companyRepository, ICloudinaryService cloudinaryService
             , IUserRepository userRepository, ICompanyMemberRepository companyMemberRepository, IValidator<CompanyRequest> validator, ICompanyFriendshipRepository companyFriendshipRepository,
-            IMailService mailService, ICompanyActivityService logService, ICurrentService currentService)
+            IMailService mailService, ICompanyActivityService logService, ICurrentService currentService, INotificationService notificationService)
         {
             _mapper = mapper;
             _companyRepository = companyRepository;
@@ -48,6 +51,7 @@ namespace Fusion.Service.Services
             _mailService = mailService;
             _logService = logService;
             _currentService = currentService;
+            _notificationService = notificationService;
         }
 
         public async Task<CompanyResponse> CreateCompanyAsync(CompanyRequest request, string Email, CancellationToken cancellationToken = default)
@@ -87,6 +91,18 @@ namespace Fusion.Service.Services
 
             if (newCompany == null)
                 throw CustomExceptionFactory.CreateInternalServerError(ResponseMessages.INTERNAL_SERVER_ERROR.FormatMessage("Add Company fail"));
+
+            //await _notificationService.CreateNotificationAsync(new SendNotificationRequest
+            //{
+            //    UserId = user.Id,
+            //    Title = $"Công ty {newCompany.Name} đã được tạo thành công!",
+            //    Body = $"Bạn vừa tạo công ty mới với mã số thuế {newCompany.TaxCode}. Bạn có thể bắt đầu quản lý ngay.",
+            //    LinkKey = "COMPANY_DETAIL",
+            //    IdLink = newCompany.Id,
+            //    Event = "CompanyCreated",
+            //    NotificationType = "Info",
+            //}, cancellationToken);
+
 
             var newMember = await _companyMemberRepository.AddCompanyMemberAsync(new CompanyMember
             {
@@ -282,6 +298,29 @@ namespace Fusion.Service.Services
             var friendships = company.CompanyFriendshipCompanyAs
                 .Concat(company.CompanyFriendshipCompanyBs)
                 .ToList();
+
+            var partners = new List<PartnerResponse>();
+            var addedCompanyIds = new HashSet<Guid>();
+
+            foreach (var friendship in friendships)
+            {
+                var partnerCompany = friendship.CompanyAId == companyId ? friendship.CompanyB : friendship.CompanyA;
+
+                if (partnerCompany != null && partnerCompany.Id != companyId && addedCompanyIds.Add(partnerCompany.Id))
+                {
+                    partners.Add(new PartnerResponse
+                    {
+                        CompanyId = partnerCompany.Id,
+                        Name = partnerCompany.Name,
+                        OwnerUserName = partnerCompany.OwnerUser?.UserName,
+                        TaxCode = partnerCompany.TaxCode,
+                        RespondedAt = friendship.RespondedAt,
+                        CreatedAt = friendship.CreatedAt,
+                        TotalProject = partnerCompany.ProjectCompanies.Count + partnerCompany.ProjectCompanyHireds.Count,
+                    });
+                }
+            }
+
             if (company == null)
                 throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Company"));
 
@@ -290,6 +329,7 @@ namespace Fusion.Service.Services
             result.TotalApproved = friendships.Count(f => f.Status == "Active");
             result.TotalWaitForApprove = friendships.Count(f => f.Status == "Pending");
             result.TotalPartners = friendships.Count();
+            result.ListPartners = partners;
 
             return result;
         }
