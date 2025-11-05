@@ -77,6 +77,8 @@ namespace Fusion.Repository
 
             //user log
             services.AddScoped<IUserLogRepository, UserLogRepository>();
+
+            services.AddScoped<IUserNotificationSettingRepository , UserNotificationSettingRepository>();
             return services;
 
         }
