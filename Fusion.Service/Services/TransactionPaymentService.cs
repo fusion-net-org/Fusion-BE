@@ -141,7 +141,7 @@ public class TransactionPaymentService : ITransactionPaymentService
 
         var user = await _userService.GetByIdAsync(userId, cancellationToken);
 
-        var subscriptionPackage = await _unitOfWork.Repository<SubscriptionPackage>().FindAsync(x => x.Id == transaction.PackageId);
+        var subscriptionPackage = await _unitOfWork.Repository<SubscriptionPlan>().FindAsync(x => x.Id == transaction.PackageId);
         if (subscriptionPackage == null)
             throw CustomExceptionFactory.CreateNotFoundError(
                 ResponseMessages.NOT_FOUND.FormatMessage("Subscription package"));

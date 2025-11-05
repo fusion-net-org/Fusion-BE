@@ -21,11 +21,11 @@ namespace Fusion.API.Controllers
         }
 
         [HttpGet("{id:guid}")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<SubscriptionPackage?>))]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<SubscriptionPlan?>))]
         public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
         {
             var result = await _subService.GetSubscriptionByIdAsync(id, cancellationToken);
-            return Ok(ResponseModel<SubscriptionPackage>.Ok(
+            return Ok(ResponseModel<SubscriptionPlan>.Ok(
                 data: result,
                 message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "Subscription package")
                 ));

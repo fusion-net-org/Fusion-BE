@@ -58,7 +58,7 @@ namespace Fusion.Service.Services
                     throw CustomExceptionFactory.CreateNotFoundError(
                         string.Format(ResponseMessages.NOT_FOUND, "Transaction"));
 
-                var subscriptionPackage = await _unitOfWork.Repository<SubscriptionPackage>().FindAsync(x => x.Id == transaction.PackageId);
+                var subscriptionPackage = await _unitOfWork.Repository<SubscriptionPlan>().FindAsync(x => x.Id == transaction.PackageId);
                 if (subscriptionPackage == null)
                     throw CustomExceptionFactory.CreateNotFoundError(
                         string.Format(ResponseMessages.NOT_FOUND, "Subscription package"));
@@ -126,7 +126,7 @@ namespace Fusion.Service.Services
             // Nếu success thì tạo UserSubscription
             if (webhookData.success)
             {
-                var subscriptionPackage = await _unitOfWork.Repository<SubscriptionPackage>()
+                var subscriptionPackage = await _unitOfWork.Repository<SubscriptionPlan>()
                     .FindAsync(x => x.Id == transaction.PackageId);
 
                 if (subscriptionPackage == null)

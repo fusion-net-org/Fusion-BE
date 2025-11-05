@@ -16,7 +16,7 @@ namespace Fusion.Service.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
-        private readonly IGenericRepository<SubscriptionPackage> _subscriptionRepository;
+        private readonly IGenericRepository<SubscriptionPlan> _subscriptionRepository;
         private readonly ISubscriptionRepository _repo;
 
         public SubscriptionPackageService(IUnitOfWork unitOfWork,
@@ -24,11 +24,11 @@ namespace Fusion.Service.Services
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
-            _subscriptionRepository = _unitOfWork.Repository<SubscriptionPackage>();
+            _subscriptionRepository = _unitOfWork.Repository<SubscriptionPlan>();
             _repo = repo;
         }
 
-        public async Task<SubscriptionPackage> GetSubscriptionByIdAsync(Guid? id, CancellationToken cancellationToken = default)
+        public async Task<SubscriptionPlan> GetSubscriptionByIdAsync(Guid? id, CancellationToken cancellationToken = default)
         {
 
             var subscription = await _subscriptionRepository.FindAsync(x => x.Id == id, cancellationToken);
@@ -46,7 +46,7 @@ namespace Fusion.Service.Services
                 throw CustomExceptionFactory.CreateBadRequestError(
                     string.Format(ResponseMessages.EXISTED, "Subscription Packages Name"));
             //2.Mapper
-            var subscription = _mapper.Map<SubscriptionPackage>(request);
+            var subscription = _mapper.Map<SubscriptionPlan>(request);
             subscription.CreatedAt = DateTime.UtcNow;
             subscription.UpdatedAt = DateTime.UtcNow;
 

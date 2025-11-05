@@ -183,11 +183,11 @@ public class MappingProfile : Profile
 
 
         //--------------------------- entity: SubscriptionPackage ---------------------------------------------
-        CreateMap<SubscriptionRequest, SubscriptionPackage>()
+        CreateMap<SubscriptionRequest, SubscriptionPlan>()
           .ForMember(dest => dest.Id, opt => opt.Ignore());
 
-        CreateMap<SubscriptionPackage, SubscriptionAdminResponse>();
-        CreateMap<SubscriptionPackage, SubscriptionResponse>();
+        CreateMap<SubscriptionPlan, SubscriptionAdminResponse>();
+        CreateMap<SubscriptionPlan, SubscriptionResponse>();
 
         //----------------------------     entity: Notification ---------------------------------------------
         CreateMap<Notification, NotificationResponse>()

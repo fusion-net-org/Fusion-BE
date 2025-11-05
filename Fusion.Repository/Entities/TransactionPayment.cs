@@ -48,5 +48,5 @@ public class TransactionPayment
 
     [ForeignKey("PackageId")]
     [InverseProperty("TransactionPayments")]
-    public virtual SubscriptionPackage SubscriptionPackage { get; set; } = null!;
+    public virtual SubscriptionPlan SubscriptionPackage { get; set; } = null!;
 }

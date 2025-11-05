@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Fusion.Repository.Repositories
 {
-    public class SubscriptionRepository : GenericRepository<SubscriptionPackage>, ISubscriptionRepository
+    public class SubscriptionRepository : GenericRepository<SubscriptionPlan>, ISubscriptionRepository
     {
         private readonly FusionDbContext _context;
         public SubscriptionRepository(FusionDbContext context) : base(context)

@@ -7,7 +7,7 @@ namespace Fusion.Service.IServices
 {
     public interface ISubscriptionPackageService
     {
-        Task<SubscriptionPackage> GetSubscriptionByIdAsync(Guid? id, CancellationToken cancellationToken = default);
+        Task<SubscriptionPlan> GetSubscriptionByIdAsync(Guid? id, CancellationToken cancellationToken = default);
         Task<List<SubscriptionResponse?>> GetAllSubscriptionForCustomerAsync(CancellationToken cancellationToken = default);
         Task<List<SubscriptionAdminResponse?>> GetAllSubscriptionForAdminAsync(CancellationToken cancellationToken = default);
         Task<SubscriptionAdminResponse> CreateSubscriptionAsync(SubscriptionRequest request, CancellationToken cancellationToken = default);

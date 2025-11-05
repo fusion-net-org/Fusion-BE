@@ -55,7 +55,7 @@ public partial class FusionDbContext : DbContext
     public virtual DbSet<WorkflowStatus> WorkflowStatuses { get; set; }
 
     public virtual DbSet<WorkflowTransition> WorkflowTransitions { get; set; }
-    public virtual DbSet<SubscriptionPackage> SubscriptionPackages { get; set; }
+    public virtual DbSet<SubscriptionPlan> SubscriptionPackages { get; set; }
     public virtual DbSet<UserSubscription> UserSubscriptions { get; set; }
     public virtual DbSet<TransactionPayment> TransactionPayments { get; set; }
     public virtual DbSet<UserDevice> UserDevices { get; set; }
@@ -324,7 +324,7 @@ public partial class FusionDbContext : DbContext
         });
 
 
-        modelBuilder.Entity<SubscriptionPackage>(entity =>
+        modelBuilder.Entity<SubscriptionPlan>(entity =>
         {
             entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.Name).IsRequired().HasMaxLength(100);

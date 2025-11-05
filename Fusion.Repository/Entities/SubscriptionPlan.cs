@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Fusion.Repository.Entities;
 
-public class SubscriptionPackage
+public class SubscriptionPlan
 {
     [Key]
     [Column("id")]
