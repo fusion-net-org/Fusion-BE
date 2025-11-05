@@ -85,7 +85,7 @@ namespace Fusion.Service.Services
 
             return _mapper.Map<SubscriptionAdminResponse>(result);
         }
-        public async Task<List<SubscriptionResponse>> GetAllSubscriptionForCustomerAsync(CancellationToken cancellationToken = default)
+        public async Task<List<SubscriptionResponse?>> GetAllSubscriptionForCustomerAsync(CancellationToken cancellationToken = default)
         {
             var listSubscription = await _subscriptionRepository
                .GetAll()

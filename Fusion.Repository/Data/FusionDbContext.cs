@@ -402,12 +402,17 @@ public partial class FusionDbContext : DbContext
 
             entity.HasOne(e => e.Member)
                   .WithMany()
-                  .HasForeignKey(e => e.MemberId)
-                  .HasConstraintName("FK_CompanySubscriptionAssignments_User");
+                  .HasForeignKey(e => e.CompanyMemberId)
+                  .HasConstraintName("FK_CompanySubscriptionAssignments_CompanyMember");
 
-            entity.HasIndex(e => new { e.CompanyId, e.MemberId, e.Code }, "UX_CompanySubscriptionAssignments_Unique")
+            entity.HasOne(e => e.OwnerSubscription)
+                  .WithMany()
+                  .HasForeignKey(e => e.UserSubscriptionId)
+                  .HasConstraintName("FK_CompanySubscriptionAssignments_UserSubscription");
+
+            entity.HasIndex(e => new { e.CompanyMemberId, e.CodeTransaction }, "UX_CompanySubscriptionAssignments_Unique")
                   .IsUnique()
-                  .HasFilter("([company_id] IS NOT NULL AND [member_id] IS NOT NULL AND [code_transaction] IS NOT NULL)");
+                  .HasFilter("([company_member_id] IS NOT NULL AND [code_transaction] IS NOT NULL)");
         });
 
         OnModelCreatingPartial(modelBuilder);

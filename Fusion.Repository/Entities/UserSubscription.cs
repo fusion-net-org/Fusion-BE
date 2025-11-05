@@ -51,4 +51,5 @@ public class UserSubscription
     [ForeignKey("PackageId")]
     [InverseProperty("UserSubscriptions")]
     public virtual SubscriptionPackage SubscriptionPackage { get; set; } = null!;
+
 }

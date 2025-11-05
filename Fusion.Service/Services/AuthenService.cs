@@ -88,7 +88,7 @@ public class AuthenService : IAuthenService
         await _unitOfWork.SaveChangesAsync(ct);
 
         // Build verify URL cho FE: FE sẽ đọc ?vtoken=... rồi gọi API /auth/verify
-        var origin = "https://localhost:5173";
+        var origin = "http://localhost:5173/login";
 
         var verifyUrl = $"{origin}/?vtoken={Uri.EscapeDataString(rawToken)}";
 
@@ -123,7 +123,7 @@ public class AuthenService : IAuthenService
                 Body = html,
                 Attachments = null
             };
-            await _mailService.SendEmailAsync(mail);  
+           // await _mailService.SendEmailAsync(mail);  
 
             return true;
         }

@@ -7,32 +7,38 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace Fusion.Repository.Entities;
 
 [Table("CompanySubscriptionAssignments")]
-public partial class CompanySubscriptionAssignment
+public class CompanySubscriptionAssignment
 {
     [Key]
     [Column("id")]
     public Guid Id { get; set; }
 
-    [Column("company_id")]
-    public Guid CompanyId { get; set; }
+    [Required]
+    [Column("company_member_id")]
+    public long CompanyMemberId { get; set; }         
+
+    [Required]
+    [Column("user_subscription_id")]
+    public Guid UserSubscriptionId { get; set; }   
 
     [Column("code_transaction")]
-    public string Code { get; set; }
-
-    [Column("member_id")]
-    public Guid MemberId { get; set; }
+    [StringLength(100)]
+    public string? CodeTransaction { get; set; }
 
     [Column("is_enabled")]
     public bool IsEnabled { get; set; } = true;
 
-    [Column("assigned_at")]
     [Precision(3)]
+    [Column("assigned_at")]
     public DateTime AssignedAt { get; set; } = DateTime.UtcNow;
 
-    [Column("revoked_at")]
     [Precision(3)]
+    [Column("revoked_at")]
     public DateTime? RevokedAt { get; set; }
 
-    [ForeignKey(nameof(MemberId))]
-    public virtual User? Member { get; set; }
+    [ForeignKey(nameof(CompanyMemberId))]
+    public virtual CompanyMember Member { get; set; } = null!;
+
+    [ForeignKey(nameof(UserSubscriptionId))]
+    public virtual UserSubscription OwnerSubscription { get; set; } = null!;
 }
