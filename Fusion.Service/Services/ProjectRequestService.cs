@@ -48,17 +48,6 @@ namespace Fusion.Service.Services
         {
             var result = await _projectRequestRepository.AcceptProjectRequestAsync(requestId, executorEmail, cancellationToken);
 
-            //await _notificationService.CreateNotificationAsync(new ViewModels.Notifications.Requests.SendNotificationRequest
-            //{
-            //    UserId = result.RequesterCompany.OwnerUser.Id, // người nhận notification
-            //    Title = "Project Request Accept",
-            //    Body = $"{result.ExecutorCompany.OwnerUser.UserName} from {result.ExecutorCompany.Name} has accpeted your project request: \"{result.Name}\".",
-            //    LinkKey = null,
-            //    IdLink = null,
-            //    Event = "PROJECT_REQUEST_ACCEPT",
-            //    Context = result.Project.Name,
-            //    NotificationType = NotificationTypeEnum.BUSINESS.ToString(),
-            //});
 
             var emailBody = $@"
                <h3>Dear {result.RequesterCompany?.Name},</h3>
@@ -89,6 +78,32 @@ namespace Fusion.Service.Services
             };
             await _logService.CreateLog(log, cancellationToken);
 
+            // Notify requester 
+            await _notificationService.CreateNotificationAsync(new ViewModels.Notifications.Requests.SendNotificationRequest
+            {
+                UserId = result.RequesterCompany.OwnerUser.Id,
+                Title = "Project request accepted",
+                Body = $"{result.ExecutorCompany.OwnerUser.UserName} from {result.ExecutorCompany.Name} has accepted your project request \"{result.Name}\".",
+                LinkKey = "PROJECT_REQUEST_PAGE",
+                IdLink = result.RequesterCompanyId,
+                Event = "PROJECT_REQUEST_ACCEPT",
+                Context = result.Name,
+                NotificationType = NotificationTypeEnum.PROJECT_REQUEST.ToString(),
+            }, cancellationToken);
+
+            // Notify executor 
+            await _notificationService.CreateNotificationAsync(new ViewModels.Notifications.Requests.SendNotificationRequest
+            {
+                UserId = result.ExecutorCompany.OwnerUser.Id,
+                Title = "You accepted a project request",
+                Body = $"You have accepted the project request \"{result.Name}\" from {result.RequesterCompany.Name}.",
+                LinkKey = "PROJECT_REQUEST_PAGE",
+                IdLink = result.ExecutorCompanyId,
+                Event = "PROJECT_REQUEST_ACCEPT_CONFIRM",
+                Context = result.Name,
+                NotificationType = NotificationTypeEnum.PROJECT_REQUEST.ToString(),
+            }, cancellationToken);
+
             return _mapper.Map<ProjectRequestResponse>(result);
         }
 
@@ -98,17 +113,6 @@ namespace Fusion.Service.Services
             var code = ProjectCodeUtil.GenerateProjectRequestCode();
             var response = await _projectRequestRepository.AddProjectRequestAsync(projectRequest, vendorEmail, code, cancellationToken);
 
-            //await _notificationService.CreateNotificationAsync(new ViewModels.Notifications.Requests.SendNotificationRequest
-            //{
-            //    UserId = response.ExecutorCompany.OwnerUser.Id, // Send to the invited user
-            //    Title = "You have been hired for a project",
-            //    Body = $"{response.RequesterCompany.OwnerUser.UserName} from {response.RequesterCompany.Name} requested your company to execute a project. We can discus for having a good cooperation",
-            //    LinkKey = null,
-            //    IdLink = null,
-            //    Event = "CREATE_PROJECT_REQUEST",
-            //    Context = null,
-            //    NotificationType = NotificationTypeEnum.BUSINESS.ToString(),
-            //});
             var currentUserName = await GetUserName(_currentService.GetUserId());
 
             var emailBody = $@"
@@ -134,6 +138,33 @@ namespace Fusion.Service.Services
                 Description = $"User:'{currentUserName}' has created project request {response.Code} for project {response.Name}",
             };
             await _logService.CreateLog(log, cancellationToken);
+
+            await _notificationService.CreateNotificationAsync(new ViewModels.Notifications.Requests.SendNotificationRequest
+            {
+                UserId = response.ExecutorCompany.OwnerUser.Id,
+                Title = "New project request received",
+                Body = $"{response.RequesterCompany.OwnerUser.UserName} from {response.RequesterCompany.Name} has requested your company to collaborate on project \"{response.Name}\".",
+                LinkKey = "PROJECT_REQUEST_PAGE",
+                IdLink = response.ExecutorCompanyId,
+                Event = "CREATE_PROJECT_REQUEST",
+                Context = response.Name,
+                NotificationType = NotificationTypeEnum.PROJECT_REQUEST.ToString(),
+            }, cancellationToken);
+
+            await _notificationService.CreateNotificationAsync(new ViewModels.Notifications.Requests.SendNotificationRequest
+            {
+                UserId = response.RequesterCompany.OwnerUser.Id,
+                Title = "Project request sent successfully",
+                Body = $"You have sent a collaboration project request \"{response.Name}\" to company {response.ExecutorCompany.Name}.",
+                LinkKey = "PROJECT_REQUEST_PAGE",
+                IdLink = response.RequesterCompanyId,
+                Event = "CREATE_PROJECT_REQUEST_CONFIRM",
+                Context = response.Name,
+                NotificationType = NotificationTypeEnum.PROJECT_REQUEST.ToString(),
+            }, cancellationToken);
+
+
+
             return _mapper.Map<ProjectRequestResponse>(response);
         }
 
@@ -143,6 +174,8 @@ namespace Fusion.Service.Services
 
             var projectRequest = await _projectRequestRepository.GetProjectRequestByIdAsync(id);
             var currentUserName = await GetUserName(_currentService.GetUserId());
+            var currentUserId = _currentService.GetUserId();
+
             var log = new CompanyActivityLog
             {
                 CompanyId = projectRequest?.RequesterCompanyId ?? Guid.Empty,
@@ -151,6 +184,40 @@ namespace Fusion.Service.Services
                 Description = $"User:'{currentUserName}' has deleted project request {projectRequest?.Code} for project {projectRequest?.Name}",
             };
             await _logService.CreateLog(log, cancellationToken);
+
+            var requesterUserId = projectRequest.RequesterCompany.OwnerUser.Id;
+            var executorUserId = projectRequest.ExecutorCompany.OwnerUser.Id;
+            var deletedByRequester = requesterUserId == currentUserId;
+
+
+            await _notificationService.CreateNotificationAsync(new ViewModels.Notifications.Requests.SendNotificationRequest
+            {
+                UserId = requesterUserId,
+                Title = "Project request deleted",
+                Body = deletedByRequester
+                    ? $"You have deleted the project request \"{projectRequest.Name}\"."
+                    : $"{projectRequest.ExecutorCompany.OwnerUser.UserName} has deleted your project request \"{projectRequest.Name}\".",
+                LinkKey = "PROJECT_REQUEST_PAGE",
+                IdLink = projectRequest.RequesterCompanyId,
+                Event = "DELETE_PROJECT_REQUEST",
+                Context = projectRequest.Name,
+                NotificationType = NotificationTypeEnum.PROJECT_REQUEST.ToString(),
+            }, cancellationToken);
+
+            await _notificationService.CreateNotificationAsync(new ViewModels.Notifications.Requests.SendNotificationRequest
+            {
+                UserId = executorUserId,
+                Title = "Project request deleted",
+                Body = deletedByRequester
+                    ? $"{projectRequest.RequesterCompany.OwnerUser.UserName} has deleted the project request \"{projectRequest.Name}\"."
+                    : $"You have deleted the project request \"{projectRequest.Name}\".",
+                LinkKey = "PROJECT_REQUEST_PAGE",
+                IdLink = projectRequest.ExecutorCompanyId,
+                Event = "DELETE_PROJECT_REQUEST",
+                Context = projectRequest.Name,
+                NotificationType = NotificationTypeEnum.PROJECT_REQUEST.ToString(),
+            }, cancellationToken);
+
             return result;
         }
 
@@ -187,17 +254,6 @@ namespace Fusion.Service.Services
                 ToEmail = result.ExecutorCompany.OwnerUser.Email
             });
 
-            //await _notificationService.CreateNotificationAsync(new ViewModels.Notifications.Requests.SendNotificationRequest
-            //{
-            //    UserId = projectRequest.RequesterCompany.OwnerUser.Id, // người nhận notification
-            //    Title = "Project Request Rejected",
-            //    Body = $"{projectRequest.ExecutorCompany.OwnerUser.UserName} from {projectRequest.ExecutorCompany.Name} has rejected your project request: \"{projectRequest.Name}\". Reason: {reason}.",
-            //    LinkKey = null,
-            //    IdLink = null,
-            //    Event = "PROJECT_REQUEST_REJECT",
-            //    Context = null,
-            //    NotificationType = NotificationTypeEnum.BUSINESS.ToString(),
-            //});
 
             var currentUserName = await GetUserName(_currentService.GetUserId());
             var log = new CompanyActivityLog
@@ -208,6 +264,35 @@ namespace Fusion.Service.Services
                 Description = $"User:'{currentUserName}' has rejected project request {projectRequest?.Code} for project {projectRequest?.Name}",
             };
             await _logService.CreateLog(log, cancellationToken);
+
+            var requesterUserId = projectRequest.RequesterCompany.OwnerUser.Id;
+            var executorUserId = projectRequest.ExecutorCompany.OwnerUser.Id;
+
+            await _notificationService.CreateNotificationAsync(new ViewModels.Notifications.Requests.SendNotificationRequest
+            {
+                UserId = requesterUserId,
+                Title = "Project request rejected",
+                Body = $"{projectRequest.ExecutorCompany.OwnerUser.UserName} from {projectRequest.ExecutorCompany.Name} has rejected your project request \"{projectRequest.Name}\". Reason: {reason}.",
+                LinkKey = "PROJECT_REQUEST_PAGE",
+                IdLink = projectRequest.RequesterCompanyId,
+                Event = "PROJECT_REQUEST_REJECT",
+                Context = projectRequest.Name,
+                NotificationType = NotificationTypeEnum.PROJECT_REQUEST.ToString(),
+            }, cancellationToken);
+
+            await _notificationService.CreateNotificationAsync(new ViewModels.Notifications.Requests.SendNotificationRequest
+            {
+                UserId = executorUserId,
+                Title = "You rejected a project request",
+                Body = $"You have rejected the project request \"{projectRequest.Name}\" from {projectRequest.RequesterCompany.Name}.",
+                LinkKey = "PROJECT_REQUEST_PAGE",
+                IdLink = projectRequest.ExecutorCompanyId,
+                Event = "PROJECT_REQUEST_REJECT",
+                Context = projectRequest.Name,
+                NotificationType = NotificationTypeEnum.PROJECT_REQUEST.ToString(),
+            }, cancellationToken);
+
+
             return new ProjectRequestRejectResponse
             {
                 Reason = reason,

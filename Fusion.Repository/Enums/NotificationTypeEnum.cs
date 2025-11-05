@@ -14,6 +14,8 @@ namespace Fusion.Repository.Enums
         TASK,
         COMPANY,
         WARNING,
+        PARTNER,
+        PROJECT_REQUEST,
         INFO
     }
 

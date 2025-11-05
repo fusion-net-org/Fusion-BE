@@ -14,6 +14,9 @@ namespace Fusion.Service.Commons.Helpers
             ["HOME_PAGE"] = ("/company", "/(tabs)/home"),
             ["COMPANY_DETAIL_PAGE"] = ("/company/{id}", null),
             ["PROJECT_DETAIL"] = ("/company/project/{id}", null),
+            ["PARTNER_PAGE"] = ("/company/{id}/partners", null),
+            ["MEMBER_PAGE"] = ("/company/{id}/members", null),
+            ["PROJECT_REQUEST_PAGE"] = ("/company/{id}/project-request", null),
         };
 
         /// <summary>
