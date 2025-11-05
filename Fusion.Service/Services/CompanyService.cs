@@ -92,16 +92,16 @@ namespace Fusion.Service.Services
             if (newCompany == null)
                 throw CustomExceptionFactory.CreateInternalServerError(ResponseMessages.INTERNAL_SERVER_ERROR.FormatMessage("Add Company fail"));
 
-            //await _notificationService.CreateNotificationAsync(new SendNotificationRequest
-            //{
-            //    UserId = user.Id,
-            //    Title = $"Công ty {newCompany.Name} đã được tạo thành công!",
-            //    Body = $"Bạn vừa tạo công ty mới với mã số thuế {newCompany.TaxCode}. Bạn có thể bắt đầu quản lý ngay.",
-            //    LinkKey = "COMPANY_DETAIL",
-            //    IdLink = newCompany.Id,
-            //    Event = "CompanyCreated",
-            //    NotificationType = "Info",
-            //}, cancellationToken);
+            await _notificationService.CreateNotificationAsync(new SendNotificationRequest
+            {
+                UserId = user.Id,
+                Title = $"Company {newCompany.Name} has been successfully created!",
+                Body = $"You have just created a new company with tax code {newCompany.TaxCode}. You can start managing it now.",
+                LinkKey = "COMPANY_DETAIL_PAGE",
+                IdLink = newCompany.Id,
+                Event = "CompanyCreated",
+                NotificationType = "COMPANY",
+            }, cancellationToken);
 
 
             var newMember = await _companyMemberRepository.AddCompanyMemberAsync(new CompanyMember
@@ -402,6 +402,18 @@ namespace Fusion.Service.Services
 
             var result = await _companyRepository.UpdateCompanyAsync(image_company, avatar_company, companyId, _mapper.Map<Company>(request), cancellationToken);
 
+            await _notificationService.CreateNotificationAsync(new SendNotificationRequest
+            {
+                UserId = user.Id,
+                Title = $"Company {company.Name} has been updated successfully!",
+                Body = $"You have successfully updated information for company {company.Name}.",
+                LinkKey = "COMPANY_DETAIL_PAGE",
+                IdLink = company.Id,
+                Event = "CompanyUpdated",
+                NotificationType = "COMPANY",
+            }, cancellationToken);
+
+
             var log = new CompanyActivityLog
             {
                 CompanyId = companyId,
@@ -443,6 +455,18 @@ namespace Fusion.Service.Services
 
             };
             await _logService.CreateLog(log, cancellationToken);
+
+            await _notificationService.CreateNotificationAsync(new SendNotificationRequest
+            {
+                UserId = user.Id,
+                Title = $"Company {company.Name} has been deleted successfully!",
+                Body = $"The company with tax code {company.TaxCode} has been removed from your account.",
+                LinkKey = "COMPANY_LIST_PAGE",
+                IdLink = company.Id,
+                Event = "CompanyDeleted",
+                NotificationType = "COMPANY",
+            }, cancellationToken);
+
             return true;
         }
         public async Task<CompanySummaryResponse> GetCompanySummaryAsync(Guid companyId)
