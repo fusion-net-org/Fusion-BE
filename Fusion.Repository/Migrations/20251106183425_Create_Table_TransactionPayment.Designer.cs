@@ -4,6 +4,7 @@ using Fusion.Repository.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Fusion.Repository.Migrations
 {
     [DbContext(typeof(FusionDbContext))]
-    partial class FusionDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251106183425_Create_Table_TransactionPayment")]
+    partial class Create_Table_TransactionPayment
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1309,10 +1312,6 @@ namespace Fusion.Repository.Migrations
                         .HasMaxLength(250)
                         .HasColumnType("nvarchar(250)")
                         .HasColumnName("counterAccountNumber");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("created_at");
 
                     b.Property<string>("Currency")
                         .ValueGeneratedOnAdd()

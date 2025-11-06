@@ -9,19 +9,10 @@ namespace Fusion.Service.IServices;
 
 public interface ITransactionPaymentService
 {
-    //Task<TransactionPayment> GetTransactionByIdAsync(Guid id, CancellationToken cancellationToken = default);
-    Task<TransactionPaymentResponse> CreateTransactionPaymentAsync(CreateTransactionRequest request, CancellationToken cancellationToken = default);
-    Task<TransactionPaymentResponse> GetTransactionByCodeAsync(string code, CancellationToken cancellationToken = default);
-    Task<Guid> GetLasterTransactionForUserAsync(CancellationToken cancellationToken = default);
-    Task<PagedResult<TransactionForAdminResponse>> GetAllTransactionForAdminAsync(
-        AdminTransactionSearch request,
-        CancellationToken cancellationToken = default);
-
-    Task<PackagePurchaseStatsResponse> GetPackagePurchaseStatsAsync(AdminTransactionSearch request, CancellationToken cancellationToken = default);
-    Task<YearlyRevenueResponse> GetMonthlyRevenueByYearAsync(
-        int year,
-        string status = "=Suceess",
-        CancellationToken cancellationToken = default);
-    Task<TransactionStatusCountsResponse> CountTransactionByStatusAsync(CancellationToken cancellationToken = default);
+    Task<PagedResult<TransactionPaymentResponse>> GetPagedAsync(TransactionPaymentPagedRequest request, CancellationToken ct = default);
+    Task<TransactionPaymentDetailResponse?> GetDetailAsync(Guid id, CancellationToken ct = default);
+    Task<TransactionPaymentResponse> CreateAsync(TransactionPaymentCreateRequest req, CancellationToken ct = default);
+    Task<bool> UpdateAsync(Guid id, TransactionPaymentUpdateRequest req, CancellationToken ct = default);
+    Task<bool> DeleteAsync(Guid id, CancellationToken ct = default);
 
 }
