@@ -132,11 +132,11 @@ public class AuthenService : IAuthenService
             return false;
         }
     }
-    public async Task<bool> EmailVerificationAsync(string token, CancellationToken cancellationToken = default)
-    {
-        var result = await _userRepository.EmailVerificationAsync(token, cancellationToken);
-        return result;
-    }
+    //public async Task<bool> EmailVerificationAsync(string token, CancellationToken cancellationToken = default)
+    //{
+    //    var result = await _userRepository.EmailVerificationAsync(token, cancellationToken);
+    //    return result;
+    //}
     public async Task<LoginResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken)
     {
         // 1. validate input

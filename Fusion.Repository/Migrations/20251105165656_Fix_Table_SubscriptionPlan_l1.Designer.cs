@@ -4,6 +4,7 @@ using Fusion.Repository.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Fusion.Repository.Migrations
 {
     [DbContext(typeof(FusionDbContext))]
-    partial class FusionDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251105165656_Fix_Table_SubscriptionPlan_l1")]
+    partial class Fix_Table_SubscriptionPlan_l1
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1004,9 +1007,10 @@ namespace Fusion.Repository.Migrations
                         .HasColumnName("id")
                         .HasDefaultValueSql("(newid())");
 
-                    b.Property<int>("BillingPeriod")
+                    b.Property<string>("BillingPeriod")
+                        .IsRequired()
                         .HasMaxLength(20)
-                        .HasColumnType("int")
+                        .HasColumnType("nvarchar(20)")
                         .HasColumnName("billing_period");
 
                     b.Property<string>("Currency")
@@ -1037,8 +1041,7 @@ namespace Fusion.Repository.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("PlanId")
-                        .IsUnique();
+                    b.HasIndex("PlanId");
 
                     b.ToTable("subscriptionplanprices");
                 });
@@ -1865,8 +1868,8 @@ namespace Fusion.Repository.Migrations
             modelBuilder.Entity("Fusion.Repository.Entities.SubscriptionPlanPrice", b =>
                 {
                     b.HasOne("Fusion.Repository.Entities.SubscriptionPlan", "SubscriptionPlan")
-                        .WithOne("Price")
-                        .HasForeignKey("Fusion.Repository.Entities.SubscriptionPlanPrice", "PlanId")
+                        .WithMany("Prices")
+                        .HasForeignKey("PlanId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("FK_SubscriptionPlanPrices_Plan");
@@ -2097,7 +2100,7 @@ namespace Fusion.Repository.Migrations
                 {
                     b.Navigation("Features");
 
-                    b.Navigation("Price");
+                    b.Navigation("Prices");
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.Ticket", b =>

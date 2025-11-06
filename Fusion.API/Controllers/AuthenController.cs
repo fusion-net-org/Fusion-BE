@@ -76,12 +76,12 @@ namespace Fusion.API.Controllers
             return Ok(ResponseModel<bool>.Ok(result, "Password reset successfully"));
         }
 
-        [HttpPut("confirm-account")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<bool>))]
-        public async Task<IActionResult> ConfirmAccount([FromBody] string token, CancellationToken cancellationToken)
-        {
-            var result = await _authenService.EmailVerificationAsync(token, cancellationToken);
-            return Ok(ResponseModel<bool>.Ok(result, "Confirm account successfully"));
-        }
+        //[HttpPut("confirm-account")]
+        //[ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<bool>))]
+        //public async Task<IActionResult> ConfirmAccount([FromBody] string token, CancellationToken cancellationToken)
+        //{
+        //    var result = await _authenService.EmailVerificationAsync(token, cancellationToken);
+        //    return Ok(ResponseModel<bool>.Ok(result, "Confirm account successfully"));
+        //}
     }
 }

@@ -4,44 +4,35 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Fusion.Repository.Entities;
 
+[Table("subscriptionplans")]
 public class SubscriptionPlan
 {
     [Key]
     [Column("id")]
     public Guid Id { get; set; }
 
-    [Required]
+    [Required, MaxLength(50)]
+    [Column("code")]
+    public string Code { get; set; } = string.Empty;
+
+    [Required, MaxLength(200)]
     [Column("name")]
-    [StringLength(100)]
-    public string Name { get; set; } = null!;
+    public string Name { get; set; } = string.Empty;
 
-    [Required]
-    [Column("price", TypeName = "decimal(18, 2)")]
-    public decimal Price { get; set; }
-
-    [Required]
-    [Column("quota_company")]
-    public int QuotaCompany { get; set; }
-
-    [Required]
-    [Column("quota_project")]
-    public int QuotaProject { get; set; }
-
-    [Required]
     [Column("description")]
-    [StringLength(250)]
-    public string Description { get; set; } = null!;
+    public string? Description { get; set; }
 
-    [Column("create_at")]
-    public DateTime CreatedAt { get; set; }
+    [Column("is_active")]
+    public bool IsActive { get; set; } = true;
 
-    [Column("update_at")]
-    public DateTime UpdatedAt { get; set; }
+    [Column("created_at")]
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+    [Column("updated_at")]
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
-    [InverseProperty("SubscriptionPackage")]
-    public virtual ICollection<UserSubscription> UserSubscriptions { get; set; } = new List<UserSubscription>();
+    public SubscriptionPlanPrice? Price { get; set; }
 
-    [InverseProperty("SubscriptionPackage")]
-    public virtual ICollection<TransactionPayment> TransactionPayments { get; set; } = new List<TransactionPayment>();
+    [InverseProperty(nameof(SubscriptionPlanFeature.SubscriptionPlan))]
+    public ICollection<SubscriptionPlanFeature>? Features { get; set; }
 }

@@ -12,56 +12,36 @@ public partial class FusionDbContext : DbContext
     }
 
     public virtual DbSet<Comment> Comments { get; set; }
-
     public virtual DbSet<Company> Companies { get; set; }
-
     public virtual DbSet<CompanyFriendship> CompanyFriendships { get; set; }
-
     public virtual DbSet<CompanyMember> CompanyMembers { get; set; }
-
     public virtual DbSet<FunctionInPage> FunctionInPages { get; set; }
-
     public virtual DbSet<Notification> Notifications { get; set; }
-
     public virtual DbSet<Project> Projects { get; set; }
-
     public virtual DbSet<ProjectMember> ProjectMembers { get; set; }
-
     public virtual DbSet<ProjectRequest> ProjectRequests { get; set; }
-
     public virtual DbSet<ProjectTask> ProjectTasks { get; set; }
-
     public virtual DbSet<Role> Roles { get; set; }
-
     public virtual DbSet<RolePermission> RolePermissions { get; set; }
-
     public virtual DbSet<Sprint> Sprints { get; set; }
-
     public virtual DbSet<TaskLogEvent> TaskLogEvents { get; set; }
-
     public virtual DbSet<TaskWorkflow> TaskWorkflows { get; set; }
-
     public virtual DbSet<RefreshToken> RefreshTokens { get; set; }
     public virtual DbSet<Ticket> Tickets { get; set; }
-
     public virtual DbSet<TicketComment> TicketComments { get; set; }
-
     public virtual DbSet<User> Users { get; set; }
-
     public virtual DbSet<UserRole> UserRoles { get; set; }
-
     public virtual DbSet<Workflow> Workflows { get; set; }
-
     public virtual DbSet<WorkflowStatus> WorkflowStatuses { get; set; }
-
     public virtual DbSet<WorkflowTransition> WorkflowTransitions { get; set; }
-    public virtual DbSet<SubscriptionPlan> SubscriptionPackages { get; set; }
-    public virtual DbSet<UserSubscription> UserSubscriptions { get; set; }
-    public virtual DbSet<TransactionPayment> TransactionPayments { get; set; }
     public virtual DbSet<UserDevice> UserDevices { get; set; }
     public virtual DbSet<CompanyActivityLog> CompanyActivityLogs { get; set; }
     public virtual DbSet<UserLog> UserLogs { get; set; }
-    public virtual DbSet<CompanySubscriptionAssignment> CompanySubscriptionAssignments { get; set; }
+
+    // Subscription
+    public virtual DbSet<SubscriptionPlan> SubscriptionPlans { get; set; }
+    public virtual DbSet<SubscriptionPlanFeature> SubscriptionPlanFeatures { get; set; }
+    public virtual DbSet<SubscriptionPlanPrice> SubscriptionPlanPrices { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -323,66 +303,6 @@ public partial class FusionDbContext : DbContext
                   .HasConstraintName("FK_RefreshTokens_User");
         });
 
-
-        modelBuilder.Entity<SubscriptionPlan>(entity =>
-        {
-            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
-            entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
-            entity.Property(e => e.Price).IsRequired().HasColumnType("decimal(18,2)");
-            entity.Property(e => e.Description).IsRequired().HasMaxLength(250);
-
-            entity.HasMany(e => e.UserSubscriptions)
-                  .WithOne(e => e.SubscriptionPackage)
-                  .HasForeignKey(e => e.PackageId)
-                  .HasConstraintName("FK_UserSubscriptions_SubscriptionPackage");
-
-            entity.HasMany(e => e.TransactionPayments)
-                  .WithOne(e => e.SubscriptionPackage)
-                  .HasForeignKey(e => e.PackageId)
-                  .HasConstraintName("FK_TransactionPayments_SubscriptionPackage");
-        });
-
-
-        modelBuilder.Entity<UserSubscription>(entity =>
-        {
-            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
-            entity.Property(e => e.PurchaseDate).IsRequired();
-            entity.Property(e => e.QuotaCompanyAdded).IsRequired();
-            entity.Property(e => e.QuotaProjectAdded).IsRequired();
-            entity.Property(e => e.QuotaCompanyRemaining).IsRequired();
-            entity.Property(e => e.QuotaProjectRemaining).IsRequired();
-
-            entity.HasOne(e => e.User)
-                  .WithMany(e => e.UserSubscriptions)
-                  .HasForeignKey(e => e.UserId)
-                  .HasConstraintName("FK_UserSubscriptions_User");
-
-            entity.HasOne(e => e.SubscriptionPackage)
-                  .WithMany(e => e.UserSubscriptions)
-                  .HasForeignKey(e => e.PackageId)
-                  .HasConstraintName("FK_UserSubscriptions_SubscriptionPackage");
-        });
-
-
-        modelBuilder.Entity<TransactionPayment>(entity =>
-        {
-            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
-            entity.Property(e => e.Amount).IsRequired().HasColumnType("decimal(18,2)");
-            entity.Property(e => e.CreatedAt).IsRequired();
-            entity.Property(e => e.PaymentMethod).HasMaxLength(50);
-            entity.Property(e => e.Status).HasMaxLength(50);
-
-            entity.HasOne(e => e.User)
-                  .WithMany(e => e.TransactionPayments)
-                  .HasForeignKey(e => e.UserId)
-                  .HasConstraintName("FK_TransactionPayments_User");
-
-            entity.HasOne(e => e.SubscriptionPackage)
-                  .WithMany(e => e.TransactionPayments)
-                  .HasForeignKey(e => e.PackageId)
-                  .HasConstraintName("FK_TransactionPayments_SubscriptionPackage");
-        });
-
         modelBuilder.Entity<CompanyActivityLog>(entity =>
         {
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
@@ -392,27 +312,49 @@ public partial class FusionDbContext : DbContext
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
         });
 
-        modelBuilder.Entity<CompanySubscriptionAssignment>(entity =>
+        // === Cấu hình mới cho SubscriptionPlan ===
+        modelBuilder.Entity<SubscriptionPlan>(entity =>
+        {
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(sysutcdatetime())");
+
+            entity.HasOne(d => d.Price)
+                  .WithOne(p => p.SubscriptionPlan)
+                  .HasForeignKey<SubscriptionPlanPrice>(p => p.PlanId)
+                  .OnDelete(DeleteBehavior.Cascade)
+                  .HasConstraintName("FK_SubscriptionPlanPrices_Plan");
+
+            entity.HasMany(d => d.Features)
+                  .WithOne(f => f.SubscriptionPlan)
+                  .HasForeignKey(f => f.PlanId)
+                  .HasConstraintName("FK_SubscriptionPlanFeatures_Plan");
+        });
+
+        // === SubscriptionPlanFeature ===
+        modelBuilder.Entity<SubscriptionPlanFeature>(entity =>
+        {
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.FeatureKey)
+                  .HasMaxLength(50)
+                  .IsRequired();
+
+            // Nếu bạn dùng enum FeatureKeys => map sang string
+            entity.Property(e => e.FeatureKey)
+                  .HasConversion<string>()
+                  .HasMaxLength(50);
+        });
+
+        // === SubscriptionPlanPrice ===
+        modelBuilder.Entity<SubscriptionPlanPrice>(entity =>
         {
             entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-            entity.Property(e => e.AssignedAt).HasDefaultValueSql("(sysutcdatetime())");
-
-            entity.Property(e => e.IsEnabled).HasDefaultValue(true);
-
-            entity.HasOne(e => e.Member)
-                  .WithMany()
-                  .HasForeignKey(e => e.CompanyMemberId)
-                  .HasConstraintName("FK_CompanySubscriptionAssignments_CompanyMember");
-
-            entity.HasOne(e => e.OwnerSubscription)
-                  .WithMany()
-                  .HasForeignKey(e => e.UserSubscriptionId)
-                  .HasConstraintName("FK_CompanySubscriptionAssignments_UserSubscription");
-
-            entity.HasIndex(e => new { e.CompanyMemberId, e.CodeTransaction }, "UX_CompanySubscriptionAssignments_Unique")
-                  .IsUnique()
-                  .HasFilter("([company_member_id] IS NOT NULL AND [code_transaction] IS NOT NULL)");
+            entity.HasOne(d => d.SubscriptionPlan)
+         .WithOne(p => p.Price)                             
+         .HasForeignKey<SubscriptionPlanPrice>(d => d.PlanId)
+         .OnDelete(DeleteBehavior.Cascade)
+         .HasConstraintName("FK_SubscriptionPlanPrices_Plan");
         });
 
         OnModelCreatingPartial(modelBuilder);
