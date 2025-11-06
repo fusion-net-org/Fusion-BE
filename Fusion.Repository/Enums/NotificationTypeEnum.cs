@@ -16,7 +16,8 @@ namespace Fusion.Repository.Enums
         WARNING,
         PARTNER,
         PROJECT_REQUEST,
-        INFO
+        INFO,
+        ADMIN_NOTIFICATE
     }
 
     public enum NotificationStatusEnum

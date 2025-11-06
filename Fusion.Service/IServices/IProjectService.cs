@@ -1,6 +1,7 @@
 ﻿
 using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.Project;
+using Fusion.Repository.Entities;
 using Fusion.Repository.ViewModels;
 using Fusion.Service.ViewModels.Project.Requests;
 using Fusion.Service.ViewModels.Project.Responses;
@@ -23,6 +24,9 @@ namespace Fusion.Service.IServices
             CancellationToken ct = default);
         Task<ProjectListResult> GetProjectsForCompanyAsync(
         Guid companyId, ProjectListSearchRequest req, CancellationToken ct = default);
+
+        Task<PagedResult<ProjectSummaryResponseV2>> GetProjectsForAdminAsync(ProjectSummarySearchRequest request, CancellationToken cancellationToken = default);
+
     }
-   
+
 }

@@ -87,5 +87,17 @@ namespace Fusion.API.Controllers
                 message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "Project Status")
             ));
         }
+
+        //[Authorize(Roles = "Admin")]
+        [HttpGet("admin")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PagedResult<ProjectSummaryResponseV2>>))]
+        public async Task<IActionResult> GetProjectsForAdminAsync( [FromQuery] ProjectSummarySearchRequest request, CancellationToken cancellationToken = default)
+        {
+            var response = await _service.GetProjectsForAdminAsync(request, cancellationToken);
+            return Ok(ResponseModel<PagedResult<ProjectSummaryResponseV2>>.Ok(
+                data: response,
+                message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "Project Admin")
+            ));
+        }
     }
 }
