@@ -1,93 +1,93 @@
 ﻿
-using Fusion.Repository.Bases.Exceptions;
-using Fusion.Repository.Bases.Page;
-using Fusion.Repository.Data;
-using Fusion.Repository.Entities;
-using Fusion.Repository.IRepositories;
-using Microsoft.EntityFrameworkCore;
+//using Fusion.Repository.Bases.Exceptions;
+//using Fusion.Repository.Bases.Page;
+//using Fusion.Repository.Data;
+//using Fusion.Repository.Entities;
+//using Fusion.Repository.IRepositories;
+//using Microsoft.EntityFrameworkCore;
 
-namespace Fusion.Repository.Repositories
-{
-    public class UserSubscriptionRepository : GenericRepository<UserSubscription>, IUserSubscriptionRepository
-    {
-        private readonly FusionDbContext _context;
-        public UserSubscriptionRepository(FusionDbContext context) : base(context)
-        {
-            _context = context;
-        }
+//namespace Fusion.Repository.Repositories
+//{
+//    public class UserSubscriptionRepository : GenericRepository<UserSubscription>, IUserSubscriptionRepository
+//    {
+//        private readonly FusionDbContext _context;
+//        public UserSubscriptionRepository(FusionDbContext context) : base(context)
+//        {
+//            _context = context;
+//        }
 
-        public async Task<int> DeactivateExpiredOrDepletedAsync(DateTime utcNow, CancellationToken ct = default)
-        {
-            var q = _context.UserSubscriptions.AsNoTracking()
-                .Where(us => us.IsActive == true)
-                .Where(us =>
-                (us.ExpiryDate.HasValue && us.ExpiryDate < utcNow) ||
-                (us.QuotaCompanyRemaining <= 0 && us.QuotaProjectRemaining <= 0));
+//        public async Task<int> DeactivateExpiredOrDepletedAsync(DateTime utcNow, CancellationToken ct = default)
+//        {
+//            var q = _context.UserSubscriptions.AsNoTracking()
+//                .Where(us => us.IsActive == true)
+//                .Where(us =>
+//                (us.ExpiryDate.HasValue && us.ExpiryDate < utcNow) ||
+//                (us.QuotaCompanyRemaining <= 0 && us.QuotaProjectRemaining <= 0));
 
-            return await q.ExecuteUpdateAsync(s => s.SetProperty(u => u.IsActive, false), ct);
-        }
+//            return await q.ExecuteUpdateAsync(s => s.SetProperty(u => u.IsActive, false), ct);
+//        }
 
-        public async Task DecreaseCompanyQuotaAsync(Guid userId, CancellationToken cancellationToken = default)
-        {
-            var subscriptions = await _context.UserSubscriptions
-                               .Where(x => x.UserId == userId && x.IsActive && x.QuotaCompanyRemaining > 0)
-                               .OrderBy(x => x.ExpiryDate)
-                               .ToListAsync(cancellationToken);
+//        public async Task DecreaseCompanyQuotaAsync(Guid userId, CancellationToken cancellationToken = default)
+//        {
+//            var subscriptions = await _context.UserSubscriptions
+//                               .Where(x => x.UserId == userId && x.IsActive && x.QuotaCompanyRemaining > 0)
+//                               .OrderBy(x => x.ExpiryDate)
+//                               .ToListAsync(cancellationToken);
 
-            if (!subscriptions.Any())
-                throw CustomExceptionFactory.CreateBadRequestError("You have no remaining company quota.");
+//            if (!subscriptions.Any())
+//                throw CustomExceptionFactory.CreateBadRequestError("You have no remaining company quota.");
 
-            var targetSub = subscriptions.First();
-            targetSub.QuotaCompanyRemaining -= 1;
+//            var targetSub = subscriptions.First();
+//            targetSub.QuotaCompanyRemaining -= 1;
 
-            _context.UserSubscriptions.Update(targetSub);
-            await _context.SaveChangesAsync(cancellationToken);
-        }
+//            _context.UserSubscriptions.Update(targetSub);
+//            await _context.SaveChangesAsync(cancellationToken);
+//        }
 
-        public async Task DecreaseProjectQuotaAsync(Guid userId, CancellationToken cancellationToken = default)
-        {
-            var subscriptions = await _context.UserSubscriptions
-                               .Where(x => x.UserId == userId && x.IsActive && x.QuotaProjectRemaining > 0)
-                               .OrderBy(x => x.ExpiryDate)
-                               .ToListAsync(cancellationToken);
+//        public async Task DecreaseProjectQuotaAsync(Guid userId, CancellationToken cancellationToken = default)
+//        {
+//            var subscriptions = await _context.UserSubscriptions
+//                               .Where(x => x.UserId == userId && x.IsActive && x.QuotaProjectRemaining > 0)
+//                               .OrderBy(x => x.ExpiryDate)
+//                               .ToListAsync(cancellationToken);
 
-            if (!subscriptions.Any())
-                throw CustomExceptionFactory.CreateBadRequestError("You have no remaining project quota.");
+//            if (!subscriptions.Any())
+//                throw CustomExceptionFactory.CreateBadRequestError("You have no remaining project quota.");
 
-            var targetSub = subscriptions.First();
-            targetSub.QuotaProjectRemaining -= 1;
+//            var targetSub = subscriptions.First();
+//            targetSub.QuotaProjectRemaining -= 1;
 
-            _context.UserSubscriptions.Update(targetSub);
-            await _context.SaveChangesAsync(cancellationToken);
-        }
+//            _context.UserSubscriptions.Update(targetSub);
+//            await _context.SaveChangesAsync(cancellationToken);
+//        }
 
-        public async Task<PagedResult<UserSubscription>> GetAllSubscription()
-        {
-            var items = await _context.UserSubscriptions
-                      .AsNoTracking()
-                      .OrderByDescending(x => x.UserId) 
-                      .ToListAsync();
+//        public async Task<PagedResult<UserSubscription>> GetAllSubscription()
+//        {
+//            var items = await _context.UserSubscriptions
+//                      .AsNoTracking()
+//                      .OrderByDescending(x => x.UserId) 
+//                      .ToListAsync();
 
-            return new PagedResult<UserSubscription>
-            {
-                Items = items,
-                TotalCount = items.Count,
-                PageNumber = 1,
-                PageSize = items.Count
-            };
-        }
+//            return new PagedResult<UserSubscription>
+//            {
+//                Items = items,
+//                TotalCount = items.Count,
+//                PageNumber = 1,
+//                PageSize = items.Count
+//            };
+//        }
 
-        public async Task<PagedResult<UserSubscription>> GetPagedSubscriptionsByUserIdAsync(Guid userId, PagedRequest request, CancellationToken cancellationToken = default)
-        {
-            var query = _context.UserSubscriptions
-                .Include(x => x.SubscriptionPackage)
-                .Where(x => x.UserId == userId)
-                .OrderByDescending(x => x.PurchaseDate)
-                .AsQueryable();
+//        public async Task<PagedResult<UserSubscription>> GetPagedSubscriptionsByUserIdAsync(Guid userId, PagedRequest request, CancellationToken cancellationToken = default)
+//        {
+//            var query = _context.UserSubscriptions
+//                .Include(x => x.SubscriptionPackage)
+//                .Where(x => x.UserId == userId)
+//                .OrderByDescending(x => x.PurchaseDate)
+//                .AsQueryable();
 
-            return await query.ToPagedResultAsync(request, cancellationToken);
-        }
+//            return await query.ToPagedResultAsync(request, cancellationToken);
+//        }
 
 
-    }
-}
+//    }
+//}

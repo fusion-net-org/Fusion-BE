@@ -46,17 +46,17 @@ namespace Fusion.Service
             //project request
             services.AddScoped<IProjectRequestService , ProjectRequestService>();
 
-            //Subscription package
-            services.AddScoped<ISubscriptionPackageService, SubscriptionPackageService>();
+            //Subscription plan
+            services.AddScoped<ISubscriptionPlanService, SubscriptionPlanService>();
 
-            //transaction payment
-            services.AddScoped<ITransactionPaymentService, TransactionPaymentService>();
+            ////transaction payment
+            //services.AddScoped<ITransactionPaymentService, TransactionPaymentService>();
 
             //refesh token
             services.AddScoped<IRefreshTokenService, RefreshTokenService>();
 
             //user subscrption
-            services.AddScoped<IUserSubscriptionService, UserSubscriptionService>();
+            //services.AddScoped<IUserSubscriptionService, UserSubscriptionService>();
 
             //notification
             services.AddScoped<INotificationService, NotificationService>();
@@ -77,26 +77,26 @@ namespace Fusion.Service
             services.AddScoped<IProjectMemberService, ProjectMemberService>();
 
             // admin
-            services.AddScoped<IAdminService, AdminService>();
+            //services.AddScoped<IAdminService, AdminService>();
 
             //userlog 
             services.AddScoped<IUserLogService, UserLogService>();
 
             // PayOS
-            services.AddSingleton<PayOS>(sp =>
-            {
-                var clientId = configuration["PayOS:ClientId"];
-                var apiKey = configuration["PayOS:ApiKey"];
-                var checksumKey = configuration["PayOS:ChecksumKey"];
+            //services.AddSingleton<PayOS>(sp =>
+            //{
+            //    var clientId = configuration["PayOS:ClientId"];
+            //    var apiKey = configuration["PayOS:ApiKey"];
+            //    var checksumKey = configuration["PayOS:ChecksumKey"];
 
-                if (string.IsNullOrEmpty(clientId) || string.IsNullOrEmpty(apiKey) || string.IsNullOrEmpty(checksumKey))
-                {
-                    throw new InvalidOperationException("Missing PayOS configuration in appsettings.json");
-                }
+            //    if (string.IsNullOrEmpty(clientId) || string.IsNullOrEmpty(apiKey) || string.IsNullOrEmpty(checksumKey))
+            //    {
+            //        throw new InvalidOperationException("Missing PayOS configuration in appsettings.json");
+            //    }
 
-                return new PayOS(clientId, apiKey, checksumKey);
-            });
-            services.AddScoped<IPayOSService, PayOSService>();
+            //    return new PayOS(clientId, apiKey, checksumKey);
+            //});
+            //services.AddScoped<IPayOSService, PayOSService>();
 
             return services;
         }

@@ -11,14 +11,12 @@ using Fusion.Service.ViewModels.Project.Requests;
 using Fusion.Service.ViewModels.Project.Responses;
 using Fusion.Service.ViewModels.Projects.Requests;
 using Fusion.Service.ViewModels.Projects.Responses;
-using Fusion.Service.ViewModels.SubscriptionPackage.Requests;
-using Fusion.Service.ViewModels.SubscriptionPackage.Responses;
+using Fusion.Service.ViewModels.SubscriptionPlan.Requests;
+using Fusion.Service.ViewModels.SubscriptionPlan.Responses;
 using Fusion.Service.ViewModels.Task.Request;
 using Fusion.Service.ViewModels.Task.Response;
 using Fusion.Service.ViewModels.Tickets.Requests;
 using Fusion.Service.ViewModels.Tickets.Responses;
-using Fusion.Service.ViewModels.TransactionPayment.Requests;
-using Fusion.Service.ViewModels.TransactionPayment.Responses;
 using Fusion.Service.ViewModels.Users.Requests;
 using Fusion.Service.ViewModels.Users.Responses;
 
@@ -164,30 +162,43 @@ public class MappingProfile : Profile
             .ReverseMap();
 
         //--------------------------- entity: Transaction Payment ---------------------------------------------
-        CreateMap<CreateTransactionRequest, TransactionPayment>();
-        CreateMap<TransactionPayment, TransactionForAdminResponse>()
-           .ForMember(d => d.UserName, opt => opt.MapFrom(s => s.User.UserName))
-           .ForMember(d => d.PackageName, opt => opt.MapFrom(s => s.SubscriptionPackage.Name))
-           .ForMember(d => d.Id, opt => opt.MapFrom(s => s.Id))
-           .ForMember(d => d.UserId, opt => opt.MapFrom(s => s.UserId))
-           .ForMember(d => d.PackageId, opt => opt.MapFrom(s => s.PackageId))
-           .ForMember(d => d.TransactionCode, opt => opt.MapFrom(s => s.TransactionCode))
-           .ForMember(d => d.Amount, opt => opt.MapFrom(s => s.Amount))
-           .ForMember(d => d.PaymentMethod, opt => opt.MapFrom(s => s.PaymentMethod))
-           .ForMember(d => d.Status, opt => opt.MapFrom(s => s.Status))
-           .ForMember(d => d.CreatedAt, opt => opt.MapFrom(s => s.CreatedAt))
-           .ForMember(d => d.UpdatedAt, opt => opt.MapFrom(s => s.UpdatedAt));
+        //CreateMap<CreateTransactionRequest, TransactionPayment>();
+        //CreateMap<TransactionPayment, TransactionForAdminResponse>()
+        //   .ForMember(d => d.UserName, opt => opt.MapFrom(s => s.User.UserName))
+        //   .ForMember(d => d.PackageName, opt => opt.MapFrom(s => s.SubscriptionPackage.Name))
+        //   .ForMember(d => d.Id, opt => opt.MapFrom(s => s.Id))
+        //   .ForMember(d => d.UserId, opt => opt.MapFrom(s => s.UserId))
+        //   .ForMember(d => d.PackageId, opt => opt.MapFrom(s => s.PackageId))
+        //   .ForMember(d => d.TransactionCode, opt => opt.MapFrom(s => s.TransactionCode))
+        //   .ForMember(d => d.Amount, opt => opt.MapFrom(s => s.Amount))
+        //   .ForMember(d => d.PaymentMethod, opt => opt.MapFrom(s => s.PaymentMethod))
+        //   .ForMember(d => d.Status, opt => opt.MapFrom(s => s.Status))
+        //   .ForMember(d => d.CreatedAt, opt => opt.MapFrom(s => s.CreatedAt))
+        //   .ForMember(d => d.UpdatedAt, opt => opt.MapFrom(s => s.UpdatedAt));
 
         //----------------------------     entity: Project  ---------------------------------------------
         CreateMap<Project, ProjectResponse>();
 
 
-        //--------------------------- entity: SubscriptionPackage ---------------------------------------------
-        CreateMap<SubscriptionRequest, SubscriptionPackage>()
-          .ForMember(dest => dest.Id, opt => opt.Ignore());
+        //--------------------------- entity: SubscriptionPlan ---------------------------------------------
+        CreateMap<SubscriptionPlanCreateRequest, SubscriptionPlan>()
+             .ForMember(dest => dest.Id, opt => opt.MapFrom(_ => Guid.NewGuid()))
+             .ForMember(dest => dest.IsActive, opt => opt.MapFrom(_ => true))
+             .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(_ => DateTime.UtcNow))
+             .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(_ => DateTime.UtcNow));
 
-        CreateMap<SubscriptionPackage, SubscriptionAdminResponse>();
-        CreateMap<SubscriptionPackage, SubscriptionResponse>();
+        CreateMap<SubscriptionPlanFeatureRequest, SubscriptionPlanFeature>();
+        CreateMap<SubscriptionPlanPriceRequest, SubscriptionPlanPrice>();
+
+        // ReverseMap
+        CreateMap<SubscriptionPlan, SubscriptionPlanResponse>();
+        CreateMap<SubscriptionPlanFeature, SubscriptionPlanFeatureRequest>();
+        CreateMap<SubscriptionPlanPrice, SubscriptionPlanPriceRequest>();
+
+        //detail
+        CreateMap<SubscriptionPlan, SubscriptionPlanDetailResponse>();
+        CreateMap<SubscriptionPlanPrice, SubscriptionPlanPriceResponse>();
+        CreateMap<SubscriptionPlanFeature, SubscriptionPlanFeatureResponse>();
 
         //----------------------------     entity: Notification ---------------------------------------------
         CreateMap<Notification, NotificationResponse>()

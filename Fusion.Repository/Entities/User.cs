@@ -109,11 +109,6 @@ public partial class User
 
     [InverseProperty("User")]
     public virtual ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
-    [InverseProperty("User")]
-    public virtual ICollection<UserSubscription> UserSubscriptions { get; set; } = new List<UserSubscription>();
-
-    [InverseProperty("User")]
-    public virtual ICollection<TransactionPayment> TransactionPayments { get; set; } = new List<TransactionPayment>();
 
     [InverseProperty("User")]
     public virtual ICollection<UserDevice> UserDevices { get; set; } = new List<UserDevice>();
