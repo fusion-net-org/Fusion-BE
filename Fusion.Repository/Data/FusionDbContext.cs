@@ -38,6 +38,7 @@ public partial class FusionDbContext : DbContext
     public virtual DbSet<CompanyActivityLog> CompanyActivityLogs { get; set; }
     public virtual DbSet<UserLog> UserLogs { get; set; }
 
+    public virtual DbSet<UserNotificationSetting> UserNotificationSettings { get; set; }
     // Subscription
     public virtual DbSet<SubscriptionPlan> SubscriptionPlans { get; set; }
     public virtual DbSet<SubscriptionPlanFeature> SubscriptionPlanFeatures { get; set; }
