@@ -257,6 +257,27 @@ namespace Fusion.Repository.Repositories
                 .Include(c => c.Company.Name)
                 .FirstOrDefaultAsync(ct);
         }
-       
+
+        public async Task<PagedResult<Project>> GetProjectsForAdminAsync(ProjectSummarySearchRequest request, CancellationToken cancellationToken = default)
+        {
+            var query = _context.Projects
+        .Include(p => p.CreatedByNavigation)
+        .Include(p => p.Company)
+        .Include(p => p.CompanyHired)
+        .Include(p => p.Workflow)
+        .Include(p => p.ProjectMembers)
+        .Include(p => p.Sprints).ThenInclude(s => s.ProjectTasks)
+        .AsQueryable();
+
+            // FILTER: companyName
+            if (!string.IsNullOrEmpty(request.CompanyName))
+            {
+                query = query.Where(p =>
+                        (p.Company != null && p.Company.Name.Contains(request.CompanyName)) ||
+                        (p.CompanyHired != null && p.CompanyHired.Name.Contains(request.CompanyName)));
+            }
+
+            return await query.ToPagedResultAsync(request, cancellationToken);
+        }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Fusion.API.Context;
+using Fusion.Repository.Bases.Page;
 using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.Companies.Responses;
@@ -145,7 +146,7 @@ namespace Fusion.API.Controllers
                     "Don't find token!"));
             }
 
-            await _notificationService.ToggleNotificationByTypeAsync(userId,  request, cancellationToken);
+            await _notificationService.ToggleNotificationByTypeAsync(userId, request, cancellationToken);
             var status = request.isEnable.Value ? "enabled" : "disabled";
 
             return Ok(ResponseModel<string>.Ok(
