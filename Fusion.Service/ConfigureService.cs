@@ -1,5 +1,4 @@
-﻿using Fusion.Repository.IRepositories;
-using Fusion.Repository.Repositories;
+﻿
 using Fusion.Service.Commons.Helpers;
 using Fusion.Service.IServices;
 using Fusion.Service.Services;

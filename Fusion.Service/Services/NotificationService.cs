@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Fusion.Repository.Bases.Exceptions;
+using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Responses;
 using Fusion.Repository.Entities;
 using Fusion.Repository.Enums;
@@ -9,6 +10,7 @@ using Fusion.Service.Commons.Helpers;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.Notifications.Requests;
 using Fusion.Service.ViewModels.Notifications.Responses;
+using Fusion.Service.ViewModels.Projects.Responses;
 using Google.Api.Gax;
 using System;
 using System.Collections.Generic;
@@ -88,6 +90,20 @@ namespace Fusion.Service.Services
             var result = await _notificationRepository.GetUserNotificationsAsync(userId, cancellationToken);
 
             return _mapper.Map<IEnumerable<NotificationResponse>>(result);
+        }
+
+        public async Task<PagedResult<NotificationResponse>> GetAdminNotificationsAsync(PagedRequest pagedRequest, CancellationToken cancellationToken = default)
+        {
+            var result = await _notificationRepository.GetAdminNotificationsAsync(pagedRequest, cancellationToken);
+
+            var list = new PagedResult<NotificationResponse>
+            {
+                Items = _mapper.Map<List<NotificationResponse>>(result.Items),
+                TotalCount = result.TotalCount,
+                PageNumber = result.PageNumber,
+                PageSize = result.PageSize
+            };
+            return list;
         }
 
         public async Task MarkAsReadAsync(Guid userId, Guid notificationId, CancellationToken cancellationToken = default)

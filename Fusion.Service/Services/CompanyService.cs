@@ -506,7 +506,8 @@ namespace Fusion.Service.Services
                             {
                                 Id = (Guid)(taskType.GetProperty("TaskId")?.GetValue(taskObj) ?? Guid.Empty),
                                 Title = taskType.GetProperty("Title")?.GetValue(taskObj)?.ToString() ?? string.Empty,
-                                Point = (int?)(taskType.GetProperty("Point")?.GetValue(taskObj) ?? 0)
+                                Point = (int?)(taskType.GetProperty("Point")?.GetValue(taskObj) ?? 0),
+                                Status = taskType.GetProperty("Status")?.GetValue(taskObj)?.ToString() ?? string.Empty,
                             });
                         }
                     }

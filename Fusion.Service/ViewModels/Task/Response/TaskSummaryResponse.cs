@@ -11,5 +11,7 @@ namespace Fusion.Service.ViewModels.Task.Response
         public Guid Id { get; set; }
         public string? Title { get; set; }
         public int? Point { get; set; }
+        public string? Status { get; set; }
+
     }
 }

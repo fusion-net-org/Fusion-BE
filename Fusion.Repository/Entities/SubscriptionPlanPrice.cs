@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Fusion.Repository.Entities;
 
-[Table("subscriptionplanprices")]
+[Table("SubscriptionPlanPrices")]
 public class SubscriptionPlanPrice
 {
     [Key]

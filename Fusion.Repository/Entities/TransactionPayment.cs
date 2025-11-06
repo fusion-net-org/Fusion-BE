@@ -1,4 +1,5 @@
 ﻿
+
 using Fusion.Repository.Enums;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -71,7 +72,7 @@ namespace Fusion.Repository.Entities
         [StringLength(250)]
         public string? CounterAccountNumber { get; set; }  // Số tài khoản đối ứng
 
-
+    
         [Column("payment_method")]
         [StringLength(50)]
         public string? PaymentMethod { get; set; }
