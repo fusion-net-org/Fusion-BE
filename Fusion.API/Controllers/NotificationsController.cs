@@ -44,6 +44,18 @@ namespace Fusion.API.Controllers
             ));
         }
 
+        [HttpGet("admin")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PagedResult<NotificationResponse>>))]
+        public async Task<IActionResult> GetAdminNotifications([FromQuery] PagedRequest request, CancellationToken ct)
+        {
+            var result = await _notificationService.GetAdminNotificationsAsync(request, ct);
+
+            return Ok(ResponseModel<PagedResult<NotificationResponse>>.Ok(
+                data: result,
+                message: "Get notifications admin successfully"
+            ));
+        }
+
         [HttpPut("{notificationId:guid}/read")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<string>))]
 
