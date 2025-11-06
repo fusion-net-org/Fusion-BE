@@ -1,147 +1,222 @@
 ﻿
-//using Fusion.Repository.Bases.Exceptions;
-//using Fusion.Repository.Bases.Responses;
-//using Fusion.Repository.Data;
-//using Fusion.Repository.Entities;
-//using Fusion.Service.IServices;
-//using Fusion.Service.ViewModels.UserSubscription.Requests;
-//using Net.payOS;
-//using Net.payOS.Types;
+using Fusion.Repository.Bases.Exceptions;
+using Fusion.Repository.Bases.Responses;
+using Fusion.Repository.Data;
+using Fusion.Repository.Entities;
+using Fusion.Repository.Enums;
+using Fusion.Service.IServices;
+using Fusion.Service.ViewModels.TransactionPayment.Requests;
+using Net.payOS;
+using Net.payOS.Types;
 
-//namespace Fusion.Service.Services
-//{
-//    public class PayOSService : IPayOSService
-//    {
-//        private readonly IUnitOfWork _unitOfWork;
-//        private readonly PayOS _payOS;
-//        private readonly ITransactionPaymentService _transactionPaymentService;
-//        private readonly IUserSubscriptionService _userSubscriptionService;
+namespace Fusion.Service.Services
+{
+    public class PayOSService : IPayOSService
+    {
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly PayOS _payOS;
+        private readonly ITransactionPaymentService _transactionPaymentService;
+        private readonly ISubscriptionPlanService _subscriptionPlanService;
+        public PayOSService(IUnitOfWork unitOfWork, PayOS payOS, ITransactionPaymentService transactionPaymentService, ISubscriptionPlanService subscriptionPlanService)
+        {
+            _unitOfWork = unitOfWork;
+            _payOS = payOS;
+            _transactionPaymentService = transactionPaymentService;
+            _subscriptionPlanService = subscriptionPlanService;
+        }
 
-//        public PayOSService(IUnitOfWork unitOfWork, PayOS payOS, ITransactionPaymentService transactionPaymentService,
-//            IUserSubscriptionService userSubscriptionService)
-//        {
-//            _unitOfWork = unitOfWork;
-//            _payOS = payOS;
-//            _transactionPaymentService = transactionPaymentService;
-//            _userSubscriptionService = userSubscriptionService;
-//        }
-//        /// <summary>
-//        /// Confirm webhook register with PayOS
-//        /// </summary>
-//        public async Task<string> ConfirmWebHook(string url)
-//        {
-//            try
-//            {
-//                Console.WriteLine($"Confirming webhook for URL: {url}");
-//                var result = await _payOS.confirmWebhook(url);
-//                Console.WriteLine($"Webhook confirmation result: {result}");
-//                return result;
-//            }
-//            catch (Exception ex)
-//            {
-//                Console.WriteLine($"Confirm webhook failed: {ex}");
-//                throw;
+        private static string MapPayOsStatus(string payosStatus, bool webhookSuccess)
+        {
+            // Tùy tài liệu PayOS, ví dụ: "PAID", "PENDING", "CANCELLED", "EXPIRED"
+            return payosStatus?.ToUpperInvariant() switch
+            {
+                "PAID" => PaymentStatus.Success.ToString(),
+                "CANCELLED" => PaymentStatus.Cancelled.ToString(),
+                "EXPIRED" => PaymentStatus.Failed.ToString(),   
+                "PENDING" => PaymentStatus.Pending.ToString(),
+                _ => webhookSuccess ? PaymentStatus.Success.ToString() : PaymentStatus.Pending.ToString()
+            };
+        }
 
-//            }
-//        }
+        /// <summary>
+        /// Confirm webhook register with PayOS
+        /// </summary>
+        public async Task<string> ConfirmWebHook(string url)
+        {
+            var result = await _payOS.confirmWebhook(url);
+            return result ?? "OK";
+        }
 
 
-//        /// <summary>
-//        /// Create link payment PayOS
-//        /// </summary>
-//        public async Task<string> CreatePaymentLink(Guid transactionId, CancellationToken cancellationToken = default)
-//        {
-//            try
-//            {
-//                var transaction = await _unitOfWork.Repository<TransactionPayment>().FindAsync(x => x.Id == transactionId);
-//                if (transaction == null)
-//                    throw CustomExceptionFactory.CreateNotFoundError(
-//                        string.Format(ResponseMessages.NOT_FOUND, "Transaction"));
+        /// <summary>
+        /// Create link payment PayOS
+        /// </summary>
+        public async Task<string> CreatePaymentLink(Guid transactionId, CancellationToken cancellationToken = default)
+        {
+          
+            var tx = await _transactionPaymentService.GetDetailAsync(transactionId);
+            if (tx == null)
+                throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Transaction"));
 
-//                var subscriptionPackage = await _unitOfWork.Repository<SubscriptionPlan>().FindAsync(x => x.Id == transaction.PackageId);
-//                if (subscriptionPackage == null)
-//                    throw CustomExceptionFactory.CreateNotFoundError(
-//                        string.Format(ResponseMessages.NOT_FOUND, "Subscription package"));
+            if (tx.Amount <= 0) 
+                throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.BAD_REQUEST.FormatMessage("Amount <= 0"));
 
-//                // paper request send to Payos 
-//                var item = new ItemData(
-//                    name: subscriptionPackage.Name,
-//                    quantity: 1,
-//                    price: (int)transaction.Amount
-//                    );
+            if (!tx.OrderCode.HasValue)
+            {
+                var baseCode = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                var rnd = Random.Shared.Next(100, 999);
+                tx.OrderCode = baseCode * 1000 + rnd;
+            }
 
-//                var request = new PaymentData(
-//                    orderCode: long.Parse(transaction.TransactionCode),
-//                    amount: (int)transaction.Amount,
-//                    description: $"Fusion - {transaction.SubscriptionPackage?.Name}",
-//                    returnUrl: "http://localhost:5173/payment-success",
-//                    cancelUrl: "http://localhost:5173/payment-failed",
-//                    items: new List<ItemData>() { item }
-//                    );
+            var plan = await _subscriptionPlanService.GetPlanByIdAsync(tx.PlanId);
+            if (plan == null)
+                throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("subscription plan"));
 
-//                var response = await _payOS.createPaymentLink(request);
+            var amountVnd = Convert.ToInt32(Math.Round(tx.Amount, MidpointRounding.AwayFromZero));
+            var description = (tx.OrderCode ?? 0).ToString();
 
-//                transaction.PaymentMethod = "PayOS";
-//                await _unitOfWork.SaveChangesAsync();
 
-//                return response.checkoutUrl;
-//            }
+            var returnUrl = $"http://localhost:5173/payment-success?transactionId={tx.Id}&orderCode={tx.OrderCode}";
+            var cancelUrl = $"http://localhost:5173/payment-failed?transactionId={tx.Id}&orderCode={tx.OrderCode}";
 
-//            catch (Exception ex)
-//            {
-//                throw CustomExceptionFactory.CreateBadRequestError(
-//                    string.Format(ResponseMessages.ERROR,
-//                    "Create payment link failed!"));
-//            }
-//        }
+            var items = new List<ItemData> {
+            new ItemData(plan.Name, 1, amountVnd)
+                                           };
 
-//        /// <summary>
-//        /// Handle callback from PayOS
-//        /// </summary>
-//        public async Task HandlePaymentWebHook(WebhookType webhookData, CancellationToken cancellationToken = default)
-//        {
-//            //1.Get transactionCode from data 
+            var paymentData = new PaymentData(
+                             orderCode: tx.OrderCode.Value,
+                             amount: amountVnd,
+                             description: description,
+                             returnUrl: returnUrl,
+                             cancelUrl: cancelUrl,
+                             items: items
+                                              );
+
+            var res = await _payOS.createPaymentLink(paymentData);
+
+            await _transactionPaymentService.UpdateAsync(tx.Id, new TransactionPaymentUpdateRequest
+            {
+                OrderCode = tx.OrderCode,                 // ensure persisted
+                PaymentLinkId = res.paymentLinkId,
+                Description = res.description,  // PayOS có thể sửa; vẫn cắt 25
+                Currency = res.currency
+
+            }, cancellationToken);
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            return res.checkoutUrl;
+
+        }
+
+        public async Task<string> RefreshStatusByGateway(long? orderCode, string? paymentLinkId, CancellationToken ct = default)
+        {
+            var repo = _unitOfWork.Repository<TransactionPayment>();
+
+            TransactionPayment? tx = null;
+            if (!string.IsNullOrWhiteSpace(paymentLinkId))
+                tx = await repo.FindAsync(x => x.PaymentLinkId == paymentLinkId, ct);
+
+            if (tx == null && orderCode.HasValue && orderCode.Value > 0)
+                tx = await repo.FindAsync(x => x.OrderCode == orderCode.Value, ct);
+
+            if (tx == null)
+                throw new InvalidOperationException("Transaction not found to refresh.");
+
+            await RefreshStatusFromGateway(tx, ct);
+            await _unitOfWork.SaveChangesAsync(ct);
+            return tx.Status;
+        }
+
+        /// <summary>
+        /// User/admin cancel link payment
+        /// </summary>
+        public async Task<bool> CancelPaymentLink(Guid transactionId, string? reason = null, CancellationToken ct = default)
+        {
+
+            var tx = await _unitOfWork.Repository<TransactionPayment>().FindAsync(x => x.Id == transactionId, ct);
+            if (tx == null) throw new InvalidOperationException("Transaction not found.");
+            if (!tx.OrderCode.HasValue && string.IsNullOrWhiteSpace(tx.PaymentLinkId))
+                throw new InvalidOperationException("Transaction has no payment link information.");
 
             
-//            var transctionCode = webhookData.data.orderCode.ToString();
+            if (tx.OrderCode.HasValue)
+                await _payOS.cancelPaymentLink(tx.OrderCode.Value, reason ?? "User cancelled");
 
-//            var transaction = await _unitOfWork.Repository<TransactionPayment>().FindAsync(x => x.TransactionCode == transctionCode);
-//            if (transaction == null)
-//            {
-//                // Đây thường xảy ra khi PayOS gọi test webhook sau confirm
-//                Console.WriteLine($"[Webhook] Transaction not found for orderCode: {transctionCode}");
-//                return;
-//            }
-//            // 3. Check idempotent
-//            if (transaction.Status == "Success" )
-//                return;
+            // Sau khi huỷ trên gateway, refresh lại thông tin để chắc chắn
+            await RefreshStatusFromGateway(tx, ct);
+            await _unitOfWork.SaveChangesAsync(ct);
+            return true;
+        }
 
-//            // 4. Update trạng thái
-//            transaction.Status = webhookData.success ? "Success" : "Failed";
-//            transaction.UpdatedAt = DateTime.UtcNow;
+        private async Task RefreshStatusFromGateway(TransactionPayment tx, CancellationToken ct)
+        {
+            // Lấy thông tin từ PayOS
+            dynamic info;
+            if (tx.OrderCode.HasValue)
+                info = await _payOS.getPaymentLinkInformation(tx.OrderCode.Value);
+            else
+                throw new InvalidOperationException("No orderCode or paymentLinkId to refresh.");
 
-//            _unitOfWork.Repository<TransactionPayment>().Update(transaction);
-//            await _unitOfWork.SaveChangesAsync();
+            // info.status, info.amount, info.currency ...
+            var newStatus = MapPayOsStatus((string)info.status, webhookSuccess: false);
+            tx.Status = newStatus;
+            tx.Currency = info.currency;
 
-//            // Nếu success thì tạo UserSubscription
-//            if (webhookData.success)
-//            {
-//                var subscriptionPackage = await _unitOfWork.Repository<SubscriptionPlan>()
-//                    .FindAsync(x => x.Id == transaction.PackageId);
+            // Optionally sync amount/currency nếu có chênh
+            if (info.amount is int gatewayAmount)
+            {
+                var dec = Convert.ToDecimal(gatewayAmount);
+                if (tx.Amount != dec) tx.Amount = dec;
+            }
 
-//                if (subscriptionPackage == null)
-//                    return;
+        }
 
-//                var createRequest = new CreateUserSubscriptionRequest
-//                {
-//                    PackageId = subscriptionPackage.Id,
-//                    PurchaseDate = DateTime.UtcNow,
-//                    QuotaCompanyAdded = subscriptionPackage.QuotaCompany,
-//                    QuotaProjectAdded = subscriptionPackage.QuotaProject
-//                };
+        /// <summary>
+        /// Handle callback from PayOS
+        /// </summary>
+        public async Task HandlePaymentWebHook(WebhookType webhookData, CancellationToken cancellationToken = default)
+        {
 
-//                await _userSubscriptionService.CreateUserSubscriptionAsync(transaction.UserId, createRequest, cancellationToken);
-//            }
-//        }
-//    }
-//}
+            var payload = webhookData.data;
+            if (payload == null) return;
+
+
+            TransactionPayment? tx = null;
+            if (!string.IsNullOrWhiteSpace(payload.paymentLinkId))
+            {
+                tx = await _unitOfWork.Repository<TransactionPayment>().FindAsync(t => t.PaymentLinkId == payload.paymentLinkId, cancellationToken);
+            }
+            if (tx == null && payload.orderCode > 0)
+            {
+                tx = await _unitOfWork.Repository<TransactionPayment>().FindAsync(t => t.OrderCode == payload.orderCode, cancellationToken);
+            }
+            if (tx == null)
+                return;
+
+            DateTimeOffset? txTime = null;
+            if (!string.IsNullOrWhiteSpace(payload.transactionDateTime) &&
+                DateTimeOffset.TryParse(payload.transactionDateTime, out var parsed))
+            {
+                txTime = parsed;
+            }
+
+            tx.OrderCode = payload.orderCode;
+            tx.Amount = payload.amount;
+            tx.Description = payload.description;
+            tx.AccountNumber = payload.accountNumber;
+            tx.Reference = payload.reference;
+            tx.TransactionDateTime = txTime;
+            tx.Currency = payload.currency;
+            tx.PaymentLinkId = payload.paymentLinkId;
+            tx.CounterAccountBankId = payload.counterAccountBankId;
+            tx.CounterAccountBankName = payload.counterAccountBankName;
+            tx.CounterAccountName = payload.counterAccountName;
+            tx.CounterAccountNumber = payload.counterAccountNumber;
+
+            // status từ webhook
+            tx.Status = MapPayOsStatus(payload.code, webhookData.success);
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+    }
+}

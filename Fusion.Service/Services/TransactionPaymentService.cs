@@ -1,268 +1,116 @@
-﻿    
+﻿
 
-//using AutoMapper;
-//using Fusion.Repository.Bases.Exceptions;
-//using Fusion.Repository.Bases.Page;
-//using Fusion.Repository.Bases.Page.TransactionPayment;
-//using Fusion.Repository.Bases.Responses;
-//using Fusion.Repository.Data;
-//using Fusion.Repository.Entities;
-//using Fusion.Repository.IRepositories;
-//using Fusion.Repository.Repositories;
-//using Fusion.Service.Commons.Helpers;
-//using Fusion.Service.IServices;
-//using Fusion.Service.ViewModels.TransactionPayment.Requests;
-//using Fusion.Service.ViewModels.TransactionPayment.Responses;
-//using Microsoft.EntityFrameworkCore;
+using AutoMapper;
+using Fusion.Repository.Bases.Exceptions;
+using Fusion.Repository.Bases.Page;
+using Fusion.Repository.Bases.Page.TransactionPayment;
+using Fusion.Repository.Bases.Responses;
+using Fusion.Repository.Entities;
+using Fusion.Repository.Enums;
+using Fusion.Repository.IRepositories;
+using Fusion.Service.Commons.Helpers;
+using Fusion.Service.IServices;
+using Fusion.Service.ViewModels.TransactionPayment.Requests;
+using Fusion.Service.ViewModels.TransactionPayment.Responses;
 
-//namespace Fusion.Service.Services;
+namespace Fusion.Service.Services;
 
-//public class TransactionPaymentService : ITransactionPaymentService
-//{
-//    private readonly IUnitOfWork _unitOfWork;
-//    private readonly ICurrentService _currentService;
-//    private readonly ITransactionPaymentRepository _transactionPaymentRepository;
-//    private readonly IMapper _mapper;
-//    private readonly IGenericRepository<TransactionPayment> _transactionPayement;
-//    private readonly IUserService _userService;
-//    private readonly ISubscriptionPackageService _subscriptionPackageService;
-//    private readonly IUserLogService _userLogService;
+public class TransactionPaymentService : ITransactionPaymentService
+{
+    private readonly ITransactionPaymentRepository _transactionPaymentRepository;
+    private readonly ISubscriptionPlanRepository _subscriptionPlanRepository;
+    private readonly IUserRepository _userRepository;
+    private readonly IMapper _mapper;
+    private readonly ICurrentService _currentService;
 
-//    public TransactionPaymentService(IUnitOfWork unitOfWork, ICurrentService currentService,
-//        ITransactionPaymentRepository transactionPaymentRepository, IMapper mapper, IUserService userService,
-//        ISubscriptionPackageService subscriptionPackageService, IUserLogService userLogService)
-//    {
-//        _unitOfWork = unitOfWork;
-//        _currentService = currentService;
-//        _transactionPaymentRepository = transactionPaymentRepository;
-//        _mapper = mapper;
-//        _transactionPayement = _unitOfWork.Repository<TransactionPayment>();
-//        _userService = userService;
-//        _subscriptionPackageService = subscriptionPackageService;
-//        _userLogService = userLogService;
-//    }
+    public TransactionPaymentService(ITransactionPaymentRepository transactionPaymentRepository, ISubscriptionPlanRepository subscriptionPlanRepository,
+        IUserRepository userRepository, IMapper mapper, ICurrentService currentService)
+    {
+        _transactionPaymentRepository = transactionPaymentRepository;
+        _subscriptionPlanRepository = subscriptionPlanRepository;
+        _userRepository = userRepository;
+        _mapper = mapper;
+        _currentService = currentService;
+    }
 
-//    public async Task<TransactionPaymentResponse> CreateTransactionPaymentAsync(CreateTransactionRequest request, CancellationToken cancellationToken = default)
-//    {
-//        var userId = _currentService.GetUserId();
-//        if (userId == Guid.Empty)
-//            throw CustomExceptionFactory.CreateNotFoundError(
-//                ResponseMessages.NOT_FOUND.FormatMessage("User"));
+    public async Task<TransactionPaymentResponse> CreateAsync(TransactionPaymentCreateRequest req, CancellationToken ct = default)
+    {
+        if (req == null)
+            throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.INVALID_INPUT);
 
-//        var subscriptionPackage = await _subscriptionPackageService.GetSubscriptionByIdAsync(request.PackageId, cancellationToken);
+        if (req.PlanId == Guid.Empty)
+            throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.INVALID_INPUT);
 
-//        var orderCode = DateTimeOffset.UtcNow.ToUnixTimeSeconds() * 1000
-//              + Random.Shared.Next(0, 999);
-//        var user = await _userService.GetByIdAsync(userId, cancellationToken);
+        var plan = await _subscriptionPlanRepository.GetByIdWithNavAsync(req.PlanId, ct);
 
-//        var entity = _mapper.Map<TransactionPayment>(request);
+        if(plan == null)
+            throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Subscription plan"));
+        if (plan.Price == null)
+            throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Price"));
 
-//        entity.UserId = userId;
-//        entity.TransactionCode = orderCode.ToString();
-//        entity.Amount = subscriptionPackage.Price;
-//        entity.Status = "Pending";
-//        entity.CreatedAt = DateTime.UtcNow;
+        var userId = _currentService.GetUserId();
+        var entity = new TransactionPayment
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            PlanId = req.PlanId,
+            Amount = plan.Price.Price,
+            Currency = plan.Price.Currency,
+            Status = PaymentStatus.Pending.ToString()
+        };
 
+        var created = await _transactionPaymentRepository.CreateAsync(entity, ct);
 
-//        await _transactionPayement.AddAsync(entity);
-//        await _unitOfWork.SaveChangesAsync();
+        var withNav = await _transactionPaymentRepository.GetByIdWithNavAsync(created.Id, ct);
+        return _mapper.Map<TransactionPaymentResponse>(withNav);
+    }
 
+    public Task<bool> DeleteAsync(Guid id, CancellationToken ct = default)
+      => _transactionPaymentRepository.DeleteAsync(id, ct);
 
-//        var response = new TransactionPaymentResponse
-//        {
-//            id = entity.Id,
-//            CustomerName = user.UserName,
-//            PackageName = subscriptionPackage.Name,
-//            TransactionCode = entity.TransactionCode,
-//            Amount = entity.Amount,
-//            Status = entity.Status,
-//            CreatedAt = entity.CreatedAt,
-//            UpdatedAt = entity.UpdatedAt,
-//        };
-//        var userLog = new UserLog
-//        {
-//            ActorUserId = userId,
-//            Title = "Create transaction",
-//            Description = $"User {user.UserName} has create transaction."
-//        };
-//        await _userLogService.CreateLog(userLog);
-//        return response;
-//    }
+    public async Task<TransactionPaymentDetailResponse?> GetDetailAsync(Guid id, CancellationToken ct = default)
+    {
+        var entity = await _transactionPaymentRepository.GetByIdWithNavAsync(id, ct);
+        return entity == null ? null : _mapper.Map<TransactionPaymentDetailResponse>(entity);
+    }
 
-//    public async Task<PagedResult<TransactionForAdminResponse>> GetAllTransactionForAdminAsync(
-//    AdminTransactionSearch request,
-//    CancellationToken cancellationToken = default)
-//    {
-//        if (string.IsNullOrWhiteSpace(request.SortColumn))
-//        {
-//            request.SortColumn = nameof(TransactionForAdminResponse.CreatedAt);
-//            request.SortDescending = true;
-//        }
+    public async Task<PagedResult<TransactionPaymentResponse>> GetPagedAsync(TransactionPaymentPagedRequest request, CancellationToken ct = default)
+    {
+        var paged = await _transactionPaymentRepository.GetPagedAsync(request, ct);
+        var items = _mapper.Map<List<TransactionPaymentResponse>>(paged.Items);
 
-//        // Lấy query chưa materialize từ repo
-//        var baseQuery = _transactionPaymentRepository.GetListPaymentForAdminQuery(request);
+        return new PagedResult<TransactionPaymentResponse>
+        {
+            Items = items,
+            TotalCount = paged.TotalCount,
+            PageNumber = paged.PageNumber,
+            PageSize = paged.PageSize
+        };
 
-//        // ProjectTo -> IQueryable<TransactionForAdminResponse>
-//        var projected = _mapper.ProjectTo<TransactionForAdminResponse>(
-//            baseQuery,
-//            parameters: null);
+    }
 
-//        // Phân trang + sort dùng extension có sẵn
-//        var paged = await projected.ToPagedResultAsync(request, cancellationToken);
-//        return paged;
-//    }
+    public async Task<bool> UpdateAsync(Guid id, TransactionPaymentUpdateRequest req, CancellationToken ct = default)
+    {
+        var current = await _transactionPaymentRepository.GetByIdWithNavAsync(id, ct);
+        if (current == null) return false;
 
-//    public async Task<Guid> GetLasterTransactionForUserAsync(CancellationToken cancellationToken = default)
-//    {
-//        var userId = _currentService.GetUserId();
-//        if (userId == Guid.Empty)
-//            throw CustomExceptionFactory.CreateNotFoundError(
-//                ResponseMessages.NOT_FOUND.FormatMessage("User"));
-//        var transaction = await _transactionPaymentRepository.GetLasterTransactionForUserAsync(userId, cancellationToken);
+        if (req.OrderCode.HasValue) current.OrderCode = req.OrderCode.Value;
+        if (req.PaymentLinkId != null) current.PaymentLinkId = req.PaymentLinkId;
 
-//        if (transaction == null)
-//            throw CustomExceptionFactory.CreateNotFoundError("No transaction found for this user.");
+        if (req.Amount.HasValue) current.Amount = req.Amount.Value;
+        if (req.Description != null) current.Description = req.Description;
+        if (req.AccountNumber != null) current.AccountNumber = req.AccountNumber;
+        if (req.Reference != null) current.Reference = req.Reference;
+        if (req.TransactionDateTime.HasValue) current.TransactionDateTime = req.TransactionDateTime.Value;
+        if (req.Currency != null) current.Currency = req.Currency;
+        if (req.CounterAccountBankId != null) current.CounterAccountBankId = req.CounterAccountBankId;
+        if (req.CounterAccountBankName != null) current.CounterAccountBankName = req.CounterAccountBankName;
+        if (req.CounterAccountName != null) current.CounterAccountName = req.CounterAccountName;
+        if (req.CounterAccountNumber != null) current.CounterAccountNumber = req.CounterAccountNumber;
+        if (req.PaymentMethod != null) current.PaymentMethod = req.PaymentMethod;
+        if (req.Status != null) current.Status = req.Status;
 
-//        return transaction.Id;
+        return await _transactionPaymentRepository.UpdateAsync(current, ct);
+    }
 
-//    }
-
-//    public async Task<TransactionPaymentResponse> GetTransactionByCodeAsync(string code, CancellationToken cancellationToken = default)
-//    {
-//        var transaction = await _transactionPayement.FindAsync(x => x.TransactionCode == code, cancellationToken);
-//        if (transaction == null)
-//            throw CustomExceptionFactory.CreateNotFoundError(
-//              ResponseMessages.NOT_FOUND.FormatMessage("Transaction panyment"));
-
-//        var userId = _currentService.GetUserId();
-//        if (userId == Guid.Empty)
-//            throw CustomExceptionFactory.CreateNotFoundError(
-//                ResponseMessages.NOT_FOUND.FormatMessage("User"));
-
-//        var user = await _userService.GetByIdAsync(userId, cancellationToken);
-
-//        var subscriptionPackage = await _unitOfWork.Repository<SubscriptionPlan>().FindAsync(x => x.Id == transaction.PackageId);
-//        if (subscriptionPackage == null)
-//            throw CustomExceptionFactory.CreateNotFoundError(
-//                ResponseMessages.NOT_FOUND.FormatMessage("Subscription package"));
-
-//        var response = new TransactionPaymentResponse
-//        {
-//            id = transaction.Id,
-//            CustomerName = user.UserName,
-//            PackageName = subscriptionPackage.Name,
-//            TransactionCode = transaction.TransactionCode,
-//            Amount = transaction.Amount,
-//            Status = transaction.Status,
-//            CreatedAt = transaction.CreatedAt,
-//            UpdatedAt = transaction.UpdatedAt,
-//        };
-
-//        return response;
-//    }
-
-
-//    // Status: Success, Cancel, Pending. Default: success
-//    public async Task<PackagePurchaseStatsResponse> GetPackagePurchaseStatsAsync(
-//        AdminTransactionSearch request,
-//        CancellationToken cancellationToken = default)
-//    {
-//        // Mặc định chỉ tính các giao dịch thành công nếu FE không truyền
-//        if (string.IsNullOrWhiteSpace(request.Status))
-//        {
-//            request.Status = "Success";
-//        }
-
-//        // Tận dụng filter có sẵn
-//        var baseQuery = _transactionPaymentRepository.GetListPaymentForAdminQuery(request);
-
-//        // Group theo gói (PackageId + PackageName)
-//        var grouped = await baseQuery
-//            .GroupBy(t => new { t.PackageId, PackageName = t.SubscriptionPackage.Name })
-//            .Select(g => new
-//            {
-//                g.Key.PackageId,
-//                g.Key.PackageName,
-//                Orders = g.Count(),
-//                Revenue = g.Sum(x => x.Amount)
-//            })
-//            .OrderByDescending(x => x.Orders) // sắp theo số đơn
-//            .ToListAsync(cancellationToken);
-
-//        var totalOrders = grouped.Sum(x => x.Orders);
-//        var totalRevenue = grouped.Sum(x => x.Revenue);
-
-//        var items = grouped.Select(x => new PackagePurchaseStatsItem
-//        {
-//            PackageId = x.PackageId,
-//            PackageName = x.PackageName ?? string.Empty,
-//            Orders = x.Orders,
-//            Revenue = x.Revenue,
-//            OrderShare = totalOrders > 0 ? (double)x.Orders / totalOrders : 0.0,
-//            RevenueShare = totalRevenue > 0 ? (double)x.Revenue / (double)totalRevenue : 0.0
-//        }).ToList();
-
-//        return new PackagePurchaseStatsResponse
-//        {
-//            TotalOrders = totalOrders,
-//            TotalRevenue = totalRevenue,
-//            Items = items
-//        };
-//    }
-
-//    public async Task<YearlyRevenueResponse> GetMonthlyRevenueByYearAsync(int year, string status = "Suceess", CancellationToken cancellationToken = default)
-//    {
-//        if(year <= 0) year = DateTime.UtcNow.Year;
-
-//        var start = new DateTime(year, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-//        var end = start.AddYears(1); // {year-01-01, nextyear-01-01}
-
-//        var filter = new AdminTransactionSearch
-//        {
-//            Status = status,
-//            PaymentDateFrom = start,
-//            PaymentDateTo = end.AddTicks(-1), // inclusive
-//        };
-
-//        var baseQuery = _transactionPaymentRepository.GetListPaymentForAdminQuery(filter);
-
-//        // Group allow month in year
-//        var grouped = await baseQuery
-//            .Where(t => t.CreatedAt >= start && t.CreatedAt <= end)
-//            .GroupBy(t => t.CreatedAt.Month)
-//            .Select(g => new {Month = g.Key, Revenue = g.Sum( x => x.Amount) })
-//            .ToListAsync(cancellationToken);
-
-//        // Get all moths. if moth has not revenue  => display = 0
-//        var months = Enumerable.Range(1, 12)
-//            .Select(m =>
-//            {
-//                var hit = grouped.FirstOrDefault(x => x.Month == m);
-//                return new MonthlyRevenueItem
-//                {
-//                    Month = m,
-//                    Revenue = hit?.Revenue ?? 0m
-//                };
-//            })
-//            .ToList();
-
-//        return new YearlyRevenueResponse
-//        {
-//            Year = year,
-//            TotalRevenue = months.Sum(x => x.Revenue),
-//            Moths = months
-//        };
-//    }
-
-//    public async Task<TransactionStatusCountsResponse> CountTransactionByStatusAsync(CancellationToken cancellationToken = default)
-//    {
-//        var result = await _transactionPaymentRepository.CountTransactionByStatusAsync();
-
-//        return new TransactionStatusCountsResponse
-//        {
-//            Cancel = result.Cancel,
-//            Success = result.Success,
-//            Pending = result.Pending,
-//        };
-//    }
-//}
+}

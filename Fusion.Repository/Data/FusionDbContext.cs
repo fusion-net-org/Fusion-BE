@@ -43,6 +43,7 @@ public partial class FusionDbContext : DbContext
     public virtual DbSet<SubscriptionPlan> SubscriptionPlans { get; set; }
     public virtual DbSet<SubscriptionPlanFeature> SubscriptionPlanFeatures { get; set; }
     public virtual DbSet<SubscriptionPlanPrice> SubscriptionPlanPrices { get; set; }
+    public virtual DbSet<TransactionPayment> TransactionPayments { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -330,6 +331,13 @@ public partial class FusionDbContext : DbContext
                   .WithOne(f => f.SubscriptionPlan)
                   .HasForeignKey(f => f.PlanId)
                   .HasConstraintName("FK_SubscriptionPlanFeatures_Plan");
+
+            // Thêm quan hệ 1–N với TransactionPayments
+            entity.HasMany(d => d.Payments)
+                  .WithOne(tp => tp.Plan)
+                  .HasForeignKey(tp => tp.PlanId)
+                  .OnDelete(DeleteBehavior.Restrict)
+                  .HasConstraintName("FK_TransactionPayments_Plan");
         });
 
         // === SubscriptionPlanFeature ===
@@ -356,6 +364,39 @@ public partial class FusionDbContext : DbContext
          .HasForeignKey<SubscriptionPlanPrice>(d => d.PlanId)
          .OnDelete(DeleteBehavior.Cascade)
          .HasConstraintName("FK_SubscriptionPlanPrices_Plan");
+        });
+
+        // === TransactionPayment ===
+        modelBuilder.Entity<TransactionPayment>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).HasDefaultValueSql("(newid())");
+
+
+            entity.Property(x => x.Amount).HasColumnType("decimal(18,2)");
+            entity.Property(x => x.Currency).HasMaxLength(3);
+            entity.Property(x => x.TransactionDateTime).HasColumnType("datetimeoffset");
+
+            // Index phục vụ tra soát & idempotency
+            entity.HasIndex(x => x.UserId);
+            entity.HasIndex(x => x.PlanId);
+            entity.HasIndex(x => x.OrderCode);
+            entity.HasIndex(x => x.PaymentLinkId);
+            entity.HasIndex(x => x.Reference);
+
+            // FK: User 1–N TransactionPayments
+            entity.HasOne(tp => tp.User)
+                  .WithMany(u => u.TransactionPayments)
+                  .HasForeignKey(tp => tp.UserId)
+                  .OnDelete(DeleteBehavior.Restrict)
+                  .HasConstraintName("FK_TransactionPayments_User");
+
+            // FK: Plan 1–N TransactionPayments
+            entity.HasOne(tp => tp.Plan)
+                  .WithMany(p => p.Payments)
+                  .HasForeignKey(tp => tp.PlanId)
+                  .OnDelete(DeleteBehavior.Restrict) 
+                  .HasConstraintName("FK_TransactionPayments_Plan");
         });
 
         OnModelCreatingPartial(modelBuilder);

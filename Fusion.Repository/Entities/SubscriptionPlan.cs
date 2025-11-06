@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Fusion.Repository.Entities;
 
-[Table("subscriptionplans")]
+[Table("SubscriptionPlans")]
 public class SubscriptionPlan
 {
     [Key]
@@ -35,4 +35,7 @@ public class SubscriptionPlan
 
     [InverseProperty(nameof(SubscriptionPlanFeature.SubscriptionPlan))]
     public ICollection<SubscriptionPlanFeature>? Features { get; set; }
+
+    [InverseProperty(nameof(TransactionPayment.Plan))]
+    public ICollection<TransactionPayment> Payments { get; set; } = new List<TransactionPayment>();
 }
