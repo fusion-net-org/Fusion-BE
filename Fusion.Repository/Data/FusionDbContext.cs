@@ -43,6 +43,8 @@ public partial class FusionDbContext : DbContext
     public virtual DbSet<SubscriptionPlan> SubscriptionPlans { get; set; }
     public virtual DbSet<SubscriptionPlanFeature> SubscriptionPlanFeatures { get; set; }
     public virtual DbSet<SubscriptionPlanPrice> SubscriptionPlanPrices { get; set; }
+    public virtual DbSet<Contract> Contracts { get; set; }
+    public virtual DbSet<ContractAppendix> ContractAppendices { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

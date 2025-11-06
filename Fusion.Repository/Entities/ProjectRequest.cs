@@ -73,6 +73,9 @@ public partial class ProjectRequest
     [InverseProperty("ProjectRequest")]
     public virtual Project? Project { get; set; }
 
+    [InverseProperty("ProjectRequest")]
+    public virtual Contract? Contract { get; set; }
+
     [ForeignKey("RequesterCompanyId")]
     [InverseProperty("ProjectRequestRequesterCompanies")]
     public virtual Company? RequesterCompany { get; set; }

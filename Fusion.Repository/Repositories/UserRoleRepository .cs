@@ -12,6 +12,8 @@ namespace Fusion.Repository.Repositories
         Task ReplaceAsync(Guid companyId, Guid userId, IEnumerable<int> roleIds, CancellationToken ct);
         Task RemoveAsync(Guid companyId, Guid userId, int roleId, CancellationToken ct);
         Task<bool> IsMemberAsync(Guid companyId, Guid userId, CancellationToken ct);
+
+        Task<IQueryable<UserRole>> GetUserRolesOfCompany(Guid companyId, CancellationToken cancellationToken = default);
     }
 
     public class UserRoleRepository : IUserRoleRepository
@@ -105,6 +107,14 @@ namespace Fusion.Repository.Repositories
 
             _db.UserRoles.Remove(ur);
             await _db.SaveChangesAsync(ct);
+        }
+
+        public async Task<IQueryable<UserRole>> GetUserRolesOfCompany(Guid companyId, CancellationToken cancellationToken = default)
+        {
+            return _db.CompanyMembers
+                .Where(cm => cm.CompanyId == companyId)
+                .SelectMany(cm => cm.User.UserRoles)
+                .AsQueryable();
         }
     }
 }

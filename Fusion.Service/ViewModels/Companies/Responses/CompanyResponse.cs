@@ -1,5 +1,7 @@
 ﻿using Fusion.Repository.Entities;
+using Fusion.Repository.Repositories;
 using Fusion.Service.ViewModels.Projects.Responses;
+using Fusion.Service.ViewModels.Role.Responses;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -48,12 +50,30 @@ namespace Fusion.Service.ViewModels.Companies.Responses
 
         public int? TotalProject {  get; set; }
 
+
+
+
         public int? TotalPartners { get; set; }
 
         public int? TotalApproved { get; set; }
 
         public int? TotalWaitForApprove { get; set; }
 
+
+        public int TotalOngoingProjects { get; set; }   // Đang làm
+        public int TotalCompletedProjects { get; set; } // Đã hoàn thành
+        public int TotalClosedProjects { get; set; }    // Đã đóng
+        public int TotalLateProjects { get; set; }      // Trễ hạn
+
+        public int OnTimeRelease { get; set; }
+        public int TotalProjectCreated { get; set; }
+        public int TotalProjectHired { get; set; }
+
+        public int TotalProjectRequestSent { get; set; }
+        public int TotalProjectRequestReceive { get; set; }
+
+
+        public ICollection<CompanyRoleSummaryResponse>? companyRoles { get; set; }
 
         public ICollection<CompanyMemberResponse>? ListMembers { get; set; }
         public ICollection<ProjectResponse>? ListProjects { get; set; }
