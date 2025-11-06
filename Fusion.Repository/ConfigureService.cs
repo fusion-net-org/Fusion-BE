@@ -55,7 +55,7 @@ namespace Fusion.Repository
             services.AddScoped<ISubscriptionPlanRepository, SubscriptionPlanRepository>();
 
             //// transaction payment
-            //services.AddScoped<ITransactionPaymentRepository, TransactionPaymentRepository>();
+            services.AddScoped<ITransactionPaymentRepository, TransactionPaymentRepository>();
 
             ////usersubscrption
             //services.AddScoped<IUserSubscriptionRepository, UserSubscriptionRepository>();

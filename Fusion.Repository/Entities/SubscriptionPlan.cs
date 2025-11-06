@@ -35,4 +35,7 @@ public class SubscriptionPlan
 
     [InverseProperty(nameof(SubscriptionPlanFeature.SubscriptionPlan))]
     public ICollection<SubscriptionPlanFeature>? Features { get; set; }
+
+    [InverseProperty(nameof(TransactionPayment.Plan))]
+    public ICollection<TransactionPayment>? Payments { get; set; }
 }

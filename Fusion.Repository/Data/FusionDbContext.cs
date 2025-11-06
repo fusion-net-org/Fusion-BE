@@ -43,7 +43,7 @@ public partial class FusionDbContext : DbContext
     public virtual DbSet<SubscriptionPlan> SubscriptionPlans { get; set; }
     public virtual DbSet<SubscriptionPlanFeature> SubscriptionPlanFeatures { get; set; }
     public virtual DbSet<SubscriptionPlanPrice> SubscriptionPlanPrices { get; set; }
-
+    public virtual DbSet<TransactionPayment> TransactionPayments { get; set; }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Comment>(entity =>
@@ -358,6 +358,22 @@ public partial class FusionDbContext : DbContext
          .HasConstraintName("FK_SubscriptionPlanPrices_Plan");
         });
 
+        modelBuilder.Entity<TransactionPayment>(entity =>
+        {
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Amount).HasColumnType("decimal(18,2)");
+            entity.Property(e => e.Currency).HasMaxLength(3).HasDefaultValue("VND");
+
+            entity.HasOne(d => d.User)
+                .WithMany(p => p.TransactionPayments)
+                .HasForeignKey(d => d.UserId)
+                .HasConstraintName("FK_TransactionPayments_User");
+
+            entity.HasOne(d => d.Plan)
+                .WithMany(p => p.Payments)
+                .HasForeignKey(d => d.PlanId)
+                .HasConstraintName("FK_TransactionPayments_Plan");
+        });
         OnModelCreatingPartial(modelBuilder);
     }
 
