@@ -7,14 +7,17 @@ using Fusion.Repository.Bases.Responses;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.IRepositories;
+using Fusion.Repository.Repositories;
 using Fusion.Repository.ViewModels;
 using Fusion.Service.Commons.Helpers;
-using Fusion.Repository.Repositories;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.Project.Requests;
 using Fusion.Service.ViewModels.Project.Responses;
-using Microsoft.EntityFrameworkCore;
 using Fusion.Service.ViewModels.ProjectMembers.Responses;
+using Fusion.Service.ViewModels.Sprint.Responses;
+using Fusion.Service.ViewModels.Task.Response;
+using Microsoft.EntityFrameworkCore;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Fusion.Service.Services
 {
@@ -327,5 +330,71 @@ namespace Fusion.Service.Services
         {
             throw new NotImplementedException();
         }
+
+        public async Task<PagedResult<ProjectSummaryResponseV2>> GetProjectsForAdminAsync(ProjectSummarySearchRequest request, CancellationToken cancellationToken = default)
+        {
+            var result = await _projectRepo.GetProjectsForAdminAsync(request, cancellationToken);
+
+            var response = new PagedResult<ProjectSummaryResponseV2>
+            {
+                PageNumber = result.PageNumber,
+                TotalCount = result.TotalCount,
+                PageSize = result.PageSize,
+                Items = new List<ProjectSummaryResponseV2>()
+            };
+
+            foreach (var p in result.Items)
+            {
+                var sprintSummary = p.Sprints.Select(s => new SprintSummaryResponse
+                {
+                    Id = s.Id,
+                    Name = s.Name,
+                    TaskCount = s.ProjectTasks.Count,
+                    TotalPoint = s.ProjectTasks.Sum(t => t.Point ?? 0),
+                    Tasks = s.ProjectTasks.Select(t => new TaskSummaryResponse
+                    {
+                        Id = t.Id,
+                        Title = t.Title,
+                        Point = t.Point,
+                        Status = t.Status
+                    }).ToList()
+                }).ToList();
+
+                var totalTasks = sprintSummary.Sum(s => s.TaskCount);
+                var doneTasks = sprintSummary.SelectMany(s => s.Tasks)
+                                             .Count(t => t.Status == "Done");
+
+                double progress = totalTasks == 0 ? 0 : (double)doneTasks / totalTasks * 100;
+
+                response.Items.Add(new ProjectSummaryResponseV2
+                {
+                    Id = p.Id,
+                    Name = p.Name,
+                    CompanyId = p.Company.Id,
+                    CompanyName = p.Company.Name,
+                    CompanyHiredId = p.CompanyHired.Id,
+                    CompanyHiredName = p.CompanyHired.Name,
+                    WorkflowId = p.Workflow.Id,
+                    WorkflowName = p.Workflow?.Name,
+                    ProjectType = p.CompanyHiredId != null ? "OutSource" : "Product",
+                    OwnerId = p.CreatedByNavigation.Id,
+                    OwnerName = p.CreatedByNavigation?.UserName,
+                    Members = p.ProjectMembers.Select(m => new ProjectMemberSummaryResponse
+                    {
+                        MemberId = m.User.Id,
+                        MemberName = m.User.UserName,
+                        Avatar = m.User.Avatar,
+                    }).ToList(),
+                    SprintCount = sprintSummary.Count,
+                    TotalTask = totalTasks,
+                    TotalPoint = sprintSummary.Sum(s => s.TotalPoint),
+                    Progress = Math.Round(progress, 2),
+                    Sprints = sprintSummary
+                });
+            }
+
+            return response;
+        }
+
     }
 }

@@ -24,5 +24,8 @@ namespace Fusion.Repository.IRepositories
        int pageNumber,
        int pageSize,
        CancellationToken ct = default);
+
+        Task<PagedResult<Project>> GetProjectsForAdminAsync(ProjectSummarySearchRequest request, CancellationToken cancellationToken = default);
+
     }
 }

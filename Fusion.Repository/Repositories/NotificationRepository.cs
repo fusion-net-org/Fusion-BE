@@ -1,4 +1,5 @@
 ﻿using Fusion.Repository.Bases.Exceptions;
+using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Responses;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
@@ -58,11 +59,11 @@ namespace Fusion.Repository.Repositories
         {
             if (string.IsNullOrWhiteSpace(notification.Title))
                 throw CustomExceptionFactory.CreateBadRequestError("Notification Title does not exist");
-       
+
 
             notification.IsRead = true;
             notification.IsDeleted = false;
-            notification.NotificationType = NotificationTypeEnum.INFO.ToString();
+            notification.NotificationType = NotificationTypeEnum.ADMIN_NOTIFICATE.ToString();
             notification.ReadAt = DateTime.UtcNow.AddHours(7);
             notification.CreateAt = DateTime.UtcNow.AddHours(7);
             notification.LinkUrlWeb = null;
@@ -80,10 +81,33 @@ namespace Fusion.Repository.Repositories
             if (exists == null)
                 throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("User"));
 
-            return await _context.Notifications
-                .Where(x => x.UserId == userId && x.IsDeleted == false)
+            var disabledTypes = await _context.UserNotificationSettings
+                                    .Where(x => x.UserId == userId && x.IsEnabled == false)
+                                    .Select(x => x.NotificationType)
+                                    .ToListAsync(cancellationToken);
+
+            var query = _context.Notifications.Where(x => x.UserId == userId && !x.IsDeleted.Value).AsQueryable();
+
+            // Loại bỏ những loại bị tắt
+            if (disabledTypes.Any())
+            {
+                query = query.Where(x => !disabledTypes.Contains(x.NotificationType.ToString()));
+            }
+
+            var notifications = await query.OrderByDescending(x => x.CreateAt).ToListAsync(cancellationToken);
+
+            return notifications;
+        }
+
+        public async Task<PagedResult<Notification>> GetAdminNotificationsAsync(PagedRequest pagedRequest, CancellationToken cancellationToken = default)
+        {
+            var query = _context.Notifications
+                .Where(x => x.NotificationType == NotificationTypeEnum.ADMIN_NOTIFICATE.ToString())
                 .OrderByDescending(x => x.CreateAt)
-               .ToListAsync(cancellationToken);
+                .AsQueryable();
+
+
+            return await query.ToPagedResultAsync(pagedRequest, cancellationToken);
         }
 
         public async Task MarkAsReadAsync(Guid userId, Guid notificationId, CancellationToken cancellationToken = default)
