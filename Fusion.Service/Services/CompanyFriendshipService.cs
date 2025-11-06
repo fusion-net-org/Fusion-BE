@@ -1,4 +1,11 @@
-﻿using AutoMapper;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.Design;
+using System.Linq;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using AutoMapper;
 using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.Partner;
@@ -9,15 +16,9 @@ using Fusion.Repository.Repositories;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.Companies.Email;
 using Fusion.Service.ViewModels.Companies.Responses;
+using Fusion.Service.ViewModels.Notifications.Requests;
 using Fusion.Service.ViewModels.Users.Requests;
 using Microsoft.AspNetCore.Http;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.Design;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace Fusion.Service.Services
@@ -30,8 +31,9 @@ namespace Fusion.Service.Services
         private readonly IMailService _mailService;
         private readonly ICompanyRepository _companyRepository;
         private readonly ICompanyActivityService _logService;
+        private readonly INotificationService _notificationService;
         public CompanyFriendshipService(IUnitOfWork unitOfWork, ICompanyFriendshipRepository userRepository,
-    IMapper mapper, IMailService mailService, ICompanyRepository companyRepository, ICompanyActivityService logService)
+    IMapper mapper, IMailService mailService, ICompanyRepository companyRepository, ICompanyActivityService logService, INotificationService notificationService)
         {
             _unitOfWork = unitOfWork;
             _companyFriendshipRepository = userRepository;
@@ -39,6 +41,7 @@ namespace Fusion.Service.Services
             _mailService = mailService;
             _companyRepository = companyRepository;
             _logService = logService;
+            _notificationService = notificationService;
         }
 
         public async Task<CompanyFriendshipResponse> AcceptCompanyFriendship(long id, Guid currentUserId)
@@ -82,6 +85,29 @@ namespace Fusion.Service.Services
             };
             await _logService.CreateLog(log);
 
+            await _notificationService.CreateNotificationAsync(new SendNotificationRequest
+            {
+                UserId = (Guid)companyA.OwnerUserId!,
+                Title = $"Partnership request accepted",
+                Body = $"Your partnership invitation with company {companyB.Name} has been accepted.",
+                LinkKey = "PARTNER_PAGE",
+                IdLink = (Guid)entity.CompanyAId!,
+                Event = "CompanyFriendshipAccepted",
+                NotificationType = "PARTNER",
+            });
+
+
+            await _notificationService.CreateNotificationAsync(new SendNotificationRequest
+            {
+                UserId = (Guid)companyB.OwnerUserId!,
+                Title = $"Partnership established",
+                Body = $"You are now connected to company {companyA.Name} as partners.",
+                LinkKey = "PARTNER_PAGE",
+                IdLink = (Guid)entity.CompanyBId!,
+                Event = "CompanyFriendshipEstablished",
+                NotificationType = "PARTNER",
+            });
+
             return _mapper.Map<CompanyFriendshipResponse>(entity);
         }
 
@@ -124,6 +150,28 @@ namespace Fusion.Service.Services
 
             };
             await _logService.CreateLog(log);
+
+            await _notificationService.CreateNotificationAsync(new SendNotificationRequest
+            {
+                UserId = (Guid)companyA.OwnerUserId!,
+                Title = $"Partnership invitation rejected",
+                Body = $"Your partnership request to company {companyB.Name} has been rejected.",
+                LinkKey = "HOME_PAGE",
+                IdLink = (Guid)entity.CompanyAId!,
+                Event = "CompanyFriendshipRejected",
+                NotificationType = "PARTNER",
+            });
+
+            await _notificationService.CreateNotificationAsync(new SendNotificationRequest
+            {
+                UserId = (Guid)companyB.OwnerUserId!,
+                Title = $"You rejected a partnership invitation",
+                Body = $"You have rejected the partnership invitation sent by company {companyA.Name}.",
+                LinkKey = "HOME_PAGE",
+                IdLink = (Guid)entity.CompanyBId!,
+                Event = "CompanyFriendshipRejectConfirmed",
+                NotificationType = "PARTNER",
+            });
             return _mapper.Map<CompanyFriendshipResponse>(entity);
         }
 
@@ -206,6 +254,10 @@ namespace Fusion.Service.Services
             var emailCompanyB = await _companyRepository.GetMailCompanyByGuid(companyBId);
             var emailCompanyA = await _companyRepository.GetMailCompanyByGuid(companyAId);
 
+
+            var companyA = await _companyRepository.GetCompanyByIdAsync(companyAId);
+            var companyB = await _companyRepository.GetCompanyByIdAsync(companyBId);
+
             await _unitOfWork.SaveChangesAsync();
 
             // Send notification company A 
@@ -245,6 +297,28 @@ namespace Fusion.Service.Services
                 Description = $"User:'{user.UserName}' sent an invitation to partner '{nameCompanyB}'.",
             };
             await _logService.CreateLog(log);
+
+            await _notificationService.CreateNotificationAsync(new SendNotificationRequest
+            {
+                UserId = (Guid)companyB.OwnerUserId!,
+                Title = $"Partnership invite received from {nameCompanyA}",
+                Body = $"Company {nameCompanyA} has sent a partnership invitation.",
+                LinkKey = "PARTNER_PAGE",
+                IdLink = companyBId,
+                Event = "CompanyFriendshipInviteReceived",
+                NotificationType = "PARTNER",
+            });
+
+            await _notificationService.CreateNotificationAsync(new SendNotificationRequest
+            {
+                UserId = (Guid)companyA.OwnerUserId!,
+                Title = $"Partnership invite sent to {nameCompanyB}",
+                Body = $"You have sent a partnership invitation to {nameCompanyB}. Awaiting response.",
+                LinkKey = "COMPANY_DETAIL_PAGE",
+                IdLink = companyAId,
+                Event = "CompanyFriendshipInviteSent",
+                NotificationType = "PARTNER",
+            });
             return _mapper.Map<CompanyFriendshipResponse>(entity);
         }
         public async Task<CompanyFriendshipResponse?> GetCompanyFriendshipBetweenCompaniesAsync(
@@ -307,6 +381,29 @@ namespace Fusion.Service.Services
 
             };
             await _logService.CreateLog(log);
+
+            await _notificationService.CreateNotificationAsync(new SendNotificationRequest
+            {
+                UserId = (Guid)companyA.OwnerUserId!,
+                Title = $"Partnership connection removed",
+                Body = $"The partnership with company {companyB.Name} has been removed.",
+                LinkKey = "PARTNER_PAGE",
+                IdLink = (Guid)entity.CompanyAId!,
+                Event = "CompanyFriendshipRemoved",
+                NotificationType = "PARTNER",
+            });
+
+            await _notificationService.CreateNotificationAsync(new SendNotificationRequest
+            {
+                UserId = (Guid)companyB.OwnerUserId!,
+                Title = $"You removed a partnership connection",
+                Body = $"You have removed the partnership with company {companyA.Name}.",
+                LinkKey = "HOME_PAGE",
+                IdLink = (Guid)entity.CompanyBId!,
+                Event = "CompanyFriendshipSelfRemoved",
+                NotificationType = "PARTNER",
+            });
+
             return _mapper.Map<CompanyFriendshipResponse>(entity);
         }
 

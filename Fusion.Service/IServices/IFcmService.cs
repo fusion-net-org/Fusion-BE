@@ -9,7 +9,7 @@ namespace Fusion.Service.IServices
 {
     public interface IFcmService
     {
-        public Task SendToUserAsync(FCMNotificationRequest request, CancellationToken cancellationToken = default);
+        public Task SendToUserAsync(FCMNotificationRequest request, string notificationType, CancellationToken cancellationToken = default);
 
         Task SendToAllAsync(FCMNotificationRequest request, CancellationToken cancellationToken = default);
 

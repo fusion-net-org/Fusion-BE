@@ -14,6 +14,14 @@ namespace Fusion.Repository.Enums
         TASK,
         COMPANY,
         WARNING,
+        PARTNER,
+        PROJECT_REQUEST,
         INFO
+    }
+
+    public enum NotificationStatusEnum
+    {
+        TURN_OFF,
+        TURN_ON
     }
 }

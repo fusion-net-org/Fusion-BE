@@ -1,5 +1,6 @@
 ﻿using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
+using Fusion.Repository.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,5 +17,10 @@ namespace Fusion.Repository.IRepositories
 
         Task<Notification> CreateAdminNotificationAsync(Notification notification, CancellationToken cancellationToken = default);
 
+        Task DeleteNotificationAsync(Guid userId, Guid notificationId, CancellationToken cancellationToken = default);
+
+        Task DeleteAllNotificationByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
+
+        Task ToggleNotificationByTypeAsync(Guid userId, NotificationTypeEnum type, bool? isEnable, CancellationToken cancellationToken = default);
     }
 }
