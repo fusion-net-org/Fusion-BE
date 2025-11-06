@@ -4,6 +4,7 @@ using Fusion.Repository.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Fusion.Repository.Migrations
 {
     [DbContext(typeof(FusionDbContext))]
-    partial class FusionDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251105165656_Fix_Table_SubscriptionPlan_l1")]
+    partial class Fix_Table_SubscriptionPlan_l1
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -375,10 +378,6 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("nvarchar(50)")
                         .HasColumnName("event");
 
-                    b.Property<bool?>("IsDeleted")
-                        .HasColumnType("bit")
-                        .HasColumnName("is_deleted");
-
                     b.Property<bool>("IsRead")
                         .HasColumnType("bit")
                         .HasColumnName("is_read");
@@ -401,11 +400,6 @@ namespace Fusion.Repository.Migrations
                         .HasPrecision(3)
                         .HasColumnType("datetime2(3)")
                         .HasColumnName("read_at");
-
-                    b.Property<string>("Status")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasColumnName("status");
 
                     b.Property<string>("Title")
                         .HasMaxLength(200)
@@ -1013,9 +1007,10 @@ namespace Fusion.Repository.Migrations
                         .HasColumnName("id")
                         .HasDefaultValueSql("(newid())");
 
-                    b.Property<int>("BillingPeriod")
+                    b.Property<string>("BillingPeriod")
+                        .IsRequired()
                         .HasMaxLength(20)
-                        .HasColumnType("int")
+                        .HasColumnType("nvarchar(20)")
                         .HasColumnName("billing_period");
 
                     b.Property<string>("Currency")
@@ -1046,8 +1041,7 @@ namespace Fusion.Repository.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("PlanId")
-                        .IsUnique();
+                    b.HasIndex("PlanId");
 
                     b.ToTable("subscriptionplanprices");
                 });
@@ -1452,33 +1446,6 @@ namespace Fusion.Repository.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("UserLogs");
-                });
-
-            modelBuilder.Entity("Fusion.Repository.Entities.UserNotificationSetting", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("id");
-
-                    b.Property<bool?>("IsEnabled")
-                        .HasColumnType("bit")
-                        .HasColumnName("is_enabled");
-
-                    b.Property<string>("NotificationType")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasColumnName("notification_type");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("user_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("UserNotificationSettings");
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.UserRole", b =>
@@ -1901,8 +1868,8 @@ namespace Fusion.Repository.Migrations
             modelBuilder.Entity("Fusion.Repository.Entities.SubscriptionPlanPrice", b =>
                 {
                     b.HasOne("Fusion.Repository.Entities.SubscriptionPlan", "SubscriptionPlan")
-                        .WithOne("Price")
-                        .HasForeignKey("Fusion.Repository.Entities.SubscriptionPlanPrice", "PlanId")
+                        .WithMany("Prices")
+                        .HasForeignKey("PlanId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("FK_SubscriptionPlanPrices_Plan");
@@ -1996,17 +1963,6 @@ namespace Fusion.Repository.Migrations
                 {
                     b.HasOne("Fusion.Repository.Entities.User", "User")
                         .WithMany("UserDevices")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Fusion.Repository.Entities.UserNotificationSetting", b =>
-                {
-                    b.HasOne("Fusion.Repository.Entities.User", "User")
-                        .WithMany("UserNotificationSettings")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -2144,7 +2100,7 @@ namespace Fusion.Repository.Migrations
                 {
                     b.Navigation("Features");
 
-                    b.Navigation("Price");
+                    b.Navigation("Prices");
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.Ticket", b =>
@@ -2183,8 +2139,6 @@ namespace Fusion.Repository.Migrations
                     b.Navigation("Tickets");
 
                     b.Navigation("UserDevices");
-
-                    b.Navigation("UserNotificationSettings");
 
                     b.Navigation("UserRoles");
                 });

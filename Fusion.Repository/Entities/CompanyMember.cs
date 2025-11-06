@@ -39,5 +39,4 @@ public partial class CompanyMember
     [InverseProperty("CompanyMembers")]
     public virtual User? User { get; set; }
 
-    public virtual ICollection<CompanySubscriptionAssignment>? SubscriptionAssignments { get; set; }
 }
