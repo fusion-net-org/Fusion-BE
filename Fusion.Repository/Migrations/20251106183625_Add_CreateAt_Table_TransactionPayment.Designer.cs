@@ -4,6 +4,7 @@ using Fusion.Repository.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Fusion.Repository.Migrations
 {
     [DbContext(typeof(FusionDbContext))]
-    partial class FusionDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251106183625_Add_CreateAt_Table_TransactionPayment")]
+    partial class Add_CreateAt_Table_TransactionPayment
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -312,93 +315,6 @@ namespace Fusion.Repository.Migrations
                         .HasFilter("([company_id] IS NOT NULL AND [user_id] IS NOT NULL)");
 
                     b.ToTable("CompanyMembers");
-                });
-
-            modelBuilder.Entity("Fusion.Repository.Entities.Contract", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("id");
-
-                    b.Property<string>("Attachment")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("attachment");
-
-                    b.Property<decimal?>("Budget")
-                        .HasColumnType("decimal(18,2)")
-                        .HasColumnName("budget");
-
-                    b.Property<string>("ContractCode")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasColumnName("contract_code");
-
-                    b.Property<string>("ContractName")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasColumnName("contract_name");
-
-                    b.Property<DateOnly?>("EffectiveDate")
-                        .HasColumnType("date")
-                        .HasColumnName("effective_date");
-
-                    b.Property<DateOnly?>("ExpiredDate")
-                        .HasColumnType("date")
-                        .HasColumnName("expired_date");
-
-                    b.Property<Guid>("ProjectRequestId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("project_request_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ProjectRequestId")
-                        .IsUnique();
-
-                    b.ToTable("Contracts");
-                });
-
-            modelBuilder.Entity("Fusion.Repository.Entities.ContractAppendix", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("id");
-
-                    b.Property<string>("AppendixCode")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasColumnName("appendix_code");
-
-                    b.Property<Guid>("ContractId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("contract_id");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("created_at");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("description");
-
-                    b.Property<string>("FilePath")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("file_path");
-
-                    b.Property<string>("Title")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)")
-                        .HasColumnName("title");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ContractId");
-
-                    b.ToTable("ContractAppendices");
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.FunctionInPage", b =>
@@ -1905,28 +1821,6 @@ namespace Fusion.Repository.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Fusion.Repository.Entities.Contract", b =>
-                {
-                    b.HasOne("Fusion.Repository.Entities.ProjectRequest", "ProjectRequest")
-                        .WithOne("Contract")
-                        .HasForeignKey("Fusion.Repository.Entities.Contract", "ProjectRequestId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("ProjectRequest");
-                });
-
-            modelBuilder.Entity("Fusion.Repository.Entities.ContractAppendix", b =>
-                {
-                    b.HasOne("Fusion.Repository.Entities.Contract", "Contract")
-                        .WithMany("ContractAppendices")
-                        .HasForeignKey("ContractId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Contract");
-                });
-
             modelBuilder.Entity("Fusion.Repository.Entities.Notification", b =>
                 {
                     b.HasOne("Fusion.Repository.Entities.User", "User")
@@ -2329,11 +2223,6 @@ namespace Fusion.Repository.Migrations
                     b.Navigation("Workflows");
                 });
 
-            modelBuilder.Entity("Fusion.Repository.Entities.Contract", b =>
-                {
-                    b.Navigation("ContractAppendices");
-                });
-
             modelBuilder.Entity("Fusion.Repository.Entities.FunctionInPage", b =>
                 {
                     b.Navigation("RolePermissions");
@@ -2352,8 +2241,6 @@ namespace Fusion.Repository.Migrations
 
             modelBuilder.Entity("Fusion.Repository.Entities.ProjectRequest", b =>
                 {
-                    b.Navigation("Contract");
-
                     b.Navigation("Project");
                 });
 
