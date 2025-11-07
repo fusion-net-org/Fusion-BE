@@ -135,13 +135,13 @@ namespace Fusion.Repository.Repositories
             if (existingRequest.RequesterCompanyId != companyRequester.CompanyId)
                 throw CustomExceptionFactory.CreateBadRequestError("You are not allowed to update this project request");
 
-            //// Rule: chỉ được update khi đang Pending
-            //if (existingRequest.Status != ProjectRequestStatusEnum.Pending.ToString())
-            //    throw CustomExceptionFactory.CreateBadRequestError(
-            //        ResponseMessages.INVALID_INPUT.FormatMessage("Invalid Status"),
-            //        "Only Pending requests can be updated");
+            // Rule: chỉ được update khi đang Pending
+            if (existingRequest.Status != ProjectRequestStatusEnum.Pending.ToString())
+                throw CustomExceptionFactory.CreateBadRequestError(
+                    ResponseMessages.INVALID_INPUT.FormatMessage("Invalid Status"),
+                    "Only Pending requests can be updated");
 
-            
+
 
             if (request.ExecutorCompanyId.HasValue && request.ExecutorCompanyId != existingRequest.ExecutorCompanyId)
             {
