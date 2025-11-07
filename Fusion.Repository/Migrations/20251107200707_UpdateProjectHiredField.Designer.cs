@@ -4,6 +4,7 @@ using Fusion.Repository.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Fusion.Repository.Migrations
 {
     [DbContext(typeof(FusionDbContext))]
-    partial class FusionDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251107200707_UpdateProjectHiredField")]
+    partial class UpdateProjectHiredField
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -527,6 +530,9 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("nvarchar(50)")
                         .HasColumnName("code");
 
+                    b.Property<Guid?>("CompanyHiredId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<Guid?>("CompanyId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("company_id");
@@ -589,9 +595,9 @@ namespace Fusion.Repository.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CompanyId");
+                    b.HasIndex("CompanyHiredId");
 
-                    b.HasIndex("CompanyRequestId");
+                    b.HasIndex("CompanyId");
 
                     b.HasIndex("CreatedBy");
 
@@ -1939,15 +1945,15 @@ namespace Fusion.Repository.Migrations
 
             modelBuilder.Entity("Fusion.Repository.Entities.Project", b =>
                 {
+                    b.HasOne("Fusion.Repository.Entities.Company", "CompanyHired")
+                        .WithMany("ProjectCompanyHireds")
+                        .HasForeignKey("CompanyHiredId")
+                        .HasConstraintName("FK_Projects_HiredCompany");
+
                     b.HasOne("Fusion.Repository.Entities.Company", "Company")
                         .WithMany("ProjectCompanies")
                         .HasForeignKey("CompanyId")
                         .HasConstraintName("FK_Projects_Company");
-
-                    b.HasOne("Fusion.Repository.Entities.Company", "CompanyRequest")
-                        .WithMany("ProjectCompanyRequests")
-                        .HasForeignKey("CompanyRequestId")
-                        .HasConstraintName("FK_Projects_HiredCompany");
 
                     b.HasOne("Fusion.Repository.Entities.User", "CreatedByNavigation")
                         .WithMany("Projects")
@@ -1966,7 +1972,7 @@ namespace Fusion.Repository.Migrations
 
                     b.Navigation("Company");
 
-                    b.Navigation("CompanyRequest");
+                    b.Navigation("CompanyHired");
 
                     b.Navigation("CreatedByNavigation");
 
@@ -2316,7 +2322,7 @@ namespace Fusion.Repository.Migrations
 
                     b.Navigation("ProjectCompanies");
 
-                    b.Navigation("ProjectCompanyRequests");
+                    b.Navigation("ProjectCompanyHireds");
 
                     b.Navigation("ProjectRequestExecutorCompanies");
 

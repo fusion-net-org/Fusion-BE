@@ -28,7 +28,7 @@ namespace Fusion.Repository.Repositories
                 .Include(x => x.Project)
                 .Where(pm =>
                 pm.UserId == memberId
-                && ((pm.Project!.IsHired && pm.Project.CompanyHiredId == companyId)
+                && ((pm.Project!.IsHired && pm.Project.CompanyRequestId == companyId)
                 || (!pm.Project.IsHired && pm.Project.CompanyId == companyId)))
                 .Select(pm => pm.ProjectId).Distinct().CountAsync(cancellationToken);
 
@@ -50,7 +50,7 @@ namespace Fusion.Repository.Repositories
             var query = _context.Projects
                 .Include(p => p.ProjectMembers)
                 .ThenInclude(pm => pm.User)
-                .Where(p => (p.CompanyId == companyId || p.CompanyHiredId == companyId)
+                .Where(p => (p.CompanyId == companyId || p.CompanyRequestId == companyId)
                             && p.ProjectMembers.Any(pm => pm.UserId == userId))
                 .AsQueryable();
 

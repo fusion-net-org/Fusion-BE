@@ -11,7 +11,7 @@ namespace Fusion.Service.ViewModels.Project.Requests
     public class ProjectCreateRequest
     {
         public bool IsHired { get; set; }
-        public Guid? CompanyHiredId { get; set; }
+        public Guid? CompanyRequestId { get; set; }
         public Guid? ProjectRequestId { get; set; }
         public string Code { get; set; } = default!;
         public string Name { get; set; } = default!;

@@ -114,9 +114,9 @@ namespace Fusion.Repository.Repositories
                 .Include(cf => cf.CompanyB)
                     .ThenInclude(c => c.ProjectCompanies)
                 .Include(cf => cf.CompanyA)
-                    .ThenInclude(c => c.ProjectCompanyHireds)
+                    .ThenInclude(c => c.ProjectCompanyRequests)
                 .Include(cf => cf.CompanyB)
-                    .ThenInclude(c => c.ProjectCompanyHireds)
+                    .ThenInclude(c => c.ProjectCompanyRequests)
                 .Where(cf =>
                     (cf.CompanyAId == companyID || cf.CompanyBId == companyID) &&
                     (cf.Status.ToLower() == "active" || cf.Status.ToLower() == "pending"))
@@ -166,7 +166,7 @@ namespace Fusion.Repository.Repositories
                .Include(cf => cf.CompanyB)
                    .ThenInclude(c => c.ProjectCompanies)
                .Include(cf => cf.CompanyB)
-                   .ThenInclude(c => c.ProjectCompanyHireds)
+                   .ThenInclude(c => c.ProjectCompanyRequests)
                .Include(cf => cf.CompanyB)
                    .ThenInclude(c => c.OwnerUser)
                .Where(cf => cf.CompanyA.OwnerUserId == ownerUserID || cf.CompanyB.OwnerUserId == ownerUserID)
@@ -246,7 +246,7 @@ namespace Fusion.Repository.Repositories
                 .Include(cf => cf.CompanyB)
                     .ThenInclude(c => c.ProjectCompanies)
                 .Include(cf => cf.CompanyB)
-                    .ThenInclude(c => c.ProjectCompanyHireds)
+                    .ThenInclude(c => c.ProjectCompanyRequests)
                 .Where(cf =>
                     (cf.CompanyAId == companyID || cf.CompanyBId == companyID) &&
                     (cf.CompanyA.OwnerUserId == ownerUserID || cf.CompanyB.OwnerUserId == ownerUserID))
@@ -409,11 +409,11 @@ namespace Fusion.Repository.Repositories
                 .Include(cf => cf.CompanyA)
                     .ThenInclude(c => c.OwnerUser)
                 .Include(cf => cf.CompanyA.ProjectCompanies)
-                .Include(cf => cf.CompanyA.ProjectCompanyHireds)
+                .Include(cf => cf.CompanyA.ProjectCompanyRequests)
                 .Include(cf => cf.CompanyB)
                     .ThenInclude(c => c.OwnerUser)
                 .Include(cf => cf.CompanyB.ProjectCompanies)
-                .Include(cf => cf.CompanyB.ProjectCompanyHireds)
+                .Include(cf => cf.CompanyB.ProjectCompanyRequests)
                 .Where(cf =>
                     (cf.CompanyAId == companyID || cf.CompanyBId == companyID)
                     && (cf.CompanyA.OwnerUserId == ownerUserID || cf.CompanyB.OwnerUserId == ownerUserID)
