@@ -1,5 +1,6 @@
 ﻿
 using Fusion.Repository.Entities;
+using Fusion.Repository.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fusion.Repository.Data;
@@ -45,6 +46,8 @@ public partial class FusionDbContext : DbContext
     public virtual DbSet<SubscriptionPlanPrice> SubscriptionPlanPrices { get; set; }
 
     public virtual DbSet<TransactionPayment> TransactionPayments { get; set; }
+    public DbSet<UserSubscription> UserSubscriptions { get; set; } = null!;
+    public DbSet<UserSubscriptionEntitlement> UserSubscriptionEntitlements { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -344,8 +347,9 @@ public partial class FusionDbContext : DbContext
 
             // Nếu bạn dùng enum FeatureKeys => map sang string
             entity.Property(e => e.FeatureKey)
-                  .HasConversion<string>()
-                  .HasMaxLength(50);
+                  .HasConversion(new EnumMemberValueConverter<FeatureKeys>()) // dùng converter bạn đã tạo
+                  .HasMaxLength(50)
+                  .IsRequired();
         });
 
         // === SubscriptionPlanPrice ===
@@ -382,6 +386,64 @@ public partial class FusionDbContext : DbContext
                   .OnDelete(DeleteBehavior.Cascade)
                   .HasConstraintName("FK_TransactionPayments_Plan");
         });
+
+        // === UserSubscription ===
+        modelBuilder.Entity<UserSubscription>(entity =>
+        {
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.CreatAt).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.UpdateAt).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.Price).HasColumnType("decimal(18,2)");
+            entity.Property(e => e.Currency).HasMaxLength(10).HasDefaultValue("VND");
+
+            // Enum SubscriptionStatus -> lưu dạng string
+            entity.Property(e => e.Status)
+                  .HasConversion(new EnumMemberValueConverter<SubscriptionStatus>())
+                  .HasMaxLength(50);
+ 
+
+            // Quan hệ 1-1 với TransactionPayment (TransactionId)
+            entity.HasOne(us => us.TransactionPayment)
+                  .WithOne(tp => tp.UserSubscription)
+                  .HasForeignKey<UserSubscription>(us => us.TransactionId)
+                  .IsRequired()                      
+                  .OnDelete(DeleteBehavior.Restrict)  
+                  .HasConstraintName("FK_UserSubscriptions_TransactionPayment");
+
+            // Quan hệ 1-N với Entitlements
+            entity.HasMany(e => e.UserSubscriptionEntitlements)
+                  .WithOne(e => e.UserSubscription)
+                  .HasForeignKey(e => e.UserSubscriptionId)
+                  .OnDelete(DeleteBehavior.Cascade)
+                  .HasConstraintName("FK_UserSubscriptionEntitlements_Subscription");
+        });
+
+        // === UserSubscriptionEntitlement ===
+        modelBuilder.Entity<UserSubscriptionEntitlement>(entity =>
+        {
+
+            entity.Property(e => e.Id)
+                  .HasDefaultValueSql("(newid())");
+
+            entity.Property(e => e.FeatureKey)
+                  .HasConversion(new EnumMemberValueConverter<FeatureKeys>())
+                  .HasMaxLength(50)
+                  .IsRequired();
+
+            entity.Property(e => e.Quantity)
+                  .IsRequired();
+
+            entity.Property(e => e.Remaining)
+                  .IsRequired();
+
+            entity.HasOne(d => d.UserSubscription)
+                  .WithMany(p => p.UserSubscriptionEntitlements)
+                  .HasForeignKey(d => d.UserSubscriptionId)
+                  .OnDelete(DeleteBehavior.Cascade)
+                  .HasConstraintName("FK_UserSubscriptionEntitlements_UserSubscription");
+        });
+
+
         OnModelCreatingPartial(modelBuilder);
     }
 

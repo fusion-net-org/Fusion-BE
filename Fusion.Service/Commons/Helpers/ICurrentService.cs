@@ -37,7 +37,7 @@ namespace Fusion.Service.Commons.Helpers
         }
         public bool IsAdmin()
         {
-            var roleClaim = _httpContextAccessor.HttpContext?.User?.FindFirst("isAdmin");
+            var roleClaim = _httpContextAccessor.HttpContext?.User?.FindFirst("Admin");
             return roleClaim != null && roleClaim.Value == "true";
         }
     }

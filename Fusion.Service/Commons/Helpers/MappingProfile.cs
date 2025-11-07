@@ -20,6 +20,8 @@ using Fusion.Service.ViewModels.Tickets.Responses;
 using Fusion.Service.ViewModels.TransactionPayment.Responses;
 using Fusion.Service.ViewModels.Users.Requests;
 using Fusion.Service.ViewModels.Users.Responses;
+using Fusion.Service.ViewModels.UserSubscription.Requests;
+using Fusion.Service.ViewModels.UserSubscription.Responses;
 
 namespace Fusion.Service.Commons.Helpers;
 
@@ -227,10 +229,18 @@ public class MappingProfile : Profile
      .ForMember(d => d.CompanyName, o => o.MapFrom(s => s.Company != null ? s.Company.Name : null))
      .ForMember(d => d.CompanyHiredName, o => o.MapFrom(s => s.CompanyHired != null ? s.CompanyHired.Name : null))
      .ForMember(d => d.CreatedByName, o => o.MapFrom(s => s.CreatedByNavigation != null ? s.CreatedByNavigation.UserName : null))
-
-   
-
      .ForMember(d => d.Sprints, o => o.MapFrom(s => s.Sprints.Where(x => !x.IsDeleted)));
+
+
+        // ===================== User Subscription =====================
+        CreateMap<UserSubscription, UserSubscriptionDetailResponse>()
+             .ForMember(d => d.Entitlements, opt => opt.MapFrom(s => s.UserSubscriptionEntitlements));
+
+        CreateMap<UserSubscriptionEntitlement, UserSubscriptionEntitlementResponse>()
+            .ForMember(d => d.FeatureKey, opt => opt.MapFrom(s => s.FeatureKey.ToString()));
+
+        CreateMap<UserSubscription, UserSubscriptionListItem>();
+        CreateMap<UserSubscriptionCreateRequest, UserSubscription>();
     }
 
 }
