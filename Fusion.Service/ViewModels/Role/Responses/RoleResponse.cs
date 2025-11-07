@@ -13,4 +13,11 @@ namespace Fusion.Service.ViewModels.Role.Responses
         public string RoleName { get; set; } = string.Empty;
         public List<PermissionResponse> Permissions { get; set; } = new();
     }
+
+    public class CompanyRoleSummaryResponse
+    {
+        public int RoleId { get; set; }
+        public string RoleName { get; set; } = string.Empty;
+        public int TotalMembers { get; set; }
+    }
 }

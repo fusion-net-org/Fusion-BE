@@ -12,6 +12,7 @@ namespace Fusion.Repository.Repositories
     public record CreateRoleDto(string Name, string? Description, IEnumerable<int>? FunctionIdsToGrant);
     public record RoleDetailVm(int Id, string Name, string? Description, List<RolePermissionVm> Permissions);
     public record RolePermissionVm(int FunctionId, string FunctionCode, string FunctionName, bool IsAccess);
+
     public sealed class UpdateRoleInfoDto
     {
         public string? Name { get; set; }
@@ -33,8 +34,7 @@ namespace Fusion.Repository.Repositories
         Task UpdatePermissionsAsync(Guid companyId, int roleId, IEnumerable<int> functionIds, CancellationToken ct = default);
         Task<int> UpdateInfoAsync(Guid companyId, int roleId, UpdateRoleInfoDto dto, CancellationToken ct = default);
         Task DeleteAsync(Guid companyId, int roleId, CancellationToken ct = default);
-
-
+        Task<List<Role>> GetRoleWithMemberAsync(CancellationToken ct = default);
     }
 
     public class RoleAdminRepository : IRoleAdminRepository
@@ -299,5 +299,15 @@ namespace Fusion.Repository.Repositories
                 .Select(r => new RoleDetailVm(r.Id, r.RoleName, r.Description, new List<RolePermissionVm>()))
                 .ToListAsync(ct);
         }
+
+        public async Task<List<Role>> GetRoleWithMemberAsync(CancellationToken ct = default)
+        {
+            return await _db.Roles
+                .Include( x => x.UserRoles)
+                    .ThenInclude(x => x.User)
+                        .ThenInclude(x => x.CompanyMembers).ToListAsync(ct);
+        }
+
+
     }
 }

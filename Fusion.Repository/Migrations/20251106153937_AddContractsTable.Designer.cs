@@ -4,6 +4,7 @@ using Fusion.Repository.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Fusion.Repository.Migrations
 {
     [DbContext(typeof(FusionDbContext))]
-    partial class FusionDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251106153937_AddContractsTable")]
+    partial class AddContractsTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -325,7 +328,7 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("attachment");
 
-                    b.Property<decimal?>("Budget")
+                    b.Property<decimal>("Budget")
                         .HasColumnType("decimal(18,2)")
                         .HasColumnName("budget");
 
@@ -335,17 +338,11 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("nvarchar(50)")
                         .HasColumnName("contract_code");
 
-                    b.Property<string>("ContractName")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasColumnName("contract_name");
-
-                    b.Property<DateOnly?>("EffectiveDate")
+                    b.Property<DateOnly>("EffectiveDate")
                         .HasColumnType("date")
                         .HasColumnName("effective_date");
 
-                    b.Property<DateOnly?>("ExpiredDate")
+                    b.Property<DateOnly>("ExpiredDate")
                         .HasColumnType("date")
                         .HasColumnName("expired_date");
 
@@ -399,6 +396,71 @@ namespace Fusion.Repository.Migrations
                     b.HasIndex("ContractId");
 
                     b.ToTable("ContractAppendices");
+                });
+
+            modelBuilder.Entity("Fusion.Repository.Entities.ContractSolution", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<string>("OtherNotes")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("other_notes");
+
+                    b.Property<decimal?>("PenaltyAmount")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("penalty_amount");
+
+                    b.Property<string>("SolutionDetail")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("solution_detail");
+
+                    b.Property<Guid>("ViolationId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("violation_id");
+
+                    b.Property<Guid?>("violation_id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("violation_id");
+
+                    b.ToTable("ContractSolutions", t =>
+                        {
+                            t.Property("violation_id")
+                                .HasColumnName("violation_id1");
+                        });
+                });
+
+            modelBuilder.Entity("Fusion.Repository.Entities.ContractViolation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ContractId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("contract_id");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("description");
+
+                    b.Property<string>("ViolationType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("violation_type");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContractId");
+
+                    b.ToTable("ContractViolations");
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.FunctionInPage", b =>
@@ -1826,6 +1888,26 @@ namespace Fusion.Repository.Migrations
                     b.Navigation("Contract");
                 });
 
+            modelBuilder.Entity("Fusion.Repository.Entities.ContractSolution", b =>
+                {
+                    b.HasOne("Fusion.Repository.Entities.ContractViolation", "ContractViolation")
+                        .WithMany("ContractSolutions")
+                        .HasForeignKey("violation_id");
+
+                    b.Navigation("ContractViolation");
+                });
+
+            modelBuilder.Entity("Fusion.Repository.Entities.ContractViolation", b =>
+                {
+                    b.HasOne("Fusion.Repository.Entities.Contract", "Contract")
+                        .WithMany("ContractViolations")
+                        .HasForeignKey("ContractId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Contract");
+                });
+
             modelBuilder.Entity("Fusion.Repository.Entities.Notification", b =>
                 {
                     b.HasOne("Fusion.Repository.Entities.User", "User")
@@ -2210,6 +2292,13 @@ namespace Fusion.Repository.Migrations
             modelBuilder.Entity("Fusion.Repository.Entities.Contract", b =>
                 {
                     b.Navigation("ContractAppendices");
+
+                    b.Navigation("ContractViolations");
+                });
+
+            modelBuilder.Entity("Fusion.Repository.Entities.ContractViolation", b =>
+                {
+                    b.Navigation("ContractSolutions");
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.FunctionInPage", b =>
