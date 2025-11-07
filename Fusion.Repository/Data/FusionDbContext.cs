@@ -114,7 +114,7 @@ public partial class FusionDbContext : DbContext
             entity.Property(e => e.CreateAt).HasDefaultValueSql("(sysutcdatetime())");
             entity.Property(e => e.UpdateAt).HasDefaultValueSql("(sysutcdatetime())");
 
-            entity.HasOne(d => d.CompanyHired).WithMany(p => p.ProjectCompanyHireds).HasConstraintName("FK_Projects_HiredCompany");
+            entity.HasOne(d => d.CompanyRequest).WithMany(p => p.ProjectCompanyRequests).HasConstraintName("FK_Projects_HiredCompany");
 
             entity.HasOne(d => d.Company).WithMany(p => p.ProjectCompanies).HasConstraintName("FK_Projects_Company");
 

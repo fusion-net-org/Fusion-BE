@@ -305,7 +305,7 @@ namespace Fusion.Service.Services
                 .ToList();
 
             var allProjects = company.ProjectCompanies
-                .Concat(company.ProjectCompanyHireds)
+                .Concat(company.ProjectCompanyRequests)
                 .ToList();
 
             var roles = await _roleRepository.GetRoleWithMemberAsync(cancellationToken);
@@ -328,7 +328,7 @@ namespace Fusion.Service.Services
                         TaxCode = partnerCompany.TaxCode,
                         RespondedAt = friendship.RespondedAt,
                         CreatedAt = friendship.CreatedAt,
-                        TotalProject = partnerCompany.ProjectCompanies.Count + partnerCompany.ProjectCompanyHireds.Count,
+                        TotalProject = partnerCompany.ProjectCompanies.Count + partnerCompany.ProjectCompanyRequests.Count,
                     });
                 }
             }
@@ -363,7 +363,7 @@ namespace Fusion.Service.Services
 
 
             result.TotalProjectCreated = company.ProjectCompanies.Count;
-            result.TotalProjectHired = company.ProjectCompanyHireds.Count;
+            result.TotalProjectHired = company.ProjectCompanyRequests.Count;
 
             result.TotalProjectRequestSent = company.ProjectRequestRequesterCompanies.Count(p =>
                p.RequesterCompanyId == companyId);

@@ -26,7 +26,7 @@ namespace Fusion.Service.ViewModels.Project.Requests
 
             When(x => x.IsHired, () =>
             {
-                RuleFor(x => x.CompanyHiredId).NotNull().WithMessage("Hired company is required.");
+                RuleFor(x => x.CompanyRequestId).NotNull().WithMessage("Hired company is required.");
             });
         }
     }

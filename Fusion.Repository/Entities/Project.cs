@@ -19,8 +19,8 @@ public partial class Project
     [Column("isHired")]
     public bool IsHired { get; set; }
 
-    [Column("company_hired_id")]
-    public Guid? CompanyHiredId { get; set; }
+    [Column("company_request_id")]
+    public Guid? CompanyRequestId { get; set; }
 
     [Column("project_request_id")]
     public Guid? ProjectRequestId { get; set; }
@@ -64,9 +64,9 @@ public partial class Project
     [InverseProperty("ProjectCompanies")]
     public virtual Company? Company { get; set; }
 
-    [ForeignKey("CompanyHiredId")]
-    [InverseProperty("ProjectCompanyHireds")]
-    public virtual Company? CompanyHired { get; set; }
+    [ForeignKey("CompanyRequestId")]
+    [InverseProperty("ProjectCompanyRequests")]
+    public virtual Company? CompanyRequest { get; set; }
 
     [ForeignKey("CreatedBy")]
     [InverseProperty("Projects")]
