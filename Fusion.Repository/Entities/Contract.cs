@@ -29,13 +29,13 @@ namespace Fusion.Repository.Entities
         public string? Attachment { get; set; }
 
         [Column("effective_date")]
-        public DateOnly EffectiveDate { get; set; }
+        public DateOnly? EffectiveDate { get; set; }
 
         [Column("expired_date")]
-        public DateOnly ExpiredDate { get; set; }
+        public DateOnly? ExpiredDate { get; set; }
 
         [Column("budget")]
-        public decimal Budget { get; set; }
+        public decimal? Budget { get; set; }
 
         // Navigation
         [ForeignKey("ProjectRequestId")]
