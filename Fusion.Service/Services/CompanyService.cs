@@ -346,13 +346,6 @@ namespace Fusion.Service.Services
             result.TotalOngoingProjects = allProjects.Count(p => p.Status == ProjectStatusEnum.ONGOING.ToString());
             result.TotalClosedProjects = allProjects.Count(p => p.Status == ProjectStatusEnum.CLOSED.ToString());
             result.TotalCompletedProjects = allProjects.Count(p => p.Status == ProjectStatusEnum.DONE.ToString());
-
-            result.TotalProjectCreated = company.ProjectCompanies.Count;
-            result.TotalProjectHired = company.ProjectCompanyHireds.Count;
-
-            result.TotalProjectRequestSent = company.ProjectRequestRequesterCompanies.Count;
-            result.TotalProjectRequestReceive = company.ProjectRequestExecutorCompanies.Count;
-
             result.OnTimeRelease = allProjects.Count(p =>
             {
                 var contract = p.ProjectRequest?.Contract;
@@ -360,7 +353,6 @@ namespace Fusion.Service.Services
 
                 return p.EndDate <= contract.ExpiredDate;
             });
-
             result.TotalLateProjects = allProjects.Count(p =>
             {
                 var contract = p.ProjectRequest?.Contract;
@@ -368,6 +360,32 @@ namespace Fusion.Service.Services
 
                 return p.EndDate != null && p.EndDate > contract.ExpiredDate;
             });
+
+
+            result.TotalProjectCreated = company.ProjectCompanies.Count;
+            result.TotalProjectHired = company.ProjectCompanyHireds.Count;
+
+            result.TotalProjectRequestSent = company.ProjectRequestRequesterCompanies.Count(p =>
+               p.RequesterCompanyId == companyId);
+
+            result.TotalProjectRequestReceive = company.ProjectRequestExecutorCompanies.Count(p =>
+                p.ExecutorCompanyId == companyId);
+
+
+            var sent = company.ProjectRequestRequesterCompanies
+                .Where(p => p.RequesterCompanyId == companyId);
+
+            var received = company.ProjectRequestExecutorCompanies
+                .Where(p => p.ExecutorCompanyId == companyId);
+
+            result.TotalProjectRequestAcceptSent = sent.Count(p => p.Status.Equals("Accepted", StringComparison.OrdinalIgnoreCase));
+            result.TotalProjectRequestRejectSent = sent.Count(p => p.Status.Equals("Rejected", StringComparison.OrdinalIgnoreCase));
+            result.TotalProjectRequestPendingSent = sent.Count(p => p.Status.Equals("Pending", StringComparison.OrdinalIgnoreCase));
+
+            result.TotalProjectRequestAcceptReceive = received.Count(p => p.Status.Equals("Accepted", StringComparison.OrdinalIgnoreCase));
+            result.TotalProjectRequestRejectReceive = received.Count(p => p.Status.Equals("Rejected", StringComparison.OrdinalIgnoreCase));
+            result.TotalProjectRequestPendingReceive = received.Count(p => p.Status.Equals("Pending", StringComparison.OrdinalIgnoreCase));
+
 
             result.companyRoles = roles.Select(role =>
                         new CompanyRoleSummaryResponse

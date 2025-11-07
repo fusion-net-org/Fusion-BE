@@ -355,6 +355,8 @@ namespace Fusion.Repository.Repositories
         {
             return await _context.Companies
                     .Include(c => c.OwnerUser)
+                    .Include(c => c.ProjectRequestRequesterCompanies)
+                    .Include(c => c.ProjectRequestExecutorCompanies)
                     .Include(c => c.ProjectCompanies).ThenInclude(pc => pc.ProjectRequest).ThenInclude(pr => pr.Contract)
                     .Include(c => c.ProjectCompanyHireds).ThenInclude(pch => pch.ProjectRequest).ThenInclude(pr => pr.Contract)
                     .Include(c => c.CompanyMembers)
