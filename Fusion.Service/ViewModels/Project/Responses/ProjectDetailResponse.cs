@@ -15,7 +15,7 @@ namespace Fusion.Service.ViewModels.Project.Responses
         public string? Name { get; set; }
         public string? Description { get; set; }
         public string? Status { get; set; }
-
+        public Guid? ProjectRequestId { get; set; }
         public bool IsHired { get; set; }
         public Guid? CompanyId { get; set; }
         public Guid? CompanyHiredId { get; set; }

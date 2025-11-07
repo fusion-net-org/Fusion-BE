@@ -91,7 +91,7 @@ namespace Fusion.Service.Services
                 CompanyId = companyId,
                 IsHired = request.IsHired,
                 CompanyHiredId = request.CompanyHiredId,
-                ProjectRequestId = null,
+                ProjectRequestId = request.ProjectRequestId,
                 Code = request.Code.Trim(),
                 Name = request.Name.Trim(),
                 Description = request.Description,
@@ -143,6 +143,7 @@ namespace Fusion.Service.Services
                 Name = created.Name,
                 Description = created.Description,
                 Status = created.Status,
+                ProjectRequestId = created.ProjectRequestId,
 
                 IsHired = created.IsHired,
                 CompanyId = created.CompanyId,
