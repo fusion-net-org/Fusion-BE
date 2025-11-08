@@ -93,7 +93,7 @@ namespace Fusion.Repository.Repositories
         }
 
 
-        public async Task<bool> DeleteProjectRequestAsync(Guid id, CancellationToken cancellationToken = default)
+        public async Task<bool> DeleteProjectRequestAsync(Guid id,string reason, Guid currentUserId, CancellationToken cancellationToken = default)
         {
             var existingRequest = await _context.ProjectRequests
                 .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
@@ -102,19 +102,44 @@ namespace Fusion.Repository.Repositories
                 throw CustomExceptionFactory.CreateNotFoundError(
                     "Project request not found");
 
-            // Rule: chỉ cho xóa khi Pending
-            if (existingRequest.Status != ProjectRequestStatusEnum.Pending.ToString())
-                throw CustomExceptionFactory.CreateBadRequestError(
-                    "Invalid status",
-                    "Only pending requests can be deleted");
+            //// Rule: chỉ cho xóa khi Pending
+            //if (existingRequest.Status != ProjectRequestStatusEnum.Pending.ToString())
+            //    throw CustomExceptionFactory.CreateBadRequestError(
+            //        "Invalid status",
+            //        "Only pending requests can be deleted");
 
             existingRequest.IsDeleted = true;
             existingRequest.UpdateAt = DateTime.UtcNow.AddHours(7);
+            existingRequest.DeletedBy = currentUserId;
+            existingRequest.ReasonDelete = reason;
 
             await _context.SaveChangesAsync(cancellationToken);
             return true;
         }
 
+        public async Task<bool> RestoreProjectRequestAsync(Guid id, Guid currentUserId, CancellationToken cancellationToken = default)
+        {
+            var existingRequest = await _context.ProjectRequests
+                .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+            if (existingRequest == null)
+                throw CustomExceptionFactory.CreateNotFoundError("Project request not found");
+
+            if (existingRequest.IsDeleted != true)
+                throw CustomExceptionFactory.CreateBadRequestError("Project request is not deleted");
+
+            if (existingRequest.DeletedBy != currentUserId)
+                throw CustomExceptionFactory.CreateForbiddenError();
+
+            // Restore
+            existingRequest.IsDeleted = false;
+            existingRequest.DeletedBy = null;
+            existingRequest.UpdateAt = DateTime.UtcNow;
+            existingRequest.ReasonDelete = null;
+
+            await _context.SaveChangesAsync(cancellationToken);
+            return true;
+        }
 
         public async Task<ProjectRequest> UpdateProjectRequestAsync(Guid id, ProjectRequest request, string vendorEmail, CancellationToken cancellationToken)
         {
@@ -382,7 +407,7 @@ namespace Fusion.Repository.Repositories
                     .ThenInclude(ec => ec.OwnerUser)
                 .Include(x => x.CreatedByNavigation)
                 .Include(x => x.Project)
-                .FirstOrDefaultAsync(x => x.Id == id && x.IsDeleted != true, cancellationToken);
+                .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
             if (projectRequest == null)
                 throw CustomExceptionFactory.CreateNotFoundError(
@@ -463,7 +488,7 @@ namespace Fusion.Repository.Repositories
             // ✅ Cập nhật trạng thái Reject
             request.Status = ProjectRequestStatusEnum.Rejected.ToString();
             request.UpdateAt = DateTime.UtcNow.AddHours(7);
-            request.Reason = reason;
+            request.ReasonReject = reason;
 
             await _context.SaveChangesAsync(cancellationToken);
 
