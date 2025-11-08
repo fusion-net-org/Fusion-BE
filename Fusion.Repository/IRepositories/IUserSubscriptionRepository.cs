@@ -17,5 +17,6 @@ public interface IUserSubscriptionRepository : IGenericRepository<UserSubscripti
     Task<PagedResult<UserSubscription>> GetAllAsync(UserSubscriptionPagedRequest request, CancellationToken cancellationToken = default);
     Task<UserSubscription> UpdateStatusAsync(Guid id,Guid userId, SubscriptionStatus status, CancellationToken cancellationToken = default);
     Task<PagedResult<UserSubscription>> GetAllByUserIdAsync(Guid userId, UserSubscriptionPagedRequest request, CancellationToken cancellationToken = default);
+    Task ValidateAndConsumeEntitlementsAsync(Guid userSubscriptionId, IEnumerable<CompanySubscriptionEntitlement> requestedEntitlements, CancellationToken cancellationToken = default);
 
 }

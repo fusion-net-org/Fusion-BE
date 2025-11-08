@@ -5,6 +5,8 @@ using Fusion.Service.ViewModels.Comment.Request;
 using Fusion.Service.ViewModels.Comment.Response;
 using Fusion.Service.ViewModels.Companies.Requests;
 using Fusion.Service.ViewModels.Companies.Responses;
+using Fusion.Service.ViewModels.CompanySubscription.Requests;
+using Fusion.Service.ViewModels.CompanySubscription.Responses;
 using Fusion.Service.ViewModels.Notifications.Requests;
 using Fusion.Service.ViewModels.Notifications.Responses;
 using Fusion.Service.ViewModels.Project.Requests;
@@ -241,6 +243,22 @@ public class MappingProfile : Profile
 
         CreateMap<UserSubscription, UserSubscriptionListItem>();
         CreateMap<UserSubscriptionCreateRequest, UserSubscription>();
+
+        // ===================== Company Subscription =====================
+        CreateMap<CompanySubscriptionCreateRequest, CompanySubscription>()
+               .ForMember(dest => dest.CompanySubscriptionEntitlements, opt => opt.MapFrom(src => src.Entitlements))
+               .ForMember(dest => dest.CompanySubscriptionRoles, opt => opt.MapFrom(src => src.Roles));
+
+        CreateMap<CompanySubscriptionEntitlementCreateRequest, CompanySubscriptionEntitlement>()
+            .ForMember(dest => dest.Remaining, opt => opt.MapFrom(src => src.Quantity));
+
+        CreateMap<CompanySubscriptionRoleCreateRequest, CompanySubscriptionRole>();
+
+        CreateMap<CompanySubscription, CompanySubscriptionDetailResponse>();
+        CreateMap<CompanySubscriptionEntitlement, CompanySubscriptionEntitlementDetailResponse>();
+        CreateMap<CompanySubscriptionRole, CompanySubscriptionRoleDetailResponse>();
+
+
     }
 
 }

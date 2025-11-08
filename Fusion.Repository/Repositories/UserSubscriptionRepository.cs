@@ -63,7 +63,7 @@ namespace Fusion.Repository.Repositories
             userSubscription.UpdateAt = null;
 
             // create list eentilement 
-            if(plan.Features != null && plan.Features.Any())
+            if (plan.Features != null && plan.Features.Any())
             {
                 userSubscription.UserSubscriptionEntitlements = plan.Features.Select(f => new UserSubscriptionEntitlement
                 {
@@ -88,8 +88,8 @@ namespace Fusion.Repository.Repositories
         public async Task<bool> Delete(Guid id, CancellationToken ct = default)
         {
             var userSubscription = await GetByIdWithNavAsync(id);
-            if(userSubscription == null)
-               return false;
+            if (userSubscription == null)
+                return false;
 
             _context.UserSubscriptions.Remove(userSubscription);
             await _context.SaveChangesAsync(ct);
@@ -221,7 +221,7 @@ namespace Fusion.Repository.Repositories
             }
 
 
-            if(userSubscription == null)
+            if (userSubscription == null)
                 throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Transaction"));
 
             userSubscription.Status = status;
@@ -238,7 +238,7 @@ namespace Fusion.Repository.Repositories
                     .AsNoTracking()
                     .Include(us => us.UserSubscriptionEntitlements)
                     .Include(us => us.TransactionPayment)
-                    .Where(us => us.TransactionPayment.UserId ==  userId)
+                    .Where(us => us.TransactionPayment.UserId == userId)
                     .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(request.PlanName))
@@ -286,6 +286,44 @@ namespace Fusion.Repository.Repositories
 
             // --- Paging ---
             return await q.ToPagedResultAsync(request, cancellationToken);
+        }
+
+        public async Task ValidateAndConsumeEntitlementsAsync(Guid userSubscriptionId, IEnumerable<CompanySubscriptionEntitlement> requestedEntitlements, CancellationToken cancellationToken = default)
+        {
+            if(requestedEntitlements == null || !requestedEntitlements.Any())
+                return;
+
+            // 1 Get userSubscription with entitlement
+            var userSub = await _context.UserSubscriptions
+                .Include(x => x.UserSubscriptionEntitlements)
+                .FirstOrDefaultAsync(u => u.Id == userSubscriptionId, cancellationToken);
+
+            if (userSub == null)
+                throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("User subscription"));
+
+            if(userSub.Status != SubscriptionStatus.Active)
+                throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.BAD_REQUEST.FormatMessage("User subscription not active"));
+
+            //2 validate each feature
+            foreach (var ent in requestedEntitlements)
+            {
+                var userEnt = userSub.UserSubscriptionEntitlements
+                    .FirstOrDefault(x => x.FeatureKey == ent.FeatureKey);
+
+                if(userEnt == null)
+                    throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage($"Feature {ent.FeatureKey} not found in user subscription"));
+
+                if (ent.Quantity > userEnt.Remaining)
+                    throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.BAD_REQUEST.FormatMessage($"Not enough quota for feature {ent.FeatureKey}"));
+            }
+
+            foreach( var ent in requestedEntitlements)
+            {
+                var userEnt = userSub.UserSubscriptionEntitlements
+                    .First(x => x.FeatureKey == ent.FeatureKey);
+                userEnt.Remaining -= ent.Quantity;
+            }
+            _context.UserSubscriptionEntitlements.UpdateRange(userSub.UserSubscriptionEntitlements);
         }
     }
 }

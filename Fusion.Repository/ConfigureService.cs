@@ -79,6 +79,10 @@ namespace Fusion.Repository
             services.AddScoped<IUserLogRepository, UserLogRepository>();
 
             services.AddScoped<IUserNotificationSettingRepository , UserNotificationSettingRepository>();
+
+            // company subscription
+            services.AddScoped<ICompanySubscriptionRepository , CompanySubscriptionRepository>();
+
             return services;
 
         }

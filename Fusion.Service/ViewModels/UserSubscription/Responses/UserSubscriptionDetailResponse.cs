@@ -20,6 +20,7 @@ public class UserSubscriptionDetailResponse
 }
 public class UserSubscriptionEntitlementResponse
 {
+    public Guid Id { get; set; }
     public string FeatureKey { get; set; } = string.Empty;
     public int Quantity { get; set; }
     public int Remaining { get; set; }

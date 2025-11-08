@@ -49,6 +49,10 @@ public partial class FusionDbContext : DbContext
     public DbSet<UserSubscription> UserSubscriptions { get; set; } = null!;
     public DbSet<UserSubscriptionEntitlement> UserSubscriptionEntitlements { get; set; } = null!;
 
+    public DbSet<CompanySubscription> CompanySubscriptions { get; set; } = null!;
+    public DbSet<CompanySubscriptionEntitlement> CompanySubscriptionEntitlements { get; set; } = null!;
+    public DbSet<CompanySubscriptionRole> CompanySubscriptionRoles { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Comment>(entity =>
@@ -443,6 +447,64 @@ public partial class FusionDbContext : DbContext
                   .HasConstraintName("FK_UserSubscriptionEntitlements_UserSubscription");
         });
 
+        // === CompanySubscription ===
+        modelBuilder.Entity<CompanySubscription>(entity =>
+        {
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.ExpiredAt).IsRequired();
+
+            entity.Property(e => e.Status)
+                .HasConversion(new EnumMemberValueConverter<SubscriptionStatus>())
+                .HasMaxLength(50);
+
+            // Company (1 - N)
+            entity.HasOne(d => d.Company)
+                  .WithMany(p => p.CompanySubscriptions)
+                  .HasForeignKey(d => d.CompanyId)
+                  .OnDelete(DeleteBehavior.Restrict)
+                  .HasConstraintName("FK_CompanySubscriptions_Company");
+
+            // UserSubscription (1 - N)
+            entity.HasOne(d => d.UserSubscription)
+                  .WithMany(p => p.CompanySubscriptions)
+                  .HasForeignKey(d => d.UserSubscriptionId)
+                  .OnDelete(DeleteBehavior.Restrict)
+                  .HasConstraintName("FK_CompanySubscriptions_UserSubscription");
+        });
+
+        // === CompanySubscriptionEntitlement ===
+        modelBuilder.Entity<CompanySubscriptionEntitlement>(entity =>
+        {
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.FeatureKey)
+                  .HasConversion(new EnumMemberValueConverter<FeatureKeys>())
+                  .HasMaxLength(50)
+                  .IsRequired();
+
+            entity.Property(e => e.Quantity).IsRequired();
+            entity.Property(e => e.Remaining).IsRequired();
+
+            entity.HasOne(d => d.CompanySubscription)
+                  .WithMany(p => p.CompanySubscriptionEntitlements)
+                  .HasForeignKey(d => d.CompanySubscriptionId)
+                  .OnDelete(DeleteBehavior.Restrict)
+                  .HasConstraintName("FK_CompanySubscriptionEntitlements_Subscription");
+        });
+
+        // === CompanySubscriptionRole ===
+        modelBuilder.Entity<CompanySubscriptionRole>(entity =>
+        {
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.NameRole).HasMaxLength(50).IsRequired();
+
+            entity.HasOne(d => d.CompanySubscription)
+                  .WithMany(p => p.CompanySubscriptionRoles)
+                  .HasForeignKey(d => d.CompanySubscriptionId)
+                  .OnDelete(DeleteBehavior.Restrict)
+                  .HasConstraintName("FK_CompanySubscriptionRoles_Subscription");
+        });
 
         OnModelCreatingPartial(modelBuilder);
     }

@@ -42,4 +42,8 @@ public class UserSubscription
 
     [InverseProperty(nameof(UserSubscriptionEntitlement.UserSubscription))]
     public ICollection<UserSubscriptionEntitlement>? UserSubscriptionEntitlements { get; set; }
+
+
+    [InverseProperty(nameof(CompanySubscription.UserSubscription))]
+    public ICollection<CompanySubscription> CompanySubscriptions { get; set; } = new List<CompanySubscription>();
 }
