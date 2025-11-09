@@ -6,7 +6,9 @@ using Fusion.Repository.Enums;
 using Fusion.Repository.IRepositories;
 using Fusion.Repository.Repositories;
 using Fusion.Service.IServices;
+using Fusion.Service.ViewModels.Common;
 using Fusion.Service.ViewModels.Sprint;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,6 +24,8 @@ namespace Fusion.Service.Services
         Task StartAsync(Guid sprintId, Guid projectId, CancellationToken ct);
         Task AddTasksAsync(Guid sprintId, Guid projectId, IEnumerable<Guid> taskIds, Guid userId, CancellationToken ct);
         Task CompleteAsync(Guid sprintId, Guid projectId, bool carryBacklog, Guid? nextSprintId, CancellationToken ct);
+        Task<PagedResult<SprintListItemVm>> GetProjectSprintsAsync(Guid projectId, SprintQuery q, CancellationToken ct);
+        Task<SprintDetailVm?> GetProjectSprintDetailAsync(Guid projectId, Guid sprintId, CancellationToken ct);
     }
     public class SprintService : ISprintService
     {
@@ -35,9 +39,81 @@ namespace Fusion.Service.Services
             _repo = repo;
             _logService = logService;
             _unitOfWork = unitOfWork;
-        } 
+        }
 
+        public async Task<PagedResult<SprintListItemVm>> GetProjectSprintsAsync(Guid projectId, SprintQuery q, CancellationToken ct)
+        {
+            var baseQ = _repo.QueryByProject(projectId); // đã lọc IsDeleted + Include Project
 
+            if (!string.IsNullOrWhiteSpace(q.Q))
+            {
+                var kw = q.Q.Trim().ToLower();
+                baseQ = baseQ.Where(x =>
+                    (x.Name ?? "").ToLower().Contains(kw) ||
+                    (x.Project!.Name ?? "").ToLower().Contains(kw));
+            }
+
+            if (q.Statuses?.Count > 0)
+            {
+                var set = q.Statuses!.ToHashSet();
+                baseQ = baseQ.Where(x => set.Contains(x.Status));
+            }
+
+            if (q.DateFrom.HasValue) baseQ = baseQ.Where(x => x.StartDate >= q.DateFrom);
+            if (q.DateTo.HasValue) baseQ = baseQ.Where(x => x.EndDate <= q.DateTo);
+
+            baseQ = (q.SortColumn?.ToLower()) switch
+            {
+                "name" => (q.SortDescending ? baseQ.OrderByDescending(x => x.Name) : baseQ.OrderBy(x => x.Name)),
+                "start_date" => (q.SortDescending ? baseQ.OrderByDescending(x => x.StartDate) : baseQ.OrderBy(x => x.StartDate)),
+                "end_date" => (q.SortDescending ? baseQ.OrderByDescending(x => x.EndDate) : baseQ.OrderBy(x => x.EndDate)),
+                "created_at" => (q.SortDescending ? baseQ.OrderByDescending(x => x.CreatedAt) : baseQ.OrderBy(x => x.CreatedAt)),
+                _ => (q.SortDescending ? baseQ.OrderByDescending(x => x.StartDate) : baseQ.OrderBy(x => x.StartDate))
+            };
+
+            var total = await baseQ.CountAsync(ct);
+            var page = Math.Max(1, q.PageNumber);
+            var size = Math.Max(1, q.PageSize);
+
+            var items = await baseQ.Skip((page - 1) * size).Take(size)
+                .Select(x => new SprintListItemVm
+                {
+                    Id = x.Id,
+                    ProjectId = x.ProjectId,
+                    ProjectName = x.Project!.Name!,
+                    Name = x.Name ?? "",
+                    StartDate = x.StartDate,
+                    EndDate = x.EndDate,
+                    Status = x.Status.ToString(),
+                    Color = x.Color
+                })
+                .ToListAsync(ct);
+
+            return new PagedResult<SprintListItemVm>(items, total, page, size);
+        }
+
+        public async Task<SprintDetailVm?> GetProjectSprintDetailAsync(Guid projectId, Guid sprintId, CancellationToken ct)
+        {
+            var s = await _repo.QueryByProject(projectId)
+                .Where(x => x.Id == sprintId)
+                .Select(x => new SprintDetailVm
+                {
+                    Id = x.Id,
+                    ProjectId = x.ProjectId,
+                    ProjectName = x.Project!.Name!,
+                    Name = x.Name ?? "",
+                    StartDate = x.StartDate,
+                    EndDate = x.EndDate,
+                    Status = x.Status.ToString(),
+                    Color = x.Color,
+                    Goal = x.Goal,
+                    CreatedAt = x.CreatedAt,
+                    CreatedBy = x.CreatedBy
+                })
+                .FirstOrDefaultAsync(ct);
+
+            return s;
+        }
         public async Task<SprintVm> CreateAsync(Guid currentUserId, SprintCreateRequest req, CancellationToken ct)
         {
             if (req.DurationWeeks is not (1 or 2))

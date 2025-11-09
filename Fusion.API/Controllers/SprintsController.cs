@@ -133,5 +133,28 @@ namespace Fusion.API.Controllers
                 data: true,
                 message: ResponseMessageHelper.FormatMessage(ResponseMessages.UPDATE_SUCCESS, "sprint")));
         }
+        [HttpGet("projects/{projectId:guid}")]
+        public async Task<IActionResult> GetProjectSprints([FromRoute] Guid projectId, [FromQuery] SprintQuery query, CancellationToken ct)
+        {
+            var result = await _service.GetProjectSprintsAsync(projectId, query, ct);
+            return Ok(new
+            {
+                data = new
+                {
+                    items = result.Items,
+                    totalCount = result.TotalCount,
+                    pageNumber = result.PageNumber,
+                    pageSize = result.PageSize
+                }
+            });
+        }
+
+        // GET /api/projects/{projectId}/sprints/{sprintId}
+        [HttpGet("{sprintId:guid}")]
+        public async Task<IActionResult> GetDetail([FromRoute] Guid projectId, [FromRoute] Guid sprintId, CancellationToken ct)
+        {
+            var vm = await _service.GetProjectSprintDetailAsync(projectId, sprintId, ct);
+            return vm is null ? NotFound() : Ok(new { data = vm });
+        }
     }
 }
