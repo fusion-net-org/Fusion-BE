@@ -397,5 +397,60 @@ namespace Fusion.Service.Services
             return response;
         }
 
+        public async Task<ProjectSummaryResponseV2?> GetProjectsByIdForAdminAsync(Guid projectId, CancellationToken cancellationToken = default)
+        {
+            var result = await _projectRepo.GetProjectsByIdForAdminAsync(projectId, cancellationToken);
+
+            if (result == null)
+                throw CustomExceptionFactory.CreateNotFoundError("Projects Not found");
+
+            var sprintSummary = result.Sprints.Select(s => new SprintSummaryResponse
+            {
+                Id = s.Id,
+                Name = s.Name,
+                TaskCount = s.ProjectTasks.Count,
+                TotalPoint = s.ProjectTasks.Sum(t => t.Point ?? 0),
+                Tasks = s.ProjectTasks.Select(t => new TaskSummaryResponse
+                {
+                    Id = t.Id,
+                    Title = t.Title,
+                    Point = t.Point,
+                    Status = t.Status
+                }).ToList()
+            }).ToList();
+
+            var totalTasks = sprintSummary.Sum(s => s.TaskCount);
+            var doneTasks = sprintSummary.SelectMany(s => s.Tasks)
+                                         .Count(t => t.Status == "Done");
+
+            double progress = totalTasks == 0 ? 0 : (double)doneTasks / totalTasks * 100;
+
+            return new ProjectSummaryResponseV2
+            {
+                Id = result.Id,
+                Name = result.Name,
+                CompanyId = result.Company.Id,
+                CompanyName = result.Company.Name,
+                CompanyHiredId = result.CompanyRequest.Id,
+                CompanyHiredName = result.CompanyRequest.Name,
+                WorkflowId = result.Workflow.Id,
+                WorkflowName = result.Workflow?.Name,
+                ProjectType = result.CompanyRequestId != null ? "OutSource" : "Product",
+                OwnerId = result.CreatedByNavigation.Id,
+                OwnerName = result.CreatedByNavigation?.UserName,
+                Members = result.ProjectMembers.Select(m => new ProjectMemberSummaryResponse
+                {
+                    MemberId = m.User.Id,
+                    MemberName = m.User.UserName,
+                    Avatar = m.User.Avatar,
+                }).ToList(),
+                SprintCount = sprintSummary.Count,
+                TotalTask = totalTasks,
+                TotalPoint = sprintSummary.Sum(s => s.TotalPoint),
+                Progress = Math.Round(progress, 2),
+                Sprints = sprintSummary
+            };
+        }
+
     }
 }
