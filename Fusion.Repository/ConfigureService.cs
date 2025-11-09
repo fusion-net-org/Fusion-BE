@@ -57,8 +57,8 @@ namespace Fusion.Repository
             // transaction payment
             services.AddScoped<ITransactionPaymentRepository, TransactionPaymentRepository>();
 
-            ////usersubscrption
-            //services.AddScoped<IUserSubscriptionRepository, UserSubscriptionRepository>();
+            //usersubscrption
+            services.AddScoped<IUserSubscriptionRepository, UserSubscriptionRepository>();
 
             //refresh token
             services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
@@ -84,6 +84,10 @@ namespace Fusion.Repository
             //Contract
             services.AddScoped<IContractRepository, ContractRepository>();
             services.AddScoped<IContractAppendixRepository, ContractAppendixRepository>();
+
+
+            // company subscription
+            services.AddScoped<ICompanySubscriptionRepository , CompanySubscriptionRepository>();
 
             return services;
 

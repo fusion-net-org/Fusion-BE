@@ -21,7 +21,7 @@ namespace Fusion.Service.ViewModels.SubscriptionPlan.Responses;
 
     public class SubscriptionPlanPriceResponse
     {
-        public BillingPriod BillingPeriod { get; set; }
+        public BillingPeriod BillingPeriod { get; set; }
         public int PeriodCount { get; set; }
         public decimal Price { get; set; }
         public string Currency { get; set; } = "VND";

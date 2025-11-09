@@ -13,7 +13,7 @@ public class SubscriptionPlanFeatureRequest
 
 public class SubscriptionPlanPriceRequest
 {
-    public BillingPriod BillingPeriod { get; set; } // Week/Month/Year
+    public BillingPeriod BillingPeriod { get; set; } // Week/Month/Year
     public int PeriodCount { get; set; } = 1;        // >= 1
     public decimal Price { get; set; }               // >= 0
     public string Currency { get; set; } = "VND";    // ISO 4217, 3-letter, UPPER

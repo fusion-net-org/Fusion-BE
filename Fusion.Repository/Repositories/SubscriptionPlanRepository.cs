@@ -181,8 +181,6 @@ namespace Fusion.Repository.Repositories
                 await tx.RollbackAsync(cancellationToken);
                 throw;
             }
-        }
-
-       
+        }  
     }
 }

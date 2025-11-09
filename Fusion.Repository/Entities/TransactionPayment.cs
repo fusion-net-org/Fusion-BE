@@ -90,4 +90,7 @@ public class TransactionPayment
     [ForeignKey(nameof(PlanId))]
     [InverseProperty(nameof(SubscriptionPlan.TransactionPayments))]
     public virtual SubscriptionPlan SubscriptionPlan { get; set; } = null!;
+
+    [InverseProperty(nameof(UserSubscription.TransactionPayment))]
+    public UserSubscription? UserSubscription { get; set; }
 }

@@ -56,7 +56,7 @@ namespace Fusion.Service
             services.AddScoped<IRefreshTokenService, RefreshTokenService>();
 
             //user subscrption
-            //services.AddScoped<IUserSubscriptionService, UserSubscriptionService>();
+            services.AddScoped<IUserSubscriptionService, UserSubscriptionService>();
 
             //notification
             services.AddScoped<INotificationService, NotificationService>();
@@ -85,6 +85,8 @@ namespace Fusion.Service
             //contract
             services.AddScoped<IContractService, ContractService>();
 
+            // company subscription
+            services.AddScoped<ICompanySubscriptionService, CompanySubscriptionService>();
             // PayOS
             services.AddSingleton<PayOS>(sp =>
             {
