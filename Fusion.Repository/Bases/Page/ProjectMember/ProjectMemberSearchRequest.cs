@@ -14,4 +14,11 @@ namespace Fusion.Repository.Bases.Page.ProjectMember
         public DateTime? EndDate { get; set; }
 
     }
+    public class ProjectMemberSearchRequestV2 : PagedRequest
+    {
+        public string? Keyword { get; set; }
+        public DateTime? FromDate { get; set; }
+        public DateTime? ToDate { get; set; }
+    }
+
 }
