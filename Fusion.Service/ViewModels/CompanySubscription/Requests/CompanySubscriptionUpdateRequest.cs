@@ -9,22 +9,15 @@ namespace Fusion.Service.ViewModels.CompanySubscription.Requests
     {
         [Required]
         public Guid Id { get; set; }
-
         public SubscriptionStatus Status { get; set; } = SubscriptionStatus.Active;
-        public List<CompanySubscriptionEntitlementUpdateDto>? Entitlements { get; set; }
+        public List<CompanySubscriptionEntitlementUpdateRequest>? Entitlements { get; set; }
 
-        public List<CompanySubscriptionRoleUpdateDto>? Roles { get; set; }
     }
 
-    public class CompanySubscriptionEntitlementUpdateDto
+    public class CompanySubscriptionEntitlementUpdateRequest
     {
         public Guid? Id { get; set; }
+        public FeatureKeys? FeatureKey { get; set; }
         public int? Quantity { get; set; }
-    }
-
-    public class CompanySubscriptionRoleUpdateDto
-    {
-        public Guid? Id { get; set; }
-        public string? NameRole { get; set; }
     }
 }

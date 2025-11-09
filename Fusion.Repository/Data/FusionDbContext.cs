@@ -51,7 +51,6 @@ public partial class FusionDbContext : DbContext
 
     public DbSet<CompanySubscription> CompanySubscriptions { get; set; } = null!;
     public DbSet<CompanySubscriptionEntitlement> CompanySubscriptionEntitlements { get; set; } = null!;
-    public DbSet<CompanySubscriptionRole> CompanySubscriptionRoles { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -491,19 +490,6 @@ public partial class FusionDbContext : DbContext
                   .HasForeignKey(d => d.CompanySubscriptionId)
                   .OnDelete(DeleteBehavior.Restrict)
                   .HasConstraintName("FK_CompanySubscriptionEntitlements_Subscription");
-        });
-
-        // === CompanySubscriptionRole ===
-        modelBuilder.Entity<CompanySubscriptionRole>(entity =>
-        {
-            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
-            entity.Property(e => e.NameRole).HasMaxLength(50).IsRequired();
-
-            entity.HasOne(d => d.CompanySubscription)
-                  .WithMany(p => p.CompanySubscriptionRoles)
-                  .HasForeignKey(d => d.CompanySubscriptionId)
-                  .OnDelete(DeleteBehavior.Restrict)
-                  .HasConstraintName("FK_CompanySubscriptionRoles_Subscription");
         });
 
         OnModelCreatingPartial(modelBuilder);

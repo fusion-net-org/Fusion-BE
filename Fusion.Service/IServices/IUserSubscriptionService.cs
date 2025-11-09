@@ -15,5 +15,5 @@ public interface IUserSubscriptionService
     Task<PagedResult<UserSubscriptionListItem>> GetAllAsync(UserSubscriptionPagedRequest request, CancellationToken ct = default);
     Task<UserSubscriptionDetailResponse> UpdateStatusAsync(Guid id, SubscriptionStatus status, CancellationToken ct = default);
     Task<PagedResult<UserSubscriptionListItem>> GetAllByUserIdAsync(UserSubscriptionPagedRequest request, CancellationToken cancellationToken = default);
-    //Task<bool> DeleteAsync(Guid id, CancellationToken ct = default);
+    Task ConsumeFeatureAsync(UseFeatureRequest request, CancellationToken cancellationToken = default);
 }

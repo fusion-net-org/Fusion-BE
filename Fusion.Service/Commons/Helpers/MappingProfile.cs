@@ -245,19 +245,45 @@ public class MappingProfile : Profile
         CreateMap<UserSubscriptionCreateRequest, UserSubscription>();
 
         // ===================== Company Subscription =====================
+
+        #region create companysubscription
         CreateMap<CompanySubscriptionCreateRequest, CompanySubscription>()
-               .ForMember(dest => dest.CompanySubscriptionEntitlements, opt => opt.MapFrom(src => src.Entitlements))
-               .ForMember(dest => dest.CompanySubscriptionRoles, opt => opt.MapFrom(src => src.Roles));
+            .ForMember(dest => dest.Id, opt => opt.Ignore())
+            .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+            .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
+            .ForMember(dest => dest.Status, opt => opt.Ignore())
+            .ForMember(dest => dest.CompanySubscriptionEntitlements, opt => opt.MapFrom(src => src.Entitlements));
 
         CreateMap<CompanySubscriptionEntitlementCreateRequest, CompanySubscriptionEntitlement>()
-            .ForMember(dest => dest.Remaining, opt => opt.MapFrom(src => src.Quantity));
-
-        CreateMap<CompanySubscriptionRoleCreateRequest, CompanySubscriptionRole>();
+              .ForMember(dest => dest.Id, opt => opt.Ignore())
+              .ForMember(dest => dest.CompanySubscriptionId, opt => opt.Ignore())
+              .ForMember(dest => dest.Remaining, opt => opt.Ignore());
 
         CreateMap<CompanySubscription, CompanySubscriptionDetailResponse>();
         CreateMap<CompanySubscriptionEntitlement, CompanySubscriptionEntitlementDetailResponse>();
-        CreateMap<CompanySubscriptionRole, CompanySubscriptionRoleDetailResponse>();
+        #endregion
 
+        #region update companysubscription
+        CreateMap<CompanySubscriptionUpdateRequest, CompanySubscription>()
+                 .ForMember(dest => dest.CompanySubscriptionEntitlements, opt => opt.MapFrom(src => src.Entitlements));
+
+        CreateMap<CompanySubscriptionEntitlementUpdateRequest, CompanySubscriptionEntitlement>();
+        #endregion
+
+        #region detail + list companysubscription
+        CreateMap<CompanySubscription, CompanySubscriptionDetailResponse>()
+             .ForMember(dest => dest.Entitlements, opt => opt.MapFrom(src => src.CompanySubscriptionEntitlements));
+
+        CreateMap<CompanySubscriptionEntitlement, CompanySubscriptionEntitlementDetailResponse>();
+
+        CreateMap<CompanySubscription, CompanySubscriptionListResponse>();
+
+        CreateMap<CompanySubscription, CompanySubscriptionActiveResponse>()
+    .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
+    .ForMember(dest => dest.CompanySubscriptionEntitlements, opt => opt.MapFrom(src => src.CompanySubscriptionEntitlements));
+
+        CreateMap<CompanySubscriptionEntitlement, CompanySubscriptionEntitlementDropdownResponse>();
+        #endregion
 
     }
 

@@ -15,8 +15,6 @@ namespace Fusion.Service.ViewModels.CompanySubscription.Requests
 
         [Required]
         public List<CompanySubscriptionEntitlementCreateRequest> Entitlements { get; set; } = new();
-
-        public List<CompanySubscriptionRoleCreateRequest>? Roles { get; set; } = new();
     }
     public class CompanySubscriptionEntitlementCreateRequest
     {
@@ -28,9 +26,4 @@ namespace Fusion.Service.ViewModels.CompanySubscription.Requests
         public int Quantity { get; set; }
     }
 
-    public class CompanySubscriptionRoleCreateRequest
-    {
-        [Required, MaxLength(50)]
-        public string NameRole { get; set; } = null!;
-    }
 }

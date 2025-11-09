@@ -32,6 +32,11 @@ namespace Fusion.Service.Services
             _userLogService = userLogService;
         }
 
+        public async Task ConsumeFeatureAsync(UseFeatureRequest request, CancellationToken cancellationToken = default)
+        {
+            await _repository.ConsumeFeatureAsync(request.UserSubscriptionId, request.FeatureKey, 1, cancellationToken);
+        }
+
         public async Task<UserSubscriptionDetailResponse> CreateAsync(UserSubscriptionCreateRequest request, CancellationToken ct = default)
         {
             var entity = _mapper.Map<UserSubscription>(request);

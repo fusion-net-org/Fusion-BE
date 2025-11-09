@@ -14,18 +14,12 @@ public class CompanySubscriptionDetailResponse
     public DateTime ExpiredAt { get; set; }
 
     public List<CompanySubscriptionEntitlementDetailResponse> Entitlements { get; set; } = new();
-    public List<CompanySubscriptionRoleDetailResponse> Roles { get; set; } = new();
 }
 public class CompanySubscriptionEntitlementDetailResponse
 {
-        public Guid Id { get; set; }
+        public Guid Id { get; set; } = Guid.NewGuid();
         public FeatureKeys FeatureKey { get; set; }
         public int Quantity { get; set; }
         public int Remaining { get; set; }
     }
 
-    public class CompanySubscriptionRoleDetailResponse
-{
-        public Guid Id { get; set; }
-        public string NameRole { get; set; } = null!;
-    }

@@ -325,5 +325,40 @@ namespace Fusion.Repository.Repositories
             }
             _context.UserSubscriptionEntitlements.UpdateRange(userSub.UserSubscriptionEntitlements);
         }
+
+        public async Task ConsumeFeatureAsync(Guid userSubscriptionId,FeatureKeys featureKey,int quantity = 1,CancellationToken cancellationToken = default)
+        {
+            if (quantity <= 0)
+                throw CustomExceptionFactory.CreateBadRequestError("Quantity must be greater than 0.");
+
+            // Load user subscription + entitlements
+            var userSub = await _context.UserSubscriptions
+                .Include(us => us.UserSubscriptionEntitlements)
+                .FirstOrDefaultAsync(us => us.Id == userSubscriptionId, cancellationToken);
+
+            if (userSub == null)
+                throw CustomExceptionFactory.CreateNotFoundError("User subscription not found.");
+
+            if (userSub.Status != SubscriptionStatus.Active || (userSub.ExpiredAt != null && userSub.ExpiredAt <= DateTime.UtcNow))
+                throw CustomExceptionFactory.CreateBadRequestError("User subscription is inactive or expired.");
+
+            // Find entitlement
+            var entitlement = userSub.UserSubscriptionEntitlements
+                .FirstOrDefault(e => e.FeatureKey == featureKey);
+
+            if (entitlement == null)
+                throw CustomExceptionFactory.CreateBadRequestError($"Feature {featureKey} not found in user subscription.");
+
+            // Check remaining
+            if (entitlement.Remaining < quantity)
+                throw CustomExceptionFactory.CreateBadRequestError(
+                    $"Not enough remaining quota for feature {featureKey}. Requested: {quantity}, Remaining: {entitlement.Remaining}");
+
+            // Consume
+            entitlement.Remaining -= quantity;
+
+            _context.UserSubscriptionEntitlements.Update(entitlement);
+            await _context.SaveChangesAsync(cancellationToken);
+        }
     }
 }

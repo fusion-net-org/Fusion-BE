@@ -44,7 +44,4 @@ public class CompanySubscription
 
     [InverseProperty(nameof(CompanySubscriptionEntitlement.CompanySubscription))]
     public ICollection<CompanySubscriptionEntitlement> CompanySubscriptionEntitlements { get; set; } = new List<CompanySubscriptionEntitlement>();
-
-    [InverseProperty(nameof(CompanySubscriptionRole.CompanySubscription))]
-    public ICollection<CompanySubscriptionRole> CompanySubscriptionRoles { get; set; } = new List<CompanySubscriptionRole>();
 }

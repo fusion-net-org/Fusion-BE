@@ -1,10 +1,9 @@
-﻿using Fusion.Service.Commons.BaseResponses;
+﻿using Fusion.Repository.Bases.Page;
+using Fusion.Repository.Bases.Page.CompanySubscriptions;
+using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.IServices;
-using Fusion.Service.Services;
 using Fusion.Service.ViewModels.CompanySubscription.Requests;
 using Fusion.Service.ViewModels.CompanySubscription.Responses;
-using Fusion.Service.ViewModels.UserSubscription.Requests;
-using Fusion.Service.ViewModels.UserSubscription.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -33,6 +32,80 @@ namespace Fusion.API.Controllers
             return Ok(ResponseModel<CompanySubscriptionDetailResponse>.Ok(
                 data: result,
                 message: "Create company subscription successfully"));
+        }
+
+        /// <summary>
+        ///  Cập nhật Company Subscription (chỉ status + entitlements)
+        /// </summary>
+        [HttpPut]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<CompanySubscriptionDetailResponse>))]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> Update([FromBody] CompanySubscriptionUpdateRequest request, CancellationToken cancellationToken)
+        {
+
+            var result = await _service.UpdateAsync(request, cancellationToken);
+            return Ok(ResponseModel<CompanySubscriptionDetailResponse>.Ok(
+                data: result,
+                message: "Update company subscription successfully."));
+        }
+
+        /// <summary>
+        /// Lấy chi tiết một Company Subscription theo ID
+        /// </summary>
+        [HttpGet("{id:guid}")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<CompanySubscriptionDetailResponse>))]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
+        {
+            var result = await _service.GetByIdAsync(id, cancellationToken);
+            return Ok(ResponseModel<CompanySubscriptionDetailResponse>.Ok(
+                data: result,
+                message: "Get company subscription detail successfully."));
+        }
+
+        /// <summary>
+        /// Lấy danh sách tất cả Company Subscription (phân trang)
+        /// </summary>
+        [HttpGet]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PagedResult<CompanySubscriptionListResponse>>))]
+        public async Task<IActionResult> GetAll(
+            [FromQuery] CompanySubscriptionPagedRequest request,
+            CancellationToken cancellationToken)
+        {
+            var result = await _service.GetAllAsync(request, cancellationToken);
+            return Ok(ResponseModel<PagedResult<CompanySubscriptionListResponse>>.Ok(
+                data: result,
+                message: "Get list company subscription successfully."));
+        }
+
+        /// <summary>
+        /// Lấy danh sách Company Subscription theo CompanyId
+        /// </summary>
+        [HttpGet("company/{companyId:guid}")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PagedResult<CompanySubscriptionListResponse>>))]
+        public async Task<IActionResult> GetByCompanyId(
+            Guid companyId,
+            [FromQuery] CompanySubscriptionPagedRequest request,
+            CancellationToken cancellationToken)
+        {
+            var result = await _service.GetAllByCompanyAsync(companyId, request, cancellationToken);
+            return Ok(ResponseModel<PagedResult<CompanySubscriptionListResponse>>.Ok(
+                data: result,
+                 message: "Get list company subscription by companyId successfully."));
+        }
+
+        /// <summary>
+        /// Lấy tất cả Company Subscriptions đang active của 1 công ty (dùng cho dropdown)
+        /// </summary>
+        [HttpGet("company/{companyId}/active")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<List<CompanySubscriptionActiveResponse>>))]
+        public async Task<IActionResult> GetActiveByCompanyId([FromRoute] Guid companyId, CancellationToken cancellationToken)
+        {
+            var result = await _service.GetAllActiveByCompanyIdAsync(companyId, cancellationToken);
+            return Ok(ResponseModel<List<CompanySubscriptionActiveResponse>>.Ok(
+                data: result,
+                message: "Get active company subscriptions successfully"));
         }
     }
 }
