@@ -285,7 +285,7 @@ namespace Fusion.Repository.Repositories
             var query = await _context.Projects
         .Include(p => p.CreatedByNavigation)
         .Include(p => p.Company)
-        .Include(p => p.CompanyHired)
+        .Include(p => p.CompanyRequestId)
         .Include(p => p.Workflow)
         .Include(p => p.ProjectMembers)
         .Include(p => p.Sprints).ThenInclude(s => s.ProjectTasks)
