@@ -344,48 +344,64 @@ namespace Fusion.Service.Services
                 Items = new List<ProjectSummaryResponseV2>()
             };
 
-            foreach (var p in result.Items)
+            foreach (var p in result.Items ?? new List<Project>())
             {
-                var sprintSummary = p.Sprints.Select(s => new SprintSummaryResponse
-                {
-                    Id = s.Id,
-                    Name = s.Name,
-                    TaskCount = s.ProjectTasks.Count,
-                    TotalPoint = s.ProjectTasks.Sum(t => t.Point ?? 0),
-                    Tasks = s.ProjectTasks.Select(t => new TaskSummaryResponse
+                // ✅ Sprints
+                var sprintSummary = (p.Sprints ?? new List<Sprint>())
+                    .Select(s => new SprintSummaryResponse
                     {
-                        Id = t.Id,
-                        Title = t.Title,
-                        Point = t.Point,
-                        Status = t.Status
-                    }).ToList()
-                }).ToList();
+                        Id = s.Id,
+                        Name = s.Name ?? "N/A",
+                        TaskCount = s.ProjectTasks?.Count ?? 0,
+                        TotalPoint = s.ProjectTasks?.Sum(t => t.Point ?? 0) ?? 0,
+                        Tasks = (s.ProjectTasks ?? new List<ProjectTask>())
+                            .Select(t => new TaskSummaryResponse
+                            {
+                                Id = t.Id,
+                                Title = t.Title ?? "N/A",
+                                Point = t.Point ?? 0,
+                                Status = t.Status ?? "Unknown"
+                            })
+                            .ToList()
+                    })
+                    .ToList();
 
+                // ✅ Progress
                 var totalTasks = sprintSummary.Sum(s => s.TaskCount);
-                var doneTasks = sprintSummary.SelectMany(s => s.Tasks)
-                                             .Count(t => t.Status == "Done");
-
+                var doneTasks = sprintSummary
+                    .SelectMany(s => s.Tasks)
+                    .Count(t => (t.Status ?? "").Equals("Done", StringComparison.OrdinalIgnoreCase));
                 double progress = totalTasks == 0 ? 0 : (double)doneTasks / totalTasks * 100;
 
+                // ✅ Safe add ProjectSummaryResponseV2
                 response.Items.Add(new ProjectSummaryResponseV2
                 {
                     Id = p.Id,
-                    Name = p.Name,
-                    CompanyId = p.Company.Id,
-                    CompanyName = p.Company.Name,
-                    CompanyHiredId = p.CompanyRequest.Id,
-                    CompanyHiredName = p.CompanyRequest.Name,
-                    WorkflowId = p.Workflow.Id,
-                    WorkflowName = p.Workflow?.Name,
+                    Name = p.Name ?? "N/A",
+
+                    CompanyId = p.Company?.Id ?? Guid.Empty,
+                    CompanyName = p.Company?.Name ?? "N/A",
+
+                    CompanyHiredId = p.CompanyRequest?.Id,
+                    CompanyHiredName = p.CompanyRequest?.Name ?? "N/A",
+
+                    WorkflowId = p.Workflow?.Id ?? Guid.Empty,
+                    WorkflowName = p.Workflow?.Name ?? "N/A",
+
                     ProjectType = p.CompanyRequestId != null ? "OutSource" : "Product",
-                    OwnerId = p.CreatedByNavigation.Id,
-                    OwnerName = p.CreatedByNavigation?.UserName,
-                    Members = p.ProjectMembers.Select(m => new ProjectMemberSummaryResponse
-                    {
-                        MemberId = m.User.Id,
-                        MemberName = m.User.UserName,
-                        Avatar = m.User.Avatar,
-                    }).ToList(),
+
+                    OwnerId = p.CreatedByNavigation?.Id ?? Guid.Empty,
+                    OwnerName = p.CreatedByNavigation?.UserName ?? "Unknown",
+
+                    Members = (p.ProjectMembers ?? new List<ProjectMember>())
+                        .Select(m => new ProjectMemberSummaryResponse
+                        {
+                            MemberId = m.User?.Id ?? Guid.Empty,
+                            MemberName = m.User?.UserName ?? "Unknown",
+                            Avatar = m.User?.Avatar
+                        })
+                        .ToList(),
+
                     SprintCount = sprintSummary.Count,
                     TotalTask = totalTasks,
                     TotalPoint = sprintSummary.Sum(s => s.TotalPoint),
@@ -397,6 +413,7 @@ namespace Fusion.Service.Services
             return response;
         }
 
+
         public async Task<ProjectSummaryResponseV2?> GetProjectsByIdForAdminAsync(Guid projectId, CancellationToken cancellationToken = default)
         {
             var result = await _projectRepo.GetProjectsByIdForAdminAsync(projectId, cancellationToken);
@@ -404,24 +421,26 @@ namespace Fusion.Service.Services
             if (result == null)
                 throw CustomExceptionFactory.CreateNotFoundError("Projects Not found");
 
-            var sprintSummary = result.Sprints.Select(s => new SprintSummaryResponse
+            var sprintSummary = (result.Sprints ?? new List<Sprint>()).Select(s => new SprintSummaryResponse
             {
                 Id = s.Id,
-                Name = s.Name,
-                TaskCount = s.ProjectTasks.Count,
-                TotalPoint = s.ProjectTasks.Sum(t => t.Point ?? 0),
+                Name = s.Name ?? "N/A",
+                TaskCount = s.ProjectTasks?.Count ?? 0,
+                TotalPoint = s.ProjectTasks?.Sum(t => t.Point ?? 0) ?? 0,
                 Tasks = s.ProjectTasks.Select(t => new TaskSummaryResponse
                 {
                     Id = t.Id,
-                    Title = t.Title,
-                    Point = t.Point,
-                    Status = t.Status
+                    Title = t.Title ?? "N/A",
+                    Point = t.Point ?? 0,
+                    Status = t.Status ?? "Unknown"
                 }).ToList()
             }).ToList();
 
             var totalTasks = sprintSummary.Sum(s => s.TaskCount);
-            var doneTasks = sprintSummary.SelectMany(s => s.Tasks)
-                                         .Count(t => t.Status == "Done");
+            var doneTasks = sprintSummary
+                .SelectMany(s => s.Tasks)
+                .Count(t => (t.Status ?? "")
+                .Equals("Done", StringComparison.OrdinalIgnoreCase));
 
             double progress = totalTasks == 0 ? 0 : (double)doneTasks / totalTasks * 100;
 
@@ -429,21 +448,22 @@ namespace Fusion.Service.Services
             {
                 Id = result.Id,
                 Name = result.Name,
-                CompanyId = result.Company.Id,
-                CompanyName = result.Company.Name,
-                CompanyHiredId = result.CompanyRequest.Id,
-                CompanyHiredName = result.CompanyRequest.Name,
+                CompanyId = result.Company?.Id ?? Guid.Empty,
+                CompanyName = result.Company?.Name ?? "N/A",
+                CompanyHiredId = result.CompanyRequest?.Id,
+                CompanyHiredName = result.CompanyRequest?.Name ?? "N/A",
                 WorkflowId = result.Workflow.Id,
-                WorkflowName = result.Workflow?.Name,
+                WorkflowName = result.Workflow?.Name ?? "N/A",
                 ProjectType = result.CompanyRequestId != null ? "OutSource" : "Product",
-                OwnerId = result.CreatedByNavigation.Id,
-                OwnerName = result.CreatedByNavigation?.UserName,
-                Members = result.ProjectMembers.Select(m => new ProjectMemberSummaryResponse
+                OwnerId = result.CreatedByNavigation?.Id ?? Guid.Empty,
+                OwnerName = result.CreatedByNavigation?.UserName ?? "Unknown",
+                Members = (result.ProjectMembers ?? new List<ProjectMember>())
+                .Select(m => new ProjectMemberSummaryResponse
                 {
-                    MemberId = m.User.Id,
-                    MemberName = m.User.UserName,
+                    MemberId = m.User?.Id ?? Guid.Empty,
+                    MemberName = m.User?.UserName ?? "N/A",
                     Avatar = m.User.Avatar,
-                }).ToList(),
+                }).ToList() ?? new List<ProjectMemberSummaryResponse>(),
                 SprintCount = sprintSummary.Count,
                 TotalTask = totalTasks,
                 TotalPoint = sprintSummary.Sum(s => s.TotalPoint),
