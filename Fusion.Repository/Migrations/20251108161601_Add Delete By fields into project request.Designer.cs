@@ -4,6 +4,7 @@ using Fusion.Repository.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Fusion.Repository.Migrations
 {
     [DbContext(typeof(FusionDbContext))]
-    partial class FusionDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251108161601_Add Delete By fields into project request")]
+    partial class AddDeleteByfieldsintoprojectrequest
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -700,13 +703,9 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("nvarchar(200)")
                         .HasColumnName("name");
 
-                    b.Property<string>("ReasonDelete")
+                    b.Property<string>("Reason")
                         .HasColumnType("nvarchar(max)")
-                        .HasColumnName("reason_delete");
-
-                    b.Property<string>("ReasonReject")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("reason_reject");
+                        .HasColumnName("reason");
 
                     b.Property<Guid?>("RequesterCompanyId")
                         .HasColumnType("uniqueidentifier")

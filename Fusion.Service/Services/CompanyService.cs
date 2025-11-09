@@ -361,9 +361,8 @@ namespace Fusion.Service.Services
                 return p.EndDate != null && p.EndDate > contract.ExpiredDate;
             });
 
-
-            result.TotalProjectCreated = company.ProjectCompanies.Count;
-            result.TotalProjectHired = company.ProjectCompanyRequests.Count;
+            result.TotalProjectCreated = company.ProjectCompanyRequests.Count;
+            result.TotalProjectHired = company.ProjectCompanies.Count;
 
             result.TotalProjectRequestSent = company.ProjectRequestRequesterCompanies.Count(p =>
                p.RequesterCompanyId == companyId);
