@@ -279,5 +279,19 @@ namespace Fusion.Repository.Repositories
 
             return await query.ToPagedResultAsync(request, cancellationToken);
         }
+
+        public async Task<Project?> GetProjectsByIdForAdminAsync(Guid projectId, CancellationToken cancellationToken = default)
+        {
+            var query = await _context.Projects
+        .Include(p => p.CreatedByNavigation)
+        .Include(p => p.Company)
+        .Include(p => p.CompanyHired)
+        .Include(p => p.Workflow)
+        .Include(p => p.ProjectMembers)
+        .Include(p => p.Sprints).ThenInclude(s => s.ProjectTasks)
+        .SingleOrDefaultAsync(x => x.Id == projectId);
+
+            return query;
+        }
     }
 }

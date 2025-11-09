@@ -99,5 +99,18 @@ namespace Fusion.API.Controllers
                 message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "Project Admin")
             ));
         }
+
+        [HttpGet("admin/{projectId:guid}")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<ProjectSummaryResponseV2>))]
+        public async Task<IActionResult> GetProjectsByIdForAdminAsync(Guid projectId, CancellationToken cancellationToken = default)
+        {
+            var response = await _service.GetProjectsByIdForAdminAsync(projectId, cancellationToken);
+            return Ok(ResponseModel<ProjectSummaryResponseV2>.Ok(
+                data: response,
+                message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "Project Admin")
+            ));
+        }
+
+
     }
 }

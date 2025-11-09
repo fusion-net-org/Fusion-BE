@@ -27,5 +27,7 @@ namespace Fusion.Repository.IRepositories
 
         Task<PagedResult<Project>> GetProjectsForAdminAsync(ProjectSummarySearchRequest request, CancellationToken cancellationToken = default);
 
+        Task<Project?> GetProjectsByIdForAdminAsync(Guid projectId, CancellationToken cancellationToken = default);
+
     }
 }
