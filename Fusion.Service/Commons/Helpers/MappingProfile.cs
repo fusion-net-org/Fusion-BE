@@ -270,6 +270,26 @@ public class MappingProfile : Profile
 
         CreateMap<CompanySubscriptionEntitlementUpdateRequest, CompanySubscriptionEntitlement>();
         #endregion
+        #region detail + list companysubscription
+        CreateMap<CompanySubscription, CompanySubscriptionDetailResponse>()
+             .ForMember(dest => dest.Entitlements, opt => opt.MapFrom(src => src.CompanySubscriptionEntitlements));
+
+        CreateMap<CompanySubscriptionEntitlement, CompanySubscriptionEntitlementDetailResponse>();
+
+        CreateMap<CompanySubscription, CompanySubscriptionListResponse>();
+
+        CreateMap<CompanySubscription, CompanySubscriptionActiveResponse>()
+       .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
+       .ForMember(dest => dest.CompanySubscriptionEntitlements, opt => opt.MapFrom(src => src.CompanySubscriptionEntitlements));
+        #endregion
+
+
+        // ===================== Project (Detail) =====================
+        CreateMap<Project, ProjectDetailResponse>()
+     .ForMember(d => d.IsHired, o => o.MapFrom(s => s.IsHired))
+     .ForMember(d => d.CompanyName, o => o.MapFrom(s => s.Company != null ? s.Company.Name : null))
+     .ForMember(d => d.CompanyHiredName, o => o.MapFrom(s => s.CompanyRequest != null ? s.CompanyRequest.Name : null))
+     .ForMember(d => d.CreatedByName, o => o.MapFrom(s => s.CreatedByNavigation != null ? s.CreatedByNavigation.UserName : null))
      .ForMember(d => d.Sprints, o => o.MapFrom(s => s.Sprints.Where(x => !x.IsDeleted)));
 
         CreateMap<Project, ProjectResponseVersion3>()
@@ -287,18 +307,6 @@ public class MappingProfile : Profile
       .ForMember(d => d.WorkflowId, o => o.MapFrom(s => s.WorkflowId))
       .ForMember(d => d.CreatedBy, o => o.MapFrom(s => s.CreatedBy))
       .ForMember(d => d.CreateByName, o => o.MapFrom(s => s.CreatedByNavigation != null ? s.CreatedByNavigation.UserName : null));
-
-        #region detail + list companysubscription
-        CreateMap<CompanySubscription, CompanySubscriptionDetailResponse>()
-             .ForMember(dest => dest.Entitlements, opt => opt.MapFrom(src => src.CompanySubscriptionEntitlements));
-
-        CreateMap<CompanySubscriptionEntitlement, CompanySubscriptionEntitlementDetailResponse>();
-
-        CreateMap<CompanySubscription, CompanySubscriptionListResponse>();
-
-        CreateMap<CompanySubscription, CompanySubscriptionActiveResponse>()
-    .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
-    .ForMember(dest => dest.CompanySubscriptionEntitlements, opt => opt.MapFrom(src => src.CompanySubscriptionEntitlements));
 
         // ===================== Project Member =====================
         CreateMap<ProjectMember, ProjectMemberResponseV2>()
