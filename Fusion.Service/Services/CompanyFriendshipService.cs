@@ -429,7 +429,7 @@ namespace Fusion.Service.Services
                         TaxCode = partnerCompany.TaxCode,
                         RespondedAt = friendship.RespondedAt,
                         CreatedAt = friendship.CreatedAt,
-                        TotalProject = partnerCompany.ProjectCompanies.Count + partnerCompany.ProjectCompanyHireds.Count,
+                        TotalProject = partnerCompany.ProjectCompanies.Count + partnerCompany.ProjectCompanyRequests.Count,
                     });
                 }
             }

@@ -4,6 +4,7 @@ using Fusion.Repository.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Fusion.Repository.Migrations
 {
     [DbContext(typeof(FusionDbContext))]
-    partial class FusionDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251107203911_UpdateProjectHiredFieldUpdate")]
+    partial class UpdateProjectHiredFieldUpdate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -675,10 +678,6 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("created_by");
 
-                    b.Property<Guid?>("DeletedBy")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("deleted_by");
-
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("description");
@@ -700,13 +699,9 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("nvarchar(200)")
                         .HasColumnName("name");
 
-                    b.Property<string>("ReasonDelete")
+                    b.Property<string>("Reason")
                         .HasColumnType("nvarchar(max)")
-                        .HasColumnName("reason_delete");
-
-                    b.Property<string>("ReasonReject")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("reason_reject");
+                        .HasColumnName("reason");
 
                     b.Property<Guid?>("RequesterCompanyId")
                         .HasColumnType("uniqueidentifier")
@@ -729,10 +724,6 @@ namespace Fusion.Repository.Migrations
                         .HasColumnName("update_at")
                         .HasDefaultValueSql("(sysutcdatetime())");
 
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("updated_by");
-
                     b.HasKey("Id");
 
                     b.HasIndex("CreatedBy");
@@ -740,8 +731,6 @@ namespace Fusion.Repository.Migrations
                     b.HasIndex("ExecutorCompanyId");
 
                     b.HasIndex("RequesterCompanyId");
-
-                    b.HasIndex("UpdatedBy");
 
                     b.HasIndex(new[] { "ConvertedProjectId" }, "UQ__ProjectR__FDFB014B54F36625")
                         .IsUnique()
@@ -2023,17 +2012,11 @@ namespace Fusion.Repository.Migrations
                         .HasForeignKey("RequesterCompanyId")
                         .HasConstraintName("FK_PRQ_Requester");
 
-                    b.HasOne("Fusion.Repository.Entities.User", "UpdatedByNavigation")
-                        .WithMany("UpdatedProjectRequests")
-                        .HasForeignKey("UpdatedBy");
-
                     b.Navigation("CreatedByNavigation");
 
                     b.Navigation("ExecutorCompany");
 
                     b.Navigation("RequesterCompany");
-
-                    b.Navigation("UpdatedByNavigation");
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.ProjectTask", b =>
@@ -2443,8 +2426,6 @@ namespace Fusion.Repository.Migrations
                     b.Navigation("Tickets");
 
                     b.Navigation("TransactionPayments");
-
-                    b.Navigation("UpdatedProjectRequests");
 
                     b.Navigation("UserDevices");
 

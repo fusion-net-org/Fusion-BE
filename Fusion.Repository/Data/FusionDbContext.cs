@@ -46,6 +46,8 @@ public partial class FusionDbContext : DbContext
     public virtual DbSet<Contract> Contracts { get; set; }
     public virtual DbSet<ContractAppendix> ContractAppendices { get; set; }
 
+    public virtual DbSet<TransactionPayment> TransactionPayments { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Comment>(entity =>
@@ -112,7 +114,7 @@ public partial class FusionDbContext : DbContext
             entity.Property(e => e.CreateAt).HasDefaultValueSql("(sysutcdatetime())");
             entity.Property(e => e.UpdateAt).HasDefaultValueSql("(sysutcdatetime())");
 
-            entity.HasOne(d => d.CompanyHired).WithMany(p => p.ProjectCompanyHireds).HasConstraintName("FK_Projects_HiredCompany");
+            entity.HasOne(d => d.CompanyRequest).WithMany(p => p.ProjectCompanyRequests).HasConstraintName("FK_Projects_HiredCompany");
 
             entity.HasOne(d => d.Company).WithMany(p => p.ProjectCompanies).HasConstraintName("FK_Projects_Company");
 
@@ -360,6 +362,28 @@ public partial class FusionDbContext : DbContext
          .HasConstraintName("FK_SubscriptionPlanPrices_Plan");
         });
 
+        // === TransactionPayment ===
+        modelBuilder.Entity<TransactionPayment>(entity =>
+        {
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Amount).HasColumnType("decimal(18,2)");
+            entity.Property(e => e.Currency).HasMaxLength(3).HasDefaultValue("VND");
+            entity.Property(e => e.Status).HasMaxLength(50).HasDefaultValue("Pending");
+
+            // Quan hệ 1-N: User - TransactionPayments
+            entity.HasOne(d => d.User)
+                  .WithMany(p => p.TransactionPayments)
+                  .HasForeignKey(d => d.UserId)
+                  .OnDelete(DeleteBehavior.Cascade)
+                  .HasConstraintName("FK_TransactionPayments_User");
+
+            // Quan hệ 1-N: SubscriptionPlan - TransactionPayments
+            entity.HasOne(d => d.SubscriptionPlan)
+                  .WithMany(p => p.TransactionPayments)
+                  .HasForeignKey(d => d.PlanId)
+                  .OnDelete(DeleteBehavior.Cascade)
+                  .HasConstraintName("FK_TransactionPayments_Plan");
+        });
         OnModelCreatingPartial(modelBuilder);
     }
 

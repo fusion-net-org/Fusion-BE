@@ -80,7 +80,7 @@ namespace Fusion.API.Controllers
 
         [HttpDelete("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
-        public async Task<IActionResult> DeleteProjectRequestAsync(Guid id, CancellationToken cancellationToken)
+        public async Task<IActionResult> DeleteProjectRequestAsync(Guid id, string? reason,CancellationToken cancellationToken)
         {
             var emailClaim = User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email || c.Type == ClaimTypes.Email || c.Type == "email");
             var email = emailClaim?.Value; if (email == null)
@@ -90,12 +90,48 @@ namespace Fusion.API.Controllers
                     message: "Unauthorized: User identity not found"
                 ));
             }
+            //var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-            var result = await _projectRequestService.DeleteProjectRequestAsync(id, cancellationToken);
+            //if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            //{
+            //    return Unauthorized(ResponseModel<string>.Error(
+            //        StatusCodes.Status401Unauthorized,
+            //        "Don't find token!"));
+            //}
+            var result = await _projectRequestService.DeleteProjectRequestAsync(id,reason,cancellationToken);
             return Ok(ResponseModel<bool>.Ok(
                 data: result,
                 message: "Delete project request successfully"));
         }
+
+        [HttpPost("{id:guid}/restore")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<bool>))]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> RestoreProjectRequest(Guid id, CancellationToken cancellationToken)
+        {
+            var emailClaim = User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email
+                                                              || c.Type == ClaimTypes.Email
+                                                              || c.Type == "email");
+            var email = emailClaim?.Value;
+            if (email == null)
+            {
+                return Unauthorized(ResponseModel<CompanyResponse>.Error(
+                    statusCode: StatusCodes.Status401Unauthorized,
+                    message: "Unauthorized: User identity not found"
+                ));
+            }
+
+            var result = await _projectRequestService.RestoreProjectRequestAsync(id, cancellationToken);
+
+            return Ok(ResponseModel<bool>.Ok(
+                data: result,
+                message: "Project request restored successfully"
+            ));
+        }
+
+
 
         [HttpGet("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<ProjectRequestResponse>))]

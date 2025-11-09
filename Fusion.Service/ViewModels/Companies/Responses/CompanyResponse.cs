@@ -71,7 +71,12 @@ namespace Fusion.Service.ViewModels.Companies.Responses
 
         public int TotalProjectRequestSent { get; set; }
         public int TotalProjectRequestReceive { get; set; }
-
+        public int TotalProjectRequestAcceptSent { get; set; }
+        public int TotalProjectRequestRejectSent { get; set; }
+        public int TotalProjectRequestPendingSent { get; set; }
+        public int TotalProjectRequestAcceptReceive { get; set; }
+        public int TotalProjectRequestRejectReceive { get; set; }
+        public int TotalProjectRequestPendingReceive { get; set; }
 
         public ICollection<CompanyRoleSummaryResponse>? companyRoles { get; set; }
 

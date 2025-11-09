@@ -32,7 +32,7 @@ namespace Fusion.Repository.Repositories
                 .Include(x => x.CompanyMembers)
                 .Include(x => x.OwnerUser)
                 .Include(x => x.ProjectCompanies)
-                .Include(c => c.ProjectCompanyHireds)
+                .Include(c => c.ProjectCompanyRequests)
                 .Include(c => c.CompanyFriendshipCompanyAs)
                 .Include(c => c.CompanyFriendshipCompanyBs)
                 .AsQueryable();
@@ -81,7 +81,7 @@ namespace Fusion.Repository.Repositories
                 .Include(x => x.CompanyMembers)
                 .Include(x => x.OwnerUser)
                 .Include(x => x.ProjectCompanies)
-                .Include(c => c.ProjectCompanyHireds)
+                .Include(c => c.ProjectCompanyRequests)
                 .Include(c => c.CompanyFriendshipCompanyAs)
                 .Include(c => c.CompanyFriendshipCompanyBs)
                 .AsQueryable();
@@ -134,11 +134,11 @@ namespace Fusion.Repository.Repositories
             {
                 if (request.SortDescending)
                 {
-                    query = query.Where(u => u.ProjectCompanies.Count + u.ProjectCompanyHireds.Count >= request.TotalProject);
+                    query = query.Where(u => u.ProjectCompanies.Count + u.ProjectCompanyRequests.Count >= request.TotalProject);
                 }
                 else
                 {
-                    query = query.Where(u => u.ProjectCompanies.Count + u.ProjectCompanyHireds.Count <= request.TotalProject);
+                    query = query.Where(u => u.ProjectCompanies.Count + u.ProjectCompanyRequests.Count <= request.TotalProject);
 
                 }
             }
@@ -174,7 +174,7 @@ namespace Fusion.Repository.Repositories
                 .Include(x => x.CompanyMembers)
                 .Include(x => x.OwnerUser)
                 .Include(x => x.ProjectCompanies)
-                .Include(c => c.ProjectCompanyHireds)
+                .Include(c => c.ProjectCompanyRequests)
                 .Include(c => c.CompanyFriendshipCompanyAs)
                 .Include(c => c.CompanyFriendshipCompanyBs)
                 .AsQueryable();
@@ -202,11 +202,11 @@ namespace Fusion.Repository.Repositories
             {
                 if (request.SortDescending)
                 {
-                    query = query.Where(u => u.ProjectCompanies.Count + u.ProjectCompanyHireds.Count >= request.TotalProject);
+                    query = query.Where(u => u.ProjectCompanies.Count + u.ProjectCompanyRequests.Count >= request.TotalProject);
                 }
                 else
                 {
-                    query = query.Where(u => u.ProjectCompanies.Count + u.ProjectCompanyHireds.Count <= request.TotalProject);
+                    query = query.Where(u => u.ProjectCompanies.Count + u.ProjectCompanyRequests.Count <= request.TotalProject);
 
                 }
             }
@@ -303,7 +303,7 @@ namespace Fusion.Repository.Repositories
                 .Include(x => x.CompanyMembers)
                 .Include(x => x.OwnerUser)
                 .Include(x => x.ProjectCompanies)
-                .Include(c => c.ProjectCompanyHireds)
+                .Include(c => c.ProjectCompanyRequests)
                 .Include(c => c.CompanyFriendshipCompanyAs)
                 .Include(c => c.CompanyFriendshipCompanyBs)
                 .SingleOrDefaultAsync(x => x.TaxCode == taxcode);
@@ -317,7 +317,7 @@ namespace Fusion.Repository.Repositories
                 .Include(x => x.CompanyMembers)
                 .Include(x => x.OwnerUser)
                 .Include(x => x.ProjectCompanies)
-                .Include(c => c.ProjectCompanyHireds)
+                .Include(c => c.ProjectCompanyRequests)
                 .Include(c => c.CompanyFriendshipCompanyAs)
                 .Include(c => c.CompanyFriendshipCompanyBs)
                 .SingleOrDefaultAsync(x => x.Email == email);
@@ -331,7 +331,7 @@ namespace Fusion.Repository.Repositories
                 .Include(x => x.CompanyMembers)
                 .Include(x => x.OwnerUser)
                 .Include(x => x.ProjectCompanies)
-                .Include(c => c.ProjectCompanyHireds)
+                .Include(c => c.ProjectCompanyRequests)
                 .Include(c => c.CompanyFriendshipCompanyAs)
                 .Include(c => c.CompanyFriendshipCompanyBs)
                 .FirstOrDefaultAsync(x => x.OwnerUserId == userId);
@@ -355,8 +355,10 @@ namespace Fusion.Repository.Repositories
         {
             return await _context.Companies
                     .Include(c => c.OwnerUser)
+                    .Include(c => c.ProjectRequestRequesterCompanies)
+                    .Include(c => c.ProjectRequestExecutorCompanies)
                     .Include(c => c.ProjectCompanies).ThenInclude(pc => pc.ProjectRequest).ThenInclude(pr => pr.Contract)
-                    .Include(c => c.ProjectCompanyHireds).ThenInclude(pch => pch.ProjectRequest).ThenInclude(pr => pr.Contract)
+                    .Include(c => c.ProjectCompanyRequests).ThenInclude(pch => pch.ProjectRequest).ThenInclude(pr => pr.Contract)
                     .Include(c => c.CompanyMembers)
                     .Include(c => c.CompanyFriendshipCompanyAs)
             .ThenInclude(cf => cf.CompanyB)
@@ -364,14 +366,14 @@ namespace Fusion.Repository.Repositories
         .Include(c => c.CompanyFriendshipCompanyAs)
             .ThenInclude(cf => cf.CompanyB.ProjectCompanies)
         .Include(c => c.CompanyFriendshipCompanyAs)
-            .ThenInclude(cf => cf.CompanyB.ProjectCompanyHireds)
+            .ThenInclude(cf => cf.CompanyB.ProjectCompanyRequests)
         .Include(c => c.CompanyFriendshipCompanyBs)
             .ThenInclude(cf => cf.CompanyA)
                 .ThenInclude(c => c.OwnerUser)
         .Include(c => c.CompanyFriendshipCompanyBs)
             .ThenInclude(cf => cf.CompanyA.ProjectCompanies)
         .Include(c => c.CompanyFriendshipCompanyBs)
-            .ThenInclude(cf => cf.CompanyA.ProjectCompanyHireds)
+            .ThenInclude(cf => cf.CompanyA.ProjectCompanyRequests)
         .FirstOrDefaultAsync(c => c.Id == Id);
         }
 

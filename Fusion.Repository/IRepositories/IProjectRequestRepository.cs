@@ -23,7 +23,8 @@ namespace Fusion.Repository.IRepositories
 
         Task<ProjectRequest?> GetProjectRequestByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
-        Task<bool> DeleteProjectRequestAsync(Guid id, CancellationToken cancellationToken = default);
+        Task<bool> DeleteProjectRequestAsync(Guid id,string reason, Guid currentUserId, CancellationToken cancellationToken = default);
+        Task<bool> RestoreProjectRequestAsync(Guid id, Guid currentUserId, CancellationToken cancellationToken = default);
 
         Task<ProjectRequest> AcceptProjectRequestAsync(Guid requestId, string executorEmail, CancellationToken cancellationToken = default);
 

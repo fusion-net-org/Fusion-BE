@@ -4,6 +4,7 @@ using Fusion.Repository.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Fusion.Repository.Migrations
 {
     [DbContext(typeof(FusionDbContext))]
-    partial class FusionDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251106183625_Add_CreateAt_Table_TransactionPayment")]
+    partial class Add_CreateAt_Table_TransactionPayment
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -314,93 +317,6 @@ namespace Fusion.Repository.Migrations
                     b.ToTable("CompanyMembers");
                 });
 
-            modelBuilder.Entity("Fusion.Repository.Entities.Contract", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("id");
-
-                    b.Property<string>("Attachment")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("attachment");
-
-                    b.Property<decimal?>("Budget")
-                        .HasColumnType("decimal(18,2)")
-                        .HasColumnName("budget");
-
-                    b.Property<string>("ContractCode")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasColumnName("contract_code");
-
-                    b.Property<string>("ContractName")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasColumnName("contract_name");
-
-                    b.Property<DateOnly?>("EffectiveDate")
-                        .HasColumnType("date")
-                        .HasColumnName("effective_date");
-
-                    b.Property<DateOnly?>("ExpiredDate")
-                        .HasColumnType("date")
-                        .HasColumnName("expired_date");
-
-                    b.Property<Guid>("ProjectRequestId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("project_request_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ProjectRequestId")
-                        .IsUnique();
-
-                    b.ToTable("Contracts");
-                });
-
-            modelBuilder.Entity("Fusion.Repository.Entities.ContractAppendix", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("id");
-
-                    b.Property<string>("AppendixCode")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasColumnName("appendix_code");
-
-                    b.Property<Guid>("ContractId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("contract_id");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("created_at");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("description");
-
-                    b.Property<string>("FilePath")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("file_path");
-
-                    b.Property<string>("Title")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)")
-                        .HasColumnName("title");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ContractId");
-
-                    b.ToTable("ContractAppendices");
-                });
-
             modelBuilder.Entity("Fusion.Repository.Entities.FunctionInPage", b =>
                 {
                     b.Property<int>("Id")
@@ -527,13 +443,13 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("nvarchar(50)")
                         .HasColumnName("code");
 
+                    b.Property<Guid?>("CompanyHiredId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("company_hired_id");
+
                     b.Property<Guid?>("CompanyId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("company_id");
-
-                    b.Property<Guid?>("CompanyRequestId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("company_request_id");
 
                     b.Property<DateTime>("CreateAt")
                         .ValueGeneratedOnAdd()
@@ -589,9 +505,9 @@ namespace Fusion.Repository.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CompanyId");
+                    b.HasIndex("CompanyHiredId");
 
-                    b.HasIndex("CompanyRequestId");
+                    b.HasIndex("CompanyId");
 
                     b.HasIndex("CreatedBy");
 
@@ -675,10 +591,6 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("created_by");
 
-                    b.Property<Guid?>("DeletedBy")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("deleted_by");
-
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("description");
@@ -700,13 +612,9 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("nvarchar(200)")
                         .HasColumnName("name");
 
-                    b.Property<string>("ReasonDelete")
+                    b.Property<string>("Reason")
                         .HasColumnType("nvarchar(max)")
-                        .HasColumnName("reason_delete");
-
-                    b.Property<string>("ReasonReject")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("reason_reject");
+                        .HasColumnName("reason");
 
                     b.Property<Guid?>("RequesterCompanyId")
                         .HasColumnType("uniqueidentifier")
@@ -729,10 +637,6 @@ namespace Fusion.Repository.Migrations
                         .HasColumnName("update_at")
                         .HasDefaultValueSql("(sysutcdatetime())");
 
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("updated_by");
-
                     b.HasKey("Id");
 
                     b.HasIndex("CreatedBy");
@@ -740,8 +644,6 @@ namespace Fusion.Repository.Migrations
                     b.HasIndex("ExecutorCompanyId");
 
                     b.HasIndex("RequesterCompanyId");
-
-                    b.HasIndex("UpdatedBy");
 
                     b.HasIndex(new[] { "ConvertedProjectId" }, "UQ__ProjectR__FDFB014B54F36625")
                         .IsUnique()
@@ -1919,28 +1821,6 @@ namespace Fusion.Repository.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Fusion.Repository.Entities.Contract", b =>
-                {
-                    b.HasOne("Fusion.Repository.Entities.ProjectRequest", "ProjectRequest")
-                        .WithOne("Contract")
-                        .HasForeignKey("Fusion.Repository.Entities.Contract", "ProjectRequestId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("ProjectRequest");
-                });
-
-            modelBuilder.Entity("Fusion.Repository.Entities.ContractAppendix", b =>
-                {
-                    b.HasOne("Fusion.Repository.Entities.Contract", "Contract")
-                        .WithMany("ContractAppendices")
-                        .HasForeignKey("ContractId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Contract");
-                });
-
             modelBuilder.Entity("Fusion.Repository.Entities.Notification", b =>
                 {
                     b.HasOne("Fusion.Repository.Entities.User", "User")
@@ -1953,15 +1833,15 @@ namespace Fusion.Repository.Migrations
 
             modelBuilder.Entity("Fusion.Repository.Entities.Project", b =>
                 {
+                    b.HasOne("Fusion.Repository.Entities.Company", "CompanyHired")
+                        .WithMany("ProjectCompanyHireds")
+                        .HasForeignKey("CompanyHiredId")
+                        .HasConstraintName("FK_Projects_HiredCompany");
+
                     b.HasOne("Fusion.Repository.Entities.Company", "Company")
                         .WithMany("ProjectCompanies")
                         .HasForeignKey("CompanyId")
                         .HasConstraintName("FK_Projects_Company");
-
-                    b.HasOne("Fusion.Repository.Entities.Company", "CompanyRequest")
-                        .WithMany("ProjectCompanyRequests")
-                        .HasForeignKey("CompanyRequestId")
-                        .HasConstraintName("FK_Projects_HiredCompany");
 
                     b.HasOne("Fusion.Repository.Entities.User", "CreatedByNavigation")
                         .WithMany("Projects")
@@ -1980,7 +1860,7 @@ namespace Fusion.Repository.Migrations
 
                     b.Navigation("Company");
 
-                    b.Navigation("CompanyRequest");
+                    b.Navigation("CompanyHired");
 
                     b.Navigation("CreatedByNavigation");
 
@@ -2023,17 +1903,11 @@ namespace Fusion.Repository.Migrations
                         .HasForeignKey("RequesterCompanyId")
                         .HasConstraintName("FK_PRQ_Requester");
 
-                    b.HasOne("Fusion.Repository.Entities.User", "UpdatedByNavigation")
-                        .WithMany("UpdatedProjectRequests")
-                        .HasForeignKey("UpdatedBy");
-
                     b.Navigation("CreatedByNavigation");
 
                     b.Navigation("ExecutorCompany");
 
                     b.Navigation("RequesterCompany");
-
-                    b.Navigation("UpdatedByNavigation");
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.ProjectTask", b =>
@@ -2336,7 +2210,7 @@ namespace Fusion.Repository.Migrations
 
                     b.Navigation("ProjectCompanies");
 
-                    b.Navigation("ProjectCompanyRequests");
+                    b.Navigation("ProjectCompanyHireds");
 
                     b.Navigation("ProjectRequestExecutorCompanies");
 
@@ -2347,11 +2221,6 @@ namespace Fusion.Repository.Migrations
                     b.Navigation("Roles");
 
                     b.Navigation("Workflows");
-                });
-
-            modelBuilder.Entity("Fusion.Repository.Entities.Contract", b =>
-                {
-                    b.Navigation("ContractAppendices");
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.FunctionInPage", b =>
@@ -2372,8 +2241,6 @@ namespace Fusion.Repository.Migrations
 
             modelBuilder.Entity("Fusion.Repository.Entities.ProjectRequest", b =>
                 {
-                    b.Navigation("Contract");
-
                     b.Navigation("Project");
                 });
 
@@ -2443,8 +2310,6 @@ namespace Fusion.Repository.Migrations
                     b.Navigation("Tickets");
 
                     b.Navigation("TransactionPayments");
-
-                    b.Navigation("UpdatedProjectRequests");
 
                     b.Navigation("UserDevices");
 
