@@ -7,13 +7,16 @@ using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.Company;
 using Fusion.Repository.Bases.Responses;
 using Fusion.Repository.Entities;
+using Fusion.Repository.Enums;
 using Fusion.Repository.IRepositories;
+using Fusion.Repository.Repositories;
 using Fusion.Service.Commons.Helpers;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.Companies.Requests;
 using Fusion.Service.ViewModels.Companies.Responses;
 using Fusion.Service.ViewModels.Notifications.Requests;
 using Fusion.Service.ViewModels.Project.Responses;
+using Fusion.Service.ViewModels.Role.Responses;
 using Fusion.Service.ViewModels.Sprint.Responses;
 using Fusion.Service.ViewModels.Task.Response;
 using Fusion.Service.ViewModels.Users.Responses;
@@ -36,10 +39,11 @@ namespace Fusion.Service.Services
         private readonly ICompanyActivityService _logService;
         private readonly ICurrentService _currentService;
         private readonly INotificationService _notificationService;
+        private readonly IRoleAdminRepository _roleRepository;
 
         public CompanyService(IMapper mapper, ICompanyRepository companyRepository, ICloudinaryService cloudinaryService
             , IUserRepository userRepository, ICompanyMemberRepository companyMemberRepository, IValidator<CompanyRequest> validator, ICompanyFriendshipRepository companyFriendshipRepository,
-            IMailService mailService, ICompanyActivityService logService, ICurrentService currentService, INotificationService notificationService)
+            IMailService mailService, ICompanyActivityService logService, ICurrentService currentService, INotificationService notificationService, IRoleAdminRepository roleRepository)
         {
             _mapper = mapper;
             _companyRepository = companyRepository;
@@ -52,6 +56,7 @@ namespace Fusion.Service.Services
             _logService = logService;
             _currentService = currentService;
             _notificationService = notificationService;
+            _roleRepository = roleRepository;
         }
 
         public async Task<CompanyResponse> CreateCompanyAsync(CompanyRequest request, string Email, CancellationToken cancellationToken = default)
@@ -299,6 +304,13 @@ namespace Fusion.Service.Services
                 .Concat(company.CompanyFriendshipCompanyBs)
                 .ToList();
 
+            var allProjects = company.ProjectCompanies
+                .Concat(company.ProjectCompanyRequests)
+                .ToList();
+
+            var roles = await _roleRepository.GetRoleWithMemberAsync(cancellationToken);
+
+
             var partners = new List<PartnerResponse>();
             var addedCompanyIds = new HashSet<Guid>();
 
@@ -316,7 +328,7 @@ namespace Fusion.Service.Services
                         TaxCode = partnerCompany.TaxCode,
                         RespondedAt = friendship.RespondedAt,
                         CreatedAt = friendship.CreatedAt,
-                        TotalProject = partnerCompany.ProjectCompanies.Count + partnerCompany.ProjectCompanyHireds.Count,
+                        TotalProject = partnerCompany.ProjectCompanies.Count + partnerCompany.ProjectCompanyRequests.Count,
                     });
                 }
             }
@@ -330,6 +342,60 @@ namespace Fusion.Service.Services
             result.TotalWaitForApprove = friendships.Count(f => f.Status == "Pending");
             result.TotalPartners = friendships.Count();
             result.ListPartners = partners;
+
+            result.TotalOngoingProjects = allProjects.Count(p => p.Status == ProjectStatusEnum.ONGOING.ToString());
+            result.TotalClosedProjects = allProjects.Count(p => p.Status == ProjectStatusEnum.CLOSED.ToString());
+            result.TotalCompletedProjects = allProjects.Count(p => p.Status == ProjectStatusEnum.DONE.ToString());
+            result.OnTimeRelease = allProjects.Count(p =>
+            {
+                var contract = p.ProjectRequest?.Contract;
+                if (contract == null) return false;
+
+                return p.EndDate <= contract.ExpiredDate;
+            });
+            result.TotalLateProjects = allProjects.Count(p =>
+            {
+                var contract = p.ProjectRequest?.Contract;
+                if (contract == null) return false;
+
+                return p.EndDate != null && p.EndDate > contract.ExpiredDate;
+            });
+
+            result.TotalProjectCreated = company.ProjectCompanyRequests.Count;
+            result.TotalProjectHired = company.ProjectCompanies.Count;
+
+            result.TotalProjectRequestSent = company.ProjectRequestRequesterCompanies.Count(p =>
+               p.RequesterCompanyId == companyId);
+
+            result.TotalProjectRequestReceive = company.ProjectRequestExecutorCompanies.Count(p =>
+                p.ExecutorCompanyId == companyId);
+
+
+            var sent = company.ProjectRequestRequesterCompanies
+                .Where(p => p.RequesterCompanyId == companyId);
+
+            var received = company.ProjectRequestExecutorCompanies
+                .Where(p => p.ExecutorCompanyId == companyId);
+
+            result.TotalProjectRequestAcceptSent = sent.Count(p => p.Status.Equals("Accepted", StringComparison.OrdinalIgnoreCase));
+            result.TotalProjectRequestRejectSent = sent.Count(p => p.Status.Equals("Rejected", StringComparison.OrdinalIgnoreCase));
+            result.TotalProjectRequestPendingSent = sent.Count(p => p.Status.Equals("Pending", StringComparison.OrdinalIgnoreCase));
+
+            result.TotalProjectRequestAcceptReceive = received.Count(p => p.Status.Equals("Accepted", StringComparison.OrdinalIgnoreCase));
+            result.TotalProjectRequestRejectReceive = received.Count(p => p.Status.Equals("Rejected", StringComparison.OrdinalIgnoreCase));
+            result.TotalProjectRequestPendingReceive = received.Count(p => p.Status.Equals("Pending", StringComparison.OrdinalIgnoreCase));
+
+
+            result.companyRoles = roles.Select(role =>
+                        new CompanyRoleSummaryResponse
+                        {
+                            RoleId = role.Id,
+                            RoleName = role.RoleName,
+                            TotalMembers = role.UserRoles.Count(ur =>
+                                ur.User.CompanyMembers.Any(cm => cm.CompanyId == companyId))
+                        }
+                ).ToList();
+
 
             return result;
         }

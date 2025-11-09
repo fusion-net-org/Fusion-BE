@@ -1,10 +1,13 @@
-﻿using Fusion.Service.ViewModels.ProjectMembers.Responses;
-using Fusion.Service.ViewModels.Sprint.Responses;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Fusion.Service.ViewModels.ProjectMembers.Responses;
+using Fusion.Service.ViewModels.Sprint.Responses;
+using Microsoft.EntityFrameworkCore;
 
 namespace Fusion.Service.ViewModels.Project.Responses
 {
@@ -48,5 +51,27 @@ namespace Fusion.Service.ViewModels.Project.Responses
 
         public double Progress { get; set; } // % tiến độ
         public List<SprintSummaryResponse> Sprints { get; set; }
+    }
+
+    public class ProjectResponseVersion3
+    {
+        public Guid Id { get; set; }
+        public Guid? CompanyId { get; set; }
+        public bool IsHired { get; set; }
+        public Guid? CompanyRequestId { get; set; }
+        public Guid? ProjectRequestId { get; set; }
+        public string? CompanyRequestName { get; set; }
+        public string? CompanyExecutorName { get; set; }
+        public string? Code { get; set; }
+        public string? Name { get; set; }
+        public string? Description { get; set; }
+        public string? Status { get; set; }
+        public Guid? WorkflowId { get; set; }
+        public DateOnly? StartDate { get; set; }
+        public DateOnly? EndDate { get; set; }
+        public Guid? CreatedBy { get; set; }
+        public string? CreateByName { get; set; }
+        public DateTime CreateAt { get; set; }
+        public DateTime UpdateAt { get; set; }
     }
 }

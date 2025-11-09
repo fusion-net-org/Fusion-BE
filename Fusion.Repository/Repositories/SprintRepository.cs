@@ -26,6 +26,8 @@ namespace Fusion.Repository.Repositories
         Task<int> RemoveTasksAsync(Guid sprintId, Guid projectId, IEnumerable<Guid> taskIds, CancellationToken ct);
         Task ReorderAsync(Guid sprintId, Guid projectId, IReadOnlyList<(Guid taskId, int order)> orders, CancellationToken ct);
         Task AddRangeAsync(IEnumerable<Sprint> sprints, CancellationToken ct = default);
+        Task<Sprint?> GetByIdAsync(Guid id, CancellationToken ct);
+        IQueryable<Sprint> QueryByCompany(Guid companyId);
     }
     public class SprintRepository : ISprintRepository
     {
@@ -41,6 +43,17 @@ namespace Fusion.Repository.Repositories
             _db.Sprints.AddRange(sprints);
             return Task.CompletedTask;
         }
+        public IQueryable<Sprint> QueryByCompany(Guid companyId)
+        {
+            // FROM company → join Project → Sprint
+            return _db.Sprints
+                .AsNoTracking()
+                .Include(s => s.Project)
+                .Where(s => !s.IsDeleted && s.Project != null && s.Project.CompanyId == companyId);
+        }
+
+        public Task<Sprint?> GetByIdAsync(Guid id, CancellationToken ct)
+            => _db.Sprints.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, ct);
         public Task<SprintVmData?> GetVmAsync(Guid sprintId, Guid projectId, CancellationToken ct) =>
         _db.Set<Sprint>()
         .Where(x => x.Id == sprintId && x.ProjectId == projectId)

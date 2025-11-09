@@ -40,7 +40,7 @@ namespace Fusion.Repository.Repositories
             var query = _ctx.Projects
                 .AsNoTracking()
                 .Include(p => p.Company)
-                .Include(p => p.CompanyHired)
+                .Include(p => p.CompanyRequest)
                 .Include(p => p.Workflow)
                 .Where(p => p.CompanyId == companyId);
 
@@ -263,7 +263,7 @@ namespace Fusion.Repository.Repositories
             var query = _context.Projects
         .Include(p => p.CreatedByNavigation)
         .Include(p => p.Company)
-        .Include(p => p.CompanyHired)
+        .Include(p => p.CompanyRequest)
         .Include(p => p.Workflow)
         .Include(p => p.ProjectMembers)
         .Include(p => p.Sprints).ThenInclude(s => s.ProjectTasks)
@@ -274,10 +274,34 @@ namespace Fusion.Repository.Repositories
             {
                 query = query.Where(p =>
                         (p.Company != null && p.Company.Name.Contains(request.CompanyName)) ||
-                        (p.CompanyHired != null && p.CompanyHired.Name.Contains(request.CompanyName)));
+                        (p.CompanyRequest != null && p.CompanyRequest.Name.Contains(request.CompanyName)));
             }
 
             return await query.ToPagedResultAsync(request, cancellationToken);
+        }
+
+        public async Task<Project?> GetProjectsByIdForAdminAsync(Guid projectId, CancellationToken cancellationToken = default)
+        {
+            var query = await _context.Projects
+        .Include(p => p.CreatedByNavigation)
+        .Include(p => p.Company)
+        .Include(p => p.CompanyRequest)
+        .Include(p => p.Workflow)
+        .Include(p => p.ProjectMembers)
+        .Include(p => p.Sprints).ThenInclude(s => s.ProjectTasks)
+        .SingleOrDefaultAsync(x => x.Id == projectId);
+
+            return query;
+        }
+
+        public async Task<Project> GetProjectById(Guid projectId, CancellationToken cancellationToken = default)
+        {
+            var query = await _context.Projects
+                        .Include(p => p.Company)
+                        .Include(p => p.CompanyRequest)
+                        .Include(p => p.CreatedByNavigation)
+                        .SingleOrDefaultAsync(x => x.Id == projectId);
+            return query;
         }
     }
 }

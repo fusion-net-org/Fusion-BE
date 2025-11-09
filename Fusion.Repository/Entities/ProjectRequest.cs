@@ -34,8 +34,12 @@ public partial class ProjectRequest
     public string? Description { get; set; }
 
 
-    [Column("reason")]
-    public string? Reason { get; set; }
+    [Column("reason_reject")]
+    public string? ReasonReject { get; set; }
+
+    [Column("reason_delete")]
+    public string? ReasonDelete { get; set; }
+
 
     [Column("status")]
     [StringLength(20)]
@@ -56,8 +60,14 @@ public partial class ProjectRequest
     [Precision(3)]
     public DateTime UpdateAt { get; set; }
 
+    [Column("updated_by")]
+    public Guid? UpdatedBy { get; set; }
+
     [Column("is_deleted")]
     public bool? IsDeleted { get; set; }
+
+    [Column("deleted_by")]
+    public Guid? DeletedBy { get; set; }
 
     [Column("converted_project_id")]
     public Guid? ConvertedProjectId { get; set; }
@@ -66,12 +76,19 @@ public partial class ProjectRequest
     [InverseProperty("ProjectRequests")]
     public virtual User? CreatedByNavigation { get; set; }
 
+    [ForeignKey("UpdatedBy")]
+    [InverseProperty("UpdatedProjectRequests")]
+    public virtual User? UpdatedByNavigation { get; set; }
+
     [ForeignKey("ExecutorCompanyId")]
     [InverseProperty("ProjectRequestExecutorCompanies")]
     public virtual Company? ExecutorCompany { get; set; }
 
     [InverseProperty("ProjectRequest")]
     public virtual Project? Project { get; set; }
+
+    [InverseProperty("ProjectRequest")]
+    public virtual Contract? Contract { get; set; }
 
     [ForeignKey("RequesterCompanyId")]
     [InverseProperty("ProjectRequestRequesterCompanies")]

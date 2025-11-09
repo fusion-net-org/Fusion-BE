@@ -82,6 +82,9 @@ namespace Fusion.Service
             //userlog 
             services.AddScoped<IUserLogService, UserLogService>();
 
+            //contract
+            services.AddScoped<IContractService, ContractService>();
+
             // company subscription
             services.AddScoped<ICompanySubscriptionService, CompanySubscriptionService>();
             // PayOS

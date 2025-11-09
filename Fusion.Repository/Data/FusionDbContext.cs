@@ -44,6 +44,8 @@ public partial class FusionDbContext : DbContext
     public virtual DbSet<SubscriptionPlan> SubscriptionPlans { get; set; }
     public virtual DbSet<SubscriptionPlanFeature> SubscriptionPlanFeatures { get; set; }
     public virtual DbSet<SubscriptionPlanPrice> SubscriptionPlanPrices { get; set; }
+    public virtual DbSet<Contract> Contracts { get; set; }
+    public virtual DbSet<ContractAppendix> ContractAppendices { get; set; }
 
     public virtual DbSet<TransactionPayment> TransactionPayments { get; set; }
     public DbSet<UserSubscription> UserSubscriptions { get; set; } = null!;
@@ -118,7 +120,7 @@ public partial class FusionDbContext : DbContext
             entity.Property(e => e.CreateAt).HasDefaultValueSql("(sysutcdatetime())");
             entity.Property(e => e.UpdateAt).HasDefaultValueSql("(sysutcdatetime())");
 
-            entity.HasOne(d => d.CompanyHired).WithMany(p => p.ProjectCompanyHireds).HasConstraintName("FK_Projects_HiredCompany");
+            entity.HasOne(d => d.CompanyRequest).WithMany(p => p.ProjectCompanyRequests).HasConstraintName("FK_Projects_HiredCompany");
 
             entity.HasOne(d => d.Company).WithMany(p => p.ProjectCompanies).HasConstraintName("FK_Projects_Company");
 

@@ -19,6 +19,7 @@ namespace Fusion.Repository.IRepositories
         Task<PagedResult<Project>> GetAllProjectsByMemberIdAsync(Guid userId, ProjectMemberSearchRequest request, CancellationToken cancellationToken = default);
         Task AddIfNotExistsAsync(Guid projectId, Guid userId, bool isPartner, bool isViewAll, CancellationToken ct = default);
         Task<bool> UserBelongsToCompanyAsync(Guid userId, Guid companyId, CancellationToken ct = default);
+        Task<PagedResult<ProjectMember>> GetProjectMemberByProjectId(Guid projectId, ProjectMemberSearchRequestV2 request, CancellationToken ct = default);
 
     }
 }

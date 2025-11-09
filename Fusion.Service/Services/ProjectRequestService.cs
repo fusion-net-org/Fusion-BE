@@ -1,4 +1,9 @@
-﻿using AutoMapper;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using AutoMapper;
 using Azure;
 using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Bases.Page;
@@ -12,13 +17,9 @@ using Fusion.Repository.Repositories;
 using Fusion.Service.Commons.Helpers;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.Companies.Responses;
+using Fusion.Service.ViewModels.Notifications.Requests;
 using Fusion.Service.ViewModels.Projects.Requests;
 using Fusion.Service.ViewModels.Projects.Responses;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using static Google.Apis.Requests.BatchRequest;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
@@ -168,13 +169,14 @@ namespace Fusion.Service.Services
             return _mapper.Map<ProjectRequestResponse>(response);
         }
 
-        public async Task<bool> DeleteProjectRequestAsync(Guid id, CancellationToken cancellationToken = default)
+        public async Task<bool> DeleteProjectRequestAsync(Guid id,string reason, CancellationToken cancellationToken = default)
         {
-            var result = await _projectRequestRepository.DeleteProjectRequestAsync(id, cancellationToken);
+            var currentUserId = _currentService.GetUserId();
+
+            var result = await _projectRequestRepository.DeleteProjectRequestAsync(id,reason, currentUserId, cancellationToken);
 
             var projectRequest = await _projectRequestRepository.GetProjectRequestByIdAsync(id);
-            var currentUserName = await GetUserName(_currentService.GetUserId());
-            var currentUserId = _currentService.GetUserId();
+            var currentUserName = await GetUserName(currentUserId);
 
             var log = new CompanyActivityLog
             {
@@ -220,6 +222,62 @@ namespace Fusion.Service.Services
 
             return result;
         }
+        public async Task<bool> RestoreProjectRequestAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            var currentUserId = _currentService.GetUserId();
+
+            var result = await _projectRequestRepository.RestoreProjectRequestAsync(id, currentUserId, cancellationToken);
+            if (!result) return false;
+
+            var projectRequest = await _projectRequestRepository.GetProjectRequestByIdAsync(id);
+            if (projectRequest == null) return false;
+
+            var currentUserName = await GetUserName(currentUserId);
+
+            var log = new CompanyActivityLog
+            {
+                CompanyId = projectRequest?.RequesterCompanyId ?? Guid.Empty,
+                ActorUserId = currentUserId,
+                Title = "Restore project request",
+                Description = $"User '{currentUserName}' has restored project request '{projectRequest.Code}' - {projectRequest.Name}"
+            };
+            await _logService.CreateLog(log, cancellationToken);
+
+            var requesterUserId = projectRequest.RequesterCompany?.OwnerUser?.Id ?? Guid.Empty;
+            var executorUserId = projectRequest.ExecutorCompany?.OwnerUser?.Id ?? Guid.Empty;
+
+            if (requesterUserId != Guid.Empty)
+            {
+                await _notificationService.CreateNotificationAsync(new SendNotificationRequest
+                {
+                    UserId = requesterUserId,
+                    Title = "Project request restored",
+                    Body = "You have restored this project request.",
+                    LinkKey = "PROJECT_REQUEST_PAGE",
+                    IdLink = projectRequest.RequesterCompanyId,
+                    Event = "RESTORE_PROJECT_REQUEST",
+                    Context = projectRequest.Name,
+                    NotificationType = NotificationTypeEnum.PROJECT_REQUEST.ToString()
+                }, cancellationToken);
+            }
+
+            if (executorUserId != Guid.Empty)
+            {
+                await _notificationService.CreateNotificationAsync(new SendNotificationRequest
+                {
+                    UserId = executorUserId,
+                    Title = "Project request restored",
+                    Body = $"{currentUserName} has restored the project request '{projectRequest.Name}'.",
+                    LinkKey = "PROJECT_REQUEST_PAGE",
+                    IdLink = projectRequest.ExecutorCompanyId,
+                    Event = "RESTORE_PROJECT_REQUEST",
+                    Context = projectRequest.Name,
+                    NotificationType = NotificationTypeEnum.PROJECT_REQUEST.ToString()
+                }, cancellationToken);
+            }
+
+            return true;
+        }
 
         public async Task<ProjectRequestResponse?> GetProjectRequestByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
@@ -241,7 +299,7 @@ namespace Fusion.Service.Services
                 <p>Your project request <strong>{result?.Name}</strong> 
                 has been <b style='color:red;'>REJECTED</b> by 
                 {result.ExecutorCompany?.Name}.</p>
-                <p><b>Reason:</b> {result.Reason ?? "No specific reason provided."}</p>
+                <p><b>Reason:</b> {result.ReasonReject ?? "No specific reason provided."}</p>
                 <p>Please review your project details and resubmit if needed.</p>
                 <hr/>
                 <small>Fusion System Notification</small>"";

@@ -65,11 +65,11 @@ namespace Fusion.Service.Services
             // 2) Hired company (optional)
             if (request.IsHired)
             {
-                if (request.CompanyHiredId == null || request.CompanyHiredId == companyId)
+                if (request.CompanyRequestId == null || request.CompanyRequestId == companyId)
                     throw CustomExceptionFactory.CreateBadRequestError("Hired company invalid.");
 
                 var hired = await _ctx.Companies.AsNoTracking()
-                    .FirstOrDefaultAsync(c => c.Id == request.CompanyHiredId && (c.IsDeleted ?? false) == false, ct);
+                    .FirstOrDefaultAsync(c => c.Id == request.CompanyRequestId && (c.IsDeleted ?? false) == false, ct);
                 if (hired == null)
                     throw CustomExceptionFactory.CreateBadRequestError("Hired company not found.");
             }
@@ -90,8 +90,8 @@ namespace Fusion.Service.Services
                 Id = Guid.NewGuid(),
                 CompanyId = companyId,
                 IsHired = request.IsHired,
-                CompanyHiredId = request.CompanyHiredId,
-                ProjectRequestId = null,
+                CompanyRequestId = request.CompanyRequestId,
+                ProjectRequestId = request.ProjectRequestId,
                 Code = request.Code.Trim(),
                 Name = request.Name.Trim(),
                 Description = request.Description,
@@ -109,8 +109,8 @@ namespace Fusion.Service.Services
 
             // 7) Validate + stage members
             var validCompanies = new HashSet<Guid> { companyId };
-            if (request.IsHired && request.CompanyHiredId.HasValue)
-                validCompanies.Add(request.CompanyHiredId.Value);
+            if (request.IsHired && request.CompanyRequestId.HasValue)
+                validCompanies.Add(request.CompanyRequestId.Value);
 
             var stagedMembers = new List<(Guid userId, bool isPartner)>();
 
@@ -143,10 +143,11 @@ namespace Fusion.Service.Services
                 Name = created.Name,
                 Description = created.Description,
                 Status = created.Status,
+                CompanyRequestId = created.ProjectRequestId,
 
                 IsHired = created.IsHired,
                 CompanyId = created.CompanyId,
-                CompanyHiredId = created.CompanyHiredId,
+                CompanyHiredId = created.CompanyRequestId,
 
                 StartDate = created.StartDate?.ToDateTime(TimeOnly.MinValue),
                 EndDate = created.EndDate?.ToDateTime(TimeOnly.MinValue),
@@ -156,7 +157,7 @@ namespace Fusion.Service.Services
                 UpdateAt = created.UpdateAt,
 
                 CompanyName = created.Company?.Name,
-                CompanyHiredName = created.CompanyHired?.Name,
+                CompanyHiredName = created.CompanyRequest?.Name,
                 CreatedByName = created.CreatedByNavigation?.UserName,
 
                 Sprints = created.Sprints
@@ -232,7 +233,7 @@ namespace Fusion.Service.Services
                 Name = p.Name ?? "",
                 Description = p.Description,
                 OwnerCompany = p.Company != null ? p.Company.Name : "",
-                HiredCompany = p.CompanyHired != null ? p.CompanyHired.Name : null,
+                HiredCompany = p.CompanyRequest != null ? p.CompanyRequest.Name : null,
                 Workflow = p.Company != null && p.Workflow != null
                                   ? $"{p.Company.Name} — {p.Workflow.Name}"
                                   : p.Workflow?.Name,
@@ -343,48 +344,64 @@ namespace Fusion.Service.Services
                 Items = new List<ProjectSummaryResponseV2>()
             };
 
-            foreach (var p in result.Items)
+            foreach (var p in result.Items ?? new List<Project>())
             {
-                var sprintSummary = p.Sprints.Select(s => new SprintSummaryResponse
-                {
-                    Id = s.Id,
-                    Name = s.Name,
-                    TaskCount = s.ProjectTasks.Count,
-                    TotalPoint = s.ProjectTasks.Sum(t => t.Point ?? 0),
-                    Tasks = s.ProjectTasks.Select(t => new TaskSummaryResponse
+                // ✅ Sprints
+                var sprintSummary = (p.Sprints ?? new List<Sprint>())
+                    .Select(s => new SprintSummaryResponse
                     {
-                        Id = t.Id,
-                        Title = t.Title,
-                        Point = t.Point,
-                        Status = t.Status
-                    }).ToList()
-                }).ToList();
+                        Id = s.Id,
+                        Name = s.Name ?? "N/A",
+                        TaskCount = s.ProjectTasks?.Count ?? 0,
+                        TotalPoint = s.ProjectTasks?.Sum(t => t.Point ?? 0) ?? 0,
+                        Tasks = (s.ProjectTasks ?? new List<ProjectTask>())
+                            .Select(t => new TaskSummaryResponse
+                            {
+                                Id = t.Id,
+                                Title = t.Title ?? "N/A",
+                                Point = t.Point ?? 0,
+                                Status = t.Status ?? "Unknown"
+                            })
+                            .ToList()
+                    })
+                    .ToList();
 
+                // ✅ Progress
                 var totalTasks = sprintSummary.Sum(s => s.TaskCount);
-                var doneTasks = sprintSummary.SelectMany(s => s.Tasks)
-                                             .Count(t => t.Status == "Done");
-
+                var doneTasks = sprintSummary
+                    .SelectMany(s => s.Tasks)
+                    .Count(t => (t.Status ?? "").Equals("Done", StringComparison.OrdinalIgnoreCase));
                 double progress = totalTasks == 0 ? 0 : (double)doneTasks / totalTasks * 100;
 
+                // ✅ Safe add ProjectSummaryResponseV2
                 response.Items.Add(new ProjectSummaryResponseV2
                 {
                     Id = p.Id,
-                    Name = p.Name,
-                    CompanyId = p.Company.Id,
-                    CompanyName = p.Company.Name,
-                    CompanyHiredId = p.CompanyHired.Id,
-                    CompanyHiredName = p.CompanyHired.Name,
-                    WorkflowId = p.Workflow.Id,
-                    WorkflowName = p.Workflow?.Name,
-                    ProjectType = p.CompanyHiredId != null ? "OutSource" : "Product",
-                    OwnerId = p.CreatedByNavigation.Id,
-                    OwnerName = p.CreatedByNavigation?.UserName,
-                    Members = p.ProjectMembers.Select(m => new ProjectMemberSummaryResponse
-                    {
-                        MemberId = m.User.Id,
-                        MemberName = m.User.UserName,
-                        Avatar = m.User.Avatar,
-                    }).ToList(),
+                    Name = p.Name ?? "N/A",
+
+                    CompanyId = p.Company?.Id ?? Guid.Empty,
+                    CompanyName = p.Company?.Name ?? "N/A",
+
+                    CompanyHiredId = p.CompanyRequest?.Id,
+                    CompanyHiredName = p.CompanyRequest?.Name ?? "N/A",
+
+                    WorkflowId = p.Workflow?.Id ?? Guid.Empty,
+                    WorkflowName = p.Workflow?.Name ?? "N/A",
+
+                    ProjectType = p.CompanyRequestId != null ? "OutSource" : "Product",
+
+                    OwnerId = p.CreatedByNavigation?.Id ?? Guid.Empty,
+                    OwnerName = p.CreatedByNavigation?.UserName ?? "Unknown",
+
+                    Members = (p.ProjectMembers ?? new List<ProjectMember>())
+                        .Select(m => new ProjectMemberSummaryResponse
+                        {
+                            MemberId = m.User?.Id ?? Guid.Empty,
+                            MemberName = m.User?.UserName ?? "Unknown",
+                            Avatar = m.User?.Avatar
+                        })
+                        .ToList(),
+
                     SprintCount = sprintSummary.Count,
                     TotalTask = totalTasks,
                     TotalPoint = sprintSummary.Sum(s => s.TotalPoint),
@@ -394,6 +411,74 @@ namespace Fusion.Service.Services
             }
 
             return response;
+        }
+
+
+        public async Task<ProjectSummaryResponseV2?> GetProjectsByIdForAdminAsync(Guid projectId, CancellationToken cancellationToken = default)
+        {
+            var result = await _projectRepo.GetProjectsByIdForAdminAsync(projectId, cancellationToken);
+
+            if (result == null)
+                throw CustomExceptionFactory.CreateNotFoundError("Projects Not found");
+
+            var sprintSummary = (result.Sprints ?? new List<Sprint>()).Select(s => new SprintSummaryResponse
+            {
+                Id = s.Id,
+                Name = s.Name ?? "N/A",
+                TaskCount = s.ProjectTasks?.Count ?? 0,
+                TotalPoint = s.ProjectTasks?.Sum(t => t.Point ?? 0) ?? 0,
+                Tasks = s.ProjectTasks.Select(t => new TaskSummaryResponse
+                {
+                    Id = t.Id,
+                    Title = t.Title ?? "N/A",
+                    Point = t.Point ?? 0,
+                    Status = t.Status ?? "Unknown"
+                }).ToList()
+            }).ToList();
+
+            var totalTasks = sprintSummary.Sum(s => s.TaskCount);
+            var doneTasks = sprintSummary
+                .SelectMany(s => s.Tasks)
+                .Count(t => (t.Status ?? "")
+                .Equals("Done", StringComparison.OrdinalIgnoreCase));
+
+            double progress = totalTasks == 0 ? 0 : (double)doneTasks / totalTasks * 100;
+
+            return new ProjectSummaryResponseV2
+            {
+                Id = result.Id,
+                Name = result.Name,
+                CompanyId = result.Company?.Id ?? Guid.Empty,
+                CompanyName = result.Company?.Name ?? "N/A",
+                CompanyHiredId = result.CompanyRequest?.Id,
+                CompanyHiredName = result.CompanyRequest?.Name ?? "N/A",
+                WorkflowId = result.Workflow.Id,
+                WorkflowName = result.Workflow?.Name ?? "N/A",
+                ProjectType = result.CompanyRequestId != null ? "OutSource" : "Product",
+                OwnerId = result.CreatedByNavigation?.Id ?? Guid.Empty,
+                OwnerName = result.CreatedByNavigation?.UserName ?? "Unknown",
+                Members = (result.ProjectMembers ?? new List<ProjectMember>())
+                .Select(m => new ProjectMemberSummaryResponse
+                {
+                    MemberId = m.User?.Id ?? Guid.Empty,
+                    MemberName = m.User?.UserName ?? "N/A",
+                    Avatar = m.User.Avatar,
+                }).ToList() ?? new List<ProjectMemberSummaryResponse>(),
+                SprintCount = sprintSummary.Count,
+                TotalTask = totalTasks,
+                TotalPoint = sprintSummary.Sum(s => s.TotalPoint),
+                Progress = Math.Round(progress, 2),
+                Sprints = sprintSummary
+            };
+        }
+
+        public async Task<ProjectResponseVersion3> GetProjectById(Guid projectId, CancellationToken cancellationToken = default)
+        {
+            var project = await _projectRepo.GetProjectById(projectId, cancellationToken);
+            if (project == null)
+                throw CustomExceptionFactory.CreateNotFoundError("Project not found");
+
+            return _mapper.Map<ProjectResponseVersion3>(project);
         }
 
     }

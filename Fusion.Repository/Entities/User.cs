@@ -86,6 +86,10 @@ public partial class User
     [InverseProperty("CreatedByNavigation")]
     public virtual ICollection<ProjectRequest> ProjectRequests { get; set; } = new List<ProjectRequest>();
 
+    [InverseProperty("UpdatedByNavigation")]
+    public virtual ICollection<ProjectRequest> UpdatedProjectRequests { get; set; } = new List<ProjectRequest>();
+
+
     [InverseProperty("CreatedByNavigation")]
     public virtual ICollection<ProjectTask> ProjectTasks { get; set; } = new List<ProjectTask>();
 
