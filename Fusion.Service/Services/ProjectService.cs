@@ -472,5 +472,14 @@ namespace Fusion.Service.Services
             };
         }
 
+        public async Task<ProjectResponseVersion3> GetProjectById(Guid projectId, CancellationToken cancellationToken = default)
+        {
+            var project = await _projectRepo.GetProjectById(projectId, cancellationToken);
+            if (project == null)
+                throw CustomExceptionFactory.CreateNotFoundError("Project not found");
+
+            return _mapper.Map<ProjectResponseVersion3>(project);
+        }
+
     }
 }

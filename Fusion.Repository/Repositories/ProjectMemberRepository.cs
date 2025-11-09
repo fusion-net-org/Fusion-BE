@@ -148,5 +148,50 @@ namespace Fusion.Repository.Repositories
                     cm.UserId == userId &&
                     cm.Status == "Active" &&
                     !(cm.IsDeleted ?? false), ct);
+
+        public async Task<PagedResult<ProjectMember>> GetProjectMemberByProjectId(
+     Guid projectId,
+     ProjectMemberSearchRequestV2 request,
+     CancellationToken ct = default)
+        {
+            var query = _context.ProjectMembers
+                .Include(pm => pm.User)
+                .Include(pm => pm.Project)
+                .Where(pm => pm.ProjectId == projectId)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(request.Keyword))
+            {
+                var keyword = request.Keyword.Trim().ToLower();
+
+                query = query.Where(pm =>
+                    (pm.User.UserName ?? "").ToLower().Contains(keyword)
+                    || (pm.User.Email ?? "").ToLower().Contains(keyword)
+                    || (pm.User.Phone ?? "").ToLower().Contains(keyword)
+
+                );
+            }
+
+            if (request.FromDate.HasValue && request.ToDate.HasValue)
+            {
+                var from = request.FromDate.Value.Date;
+                var to = request.ToDate.Value.Date.AddDays(1).AddTicks(-1);
+
+                query = query.Where(pm => pm.JoinedAt >= from && pm.JoinedAt <= to);
+            }
+            else if (request.FromDate.HasValue)
+            {
+                var from = request.FromDate.Value.Date;
+                query = query.Where(pm => pm.JoinedAt >= from);
+            }
+            else if (request.ToDate.HasValue)
+            {
+                var to = request.ToDate.Value.Date.AddDays(1).AddTicks(-1);
+                query = query.Where(pm => pm.JoinedAt <= to);
+            }
+
+            return await query.ToPagedResultAsync(request, ct);
+        }
+
     }
 }

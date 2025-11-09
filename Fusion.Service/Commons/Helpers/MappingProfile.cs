@@ -1,4 +1,4 @@
-
+﻿
 using AutoMapper;
 using Fusion.Repository.Entities;
 using Fusion.Service.ViewModels.Comment.Request;
@@ -9,6 +9,7 @@ using Fusion.Service.ViewModels.Notifications.Requests;
 using Fusion.Service.ViewModels.Notifications.Responses;
 using Fusion.Service.ViewModels.Project.Requests;
 using Fusion.Service.ViewModels.Project.Responses;
+using Fusion.Service.ViewModels.ProjectMembers.Responses;
 using Fusion.Service.ViewModels.Projects.Requests;
 using Fusion.Service.ViewModels.Projects.Responses;
 using Fusion.Service.ViewModels.SubscriptionPlan.Requests;
@@ -227,10 +228,39 @@ public class MappingProfile : Profile
      .ForMember(d => d.CompanyName, o => o.MapFrom(s => s.Company != null ? s.Company.Name : null))
      .ForMember(d => d.CompanyHiredName, o => o.MapFrom(s => s.CompanyRequest != null ? s.CompanyRequest.Name : null))
      .ForMember(d => d.CreatedByName, o => o.MapFrom(s => s.CreatedByNavigation != null ? s.CreatedByNavigation.UserName : null))
-
-   
-
      .ForMember(d => d.Sprints, o => o.MapFrom(s => s.Sprints.Where(x => !x.IsDeleted)));
+
+        CreateMap<Project, ProjectResponseVersion3>()
+      .ForMember(d => d.CompanyExecutorName, o => o.MapFrom(s => s.Company != null ? s.Company.Name : null))
+      .ForMember(d => d.CompanyRequestName, o => o.MapFrom(s => s.CompanyRequest != null ? s.CompanyRequest.Name : null))
+      .ForMember(d => d.IsHired, o => o.MapFrom(s => s.IsHired))
+      .ForMember(d => d.StartDate, o => o.MapFrom(s => s.StartDate))
+      .ForMember(d => d.EndDate, o => o.MapFrom(s => s.EndDate))
+      .ForMember(d => d.CreateAt, o => o.MapFrom(s => s.CreateAt))
+      .ForMember(d => d.UpdateAt, o => o.MapFrom(s => s.UpdateAt))
+      .ForMember(d => d.Code, o => o.MapFrom(s => s.Code))
+      .ForMember(d => d.Name, o => o.MapFrom(s => s.Name))
+      .ForMember(d => d.Description, o => o.MapFrom(s => s.Description))
+      .ForMember(d => d.Status, o => o.MapFrom(s => s.Status))
+      .ForMember(d => d.WorkflowId, o => o.MapFrom(s => s.WorkflowId))
+      .ForMember(d => d.CreatedBy, o => o.MapFrom(s => s.CreatedBy))
+      .ForMember(d => d.CreateByName, o => o.MapFrom(s => s.CreatedByNavigation != null ? s.CreatedByNavigation.UserName : null));
+
+
+        // ===================== Project Member =====================
+        CreateMap<ProjectMember, ProjectMemberResponseV2>()
+            .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User != null ? src.User.UserName : null))
+            .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.User != null ? src.User.Email : null))
+            .ForMember(dest => dest.Phone, opt => opt.MapFrom(src => src.User != null ? src.User.Phone : null))
+            .ForMember(dest => dest.Avatar, opt => opt.MapFrom(src => src.User != null ? src.User.Avatar : null))
+            .ForMember(dest => dest.Gender, opt => opt.MapFrom(src => src.User != null ? src.User.Gender : null))
+            .ForMember(dest => dest.Status,
+                opt => opt.MapFrom(src => src.User != null && src.User.Status))
+            .ForMember(dest => dest.IsPartner, opt => opt.MapFrom(src => src.IsPartner))
+            .ForMember(dest => dest.IsViewAll, opt => opt.MapFrom(src => src.IsViewAll))
+            .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.UserId))
+            .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id));
+
     }
 
 }
