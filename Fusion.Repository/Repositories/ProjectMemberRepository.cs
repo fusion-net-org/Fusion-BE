@@ -3,6 +3,7 @@ using Fusion.Repository.Bases.Page.ProjectMember;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.IRepositories;
+using Fusion.Repository.ViewModels;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -142,6 +143,47 @@ namespace Fusion.Repository.Repositories
 
             return await query.ToPagedResultAsync(request, cancellationToken);
         }
+
+        public async Task<MemberPerformanceStats> GetMemberPerformanceAsync(Guid userId, Guid companyId, CancellationToken token = default)
+        {
+            // Lấy toàn bộ project của company
+            var projectIds = await _context.Projects
+                .Where(p => p.CompanyId == companyId)
+                .Select(p => p.Id)
+                .ToListAsync(token);
+
+            // Task user được assign
+            var tasks = await _context.TaskWorkflows
+                .Include(tw => tw.Task)
+                .Where(tw => tw.AssignUserId == userId && projectIds.Contains(tw.Task.ProjectId!.Value))
+                .ToListAsync(token);
+
+            int totalTask = tasks.Count;
+            int doneTask = tasks.Count(t => t.Task.Status == "Done" || t.Task.Status == "Resolved");
+
+            int productivity = totalTask > 0 ? (int)((double)doneTask / totalTask * 100) : 0;
+            int problemSolving = doneTask;
+
+            // Communication = comment trong task thuộc company
+            int communication = await _context.Comments
+                .Include(c => c.Task)
+                .CountAsync(c => c.AuthorUserId == userId && projectIds.Contains(c.Task.ProjectId!.Value), token);
+
+            // Teamwork = project user làm chung với người khác
+            int teamwork = await _context.ProjectMembers
+                .Where(pm => pm.UserId == userId && projectIds.Contains(pm.ProjectId!.Value))
+                .GroupBy(pm => pm.ProjectId)
+                .CountAsync(g => g.Count() > 1, token);
+
+            return new MemberPerformanceStats
+            {
+                Productivity = productivity,
+                Communication = communication,
+                Teamwork = teamwork,
+                ProblemSolving = problemSolving
+            };
+        }
+
         public Task<bool> UserBelongsToCompanyAsync(Guid userId, Guid companyId, CancellationToken ct = default)
             => _context.CompanyMembers.AnyAsync(cm =>
                     cm.CompanyId == companyId &&

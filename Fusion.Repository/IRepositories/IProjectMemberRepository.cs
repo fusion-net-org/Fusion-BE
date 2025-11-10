@@ -2,6 +2,7 @@
 using Fusion.Repository.Bases.Page.ProjectMember;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
+using Fusion.Repository.ViewModels;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -19,6 +20,8 @@ namespace Fusion.Repository.IRepositories
         Task<PagedResult<Project>> GetAllProjectsByMemberIdAsync(Guid userId, ProjectMemberSearchRequest request, CancellationToken cancellationToken = default);
         Task AddIfNotExistsAsync(Guid projectId, Guid userId, bool isPartner, bool isViewAll, CancellationToken ct = default);
         Task<bool> UserBelongsToCompanyAsync(Guid userId, Guid companyId, CancellationToken ct = default);
+
+        Task<MemberPerformanceStats> GetMemberPerformanceAsync(Guid userId, Guid companyId, CancellationToken token = default);
 
     }
 }
