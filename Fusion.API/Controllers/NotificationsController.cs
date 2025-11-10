@@ -145,6 +145,27 @@ namespace Fusion.API.Controllers
                 ));
         }
 
+        [HttpDelete("admin")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<string>))]
+        public async Task<IActionResult> DeleteAdminNotification(CancellationToken cancellationToken)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(ResponseModel<string>.Error(
+                    StatusCodes.Status401Unauthorized,
+                    "Don't find token!"));
+            }
+
+            await _notificationService.DeleteAdminNotificationAsync(userId, cancellationToken);
+
+            return Ok(ResponseModel<string>.Ok(
+                data: null,
+                message: "Delete admin Notification success"
+                ));
+        }
+
         [HttpPost("toggle")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<string>))]
         public async Task<IActionResult> ToggleNotification([FromBody] ToggleNotificationRequest request, CancellationToken cancellationToken)
