@@ -121,6 +121,11 @@ namespace Fusion.Service.Services
             await _notificationRepository.DeleteAllNotificationByUserIdAsync(userId,cancellationToken);
         }
 
+        public async Task DeleteAdminNotificationAsync(Guid userId, CancellationToken cancellationToken = default)
+        {
+            await _notificationRepository.DeleteAdminNotificationAsync(userId, cancellationToken);
+        }
+
         public async Task ToggleNotificationByTypeAsync(Guid userId, ToggleNotificationRequest? request, CancellationToken cancellationToken = default)
         {
             await _notificationRepository.ToggleNotificationByTypeAsync(userId, request.type.Value, request.isEnable, cancellationToken);
