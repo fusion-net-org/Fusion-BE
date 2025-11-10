@@ -20,7 +20,7 @@ public class SubscriptionPlanFeature
     //Mã khóa tính năng : Create_project, max_partner
     [Required, MaxLength(50)]
     [Column("feature_key")]
-    public string FeatureKey { get; set; } = FeatureKeys.Project.ToString();
+    public FeatureKeys FeatureKey { get; set; } = FeatureKeys.Project;
 
     //Giới hạn tương ứng
     [Column("limit_value")]

@@ -293,5 +293,15 @@ namespace Fusion.Repository.Repositories
 
             return query;
         }
+
+        public async Task<Project> GetProjectById(Guid projectId, CancellationToken cancellationToken = default)
+        {
+            var query = await _context.Projects
+                        .Include(p => p.Company)
+                        .Include(p => p.CompanyRequest)
+                        .Include(p => p.CreatedByNavigation)
+                        .SingleOrDefaultAsync(x => x.Id == projectId);
+            return query;
+        }
     }
 }

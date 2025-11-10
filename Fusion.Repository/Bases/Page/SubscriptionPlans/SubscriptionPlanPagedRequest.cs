@@ -11,7 +11,7 @@ public class SubscriptionPlanPagedRequest : PagedRequest
     public bool? IsActive { get; set; }
 
     // Lọc theo billing period của Price (Week/Month/Year)
-    public BillingPriod? BillingPeriod { get; set; }
+    public BillingPeriod? BillingPeriod { get; set; }
 
     // Lọc theo khoảng thời gian tạo
     public DateRange<DateTime> CreatedAt { get; set; } = new();
