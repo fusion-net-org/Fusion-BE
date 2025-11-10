@@ -24,7 +24,7 @@ using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace Fusion.Service.Services
 {
-	public class TicketService : ITicketService
+    public class TicketService : ITicketService
 	{
 		private readonly IMapper _mapper;
 		private readonly ITicketRepository _ticketRepository;
@@ -33,9 +33,9 @@ namespace Fusion.Service.Services
 		private readonly IUnitOfWork _unitOfWork;
 		private readonly ICompanyActivityService _logService;
 		private readonly ICurrentService _currentService;
-
+		private readonly IProjectService _projectService;
 		public TicketService(IMapper mapper, ITicketRepository ticketRepository, IUserRepository userRepository, IValidator<TicketRequest> validator,
-			IUnitOfWork unitOfWork, ICompanyActivityService logService, ICurrentService currentService)
+			IUnitOfWork unitOfWork, ICompanyActivityService logService, ICurrentService currentService,IProjectService projectService)
 		{
 			_mapper = mapper;
 			_ticketRepository = ticketRepository;
@@ -44,6 +44,7 @@ namespace Fusion.Service.Services
 			_unitOfWork = unitOfWork;
 			_logService = logService;
 			_currentService	= currentService;
+			_projectService = projectService;
 		}
 
 		public async Task<TicketResponse?> CreateTicketAsync(TicketRequest request, CancellationToken cancellationToken = default)
@@ -58,21 +59,26 @@ namespace Fusion.Service.Services
 			   cancellationToken
 			   );
 
-			var ticket = _mapper.Map<Ticket>(request);
+       
 
-			var newTicket = await _ticketRepository.AddTicketAsync(ticket, cancellationToken);
+            var ticket = _mapper.Map<Ticket>(request);
 
-			var companyId = await GetCompanyIdAsync(newTicket.Id);
+            ticket.SubmittedBy = request.SubmittedBy;
 
-            var currentUserName = await GetUserName(_currentService.GetUserId());
-            var log = new CompanyActivityLog
-			{
-                CompanyId = companyId,
-                ActorUserId = _currentService.GetUserId(),
-                Title = "Create ticket",
-                Description = $"User:{currentUserName} has created ticket '{newTicket.TicketName}' for project '{newTicket.Project.Name}'",
-            };
-			await _logService.CreateLog(log);
+
+            var newTicket = await _ticketRepository.AddTicketAsync(ticket, cancellationToken);
+
+			//var companyId = await GetCompanyIdAsync(newTicket.Id);
+
+   //         var currentUserName = await GetUserName(_currentService.GetUserId());
+   //         var log = new CompanyActivityLog
+			//{
+   //             CompanyId = companyId,
+   //             ActorUserId = _currentService.GetUserId(),
+   //             Title = "Create ticket",
+   //             Description = $"User:{currentUserName} has created ticket '{newTicket.TicketName}' for project '{newTicket.Project.Name}'",
+   //         };
+			//await _logService.CreateLog(log);
 			return _mapper.Map<TicketResponse>(newTicket);
 		}
 
@@ -128,7 +134,23 @@ namespace Fusion.Service.Services
 			return _mapper.Map<TicketResponse>(ticket);
 		}
 
-		public async Task<TicketResponse?> UpdateTicketAsync(TicketRequest request, Guid ticketId, CancellationToken cancellationToken = default)
+        public async Task<PagedResult<TicketResponse>> GetTicketsByProjectIdAsync(TicketByProjectPagedRequest request, CancellationToken cancellationToken = default)
+        {
+            var tickets = await _ticketRepository.GetTicketsByProjectIdAsync(request, cancellationToken);
+
+            var mapped = _mapper.Map<List<TicketResponse>>(tickets.Items);
+
+            return new PagedResult<TicketResponse>
+            {
+                Items = mapped,
+                TotalCount = tickets.TotalCount,
+                PageNumber = tickets.PageNumber,
+                PageSize = tickets.PageSize
+            };
+        }
+
+
+        public async Task<TicketResponse?> UpdateTicketAsync(TicketRequest request, Guid ticketId, CancellationToken cancellationToken = default)
 		{
 			if (request == null)
 				throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.INVALID_INPUT);
