@@ -122,7 +122,10 @@ public class MappingProfile : Profile
                  opt => opt.MapFrom(src => src.User.CompanyMembers.Count(cm => cm.IsDeleted == false)));
 
         //----------------------------     entity: Ticket ---------------------------------------------
-        CreateMap<Ticket, TicketResponse>().ReverseMap();
+        CreateMap<Ticket, TicketResponse>()
+                  .ForMember(dest => dest.SubmittedByName,
+                             opt => opt.MapFrom(src => src.SubmittedByNavigation != null ? src.SubmittedByNavigation.UserName : null))
+                  .ReverseMap(); 
         CreateMap<TicketRequest, Ticket>().ReverseMap();
 
 

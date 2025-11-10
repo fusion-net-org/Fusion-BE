@@ -1,13 +1,14 @@
-﻿using Fusion.Repository.Bases.Page;
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.Ticket;
 using Fusion.Repository.Bases.Responses;
+using Fusion.Repository.Entities;
 using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.Tickets.Requests;
 using Fusion.Service.ViewModels.Tickets.Responses;
 using Microsoft.AspNetCore.Mvc;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 
 namespace Fusion.API.Controllers
 {
@@ -36,7 +37,6 @@ namespace Fusion.API.Controllers
 		[ProducesResponseType(StatusCodes.Status201Created, Type = typeof(ResponseModel<TicketResponse>))]
 		public async Task<IActionResult> CreateTicket(TicketRequest request, CancellationToken cancellationToken)
 		{
-			// Nếu bạn muốn lấy email từ JWT như CompanyController thì giữ lại phần này
 			var emailClaim = User.Claims.FirstOrDefault(c =>
 				c.Type == JwtRegisteredClaimNames.Email ||
 				c.Type == ClaimTypes.Email ||
@@ -50,8 +50,17 @@ namespace Fusion.API.Controllers
 					message: "Unauthorized: User identity not found"
 				));
 			}
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-			var result = await _ticketService.CreateTicketAsync(request, cancellationToken);
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(ResponseModel<string>.Error(
+                    StatusCodes.Status401Unauthorized,
+                    "Don't find token!"));
+            }
+            request.SubmittedBy = userId;
+
+            var result = await _ticketService.CreateTicketAsync(request, cancellationToken);
 
 			return Ok(ResponseModel<TicketResponse>.Ok(
 				data: result,
@@ -115,5 +124,31 @@ namespace Fusion.API.Controllers
 				data: result ?? false,
 				message: "Delete ticket successfully"));
 		}
-	}
+
+        [HttpGet("by-project")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PagedResult<TicketResponse>>))]
+        public async Task<IActionResult> GetTicketsByProject([FromQuery] TicketByProjectPagedRequest request, CancellationToken cancellationToken)
+        {
+            var emailClaim = User.Claims.FirstOrDefault(c =>
+                c.Type == JwtRegisteredClaimNames.Email ||
+                c.Type == ClaimTypes.Email ||
+                c.Type == "email");
+
+            var email = emailClaim?.Value;
+            if (email == null)
+            {
+                return Unauthorized(ResponseModel<PagedResult<TicketResponse>>.Error(
+                    statusCode: StatusCodes.Status401Unauthorized,
+                    message: "Unauthorized: User identity not found"
+                ));
+            }
+
+            var result = await _ticketService.GetTicketsByProjectIdAsync(request, cancellationToken);
+
+            return Ok(ResponseModel<PagedResult<TicketResponse>>.Ok(
+                data: result,
+                message: "Get tickets by project successfully"));
+        }
+
+    }
 }
