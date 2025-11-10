@@ -80,8 +80,8 @@ public partial class Company
     [InverseProperty("Company")]
     public virtual ICollection<Project> ProjectCompanies { get; set; } = new List<Project>();
 
-    [InverseProperty("CompanyHired")]
-    public virtual ICollection<Project> ProjectCompanyHireds { get; set; } = new List<Project>();
+    [InverseProperty("CompanyRequest")]
+    public virtual ICollection<Project> ProjectCompanyRequests { get; set; } = new List<Project>();
 
     [InverseProperty("ExecutorCompany")]
     public virtual ICollection<ProjectRequest> ProjectRequestExecutorCompanies { get; set; } = new List<ProjectRequest>();
@@ -97,4 +97,7 @@ public partial class Company
 
     [InverseProperty("Company")]
     public virtual ICollection<Workflow> Workflows { get; set; } = new List<Workflow>();
+
+    [InverseProperty(nameof(CompanySubscription.Company))]
+    public virtual ICollection<CompanySubscription> CompanySubscriptions { get; set; } = new List<CompanySubscription>();
 }

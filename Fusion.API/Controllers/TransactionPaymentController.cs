@@ -1,9 +1,12 @@
 ﻿
+using Fusion.Repository.Bases.Page;
+using Fusion.Repository.Bases.Page.TransactionPayment;
 using Fusion.Repository.Bases.Responses;
 using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.TransactionPayment.Requests;
 using Fusion.Service.ViewModels.TransactionPayment.Responses;
+using Fusion.Service.ViewModels.Users.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -25,38 +28,61 @@ namespace Fusion.API.Controllers
         /// </summary>
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<TransactionPaymentResponse>))]
-        public async Task<IActionResult> Create([FromBody] CreateTransactionRequest request, CancellationToken cancellationToken)
+        public async Task<IActionResult> Create([FromBody] TransactionPaymentCreateRequest request, CancellationToken cancellationToken)
         {
-            var result = await _transactionPaymentService.CreateTransactionPaymentAsync(request, cancellationToken);
+            var result = await _transactionPaymentService.CreateAsync(request, cancellationToken);
             return Ok(ResponseModel<TransactionPaymentResponse>.Ok(
                 data: result,
                 message: ResponseMessageHelper.FormatMessage(ResponseMessages.CREATE_SUCCESS, "Transaction payment")
             ));
         }
 
-        /// <summary>
-        ///Get transaction by code
-        /// </summary>
-        [HttpGet("{code}")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<TransactionPaymentResponse>))]
-        public async Task<IActionResult> GetByCode(string code, CancellationToken cancellationToken)
+        [HttpGet("paged")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PagedResult<TransactionPaymentResponse>>))]
+        public async Task<IActionResult> GetPaged(
+               [FromQuery] TransactionPaymentPagedRequest request,
+               CancellationToken cancellationToken)
         {
-            var result = await _transactionPaymentService.GetTransactionByCodeAsync(code, cancellationToken);
-            return Ok(ResponseModel<TransactionPaymentResponse>.Ok(
+            var result = await _transactionPaymentService.GetPagedAsync(request, cancellationToken);
+            return Ok(ResponseModel<PagedResult<TransactionPaymentResponse>>.Ok(
                 data: result,
-                message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "Transaction payment")
-            ));
+                message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "Transactions")));
         }
-        [HttpGet("latest")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<Guid>))]
-        public async Task<IActionResult> GetLatestTransactionForCurrentUser(CancellationToken cancellationToken)
-        {
-            var result = await _transactionPaymentService.GetLasterTransactionForUserAsync(cancellationToken);
 
-            return Ok(ResponseModel<Guid>.Ok(
+        [HttpGet("{id:guid}")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<TransactionPaymentDetailResponse>))]
+        public async Task<IActionResult> GetDetail(Guid id, CancellationToken cancellationToken)
+        {
+            var result = await _transactionPaymentService.GetDetailAsync(id, cancellationToken);
+            return Ok(ResponseModel<TransactionPaymentDetailResponse>.Ok(
                 data: result,
-                message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "latest transaction")
-            ));
+                message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "Transaction")));
+        }
+
+        [HttpPut("{id:guid}")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<bool>))]
+        public async Task<IActionResult> Update(
+            Guid id,
+            [FromBody] TransactionPaymentUpdateRequest request,
+            CancellationToken cancellationToken)
+        {
+            var ok = await _transactionPaymentService.UpdateAsync(id, request, cancellationToken);
+            return Ok(ResponseModel<bool>.Ok(
+                data: ok,
+                message: ResponseMessageHelper.FormatMessage(ResponseMessages.UPDATE_SUCCESS, "Transaction")));
+        }
+
+        /// <summary>
+        /// Delete a transaction
+        /// </summary>
+        [HttpDelete("{id:guid}")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<bool>))]
+        public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
+        {
+            var ok = await _transactionPaymentService.DeleteAsync(id, cancellationToken);
+            return Ok(ResponseModel<bool>.Ok(
+                data: ok,
+                message: ResponseMessageHelper.FormatMessage(ResponseMessages.DELETE_SUCCESS, "Transaction")));
         }
     }
 }

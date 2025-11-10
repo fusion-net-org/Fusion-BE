@@ -51,8 +51,8 @@ namespace Fusion.Repository
             //project member
             services.AddScoped<IProjectMemberRepository, ProjectMemberRepository>();
 
-            //subscriptionpackage
-            services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
+            //subscriptionplan
+            services.AddScoped<ISubscriptionPlanRepository, SubscriptionPlanRepository>();
 
             // transaction payment
             services.AddScoped<ITransactionPaymentRepository, TransactionPaymentRepository>();
@@ -75,19 +75,31 @@ namespace Fusion.Repository
             //project
             services.AddScoped<IProjectRepository, ProjectRepository>();
 
-            return services;
+            //user log
+            services.AddScoped<IUserLogRepository, UserLogRepository>();
 
+            //User setting
+            services.AddScoped<IUserNotificationSettingRepository , UserNotificationSettingRepository>();
+
+            //Contract
+            services.AddScoped<IContractRepository, ContractRepository>();
+            services.AddScoped<IContractAppendixRepository, ContractAppendixRepository>();
+
+
+            // company subscription
+            services.AddScoped<ICompanySubscriptionRepository , CompanySubscriptionRepository>();
+
+            return services;
 
         }
         public static void AddDatabase(this IServiceCollection services, IConfiguration configuration)
         {
-
             services.AddDbContext<FusionDbContext>(options =>
                     options.UseSqlServer(
-                        configuration.GetConnectionString("DefaultConnection"),
-                        sqlOptions => sqlOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)
+                           configuration.GetConnectionString("DefaultConnection"),
+                           sqlOptions => sqlOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)
                     )
-                );
+         );
         }
     }
 }

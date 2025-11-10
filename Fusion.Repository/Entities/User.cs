@@ -86,6 +86,10 @@ public partial class User
     [InverseProperty("CreatedByNavigation")]
     public virtual ICollection<ProjectRequest> ProjectRequests { get; set; } = new List<ProjectRequest>();
 
+    [InverseProperty("UpdatedByNavigation")]
+    public virtual ICollection<ProjectRequest> UpdatedProjectRequests { get; set; } = new List<ProjectRequest>();
+
+
     [InverseProperty("CreatedByNavigation")]
     public virtual ICollection<ProjectTask> ProjectTasks { get; set; } = new List<ProjectTask>();
 
@@ -109,12 +113,13 @@ public partial class User
 
     [InverseProperty("User")]
     public virtual ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
-    [InverseProperty("User")]
-    public virtual ICollection<UserSubscription> UserSubscriptions { get; set; } = new List<UserSubscription>();
-
-    [InverseProperty("User")]
-    public virtual ICollection<TransactionPayment> TransactionPayments { get; set; } = new List<TransactionPayment>();
 
     [InverseProperty("User")]
     public virtual ICollection<UserDevice> UserDevices { get; set; } = new List<UserDevice>();
+
+    [InverseProperty("User")]
+    public virtual ICollection<UserNotificationSetting> UserNotificationSettings { get; set; } = new List<UserNotificationSetting>();
+
+    [InverseProperty(nameof(TransactionPayment.User))]
+    public virtual ICollection<TransactionPayment> TransactionPayments { get; set; } = new List<TransactionPayment>();
 }

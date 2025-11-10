@@ -30,6 +30,9 @@ public partial class Notification
     [Column("context")]
     public string? Context { get; set; }
 
+    [Column("notification_type")]
+    public string? NotificationType { get; set; }
+
     [Column("link_url_web")]
     [StringLength(500)]
     public string? LinkUrlWeb { get; set; }
@@ -38,8 +41,15 @@ public partial class Notification
     [StringLength(500)]
     public string? LinkUrlMobile { get; set; }
 
+    [Column("status")]
+    [StringLength(50)]
+    public string? Status { get; set; }
+
     [Column("is_read")]
     public bool IsRead { get; set; }
+
+    [Column("is_deleted")]
+    public bool? IsDeleted { get; set; }
 
     [Column("create_at")]
     [Precision(3)]

@@ -31,4 +31,6 @@ namespace Fusion.Service.ViewModels.Notifications.Requests
 
         public string? NotificationType { get; set; }
     }
+
+    public record SendAllNotificationRequest(string? Title, string? Body, string? Event);
 }

@@ -1,12 +1,12 @@
 ﻿
-
 using AutoMapper;
 using Fusion.Repository.Bases.Exceptions;
+using Fusion.Repository.Bases.Page;
+using Fusion.Repository.Bases.Page.TransactionPayment;
 using Fusion.Repository.Bases.Responses;
-using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
+using Fusion.Repository.Enums;
 using Fusion.Repository.IRepositories;
-using Fusion.Repository.Repositories;
 using Fusion.Service.Commons.Helpers;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.TransactionPayment.Requests;
@@ -16,118 +16,100 @@ namespace Fusion.Service.Services;
 
 public class TransactionPaymentService : ITransactionPaymentService
 {
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly ICurrentService _currentService;
     private readonly ITransactionPaymentRepository _transactionPaymentRepository;
+    private readonly ISubscriptionPlanRepository _subscriptionPlanRepository;
+    private readonly IUserRepository _userRepository;
     private readonly IMapper _mapper;
-    private readonly IGenericRepository<TransactionPayment> _transactionPayement;
-    private readonly IUserService _userService;
-    private readonly ISubscriptionPackageService _subscriptionPackageService;
+    private readonly ICurrentService _currentService;
 
-    public TransactionPaymentService(IUnitOfWork unitOfWork, ICurrentService currentService,
-        ITransactionPaymentRepository transactionPaymentRepository, IMapper mapper, IUserService userService,
-        ISubscriptionPackageService subscriptionPackageService)
+    public TransactionPaymentService(ITransactionPaymentRepository transactionPaymentRepository, ISubscriptionPlanRepository subscriptionPlanRepository,
+        IUserRepository userRepository, IMapper mapper, ICurrentService currentService)
     {
-        _unitOfWork = unitOfWork;
-        _currentService = currentService;
         _transactionPaymentRepository = transactionPaymentRepository;
+        _subscriptionPlanRepository = subscriptionPlanRepository;
+        _userRepository = userRepository;
         _mapper = mapper;
-        _transactionPayement = _unitOfWork.Repository<TransactionPayment>();
-        _userService = userService;
-        _subscriptionPackageService = subscriptionPackageService;
+        _currentService = currentService;
     }
-    public async Task<TransactionPaymentResponse> CreateTransactionPaymentAsync(CreateTransactionRequest request, CancellationToken cancellationToken = default)
+
+    public async Task<TransactionPaymentResponse> CreateAsync(TransactionPaymentCreateRequest req, CancellationToken ct = default)
     {
+        if (req == null)
+            throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.INVALID_INPUT);
+
+        if (req.PlanId == Guid.Empty)
+            throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.INVALID_INPUT);
+
+        var plan = await _subscriptionPlanRepository.GetByIdWithNavAsync(req.PlanId, ct);
+
+        if (plan == null)
+            throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Subscription plan"));
+        if (plan.Price == null)
+            throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Price"));
+
         var userId = _currentService.GetUserId();
-        if (userId == Guid.Empty)
-            throw CustomExceptionFactory.CreateNotFoundError(
-                ResponseMessages.NOT_FOUND.FormatMessage("User"));
-
-        var subscriptionPackage = await _subscriptionPackageService.GetSubscriptionByIdAsync(request.PackageId, cancellationToken);
-
-        var orderCode = DateTimeOffset.UtcNow.ToUnixTimeSeconds() * 1000
-              + Random.Shared.Next(0, 999);
-        var user = await _userService.GetByIdAsync(userId, cancellationToken);
-
-        var entity = _mapper.Map<TransactionPayment>(request);
-
-        entity.UserId = userId;
-        entity.TransactionCode = orderCode.ToString();
-        entity.Amount = subscriptionPackage.Price;
-        entity.Status = "Pending";
-        entity.CreatedAt = DateTime.UtcNow;
-
-
-        await _transactionPayement.AddAsync(entity);
-        await _unitOfWork.SaveChangesAsync();
-
-
-        var response = new TransactionPaymentResponse
+        var entity = new TransactionPayment
         {
-            id = entity.Id,
-            CustomerName = user.UserName,
-            PackageName = subscriptionPackage.Name,
-            TransactionCode = entity.TransactionCode,
-            Amount = entity.Amount,
-            Status = entity.Status,
-            CreatedAt = entity.CreatedAt,
-            UpdatedAt = entity.UpdatedAt,
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            PlanId = req.PlanId,
+            Amount = plan.Price.Price,
+            Currency = plan.Price.Currency,
+            Status = PaymentStatus.Pending.ToString()
         };
 
-        return response;
+        var created = await _transactionPaymentRepository.CreateAsync(entity, ct);
+
+        var withNav = await _transactionPaymentRepository.GetByIdWithNavAsync(created.Id, ct);
+        return _mapper.Map<TransactionPaymentResponse>(withNav);
     }
 
-    public async Task<Guid> GetLasterTransactionForUserAsync(CancellationToken cancellationToken = default)
+    public Task<bool> DeleteAsync(Guid id, CancellationToken ct = default)
+      => _transactionPaymentRepository.DeleteAsync(id, ct);
+
+    public async Task<TransactionPaymentDetailResponse?> GetDetailAsync(Guid id, CancellationToken ct = default)
     {
-        var userId = _currentService.GetUserId();
-        if (userId == Guid.Empty)
-            throw CustomExceptionFactory.CreateNotFoundError(
-                ResponseMessages.NOT_FOUND.FormatMessage("User"));
-        var transaction = await _transactionPaymentRepository.GetLasterTransactionForUserAsync(userId, cancellationToken);
-
-        if (transaction == null)
-            throw CustomExceptionFactory.CreateNotFoundError("No transaction found for this user.");
-
-        return transaction.Id;
-
+        var entity = await _transactionPaymentRepository.GetByIdWithNavAsync(id, ct);
+        return entity == null ? null : _mapper.Map<TransactionPaymentDetailResponse>(entity);
     }
 
-    public async Task<TransactionPaymentResponse> GetTransactionByCodeAsync(string code, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<TransactionPaymentResponse>> GetPagedAsync(TransactionPaymentPagedRequest request, CancellationToken ct = default)
     {
-        var transaction = await _transactionPayement.FindAsync(x => x.TransactionCode == code, cancellationToken);
-        if (transaction == null)
-            throw CustomExceptionFactory.CreateNotFoundError(
-              ResponseMessages.NOT_FOUND.FormatMessage("Transaction panyment"));
+        var paged = await _transactionPaymentRepository.GetPagedAsync(request, ct);
+        var items = _mapper.Map<List<TransactionPaymentResponse>>(paged.Items);
 
-        var userId = _currentService.GetUserId();
-        if (userId == Guid.Empty)
-            throw CustomExceptionFactory.CreateNotFoundError(
-                ResponseMessages.NOT_FOUND.FormatMessage("User"));
-
-        var user = await _userService.GetByIdAsync(userId, cancellationToken);
-
-        var subscriptionPackage = await _unitOfWork.Repository<SubscriptionPackage>().FindAsync(x => x.Id == transaction.PackageId);
-        if (subscriptionPackage == null)
-            throw CustomExceptionFactory.CreateNotFoundError(
-                ResponseMessages.NOT_FOUND.FormatMessage("Subscription package"));
-
-        var response = new TransactionPaymentResponse
+        return new PagedResult<TransactionPaymentResponse>
         {
-            id = transaction.Id,
-            CustomerName = user.UserName,
-            PackageName = subscriptionPackage.Name,
-            TransactionCode = transaction.TransactionCode,
-            Amount = transaction.Amount,
-            Status = transaction.Status,
-            CreatedAt = transaction.CreatedAt,
-            UpdatedAt = transaction.UpdatedAt,
+            Items = items,
+            TotalCount = paged.TotalCount,
+            PageNumber = paged.PageNumber,
+            PageSize = paged.PageSize
         };
 
-        return response;
     }
-       
-    public Task UpdateTransactionAsync(Guid id)
+
+    public async Task<bool> UpdateAsync(Guid id, TransactionPaymentUpdateRequest req, CancellationToken ct = default)
     {
-        throw new NotImplementedException();
+        var current = await _transactionPaymentRepository.GetByIdWithNavAsync(id, ct);
+        if (current == null) return false;
+
+        if (req.OrderCode.HasValue) current.OrderCode = req.OrderCode.Value;
+        if (req.PaymentLinkId != null) current.PaymentLinkId = req.PaymentLinkId;
+
+        if (req.Amount.HasValue) current.Amount = req.Amount.Value;
+        if (req.Description != null) current.Description = req.Description;
+        if (req.AccountNumber != null) current.AccountNumber = req.AccountNumber;
+        if (req.Reference != null) current.Reference = req.Reference;
+        if (req.TransactionDateTime.HasValue) current.TransactionDateTime = req.TransactionDateTime.Value;
+        if (req.Currency != null) current.Currency = req.Currency;
+        if (req.CounterAccountBankId != null) current.CounterAccountBankId = req.CounterAccountBankId;
+        if (req.CounterAccountBankName != null) current.CounterAccountBankName = req.CounterAccountBankName;
+        if (req.CounterAccountName != null) current.CounterAccountName = req.CounterAccountName;
+        if (req.CounterAccountNumber != null) current.CounterAccountNumber = req.CounterAccountNumber;
+        if (req.PaymentMethod != null) current.PaymentMethod = req.PaymentMethod;
+        if (req.Status != null) current.Status = req.Status;
+
+        return await _transactionPaymentRepository.UpdateAsync(current, ct);
     }
+
 }

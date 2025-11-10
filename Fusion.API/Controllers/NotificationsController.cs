@@ -1,4 +1,5 @@
 ﻿using Fusion.API.Context;
+using Fusion.Repository.Bases.Page;
 using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.Companies.Responses;
@@ -6,6 +7,7 @@ using Fusion.Service.ViewModels.Notifications.Requests;
 using Fusion.Service.ViewModels.Notifications.Responses;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Security.Claims;
 
 namespace Fusion.API.Controllers
@@ -39,6 +41,18 @@ namespace Fusion.API.Controllers
             return Ok(ResponseModel<IEnumerable<NotificationResponse>>.Ok(
                 data: result,
                 message: "Get notifications successfully"
+            ));
+        }
+
+        [HttpGet("admin")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PagedResult<NotificationResponse>>))]
+        public async Task<IActionResult> GetAdminNotifications([FromQuery] PagedRequest request, CancellationToken ct)
+        {
+            var result = await _notificationService.GetAdminNotificationsAsync(request, ct);
+
+            return Ok(ResponseModel<PagedResult<NotificationResponse>>.Ok(
+                data: result,
+                message: "Get notifications admin successfully"
             ));
         }
 
@@ -76,5 +90,82 @@ namespace Fusion.API.Controllers
                 message: "Send Notification success"
                 ));
         }
+
+        [HttpPost("send/all")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<string>))]
+        public async Task<IActionResult> SendAllNotification([FromBody] SendAllNotificationRequest request)
+        {
+            await _notificationService.SendAllNotificationAsync(request);
+
+            return Ok(ResponseModel<string>.Ok(
+                data: null,
+                message: "Send Notification success"
+                ));
+        }
+
+        [HttpDelete("{notificationId:guid}")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<string>))]
+        public async Task<IActionResult> DeleteNotificationById(Guid notificationId, CancellationToken cancellationToken)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(ResponseModel<string>.Error(
+                    StatusCodes.Status401Unauthorized,
+                    "Don't find token!"));
+            }
+
+            await _notificationService.DeleteNotificationAsync(userId, notificationId, cancellationToken);
+
+            return Ok(ResponseModel<string>.Ok(
+                data: null,
+                message: "Delete Notification success"
+                ));
+        }
+
+        [HttpDelete("all")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<string>))]
+        public async Task<IActionResult> DeleteAllNotification(CancellationToken cancellationToken)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(ResponseModel<string>.Error(
+                    StatusCodes.Status401Unauthorized,
+                    "Don't find token!"));
+            }
+
+            await _notificationService.DeleteAllNotificationByUserIdAsync(userId, cancellationToken);
+
+            return Ok(ResponseModel<string>.Ok(
+                data: null,
+                message: "Delete all Notification success"
+                ));
+        }
+
+        [HttpPost("toggle")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<string>))]
+        public async Task<IActionResult> ToggleNotification([FromBody] ToggleNotificationRequest request, CancellationToken cancellationToken)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(ResponseModel<string>.Error(
+                    StatusCodes.Status401Unauthorized,
+                    "Don't find token!"));
+            }
+
+            await _notificationService.ToggleNotificationByTypeAsync(userId, request, cancellationToken);
+            var status = request.isEnable.Value ? "enabled" : "disabled";
+
+            return Ok(ResponseModel<string>.Ok(
+                data: null,
+                message: $"Notification type '{request.type}' has been {status} for user {userId}"
+                ));
+        }
+
     }
 }

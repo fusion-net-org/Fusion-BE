@@ -77,16 +77,6 @@ namespace Fusion.Service.Services
                 ToEmail = result.User.Email
             });
 
-            //await _notificationService.CreateNotificationAsync(new SendNotificationRequest
-            //{
-            //    UserId = result.UserId.Value,
-            //    Title = "Fired from company",
-            //    Body = $"You have been removed from the company {response.Company.Name} by {response.Company.OwnerUser.UserName}. Reason: {reason}",
-            //    LinkKey = null,
-            //    IdLink = null,
-            //    Event = "MEMBER_REMOVED",
-            //    NotificationType = NotificationTypeEnum.BUSINESS.ToString()
-            //});
             var currentUserName = await GetUserName(_currentService.GetUserId());
             var log = new CompanyActivityLog
             {
@@ -96,21 +86,45 @@ namespace Fusion.Service.Services
                 Description = $"User:'{currentUserName}' deleted member with user id '{result.User.Id}' has left the company .",
 
             };
+
+            await _notificationService.CreateNotificationAsync(new SendNotificationRequest
+            {
+                UserId = result.User.Id,
+                Title = $"You have been fired from {result.Company.Name}",
+                Body = $"You have been removed from the company due to: {reason}",
+                LinkKey = "HOME_PAGE",
+                IdLink = companyId,
+                Event = "CompanyMemberFired",
+                NotificationType = "COMPANY"
+            }, token);
+
             return _mapper.Map<CompanyMemberResponse>(response);
         }
 
-        public async Task<PagedResult<CompanyMemberResponse>> GetPagedCompanyMemberByCompanyIdAsync(Guid companyId, string mail, CompanyMemberPagedSearchRequest request, CancellationToken token = default)
+        public async Task<PagedResult<CompanyMemberResponse>> GetPagedCompanyMemberByCompanyIdAsync(
+         Guid companyId, string mail, CompanyMemberPagedSearchRequest request, CancellationToken token = default)
         {
+            var result = await _companyMemberRepository
+                .GetPagedCompanyMemberByCompanyIdAsync(companyId, mail, request, token);
 
-            var result = await _companyMemberRepository.GetPagedCompanyMemberByCompanyIdAsync(companyId, mail, request, token);
+            var userIds = result.Items.Where(m => m.User != null).Select(m => m.User.Id).Distinct().ToList();
+            var rolesByUser = await _companyMemberRepository
+                .GetUserRoleMapInCompanyAsync(companyId, userIds, token);
 
-            var memberResponses = new List<CompanyMemberResponse>();
+            var memberResponses = new List<CompanyMemberResponse>(result.Items.Count);
+
             foreach (var member in result.Items)
             {
-                var numberProjectJoin = await _projectMemberRepository.GetTotalProjectsForMemberInCompanyAsync(member.User.Id, companyId, token);
+                var numberProjectJoin = await _projectMemberRepository
+                    .GetTotalProjectsForMemberInCompanyAsync(member.User.Id, companyId, token);
 
                 var dto = _mapper.Map<CompanyMemberResponse>(member);
                 dto.NumberProductJoin = numberProjectJoin;
+
+                if (member.User != null && rolesByUser.TryGetValue(member.User.Id, out var role))
+                {
+                    dto.roleName = role.RoleName;
+                }
 
                 memberResponses.Add(dto);
             }
@@ -123,6 +137,7 @@ namespace Fusion.Service.Services
                 PageSize = result.PageSize
             };
         }
+
 
         public async Task<PagedResult<CompanyMemberResponse>> GetPagedCompanyMemberAsync(CompanyMemberPagedSearchAdminRequest request, CancellationToken token = default)
         {
@@ -155,31 +170,10 @@ namespace Fusion.Service.Services
 
             var response = await _companyMemberRepository.GetCompanyMemberByIdAsync(result.Id);
 
-            //await _notificationService.CreateNotificationAsync(new ViewModels.Notifications.Requests.SendNotificationRequest
-            //{
-            //    UserId = response.UserId.Value,
-            //    Title = "You have been invited to join a company",
-            //    Body = $"{response.Company.OwnerUser.UserName} has invited you to join the company {response.Company.Name}.",
-            //    LinkKey = null,
-            //    IdLink = null,
-            //    Event = "Invite_Member",
-            //    Context = null,
-            //    NotificationType = NotificationTypeEnum.BUSINESS.ToString(),
-            //});
-
             var owner_user = await _userRepository.GetUserByEmailAsync(inviterEmail);
 
             var inviteToken = result.Id.ToString();
 
-            //var cacheKey = $"company_invite:{inviteToken}";
-
-            //await _cacheService.SetAsync(cacheKey,
-            //    new InviteMemberRequest
-            //    {
-            //        CompanyId = company.Id,
-            //        InviteeMemberId = inviteeMemberId
-            //    },
-            //    TimeSpan.FromMinutes(10), cancellationToken);
 
             var inviteUrl = $"https://localhost:7160/api/companymember/accept?tokenConfirm={inviteToken}";
             var rejectUrl = $"https://localhost:7160/api/companymember/reject?tokenConfirm={inviteToken}";
@@ -210,6 +204,18 @@ namespace Fusion.Service.Services
 
             };
             await _logService.CreateLog(log, cancellationToken);
+
+            await _notificationService.CreateNotificationAsync(new SendNotificationRequest
+            {
+                UserId = result.User.Id,
+                Title = $"You have been invited to join {result.Company.Name}",
+                Body = $"User {currentUserName} has invited you to become a member of company {result.Company.Name}.",
+                LinkKey = "COMPANY_DETAIL_PAGE",
+                IdLink = companyId,
+                Event = "CompanyMemberInvited",
+                NotificationType = "COMPANY",
+            }, cancellationToken);
+
             return _mapper.Map<CompanyMemberResponse>(response);
 
         }
@@ -237,6 +243,17 @@ namespace Fusion.Service.Services
 
             };
             await _logService.CreateLog(log, cancellationToken);
+
+            await _notificationService.CreateNotificationAsync(new SendNotificationRequest
+            {
+                UserId = (Guid)data.Company.OwnerUserId,
+                Title = $"{userResult} has joined your company",
+                Body = $"{userResult} accepted your invitation and is now a company member.",
+                LinkKey = "MEMBER_PAGE",
+                IdLink = data.CompanyId.Value,
+                Event = "CompanyMemberAccepted",
+                NotificationType = "COMPANY"
+            }, cancellationToken);
             return _mapper.Map<CompanyMemberResponse>(result);
 
         }
@@ -264,6 +281,17 @@ namespace Fusion.Service.Services
 
             };
             await _logService.CreateLog(log, cancellationToken);
+
+            await _notificationService.CreateNotificationAsync(new SendNotificationRequest
+            {
+                UserId = (Guid)data.Company.OwnerUserId,
+                Title = $"{userResult} has rejected the invite",
+                Body = $"{userResult} refused your invitation to join the company.",
+                LinkKey = "HOME_PAGE",
+                IdLink = data.CompanyId.Value,
+                Event = "CompanyMemberRejected",
+                NotificationType = "COMPANY"
+            }, cancellationToken);
             return _mapper.Map<CompanyMemberResponse>(result);
         }
 
@@ -282,6 +310,17 @@ namespace Fusion.Service.Services
 
             };
             await _logService.CreateLog(log);
+
+            await _notificationService.CreateNotificationAsync(new SendNotificationRequest
+            {
+                UserId = userId,
+                Title = $"You have been removed from the company",
+                Body = $"User {currentUserName} removed you from the company.",
+                LinkKey = "HOME_PAGE",
+                IdLink = companyId,
+                Event = "CompanyMemberRemoved",
+                NotificationType = "COMPANY"
+            }, token);
             return _mapper.Map<CompanyMemberResponse>(result);
         }
 
@@ -346,5 +385,29 @@ namespace Fusion.Service.Services
             var user = await _userRepository.GetUserByIdAsync(userId);
             return user.UserName;
         }
+
+        public async Task<CompanyMemberResponse?> GetCompanyMemberByCompanyIdAndUserIdAsync(Guid companyId, Guid userId, CancellationToken token = default)
+        {
+            var member = await _companyMemberRepository
+                .GetCompanyMemberByCompanyIdAndUserIdAsync(companyId, userId, token);
+
+            if (member == null)
+                return null;
+
+            var dto = _mapper.Map<CompanyMemberResponse>(member);
+
+            // Optional: tính số dự án user tham gia trong công ty (đồng bộ với API khác)
+            var numberProjectJoin = await _projectMemberRepository.GetTotalProjectsForMemberInCompanyAsync(userId, companyId, token);
+            dto.NumberProductJoin = numberProjectJoin;
+
+            var performance = await _projectMemberRepository.GetMemberPerformanceAsync(userId, companyId, token);
+            dto.Productivity = performance?.Productivity ?? 0;
+            dto.Communication = performance?.Communication ?? 0;
+            dto.Teamwork = performance?.Teamwork ?? 0;
+            dto.ProblemSolving = performance?.ProblemSolving ?? 0;
+
+            return dto;
+        }
+
     }
 }

@@ -26,12 +26,18 @@ namespace Fusion.Service.ViewModels.Companies.Responses
         public string? Gender { get; set; }
 
         public string? MemberPhoneNumber { get; set; }
+        public string? roleName { get; set; }
 
         public int? NumberProductJoin { get; set; } = 0; //Sum of project internal and hired project of member in that company
 
         public int? NumberCompanyJoin { get; set; } = 0;
 
         public string? Status { get; set; } //Hien dang o trong cong ty hay khong.
+
+        public int Productivity { get; set; }
+        public int Communication { get; set; }
+        public int Teamwork { get; set; }
+        public int ProblemSolving { get; set; }
 
         public bool? IsDeleted { get; set; }
 

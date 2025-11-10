@@ -78,5 +78,7 @@ namespace Fusion.API.Controllers
             var request = await _service.RequestViewLog(companyIdA, companyIdB, ct);
             return Ok(ResponseModel<bool>.Ok(request, "Request success."));
         }
+
+
     }
 }

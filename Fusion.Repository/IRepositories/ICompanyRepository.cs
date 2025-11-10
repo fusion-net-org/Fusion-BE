@@ -15,6 +15,7 @@ namespace Fusion.Repository.IRepositories
     {
         Task<PagedResult<Company>> GetPagedCompaniesAsync(string userMail, CompanyPagedSearchRequest request, CancellationToken cancellationToken = default);
         Task<PagedResult<Company>> GetAllCompaniesAsync(string userMail, CompanyPagedSearchRequestVersion2 request, Guid? selectedCompanyId, CancellationToken cancellationToken = default);
+        Task<PagedResult<Company>> GetPagedCompaniesAdminAsync(string adminEmail, CompanyPagedSearchRequest request, CancellationToken cancellationToken = default);
 
         Task<Company?> GetCompanyByTaxCode(string taxcode);
         Task<Company?> GetCompanyByEmail(string email);
@@ -25,5 +26,13 @@ namespace Fusion.Repository.IRepositories
         Task<string> GetMailCompanyByGuid(Guid company);
         Task<string> GetCompanyNameByGuid(Guid company);
         Task<Guid?> GetCompanyIdByUserId(Guid userId);
+        Task<List<object>> GetCompanyProjectSummaryAsync(Guid companyId);
+        Task<List<object>> GetCompanyUserTasksAsync(Guid companyId);
+        Task<(int Active, int Inactive)> GetCompanyStatusCountsAsync(CancellationToken cancellationToken = default);
+        Task<List<Company>> GetCompaniesCreatedInYearAsync(int year, CancellationToken ct = default);
+        Task<int> GetAllCompanyAsync(CancellationToken cancellationToken = default);
+
+        Task<PagedResult<Company>> GetAllCompanyOfOwnerAsync(Guid userId, CancellationToken ct = default);
+        Task<PagedResult<Company>> GetAllCompanyOfMemberAsync(Guid userId, CancellationToken ct = default);
     }
 }

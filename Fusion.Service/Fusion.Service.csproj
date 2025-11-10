@@ -7,12 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Commons\NewFolder\**" />
-    <EmbeddedResource Remove="Commons\NewFolder\**" />
-    <None Remove="Commons\NewFolder\**" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="AutoMapper" Version="12.0.0" />
     <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.0" />
     <PackageReference Include="CloudinaryDotNet" Version="1.27.7" />
@@ -30,8 +24,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="ViewModels\ProjectMembers\Request\" />
     <Folder Include="ViewModels\Project\Validators\" />
-    <Folder Include="ViewModels\UserSubscription\Validators\" />
+    <Folder Include="ViewModels\Workflow\" />
   </ItemGroup>
 
 </Project>

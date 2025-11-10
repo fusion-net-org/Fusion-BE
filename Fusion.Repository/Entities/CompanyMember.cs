@@ -38,4 +38,5 @@ public partial class CompanyMember
     [ForeignKey("UserId")]
     [InverseProperty("CompanyMembers")]
     public virtual User? User { get; set; }
+
 }

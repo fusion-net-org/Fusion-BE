@@ -1,25 +1,30 @@
-
+﻿
 using AutoMapper;
 using Fusion.Repository.Entities;
 using Fusion.Service.ViewModels.Comment.Request;
 using Fusion.Service.ViewModels.Comment.Response;
 using Fusion.Service.ViewModels.Companies.Requests;
 using Fusion.Service.ViewModels.Companies.Responses;
+using Fusion.Service.ViewModels.CompanySubscription.Requests;
+using Fusion.Service.ViewModels.CompanySubscription.Responses;
 using Fusion.Service.ViewModels.Notifications.Requests;
 using Fusion.Service.ViewModels.Notifications.Responses;
 using Fusion.Service.ViewModels.Project.Requests;
 using Fusion.Service.ViewModels.Project.Responses;
+using Fusion.Service.ViewModels.ProjectMembers.Responses;
 using Fusion.Service.ViewModels.Projects.Requests;
 using Fusion.Service.ViewModels.Projects.Responses;
-using Fusion.Service.ViewModels.SubscriptionPackage.Requests;
-using Fusion.Service.ViewModels.SubscriptionPackage.Responses;
+using Fusion.Service.ViewModels.SubscriptionPlan.Requests;
+using Fusion.Service.ViewModels.SubscriptionPlan.Responses;
 using Fusion.Service.ViewModels.Task.Request;
 using Fusion.Service.ViewModels.Task.Response;
 using Fusion.Service.ViewModels.Tickets.Requests;
 using Fusion.Service.ViewModels.Tickets.Responses;
-using Fusion.Service.ViewModels.TransactionPayment.Requests;
+using Fusion.Service.ViewModels.TransactionPayment.Responses;
 using Fusion.Service.ViewModels.Users.Requests;
 using Fusion.Service.ViewModels.Users.Responses;
+using Fusion.Service.ViewModels.UserSubscription.Requests;
+using Fusion.Service.ViewModels.UserSubscription.Responses;
 
 namespace Fusion.Service.Commons.Helpers;
 
@@ -39,7 +44,7 @@ public class MappingProfile : Profile
         //----------------------------     entity: Partner  ---------------------------------------------
         CreateMap<CompanyFriendship, CompanyFriendshipResponse>()
              .ForMember(dest => dest.TotalProject, opt => opt.MapFrom(
-                        src => (src.CompanyB != null ? src.CompanyB.ProjectCompanies.Count + src.CompanyB.ProjectCompanyHireds.Count : 0)))
+                        src => (src.CompanyB != null ? src.CompanyB.ProjectCompanies.Count + src.CompanyB.ProjectCompanyRequests.Count : 0)))
              .ForMember(dest => dest.TotalMember, opt => opt.MapFrom(
                        src => (src.CompanyB != null ? src.CompanyB.CompanyMembers.Count : 0)))
              .ReverseMap();
@@ -60,10 +65,10 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.OwnerUserAvatar, otp => otp.MapFrom(src => src.OwnerUser.Avatar))
             .ForMember(dest => dest.ListMembers, opt => opt.MapFrom(src => src.CompanyMembers))
             .ForMember(dest => dest.TotalProject, opt => opt.MapFrom(
-                        src => src.ProjectCompanies.Count + src.ProjectCompanyHireds.Count
+                        src => src.ProjectCompanies.Count + src.ProjectCompanyRequests.Count
                         ))
             .ForMember(dest => dest.ListProjects, opt => opt.MapFrom(
-                        src => src.ProjectCompanies.Concat(src.ProjectCompanyHireds)
+                        src => src.ProjectCompanies.Concat(src.ProjectCompanyRequests)
                         ))
             .ForMember(dest => dest.TotalMember, opt => opt.MapFrom(
                         src => src.CompanyMembers.Count))
@@ -77,7 +82,7 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.OwnerUserName, otp => otp.MapFrom(src => src.OwnerUser.UserName))
             .ForMember(dest => dest.OwnerUserAvatar, otp => otp.MapFrom(src => src.OwnerUser.Avatar))
             .ForMember(dest => dest.TotalProject, opt => opt.MapFrom(
-                        src => src.ProjectCompanies.Count + src.ProjectCompanyHireds.Count
+                        src => src.ProjectCompanies.Count + src.ProjectCompanyRequests.Count
                         ))
             .ForMember(dest => dest.TotalMember, opt => opt.MapFrom(
                         src => src.CompanyMembers.Count))
@@ -152,44 +157,171 @@ public class MappingProfile : Profile
                     opt => opt.MapFrom(src => src.Name)) // Name trong ProjectRequest map sang ProjectName
             .ForMember(dest => dest.ConvertedProjectId,
                     opt => opt.MapFrom(src => src.Project != null ? src.Project.Id : (Guid?)null))
+            .ForMember(dest => dest.RequesterCompanyLogoUrl,
+                    opt => opt.MapFrom(src =>
+                    src.RequesterCompany != null ? src.RequesterCompany.AvatarCompany : null))
+            .ForMember(dest => dest.ExecutorCompanyLogoUrl,
+                    opt => opt.MapFrom(src =>
+                    src.ExecutorCompany != null ? src.ExecutorCompany.AvatarCompany : null))
+            .ForMember(dest => dest.isHaveProject,
+                    opt => opt.MapFrom(src => src.Project != null && src.Project.Id != Guid.Empty))
             .ReverseMap();
 
         //--------------------------- entity: Transaction Payment ---------------------------------------------
-        CreateMap<CreateTransactionRequest, TransactionPayment>();
+        // List item
+        CreateMap<TransactionPayment, TransactionPaymentResponse>()
+            .ForMember(d => d.UserName, opt => opt.MapFrom(s => s.User != null ? s.User.UserName : null))
+            .ForMember(d => d.PlanName, opt => opt.MapFrom(s => s.SubscriptionPlan != null ? s.SubscriptionPlan.Name : null));
 
+        // Detail item
+        CreateMap<TransactionPayment, TransactionPaymentDetailResponse>();
         //----------------------------     entity: Project  ---------------------------------------------
         CreateMap<Project, ProjectResponse>();
 
 
-        //--------------------------- entity: SubscriptionPackage ---------------------------------------------
-        CreateMap<SubscriptionRequest, SubscriptionPackage>()
-          .ForMember(dest => dest.Id, opt => opt.Ignore());
+        //--------------------------- entity: SubscriptionPlan ---------------------------------------------
+        CreateMap<SubscriptionPlanCreateRequest, SubscriptionPlan>()
+             .ForMember(dest => dest.Id, opt => opt.MapFrom(_ => Guid.NewGuid()))
+             .ForMember(dest => dest.IsActive, opt => opt.MapFrom(_ => true))
+             .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(_ => DateTime.UtcNow))
+             .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(_ => DateTime.UtcNow));
 
-        CreateMap<SubscriptionPackage, SubscriptionAdminResponse>();
-        CreateMap<SubscriptionPackage, SubscriptionResponse>();
+        CreateMap<SubscriptionPlanFeatureRequest, SubscriptionPlanFeature>();
+        CreateMap<SubscriptionPlanPriceRequest, SubscriptionPlanPrice>();
+
+        // ReverseMap
+        CreateMap<SubscriptionPlan, SubscriptionPlanResponse>();
+        CreateMap<SubscriptionPlanFeature, SubscriptionPlanFeatureRequest>();
+        CreateMap<SubscriptionPlanPrice, SubscriptionPlanPriceRequest>();
+
+        //detail
+        CreateMap<SubscriptionPlan, SubscriptionPlanDetailResponse>();
+        CreateMap<SubscriptionPlanPrice, SubscriptionPlanPriceResponse>();
+        CreateMap<SubscriptionPlanFeature, SubscriptionPlanFeatureResponse>();
 
         //----------------------------     entity: Notification ---------------------------------------------
-        CreateMap<Notification, NotificationResponse>();
+        CreateMap<Notification, NotificationResponse>()
+            .ForMember(dest => dest.LinkUrl, opt => opt.MapFrom(src => src.LinkUrlMobile)) 
+            .ForMember(dest => dest.LinkUrlWeb, opt => opt.MapFrom(src => src.LinkUrlWeb));
         CreateMap<SendNotificationRequest, Notification>();
+        CreateMap<SendAllNotificationRequest, Notification>();
 
         //----------------------------     entity: Project ---------------------------------------------
+        // ===================== Project (Create) =====================
         CreateMap<CreateProjectRequest, Project>()
-                 .ForMember(d => d.IsHired, o => o.MapFrom(s => s.isHired))
-                 .ForMember(d => d.CompanyHiredId, o => o.MapFrom(s =>
-                     s.CompanyHiredId.HasValue && s.CompanyHiredId.Value != Guid.Empty ? s.CompanyHiredId : (Guid?)null))
-                 .ForMember(d => d.ProjectRequestId, o => o.MapFrom(s =>
-                     s.ProjectRequestId.HasValue && s.ProjectRequestId.Value != Guid.Empty ? s.ProjectRequestId : (Guid?)null))
-                 .ForMember(d => d.StartDate, o => o.MapFrom(s => s.StartDate.HasValue ? DateOnly.FromDateTime(s.StartDate.Value) : (DateOnly?)null))
-                 .ForMember(d => d.EndDate, o => o.MapFrom(s => s.EndDate.HasValue ? DateOnly.FromDateTime(s.EndDate.Value) : (DateOnly?)null))
-                 .ForMember(d => d.CreatedBy, o => o.Ignore())
-                 .ForMember(d => d.CreateAt, o => o.Ignore())
-                 .ForMember(d => d.UpdateAt, o => o.Ignore())
-                 .ForMember(d => d.Id, o => o.Ignore());
+            .ForMember(d => d.IsHired, o => o.MapFrom(s => s.isHired))
+            .ForMember(d => d.CompanyRequestId, o => o.MapFrom(s =>
+                s.CompanyHiredId.HasValue && s.CompanyHiredId.Value != Guid.Empty ? s.CompanyHiredId : (Guid?)null))
+            .ForMember(d => d.ProjectRequestId, o => o.MapFrom(s =>
+                s.ProjectRequestId.HasValue && s.ProjectRequestId.Value != Guid.Empty ? s.ProjectRequestId : (Guid?)null))
+            .ForMember(d => d.CreatedBy, o => o.Ignore())
+            .ForMember(d => d.CreateAt, o => o.Ignore())
+            .ForMember(d => d.UpdateAt, o => o.Ignore())
+            .ForMember(d => d.Id, o => o.Ignore());
 
+        // ===================== Project (List) =====================
         CreateMap<Project, ProjectsResponse>()
-            .ForMember(d => d.isHired, o => o.MapFrom(s => s.IsHired))
-            .ForMember(d => d.StartDate, opt => opt.MapFrom(s => s.StartDate.HasValue ? s.StartDate.Value.ToDateTime(TimeOnly.MinValue) : (DateTime?)null))
-            .ForMember(d => d.EndDate, opt => opt.MapFrom(s => s.EndDate.HasValue ? s.EndDate.Value.ToDateTime(TimeOnly.MinValue) : (DateTime?)null)); 
+            .ForMember(d => d.isHired, o => o.MapFrom(s => s.IsHired));
+
+        // ===================== Sprint =====================
+        CreateMap<Sprint, SprintDto>();
+
+        // ===================== Project (Detail) =====================
+        CreateMap<Project, ProjectDetailResponse>()
+     .ForMember(d => d.IsHired, o => o.MapFrom(s => s.IsHired))
+     .ForMember(d => d.CompanyName, o => o.MapFrom(s => s.Company != null ? s.Company.Name : null))
+     .ForMember(d => d.CompanyHiredName, o => o.MapFrom(s => s.CompanyRequest != null ? s.CompanyRequest.Name : null))
+     .ForMember(d => d.CreatedByName, o => o.MapFrom(s => s.CreatedByNavigation != null ? s.CreatedByNavigation.UserName : null))
+     .ForMember(d => d.Sprints, o => o.MapFrom(s => s.Sprints.Where(x => !x.IsDeleted)));
+
+
+        // ===================== User Subscription =====================
+        CreateMap<UserSubscription, UserSubscriptionDetailResponse>()
+             .ForMember(d => d.Entitlements, opt => opt.MapFrom(s => s.UserSubscriptionEntitlements));
+
+        CreateMap<UserSubscriptionEntitlement, UserSubscriptionEntitlementResponse>()
+            .ForMember(d => d.FeatureKey, opt => opt.MapFrom(s => s.FeatureKey.ToString()));
+
+        CreateMap<UserSubscription, UserSubscriptionListItem>();
+        CreateMap<UserSubscriptionCreateRequest, UserSubscription>();
+
+        // ===================== Company Subscription =====================
+
+        #region create companysubscription
+        CreateMap<CompanySubscriptionCreateRequest, CompanySubscription>()
+            .ForMember(dest => dest.Id, opt => opt.Ignore())
+            .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+            .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
+            .ForMember(dest => dest.Status, opt => opt.Ignore())
+            .ForMember(dest => dest.CompanySubscriptionEntitlements, opt => opt.MapFrom(src => src.Entitlements));
+
+        CreateMap<CompanySubscriptionEntitlementCreateRequest, CompanySubscriptionEntitlement>()
+              .ForMember(dest => dest.Id, opt => opt.Ignore())
+              .ForMember(dest => dest.CompanySubscriptionId, opt => opt.Ignore())
+              .ForMember(dest => dest.Remaining, opt => opt.Ignore());
+
+        CreateMap<CompanySubscription, CompanySubscriptionDetailResponse>();
+        CreateMap<CompanySubscriptionEntitlement, CompanySubscriptionEntitlementDetailResponse>();
+        #endregion
+
+        #region update companysubscription
+        CreateMap<CompanySubscriptionUpdateRequest, CompanySubscription>()
+                 .ForMember(dest => dest.CompanySubscriptionEntitlements, opt => opt.MapFrom(src => src.Entitlements));
+
+        CreateMap<CompanySubscriptionEntitlementUpdateRequest, CompanySubscriptionEntitlement>();
+        #endregion
+        #region detail + list companysubscription
+        CreateMap<CompanySubscription, CompanySubscriptionDetailResponse>()
+             .ForMember(dest => dest.Entitlements, opt => opt.MapFrom(src => src.CompanySubscriptionEntitlements));
+
+        CreateMap<CompanySubscriptionEntitlement, CompanySubscriptionEntitlementDetailResponse>();
+
+        CreateMap<CompanySubscription, CompanySubscriptionListResponse>();
+
+        CreateMap<CompanySubscription, CompanySubscriptionActiveResponse>()
+       .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
+       .ForMember(dest => dest.CompanySubscriptionEntitlements, opt => opt.MapFrom(src => src.CompanySubscriptionEntitlements));
+        #endregion
+
+
+        // ===================== Project (Detail) =====================
+        CreateMap<Project, ProjectDetailResponse>()
+     .ForMember(d => d.IsHired, o => o.MapFrom(s => s.IsHired))
+     .ForMember(d => d.CompanyName, o => o.MapFrom(s => s.Company != null ? s.Company.Name : null))
+     .ForMember(d => d.CompanyHiredName, o => o.MapFrom(s => s.CompanyRequest != null ? s.CompanyRequest.Name : null))
+     .ForMember(d => d.CreatedByName, o => o.MapFrom(s => s.CreatedByNavigation != null ? s.CreatedByNavigation.UserName : null))
+     .ForMember(d => d.Sprints, o => o.MapFrom(s => s.Sprints.Where(x => !x.IsDeleted)));
+
+        CreateMap<Project, ProjectResponseVersion3>()
+      .ForMember(d => d.CompanyExecutorName, o => o.MapFrom(s => s.Company != null ? s.Company.Name : null))
+      .ForMember(d => d.CompanyRequestName, o => o.MapFrom(s => s.CompanyRequest != null ? s.CompanyRequest.Name : null))
+      .ForMember(d => d.IsHired, o => o.MapFrom(s => s.IsHired))
+      .ForMember(d => d.StartDate, o => o.MapFrom(s => s.StartDate))
+      .ForMember(d => d.EndDate, o => o.MapFrom(s => s.EndDate))
+      .ForMember(d => d.CreateAt, o => o.MapFrom(s => s.CreateAt))
+      .ForMember(d => d.UpdateAt, o => o.MapFrom(s => s.UpdateAt))
+      .ForMember(d => d.Code, o => o.MapFrom(s => s.Code))
+      .ForMember(d => d.Name, o => o.MapFrom(s => s.Name))
+      .ForMember(d => d.Description, o => o.MapFrom(s => s.Description))
+      .ForMember(d => d.Status, o => o.MapFrom(s => s.Status))
+      .ForMember(d => d.WorkflowId, o => o.MapFrom(s => s.WorkflowId))
+      .ForMember(d => d.CreatedBy, o => o.MapFrom(s => s.CreatedBy))
+      .ForMember(d => d.CreateByName, o => o.MapFrom(s => s.CreatedByNavigation != null ? s.CreatedByNavigation.UserName : null));
+
+        // ===================== Project Member =====================
+        CreateMap<ProjectMember, ProjectMemberResponseV2>()
+            .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User != null ? src.User.UserName : null))
+            .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.User != null ? src.User.Email : null))
+            .ForMember(dest => dest.Phone, opt => opt.MapFrom(src => src.User != null ? src.User.Phone : null))
+            .ForMember(dest => dest.Avatar, opt => opt.MapFrom(src => src.User != null ? src.User.Avatar : null))
+            .ForMember(dest => dest.Gender, opt => opt.MapFrom(src => src.User != null ? src.User.Gender : null))
+            .ForMember(dest => dest.Status,
+                opt => opt.MapFrom(src => src.User != null && src.User.Status))
+            .ForMember(dest => dest.IsPartner, opt => opt.MapFrom(src => src.IsPartner))
+            .ForMember(dest => dest.IsViewAll, opt => opt.MapFrom(src => src.IsViewAll))
+            .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.UserId))
+            .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id));
+
     }
 
 }

@@ -1,54 +1,49 @@
 ﻿
+
+using Fusion.Repository.Enums;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Fusion.Repository.Entities;
-
+[Table("UserSubscriptions")]
 public class UserSubscription
 {
     [Key]
     [Column("id")]
     public Guid Id { get; set; }
 
-    [Required]
-    [Column("user_id")]
-    public Guid UserId { get; set; }
+    [Column("transaction_id")]
+    public Guid TransactionId { get; set; }
 
-    [Required]
-    [Column("package_id")]
-    public Guid PackageId { get; set; }
+    [Column("name_plan")]
+    public string? NamePlan { get; set; }
 
-    [Required]
-    [Column("purchase_date")]
-    public DateTime PurchaseDate { get; set; }
+    [Column("price")]
+    public decimal Price { get; set; }
 
-    [Required]
-    [Column("quota_company_added")]
-    public int QuotaCompanyAdded { get; set; }
+    [Column("currency")]
+    public string? Currency { get; set; }
 
-    [Required]
-    [Column("quota_project_added")]
-    public int QuotaProjectAdded { get; set; }
+    [Column("status")]
+    public SubscriptionStatus Status { get; set; } = SubscriptionStatus.Active;
 
-    [Required]
-    [Column("quota_company_remaining")]
-    public int QuotaCompanyRemaining { get; set; }
+    [Column("create_at")]
+    public DateTime CreatAt { get; set; } = DateTime.Now;
 
-    [Required]
-    [Column("quota_project_remaining")]
-    public int QuotaProjectRemaining { get; set; }
+    [Column("expired_at")]
+    public DateTime ExpiredAt { get; set; }
 
-    [Column("expiry_date")]
-    public DateTime? ExpiryDate { get; set; }
+    [Column("update_at")]
+    public DateTime? UpdateAt { get; set; }
 
-    [Column("is_active")]
-    public bool IsActive { get; set; } = true;
+    [ForeignKey(nameof(TransactionId))]
+    [InverseProperty(nameof(TransactionPayment.UserSubscription))]
+    public TransactionPayment TransactionPayment { get; set; } = null!;
 
-    [ForeignKey("UserId")]
-    [InverseProperty("UserSubscriptions")]
-    public virtual User User { get; set; } = null!;
+    [InverseProperty(nameof(UserSubscriptionEntitlement.UserSubscription))]
+    public ICollection<UserSubscriptionEntitlement>? UserSubscriptionEntitlements { get; set; }
 
-    [ForeignKey("PackageId")]
-    [InverseProperty("UserSubscriptions")]
-    public virtual SubscriptionPackage SubscriptionPackage { get; set; } = null!;
+
+    [InverseProperty(nameof(CompanySubscription.UserSubscription))]
+    public ICollection<CompanySubscription> CompanySubscriptions { get; set; } = new List<CompanySubscription>();
 }

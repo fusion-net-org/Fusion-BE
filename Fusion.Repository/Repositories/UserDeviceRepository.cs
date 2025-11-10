@@ -58,6 +58,16 @@ namespace Fusion.Repository.Repositories
             return token;
         }
 
+        public async Task<List<string>> GetAllTokenAsync(CancellationToken cancellationToken = default)
+        {
+            var token = await _context.UserDevices
+              .Where(d => d.IsActive.Value)
+              .Select(d => d.DeviceToken)
+              .ToListAsync(cancellationToken);
+
+            return token;
+        }
+
         public async Task DeactivateTokenAsync(string token, CancellationToken cancellationToken = default)
         {
             var device = await _context.UserDevices
