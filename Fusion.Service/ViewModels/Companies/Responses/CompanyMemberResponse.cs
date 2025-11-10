@@ -34,6 +34,11 @@ namespace Fusion.Service.ViewModels.Companies.Responses
 
         public string? Status { get; set; } //Hien dang o trong cong ty hay khong.
 
+        public int Productivity { get; set; }
+        public int Communication { get; set; }
+        public int Teamwork { get; set; }
+        public int ProblemSolving { get; set; }
+
         public bool? IsDeleted { get; set; }
 
         public DateTime JoinedAt { get; set; }

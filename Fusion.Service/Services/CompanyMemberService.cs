@@ -400,6 +400,12 @@ namespace Fusion.Service.Services
             var numberProjectJoin = await _projectMemberRepository.GetTotalProjectsForMemberInCompanyAsync(userId, companyId, token);
             dto.NumberProductJoin = numberProjectJoin;
 
+            var performance = await _projectMemberRepository.GetMemberPerformanceAsync(userId, companyId, token);
+            dto.Productivity = performance?.Productivity ?? 0;
+            dto.Communication = performance?.Communication ?? 0;
+            dto.Teamwork = performance?.Teamwork ?? 0;
+            dto.ProblemSolving = performance?.ProblemSolving ?? 0;
+
             return dto;
         }
 

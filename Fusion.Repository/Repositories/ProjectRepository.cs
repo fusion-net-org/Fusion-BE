@@ -265,7 +265,7 @@ namespace Fusion.Repository.Repositories
         .Include(p => p.Company)
         .Include(p => p.CompanyRequest)
         .Include(p => p.Workflow)
-        .Include(p => p.ProjectMembers)
+        .Include(p => p.ProjectMembers).ThenInclude(x => x.User)
         .Include(p => p.Sprints).ThenInclude(s => s.ProjectTasks)
         .AsQueryable();
 
@@ -287,7 +287,7 @@ namespace Fusion.Repository.Repositories
         .Include(p => p.Company)
         .Include(p => p.CompanyRequest)
         .Include(p => p.Workflow)
-        .Include(p => p.ProjectMembers)
+        .Include(p => p.ProjectMembers).ThenInclude(x => x.User)
         .Include(p => p.Sprints).ThenInclude(s => s.ProjectTasks)
         .SingleOrDefaultAsync(x => x.Id == projectId);
 
