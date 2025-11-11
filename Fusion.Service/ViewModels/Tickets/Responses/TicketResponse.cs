@@ -11,7 +11,6 @@ namespace Fusion.Service.ViewModels.Tickets.Responses
 		public Guid? Id { get; set; }
 		public Guid? ProjectId { get; set; }
 		public string? Priority { get; set; }
-		public string? Urgency { get; set; }
 		public bool? IsHighestUrgen { get; set; }
 		public string? TicketName { get; set; }
 		public string? Description { get; set; }

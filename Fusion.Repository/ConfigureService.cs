@@ -85,6 +85,8 @@ namespace Fusion.Repository
             services.AddScoped<IContractRepository, ContractRepository>();
             services.AddScoped<IContractAppendixRepository, ContractAppendixRepository>();
 
+            //workflow status
+            services.AddScoped<IWorkflowStatusRepository, WorkflowStatusRepository>();
 
             // company subscription
             services.AddScoped<ICompanySubscriptionRepository , CompanySubscriptionRepository>();

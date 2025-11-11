@@ -85,6 +85,9 @@ namespace Fusion.Service
             //contract
             services.AddScoped<IContractService, ContractService>();
 
+            //workflow status
+            services.AddScoped<IWorkflowStatusService, WorkflowStatusService>();
+
             // company subscription
             services.AddScoped<ICompanySubscriptionService, CompanySubscriptionService>();
             // PayOS

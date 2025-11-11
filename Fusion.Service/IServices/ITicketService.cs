@@ -20,6 +20,7 @@ namespace Fusion.Service.IServices
 		Task<TicketResponse?> UpdateTicketAsync(TicketRequest request, Guid ticketId, CancellationToken cancellationToken = default);
 		Task<bool?> DeleteTicketAsync(Guid ticketId, CancellationToken cancellationToken = default);
         Task<PagedResult<TicketResponse>> GetTicketsByProjectIdAsync(TicketByProjectPagedRequest request, CancellationToken cancellationToken = default);
+        Task<TicketDashboardResponse> GetTicketDashboardAsync(Guid projectId, CancellationToken cancellationToken = default);
 
     }
 }

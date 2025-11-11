@@ -25,6 +25,7 @@ using Fusion.Service.ViewModels.Users.Requests;
 using Fusion.Service.ViewModels.Users.Responses;
 using Fusion.Service.ViewModels.UserSubscription.Requests;
 using Fusion.Service.ViewModels.UserSubscription.Responses;
+using Fusion.Service.ViewModels.WorkflowStatus;
 
 namespace Fusion.Service.Commons.Helpers;
 
@@ -324,7 +325,8 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.IsViewAll, opt => opt.MapFrom(src => src.IsViewAll))
             .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.UserId))
             .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id));
-
-    }
-
+        // ===================== Workflow status =====================
+        CreateMap<WorkflowStatus, WorkflowStatusResponse>().ReverseMap();
+    
+    }    
 }

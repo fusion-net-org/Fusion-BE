@@ -149,6 +149,15 @@ namespace Fusion.API.Controllers
                 data: result,
                 message: "Get tickets by project successfully"));
         }
+        [HttpGet("dashboard")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<TicketDashboardResponse>))]
+        public async Task<IActionResult> GetDashboard([FromQuery] Guid projectId, CancellationToken cancellationToken)
+        {
+            var dashboard = await _ticketService.GetTicketDashboardAsync(projectId, cancellationToken);
+            return Ok(ResponseModel<TicketDashboardResponse>.Ok(
+                data: dashboard,
+                message: "Get ticket dashboard successfully"));
+        }
 
     }
 }

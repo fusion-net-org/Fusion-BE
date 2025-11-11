@@ -134,6 +134,52 @@ namespace Fusion.Service.Services
 			return _mapper.Map<TicketResponse>(ticket);
 		}
 
+        public async Task<TicketDashboardResponse> GetTicketDashboardAsync(Guid projectId, CancellationToken cancellationToken = default)
+        {
+            var tickets = await _ticketRepository.GetTicketsForDashboardAsync(projectId, cancellationToken);
+            var dashboard = new TicketDashboardResponse();
+
+            // Ticket Status
+            var statusInProgress = tickets.Count(t => t.Status != null && t.Status.IsStart);
+            var statusResolved = tickets.Count(t => t.Status != null && t.Status.IsEnd);
+            dashboard.TicketStatusData.Add(new TicketStatusChartItem { Name = "In Progress", Value = statusInProgress });
+            dashboard.TicketStatusData.Add(new TicketStatusChartItem { Name = "Resolved", Value = statusResolved });
+
+            // Budget theo Priority
+            dashboard.BudgetByPriority = tickets
+                .GroupBy(t => t.Priority ?? "Unknown")
+                .Select(g => new BudgetByPriorityItem { Status = g.Key, Budget = g.Sum(t => t.Budget ?? 0) })
+                .ToList();
+
+            // Số lượng Priority
+            dashboard.TicketPriorityData = tickets
+                .GroupBy(t => t.Priority ?? "Unknown")
+                .Select(g => new TicketPriorityChartItem { Priority = g.Key, Value = g.Count() })
+                .ToList();
+
+            // Số lượng Resolved và Closed
+            var resolved = tickets.Count(t => t.ResolvedAt.HasValue);
+            var closed = tickets.Count(t => t.ClosedAt.HasValue);
+            dashboard.ResolvedAndClosedData.Add(new ResolvedClosedChartItem { Name = "Resolved", Value = resolved });
+            dashboard.ResolvedAndClosedData.Add(new ResolvedClosedChartItem { Name = "Closed", Value = closed });
+
+            // Resolved & Closed timeline theo tuần
+            dashboard.ResolvedClosedTimeline = tickets
+                .Where(t => t.ResolvedAt.HasValue || t.ClosedAt.HasValue)
+                .GroupBy(t => t.CreatedAt.Date)
+                .OrderBy(g => g.Key)
+                .Select(g => new ResolvedClosedTimelineItem
+                {
+                    Date = g.Key.ToString("yyyy-MM-dd"),
+                    Resolved = g.Count(t => t.ResolvedAt.HasValue),
+                    Closed = g.Count(t => t.ClosedAt.HasValue)
+                })
+                .ToList();
+
+            return dashboard;
+        }
+
+
         public async Task<PagedResult<TicketResponse>> GetTicketsByProjectIdAsync(TicketByProjectPagedRequest request, CancellationToken cancellationToken = default)
         {
             var tickets = await _ticketRepository.GetTicketsByProjectIdAsync(request, cancellationToken);

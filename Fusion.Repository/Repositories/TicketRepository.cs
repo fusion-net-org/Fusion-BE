@@ -1,6 +1,7 @@
 ﻿using Azure.Core;
 using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.Ticket;
+using Fusion.Repository.Bases.Page.Workflowstatus;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.IRepositories;
@@ -41,7 +42,12 @@ namespace Fusion.Repository.Repositories
 
 		public async Task<Ticket?> GetTicketByIdAsync(Guid Id)
 		{
-			return await _context.Tickets.Include(x => x.TicketComments).SingleOrDefaultAsync(x => x.Id == Id);
+			return await _context.Tickets
+                .Include(x => x.TicketComments)
+                .Include(x => x.SubmittedByNavigation)
+                .Include(x => x.Project)
+                .Include(x => x.Status)
+                .SingleOrDefaultAsync(x => x.Id == Id);
 		}
 
 		public async Task<Ticket?> GetTicketByTicketName(string ticketName)
@@ -68,7 +74,6 @@ namespace Fusion.Repository.Repositories
 
 			existedTicket.TicketName = updateTicket.TicketName ?? existedTicket.TicketName;
 			existedTicket.Priority = updateTicket.Priority ?? existedTicket?.Priority;
-			existedTicket.Urgency = updateTicket.Urgency ?? existedTicket?.Urgency;
 			existedTicket.Budget = updateTicket.Budget ?? existedTicket.Budget;
 			existedTicket.Description = updateTicket.Description ?? existedTicket.Description;
 			existedTicket.IsHighestUrgen = updateTicket.IsHighestUrgen;
@@ -154,6 +159,17 @@ namespace Fusion.Repository.Repositories
 
             return await query.ToPagedResultAsync(request, cancellationToken);
         }
+
+        public async Task<List<Ticket>> GetTicketsForDashboardAsync(Guid projectId, CancellationToken cancellationToken = default)
+        {
+            return await _context.Tickets
+                .Include(t => t.Project)
+                .Include(t => t.SubmittedByNavigation)
+                .Include(t => t.Status) 
+                .Where(t => t.ProjectId == projectId)
+                .ToListAsync(cancellationToken);
+        }
+
 
     }
 }
