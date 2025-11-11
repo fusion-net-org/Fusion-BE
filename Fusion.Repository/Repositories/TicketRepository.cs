@@ -89,5 +89,71 @@ namespace Fusion.Repository.Repositories
 			await _context.SaveChangesAsync(cancellationToken);
 			return true;
 		}
-	}
+
+        public async Task<PagedResult<Ticket>> GetTicketsByProjectIdAsync(
+      TicketByProjectPagedRequest request,
+      CancellationToken cancellationToken = default)
+        {
+            var query = _context.Tickets
+                .Include(x => x.TicketComments)
+				.Include(x => x.SubmittedByNavigation)
+                .Where(t => t.ProjectId == request.ProjectId && t.IsDeleted == false)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(request.TicketName))
+            {
+                query = query.Where(t => (t.TicketName ?? "").Contains(request.TicketName));
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.Priority))
+            {
+                query = query.Where(t => t.Priority == request.Priority);
+            }
+
+            if (request.MinBudget.HasValue)
+            {
+                query = query.Where(t => t.Budget >= request.MinBudget.Value);
+            }
+
+            if (request.MaxBudget.HasValue)
+            {
+                query = query.Where(t => t.Budget <= request.MaxBudget.Value);
+            }
+
+            if (request.ResolvedFrom.HasValue)
+            {
+                query = query.Where(t => t.ResolvedAt >= request.ResolvedFrom.Value);
+            }
+
+            if (request.ResolvedTo.HasValue)
+            {
+                query = query.Where(t => t.ResolvedAt <= request.ResolvedTo.Value);
+            }
+
+            if (request.ClosedFrom.HasValue)
+            {
+                query = query.Where(t => t.ClosedAt >= request.ClosedFrom.Value);
+            }
+
+            if (request.ClosedTo.HasValue)
+            {
+                query = query.Where(t => t.ClosedAt <= request.ClosedTo.Value);
+            }
+
+            if (request.CreateFrom.HasValue)
+            {
+                query = query.Where(t => t.CreatedAt >= request.CreateFrom.Value);
+            }
+
+            if (request.CreateTo.HasValue)
+            {
+                query = query.Where(t => t.CreatedAt <= request.CreateTo.Value);
+            }
+
+
+
+            return await query.ToPagedResultAsync(request, cancellationToken);
+        }
+
+    }
 }

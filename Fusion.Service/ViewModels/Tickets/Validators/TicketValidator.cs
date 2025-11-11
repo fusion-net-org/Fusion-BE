@@ -45,10 +45,7 @@ namespace Fusion.Service.ViewModels.Tickets.Validators
 					.Must(u => string.IsNullOrEmpty(u) || new[] { "Low", "Medium", "High" }.Contains(u))
 					.WithMessage("Urgency must be one of: Low, Medium, High.");
 
-				RuleFor(x => x.ClosedAt)
-					.GreaterThanOrEqualTo(x => x.ResolvedAt)
-					.When(x => x.ClosedAt.HasValue && x.ResolvedAt.HasValue)
-					.WithMessage("ClosedAt must be greater than or equal to ResolvedAt.");
+	
 			});
 		}
 	}
