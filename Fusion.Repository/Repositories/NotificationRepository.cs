@@ -178,7 +178,7 @@ namespace Fusion.Repository.Repositories
                 throw CustomExceptionFactory.CreateBadRequestError("User is not Admin");
 
             var notifications = await _context.Notifications.Where(x => x.NotificationType == NotificationTypeEnum.ADMIN_NOTIFICATE.ToString()).ToListAsync();
-            if (notifications.Any())
+            if (!notifications.Any())
                 throw CustomExceptionFactory.CreateNotFoundError("Admin do not have any notifications");
 
             foreach (var noti in notifications)
