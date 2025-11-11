@@ -20,10 +20,6 @@ public partial class Ticket
     [Unicode(false)]
     public string? Priority { get; set; }
 
-    [Column("urgency")]
-    [StringLength(20)]
-    [Unicode(false)]
-    public string? Urgency { get; set; }
 
     [Column("is_highest_urgen")]
     public bool IsHighestUrgen { get; set; }

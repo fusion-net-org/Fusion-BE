@@ -464,7 +464,7 @@ namespace Fusion.Service.Services
                 {
                     MemberId = m.User?.Id ?? Guid.Empty,
                     MemberName = m.User?.UserName ?? "N/A",
-                    Avatar = m.User.Avatar,
+                    Avatar = m.User?.Avatar,
                 }).ToList() ?? new List<ProjectMemberSummaryResponse>(),
                 SprintCount = sprintSummary.Count,
                 TotalTask = totalTasks,

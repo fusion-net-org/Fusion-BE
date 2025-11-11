@@ -20,13 +20,10 @@ namespace Fusion.Service.ViewModels.Tickets.Validators
 
 				RuleFor(x => x.Priority)
 					.NotEmpty().WithMessage("Priority is required!")
-					.Must(p => new[] { "Low", "Medium", "High" }.Contains(p))
+					.Must(p => new[] { "Low", "Medium", "High", "Urgent" }.Contains(p))
 					.WithMessage("Priority must be one of: Low, Medium, High.");
 
-				RuleFor(x => x.Urgency)
-					.NotEmpty().WithMessage("Urgency is required!")
-					.Must(u => new[] { "Low", "Medium", "High" }.Contains(u))
-					.WithMessage("Urgency must be one of: Low, Medium, High.");
+			
 
 				RuleFor(x => x.SubmittedBy)
 					.NotEmpty().WithMessage("SubmittedBy must not be empty!");
@@ -41,14 +38,7 @@ namespace Fusion.Service.ViewModels.Tickets.Validators
 					.Must(p => string.IsNullOrEmpty(p) || new[] { "Low", "Medium", "High" }.Contains(p))
 					.WithMessage("Priority must be one of: Low, Medium, High.");
 
-				RuleFor(x => x.Urgency)
-					.Must(u => string.IsNullOrEmpty(u) || new[] { "Low", "Medium", "High" }.Contains(u))
-					.WithMessage("Urgency must be one of: Low, Medium, High.");
-
-				RuleFor(x => x.ClosedAt)
-					.GreaterThanOrEqualTo(x => x.ResolvedAt)
-					.When(x => x.ClosedAt.HasValue && x.ResolvedAt.HasValue)
-					.WithMessage("ClosedAt must be greater than or equal to ResolvedAt.");
+	
 			});
 		}
 	}

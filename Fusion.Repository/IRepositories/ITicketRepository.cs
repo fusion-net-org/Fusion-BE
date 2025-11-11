@@ -17,6 +17,8 @@ namespace Fusion.Repository.IRepositories
 		Task<Ticket?> AddTicketAsync(Ticket newTicket, CancellationToken cancellationToken = default);
 		Task<Ticket?> UpdateTicketAsync(Guid ticketId, Ticket updateTicket, CancellationToken cancellationToken = default);
 		Task<bool?> DeleteTicketAsync(Ticket ticket, CancellationToken cancellationToken = default);
+        Task<PagedResult<Ticket>> GetTicketsByProjectIdAsync(TicketByProjectPagedRequest request, CancellationToken cancellationToken = default);
+        Task<List<Ticket>> GetTicketsForDashboardAsync(Guid projectId, CancellationToken cancellationToken = default);
 
-	}
+    }
 }

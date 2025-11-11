@@ -18,6 +18,7 @@ namespace Fusion.Service.ViewModels.Notifications.Responses
         public string? LinkUrl { get; set; }
         public string? LinkUrlWeb { get; set; }
         public bool IsRead { get; set; }
+        public bool? IsDeleted { get; set; }
         public DateTime CreateAt { get; set; }
         public DateTime? ReadAt { get; set; }
     }

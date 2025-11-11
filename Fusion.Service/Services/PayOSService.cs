@@ -7,6 +7,7 @@ using Fusion.Repository.Entities;
 using Fusion.Repository.Enums;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.TransactionPayment.Requests;
+using Fusion.Service.ViewModels.UserSubscription.Requests;
 using Net.payOS;
 using Net.payOS.Types;
 
@@ -19,12 +20,14 @@ public class PayOSService : IPayOSService
     private readonly PayOS _payOS;
     private readonly ITransactionPaymentService _transactionPaymentService;
     private readonly ISubscriptionPlanService _subscriptionPlanService;
-    public PayOSService(IUnitOfWork unitOfWork, PayOS payOS, ITransactionPaymentService transactionPaymentService, ISubscriptionPlanService subscriptionPlanService)
+    private readonly IUserSubscriptionService _userSubscriptionService;
+    public PayOSService(IUnitOfWork unitOfWork, PayOS payOS, ITransactionPaymentService transactionPaymentService, ISubscriptionPlanService subscriptionPlanService, IUserSubscriptionService userSubscriptionService)
     {
         _unitOfWork = unitOfWork;
         _payOS = payOS;
         _transactionPaymentService = transactionPaymentService;
         _subscriptionPlanService = subscriptionPlanService;
+        _userSubscriptionService = userSubscriptionService;
     }
 
     private static string MapPayOsStatus(string payosStatus, bool webhookSuccess)
@@ -218,6 +221,15 @@ public class PayOSService : IPayOSService
         // status từ webhook
         tx.Status = MapPayOsStatus(payload.code, webhookData.success);
 
+        if (tx.Status == PaymentStatus.Success.ToString())
+        {
+            var subReq = new UserSubscriptionCreateRequest
+            {
+                TransactionId = tx.Id
+            };
+
+            await _userSubscriptionService.CreateAsync(subReq, cancellationToken);
+        }
         await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 }

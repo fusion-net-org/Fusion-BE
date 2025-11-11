@@ -20,7 +20,7 @@ public class SubscriptionPlanPrice
     //Chu kỳ thanh toán (WEEK, MONTH, YEAR)
     [Required, MaxLength(20)]
     [Column("billing_period")]
-    public BillingPriod BillingPeriod { get; set; } = BillingPriod.Month;
+    public BillingPeriod BillingPeriod { get; set; } = BillingPeriod.Month;
 
     //Số chu kỳ (ví dụ 1, 3, 12)
     [Column("period_count")]
