@@ -4,6 +4,7 @@ using Fusion.Repository.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Fusion.Repository.Migrations
 {
     [DbContext(typeof(FusionDbContext))]
-    partial class FusionDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251111085314_AddAndUpdateProjectBoard")]
+    partial class AddAndUpdateProjectBoard
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -892,56 +895,6 @@ namespace Fusion.Repository.Migrations
                     b.HasIndex("SprintId");
 
                     b.ToTable("ProjectTasks");
-                });
-
-            modelBuilder.Entity("Fusion.Repository.Entities.ProjectTaskAssignee", b =>
-                {
-                    b.Property<Guid>("TaskId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("task_id")
-                        .HasColumnOrder(0);
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("user_id")
-                        .HasColumnOrder(1);
-
-                    b.Property<DateTime>("AssignedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasPrecision(3)
-                        .HasColumnType("datetime2(3)")
-                        .HasColumnName("assigned_at")
-                        .HasDefaultValueSql("GETUTCDATE()");
-
-                    b.HasKey("TaskId", "UserId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("ProjectTaskAssignees", (string)null);
-                });
-
-            modelBuilder.Entity("Fusion.Repository.Entities.ProjectTaskDependency", b =>
-                {
-                    b.Property<Guid>("TaskId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("task_id");
-
-                    b.Property<Guid>("DependsOnTaskId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("depends_on_task_id");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasPrecision(3)
-                        .HasColumnType("datetime2(3)")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("GETUTCDATE()");
-
-                    b.HasKey("TaskId", "DependsOnTaskId");
-
-                    b.HasIndex("DependsOnTaskId");
-
-                    b.ToTable("ProjectTaskDependencies", (string)null);
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.RefreshToken", b =>
@@ -2191,44 +2144,6 @@ namespace Fusion.Repository.Migrations
                     b.Navigation("Sprint");
                 });
 
-            modelBuilder.Entity("Fusion.Repository.Entities.ProjectTaskAssignee", b =>
-                {
-                    b.HasOne("Fusion.Repository.Entities.ProjectTask", "Task")
-                        .WithMany("Assignees")
-                        .HasForeignKey("TaskId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Fusion.Repository.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Task");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Fusion.Repository.Entities.ProjectTaskDependency", b =>
-                {
-                    b.HasOne("Fusion.Repository.Entities.ProjectTask", "DependsOnTask")
-                        .WithMany()
-                        .HasForeignKey("DependsOnTaskId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Fusion.Repository.Entities.ProjectTask", "Task")
-                        .WithMany("Dependencies")
-                        .HasForeignKey("TaskId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("DependsOnTask");
-
-                    b.Navigation("Task");
-                });
-
             modelBuilder.Entity("Fusion.Repository.Entities.RefreshToken", b =>
                 {
                     b.HasOne("Fusion.Repository.Entities.User", "User")
@@ -2548,11 +2463,7 @@ namespace Fusion.Repository.Migrations
 
             modelBuilder.Entity("Fusion.Repository.Entities.ProjectTask", b =>
                 {
-                    b.Navigation("Assignees");
-
                     b.Navigation("Comments");
-
-                    b.Navigation("Dependencies");
 
                     b.Navigation("TaskLogEvents");
 

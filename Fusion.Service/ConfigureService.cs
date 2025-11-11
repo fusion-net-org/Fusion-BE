@@ -33,6 +33,7 @@ namespace Fusion.Service
             //company
             services.AddScoped<ICompanyService, CompanyService>();
             services.AddScoped<ICompanyMemberService, CompanyMemberService>();
+            services.AddScoped<IProjectBoardService, ProjectBoardService>();
 
             //task
             services.AddScoped<ITaskService, TaskService>();

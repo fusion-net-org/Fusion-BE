@@ -38,7 +38,7 @@ namespace Fusion.Repository
             services.AddScoped<ICompanyRepository,CompanyRepository>();
             services.AddScoped<ICompanyMemberRepository, CompanyMemberRepository>();
             services.AddScoped<IPermissionQuery, PermissionQuery>();
-
+            services.AddScoped<IProjectBoardRepository, ProjectBoardRepository>();
             //task
             services.AddScoped<ITaskRepository, TaskRepository>();
 
