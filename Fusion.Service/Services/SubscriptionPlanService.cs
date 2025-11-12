@@ -11,6 +11,7 @@ using Fusion.Service.Commons.Helpers;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.SubscriptionPlan.Requests;
 using Fusion.Service.ViewModels.SubscriptionPlan.Responses;
+using Microsoft.EntityFrameworkCore;
 using System.Numerics;
 
 namespace Fusion.Service.Services
@@ -76,17 +77,14 @@ namespace Fusion.Service.Services
 
         public async Task<SubscriptionPlanResponse> UpdatePlanAsync(SubscriptionPlanUpdateRequest req, CancellationToken cancellationToken = default)
         {
-            var existing = await _subscriptionPlanRepository.GetByIdWithNavAsync(req.Id, cancellationToken);
-            if (existing == null)
-                throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Plan"));
+            // Map sang payload DETACHED (không đè lên entity đang track)
+            var payload = _mapper.Map<SubscriptionPlan>(req);
 
-            _mapper.Map(req, existing);
-            existing.UpdatedAt = DateTime.UtcNow;
+            var updated = await _subscriptionPlanRepository.UpdatePlanAsync(payload, cancellationToken);
 
-            var updated = await _subscriptionPlanRepository.UpdatePlan(existing, cancellationToken);
+            // Map sang response (giả định bạn đã có mapping sẵn cho SubscriptionPlan -> SubscriptionPlanResponse)
             return _mapper.Map<SubscriptionPlanResponse>(updated);
         }
-
         public async Task<List<SubscriptionPlanResponse>> GetAllForCusromerAsync(CancellationToken cancellationToken = default)
         {
             var subscriptionPlans = await _subscriptionPlanRepository.GetAllForCusromerAsync(cancellationToken);

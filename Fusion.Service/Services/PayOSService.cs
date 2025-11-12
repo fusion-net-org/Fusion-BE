@@ -28,17 +28,16 @@ public class PayOSService : IPayOSService
         _userSubscriptionService = userSubscriptionService;
     }
 
-    private static string MapPayOsStatus(string payosStatus, bool webhookSuccess)
+    private static string MapPayOsStatus(string? status)
     {
-        // Tùy tài liệu PayOS, ví dụ: "PAID", "PENDING", "CANCELLED", "EXPIRED"
-        return payosStatus?.ToUpperInvariant() switch
+        switch (status?.ToUpperInvariant())
         {
-            "PAID" => PaymentStatus.Success.ToString(),
-            "CANCELLED" => PaymentStatus.Cancelled.ToString(),
-            "EXPIRED" => PaymentStatus.Failed.ToString(),
-            "PENDING" => PaymentStatus.Pending.ToString(),
-            _ => webhookSuccess ? PaymentStatus.Success.ToString() : PaymentStatus.Pending.ToString()
-        };
+            case "PAID": return PaymentStatus.Success.ToString();
+            case "CANCELLED": return PaymentStatus.Cancelled.ToString();
+            case "EXPIRED": return PaymentStatus.Failed.ToString();
+            case "PENDING": return PaymentStatus.Pending.ToString();
+            default: return PaymentStatus.Pending.ToString();
+        }
     }
 
     /// <summary>
@@ -111,6 +110,7 @@ public class PayOSService : IPayOSService
 
     }
 
+    // PayOSService.cs
     public async Task<string> RefreshStatusByGateway(long? orderCode, string? paymentLinkId, CancellationToken ct = default)
     {
         var repo = _unitOfWork.Repository<TransactionPayment>();
@@ -130,48 +130,14 @@ public class PayOSService : IPayOSService
         return tx.Status;
     }
 
-    /// <summary>
-    /// User/admin cancel link payment
-    /// </summary>
-    public async Task<bool> CancelPaymentLink(Guid transactionId, string? reason = null, CancellationToken ct = default)
-    {
-
-        var tx = await _unitOfWork.Repository<TransactionPayment>().FindAsync(x => x.Id == transactionId, ct);
-        if (tx == null) throw new InvalidOperationException("Transaction not found.");
-        if (!tx.OrderCode.HasValue && string.IsNullOrWhiteSpace(tx.PaymentLinkId))
-            throw new InvalidOperationException("Transaction has no payment link information.");
-
-
-        if (tx.OrderCode.HasValue)
-            await _payOS.cancelPaymentLink(tx.OrderCode.Value, reason ?? "User cancelled");
-
-        // Sau khi huỷ trên gateway, refresh lại thông tin để chắc chắn
-        await RefreshStatusFromGateway(tx, ct);
-        await _unitOfWork.SaveChangesAsync(ct);
-        return true;
-    }
-
+    // giữ nguyên helper private
     private async Task RefreshStatusFromGateway(TransactionPayment tx, CancellationToken ct)
     {
-        // Lấy thông tin từ PayOS
-        dynamic info;
-        if (tx.OrderCode.HasValue)
-            info = await _payOS.getPaymentLinkInformation(tx.OrderCode.Value);
-        else
-            throw new InvalidOperationException("No orderCode or paymentLinkId to refresh.");
+        if (!tx.OrderCode.HasValue)
+            throw new InvalidOperationException("No orderCode to refresh.");
 
-        // info.status, info.amount, info.currency ...
-        var newStatus = MapPayOsStatus((string)info.status, webhookSuccess: false);
-        tx.Status = newStatus;
-        tx.Currency = info.currency;
-
-        // Optionally sync amount/currency nếu có chênh
-        if (info.amount is int gatewayAmount)
-        {
-            var dec = Convert.ToDecimal(gatewayAmount);
-            if (tx.Amount != dec) tx.Amount = dec;
-        }
-
+        var info = await _payOS.getPaymentLinkInformation(tx.OrderCode.Value);
+        tx.Status = MapPayOsStatus((string)info.status);
     }
 
     /// <summary>
@@ -196,6 +162,11 @@ public class PayOSService : IPayOSService
         if (tx == null)
             return;
 
+
+        // --- LẤY THÔNG TIN TỪ GATEWAY LÀM NGUỒN SỰ THẬT ---
+        var info = await _payOS.getPaymentLinkInformation(payload.orderCode);
+        tx.Status = MapPayOsStatus((string)info.status);
+
         DateTimeOffset? txTime = null;
         if (!string.IsNullOrWhiteSpace(payload.transactionDateTime) &&
             DateTimeOffset.TryParse(payload.transactionDateTime, out var parsed))
@@ -216,8 +187,6 @@ public class PayOSService : IPayOSService
         tx.CounterAccountName = payload.counterAccountName;
         tx.CounterAccountNumber = payload.counterAccountNumber;
 
-        // status từ webhook
-        tx.Status = MapPayOsStatus(payload.code, webhookData.success);
 
         if (tx.Status == PaymentStatus.Success.ToString())
         {

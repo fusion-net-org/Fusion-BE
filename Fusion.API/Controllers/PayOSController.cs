@@ -72,5 +72,16 @@ namespace Fusion.API.Controllers
                 message: ResponseMessageHelper.FormatMessage(ResponseMessages.UPDATE_SUCCESS, "Transaction payment status")
         ));
         }
+
+        [AllowAnonymous]
+        [HttpPost("refresh-status")]
+        public async Task<IActionResult> RefreshStatus([FromQuery] long? orderCode, [FromQuery] string? paymentLinkId)
+        {
+            var status = await _payOSService.RefreshStatusByGateway(orderCode, paymentLinkId);
+            return Ok(ResponseModel<string>.Ok(
+                data: status,
+                message: ResponseMessageHelper.FormatMessage(ResponseMessages.UPDATE_SUCCESS, "Transaction payment status")
+            ));
+        }
     }
 }

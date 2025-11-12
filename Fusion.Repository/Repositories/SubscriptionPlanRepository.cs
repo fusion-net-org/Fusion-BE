@@ -116,75 +116,119 @@ namespace Fusion.Repository.Repositories
             .Include(p => p.Features) // 1–N
             .FirstOrDefaultAsync(p => p.Id == id, ct);
 
-        public async Task<SubscriptionPlan> UpdatePlan(SubscriptionPlan req, CancellationToken cancellationToken = default)
+        public async Task<bool> ExistsCodeOrNameExceptAsync(Guid excludeId, string code, string name, CancellationToken cancellationToken = default)
+        {
+            return await _context.SubscriptionPlans
+                .AsNoTracking()
+                .AnyAsync(p => p.Id != excludeId && (p.Code == code || p.Name == name), cancellationToken);
+        }
+        public async Task<SubscriptionPlan> UpdatePlanAsync(SubscriptionPlan payload, CancellationToken cancellationToken = default)
         {
             var plan = await _context.SubscriptionPlans
-                           .Include(p => p.Features)
-                           .Include(p => p.Price) // 1–1
-                           .FirstOrDefaultAsync(p => p.Id == req.Id, cancellationToken);
+                .Include(p => p.Price)
+                .Include(p => p.Features)
+                .FirstOrDefaultAsync(p => p.Id == payload.Id, cancellationToken);
 
             if (plan == null)
                 throw CustomExceptionFactory.CreateNotFoundError(
                     ResponseMessages.NOT_FOUND.FormatMessage("Subscription Plan"));
 
-            // Chặn trùng Code/Name với plan khác
-            bool duplicated = await _context.SubscriptionPlans
-                .AnyAsync(p => p.Id != req.Id && (p.Code == req.Code || p.Name == req.Name), cancellationToken);
-            if (duplicated)
+            // Check trùng Code/Name
+            if (await ExistsCodeOrNameExceptAsync(payload.Id, payload.Code, payload.Name, cancellationToken))
                 throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.EXISTED, "Plan code/name");
 
-            // Bắt buộc có 1 Price theo nghiệp vụ 1–1
-            if (req.Price == null)
+            // Bắt buộc có Price
+            if (payload.Price == null)
                 throw CustomExceptionFactory.CreateBadRequestError("Price is required.");
 
             using var tx = await _context.Database.BeginTransactionAsync(cancellationToken);
             try
             {
-                // Update plan fields
-                plan.Code = req.Code;
-                plan.Name = req.Name;
-                plan.Description = req.Description;
-                plan.IsActive = req.IsActive;
+                // 1) Update fields cơ bản
+                plan.Code = payload.Code;
+                plan.Name = payload.Name;
+                plan.Description = payload.Description;
+                plan.IsActive = payload.IsActive;
                 plan.UpdatedAt = DateTime.UtcNow;
 
-                // Replace-all features
-                if (plan.Features?.Count > 0)
-                {
-                    _context.SubscriptionPlanFeatures.RemoveRange(plan.Features);
-                    await _context.SaveChangesAsync(cancellationToken);
-                }
-
-                if (req.Features != null && req.Features.Any())
-                {
-                    var newFeatures = req.Features.Select(f => new SubscriptionPlanFeature
-                    {
-                        PlanId = plan.Id,
-                        FeatureKey = f.FeatureKey,
-                        LimitValue = f.LimitValue
-                    }).ToList();
-
-                    await _context.SubscriptionPlanFeatures.AddRangeAsync(newFeatures, cancellationToken);
-                }
-
-                // Update 1–1 price (in-place)
+                // 2) Price (1-1)
                 if (plan.Price == null)
                 {
                     plan.Price = new SubscriptionPlanPrice
                     {
-                        Id = default,   // nếu cấu hình NEWID()
+                        Id = Guid.NewGuid(),
                         PlanId = plan.Id
                     };
                 }
 
-                plan.Price.BillingPeriod = req.Price.BillingPeriod;
-                plan.Price.PeriodCount = req.Price.PeriodCount;
-                plan.Price.Price = req.Price.Price;
-                plan.Price.Currency = req.Price.Currency;
-                plan.Price.RefundWindowDays = req.Price.RefundWindowDays;
-                plan.Price.RefundFeePercent = req.Price.RefundFeePercent;
+                plan.Price.BillingPeriod = payload.Price!.BillingPeriod;
+                plan.Price.PeriodCount = payload.Price.PeriodCount;
+                plan.Price.Price = payload.Price.Price;
+                plan.Price.Currency = payload.Price.Currency;
+                plan.Price.RefundWindowDays = payload.Price.RefundWindowDays;
+                plan.Price.RefundFeePercent = payload.Price.RefundFeePercent;
+
+                // 3) Features — chỉ đồng bộ khi client gửi (null => giữ nguyên)
+                if (payload.Features is not null)
+                {
+                    var existing = (plan.Features ?? new List<SubscriptionPlanFeature>()).ToList();
+
+                    // chuẩn hoá input: loại duplicates theo (Id hoặc FeatureKey)
+                    var normalized = payload.Features
+                        .GroupBy(f => f.Id != Guid.Empty ? $"ID:{f.Id}" : $"KEY:{f.FeatureKey}")
+                        .Select(g => g.First())
+                        .ToList();
+
+                    // Build index để tra nhanh
+                    var byId = existing.Where(e => e.Id != Guid.Empty).ToDictionary(e => e.Id, e => e);
+                    var byKey = existing.GroupBy(e => e.FeatureKey).ToDictionary(g => g.Key, g => g.First());
+
+                    var keepIds = new HashSet<Guid>();            // những existing sẽ được giữ lại
+                    var toAdd = new List<SubscriptionPlanFeature>();
+
+                    foreach (var n in normalized)
+                    {
+                        var isNew = n.Id == Guid.Empty;
+
+                        if (!isNew && byId.TryGetValue(n.Id, out var exById))
+                        {
+                            // Update theo Id
+                            exById.FeatureKey = n.FeatureKey;
+                            exById.LimitValue = n.LimitValue;
+                            keepIds.Add(exById.Id);
+                        }
+                        else if (isNew && byKey.TryGetValue(n.FeatureKey, out var exByKey))
+                        {
+                            // Id rỗng nhưng đã có feature cùng key => coi là UPDATE theo key
+                            exByKey.FeatureKey = n.FeatureKey;
+                            exByKey.LimitValue = n.LimitValue;
+                            keepIds.Add(exByKey.Id);
+                        }
+                        else
+                        {
+                            // Thêm mới
+                            toAdd.Add(new SubscriptionPlanFeature
+                            {
+                                Id = Guid.NewGuid(),
+                                PlanId = plan.Id,
+                                FeatureKey = n.FeatureKey,
+                                LimitValue = n.LimitValue
+                            });
+                        }
+                    }
+
+                    // Xoá những cái không nằm trong keepIds (khi client gửi [] rỗng => xoá hết)
+                    var toRemove = existing.Where(e => !keepIds.Contains(e.Id) && !toAdd.Any(a => a.FeatureKey == e.FeatureKey)).ToList();
+                    if (toRemove.Count > 0)
+                        _context.SubscriptionPlanFeatures.RemoveRange(toRemove);
+
+                    if (toAdd.Count > 0)
+                        await _context.SubscriptionPlanFeatures.AddRangeAsync(toAdd, cancellationToken);
+                }
 
                 await _context.SaveChangesAsync(cancellationToken);
                 await tx.CommitAsync(cancellationToken);
+
                 return plan;
             }
             catch
@@ -192,6 +236,7 @@ namespace Fusion.Repository.Repositories
                 await tx.RollbackAsync(cancellationToken);
                 throw;
             }
-        }  
+        }
+
     }
 }
