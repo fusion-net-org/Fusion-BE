@@ -327,6 +327,23 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id));
         // ===================== Workflow status =====================
         CreateMap<WorkflowStatus, WorkflowStatusResponse>().ReverseMap();
-    
-    }    
+
+        // ===================== Project task =====================
+        CreateMap<ProjectTaskRequest, ProjectTask>()
+            .ForMember(d => d.Id, opt => opt.Ignore()) // create: service tự gán
+            .ForMember(d => d.CreateAt, opt => opt.Ignore())
+            .ForMember(d => d.UpdateAt, opt => opt.Ignore())
+            .ForMember(d => d.Code, opt => opt.Ignore())
+            .ForMember(d => d.Status, opt => opt.Ignore())
+            .ForMember(d => d.CurrentStatusId, opt => opt.Ignore())
+            .ForMember(d => d.OrderInSprint, opt => opt.Ignore())
+            .ForMember(d => d.IsBacklog, opt => opt.Ignore())
+            .ForMember(d => d.RemainingHours, opt => opt.Ignore())
+            .ForMember(d => d.IsDeleted, opt => opt.Ignore())
+            .ForMember(d => d.Assignees, opt => opt.Ignore());
+
+        CreateMap<ProjectTask, ProjectTaskResponse>()
+            .ForMember(d => d.AssigneeIds, opt => opt.MapFrom(s => s.Assignees.Select(a => a.UserId)));
+    }
+
 }
