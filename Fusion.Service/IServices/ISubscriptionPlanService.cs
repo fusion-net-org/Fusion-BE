@@ -12,5 +12,6 @@ namespace Fusion.Service.IServices
         Task<bool> DeletePlanAsync(Guid planId, CancellationToken cancellationToken = default);
         Task<PagedResult<SubscriptionPlanResponse>> GetAllAsync(SubscriptionPlanPagedRequest request, CancellationToken cancellationToken = default);
         Task<SubscriptionPlanDetailResponse?> GetPlanByIdAsync(Guid id, CancellationToken cancellationToken = default);
+        Task<List<SubscriptionPlanResponse>> GetAllForCusromerAsync(CancellationToken cancellationToken = default);
     }
 }

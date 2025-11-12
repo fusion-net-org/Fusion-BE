@@ -100,7 +100,16 @@ namespace Fusion.Repository.Repositories
 
             return await q.ToPagedResultAsync(request, cancellationToken);
         }
-
+        public async Task<List<SubscriptionPlan>> GetAllForCusromerAsync(CancellationToken cancellationToken = default)
+        {
+            var subscriptions = await _context.SubscriptionPlans
+                     .AsNoTracking()
+                     .Include(p => p.Price)
+                     .Include(p => p.Features)
+                     .Where(x => x.IsActive && x.Price.Price > 0)
+                     .ToListAsync(cancellationToken);
+            return subscriptions;   
+        }
         public Task<SubscriptionPlan?> GetByIdWithNavAsync(Guid id, CancellationToken ct = default)
            => _context.SubscriptionPlans
             .Include(p => p.Price)    // 1–1
@@ -140,13 +149,15 @@ namespace Fusion.Repository.Repositories
 
                 // Replace-all features
                 if (plan.Features?.Count > 0)
+                {
                     _context.SubscriptionPlanFeatures.RemoveRange(plan.Features);
+                    await _context.SaveChangesAsync(cancellationToken);
+                }
 
                 if (req.Features != null && req.Features.Any())
                 {
                     var newFeatures = req.Features.Select(f => new SubscriptionPlanFeature
                     {
-                        Id = default,
                         PlanId = plan.Id,
                         FeatureKey = f.FeatureKey,
                         LimitValue = f.LimitValue

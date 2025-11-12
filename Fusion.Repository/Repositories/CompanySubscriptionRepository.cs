@@ -248,33 +248,12 @@ namespace Fusion.Repository.Repositories
                             .Include(cs => cs.CompanySubscriptionEntitlements)
                             .AsQueryable();
 
-            // --- Lọc theo tên gói ---
-            if (!string.IsNullOrWhiteSpace(request.PlanName))
-            {
-                var pattern = $"%{request.PlanName.Trim()}%";
-                q = q.Where(cs => cs.NameSubscription != null && EF.Functions.Like(cs.NameSubscription, pattern));
-            }
-
             // --- Lọc theo trạng thái ---
 
             if (request.status.HasValue)
             {
                 q = q.Where(cs => cs.UserSubscription != null && cs.UserSubscription.Status == request.status.Value);
             }
-
-            // --- Lọc theo thời gian tạo ---
-            if (request.CreateAt.From.HasValue)
-                q = q.Where(cs => cs.CreatedAt >= request.CreateAt.From.Value);
-
-            if (request.CreateAt.To.HasValue)
-                q = q.Where(cs => cs.CreatedAt <= request.CreateAt.To.Value);
-
-            // --- Lọc theo thời gian hết hạn ---
-            if (request.ExpiredAt.From.HasValue)
-                q = q.Where(cs => cs.ExpiredAt >= request.ExpiredAt.From.Value);
-
-            if (request.ExpiredAt.To.HasValue)
-                q = q.Where(cs => cs.ExpiredAt <= request.ExpiredAt.To.Value);
 
             // --- Tìm kiếm tổng hợp ---
             if (!string.IsNullOrWhiteSpace(request.Keyword))
@@ -310,33 +289,12 @@ namespace Fusion.Repository.Repositories
                            .Include(cs => cs.CompanySubscriptionEntitlements)
                            .AsQueryable();
 
-            // --- Lọc theo tên gói ---
-            if (!string.IsNullOrWhiteSpace(request.PlanName))
-            {
-                var pattern = $"%{request.PlanName.Trim()}%";
-                q = q.Where(cs => cs.NameSubscription != null && EF.Functions.Like(cs.NameSubscription, pattern));
-            }
-
             // --- Lọc theo trạng thái ---
 
             if (request.status.HasValue)
             {
                 q = q.Where(cs => cs.UserSubscription != null && cs.UserSubscription.Status == request.status.Value);
             }
-
-            // --- Lọc theo thời gian tạo ---
-            if (request.CreateAt.From.HasValue)
-                q = q.Where(cs => cs.CreatedAt >= request.CreateAt.From.Value);
-
-            if (request.CreateAt.To.HasValue)
-                q = q.Where(cs => cs.CreatedAt <= request.CreateAt.To.Value);
-
-            // --- Lọc theo thời gian hết hạn ---
-            if (request.ExpiredAt.From.HasValue)
-                q = q.Where(cs => cs.ExpiredAt >= request.ExpiredAt.From.Value);
-
-            if (request.ExpiredAt.To.HasValue)
-                q = q.Where(cs => cs.ExpiredAt <= request.ExpiredAt.To.Value);
 
             // --- Tìm kiếm tổng hợp ---
             if (!string.IsNullOrWhiteSpace(request.Keyword))

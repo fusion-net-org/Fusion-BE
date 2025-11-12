@@ -77,7 +77,6 @@ namespace Fusion.Service.Services
             var entity = await _repository.GetByIdWithNavAsync(id, ct);
             return entity == null ? null : _mapper.Map<UserSubscriptionDetailResponse>(entity);
         }
-
         public async Task<UserSubscriptionDetailResponse> UpdateStatusAsync(Guid id, SubscriptionStatus status, CancellationToken ct = default)
         {
             var userId = _currentService.GetUserId();

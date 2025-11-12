@@ -1,6 +1,4 @@
-﻿
-
-using Fusion.Repository.Bases.Exceptions;
+﻿using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Bases.Responses;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;

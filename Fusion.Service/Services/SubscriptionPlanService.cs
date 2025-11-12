@@ -86,5 +86,14 @@ namespace Fusion.Service.Services
             var updated = await _subscriptionPlanRepository.UpdatePlan(existing, cancellationToken);
             return _mapper.Map<SubscriptionPlanResponse>(updated);
         }
+
+        public async Task<List<SubscriptionPlanResponse>> GetAllForCusromerAsync(CancellationToken cancellationToken = default)
+        {
+            var subscriptionPlans = await _subscriptionPlanRepository.GetAllForCusromerAsync(cancellationToken);
+
+            var result = _mapper.Map<List<SubscriptionPlanResponse>>(subscriptionPlans);
+
+            return result;
+        }
     }
 }

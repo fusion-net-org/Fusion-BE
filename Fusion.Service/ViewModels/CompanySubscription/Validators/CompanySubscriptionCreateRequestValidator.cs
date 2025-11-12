@@ -24,7 +24,7 @@ public class CompanySubscriptionCreateRequestValidator : AbstractValidator<Compa
 
             // Quantity > 0
             ent.RuleFor(e => e.Quantity)
-                .GreaterThan(0)
+                .GreaterThanOrEqualTo(0)
                 .WithMessage("Quantity must be greater than 0.");
         });
     }

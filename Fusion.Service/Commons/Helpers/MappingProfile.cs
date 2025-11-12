@@ -186,8 +186,17 @@ public class MappingProfile : Profile
              .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(_ => DateTime.UtcNow))
              .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(_ => DateTime.UtcNow));
 
+
+        CreateMap<SubscriptionPlanUpdateRequest, SubscriptionPlan>()
+        .ForMember(d => d.CreatedAt, opt => opt.Ignore())
+        .ForMember(d => d.UpdatedAt, opt => opt.Ignore()) 
+        .ForMember(d => d.Price, opt => opt.MapFrom(src => src.Price))
+        .ForMember(d => d.Features, opt => opt.MapFrom(src => src.Features));
+
+
         CreateMap<SubscriptionPlanFeatureRequest, SubscriptionPlanFeature>();
         CreateMap<SubscriptionPlanPriceRequest, SubscriptionPlanPrice>();
+
 
         // ReverseMap
         CreateMap<SubscriptionPlan, SubscriptionPlanResponse>();

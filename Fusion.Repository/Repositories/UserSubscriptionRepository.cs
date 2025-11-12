@@ -105,29 +105,9 @@ namespace Fusion.Repository.Repositories
                 .Include(us => us.TransactionPayment)
                 .AsQueryable();
 
-            if (!string.IsNullOrWhiteSpace(request.PlanName))
-            {
-                var pattern = $"%{request.PlanName.Trim()}%";
-                q = q.Where(us => us.NamePlan != null && EF.Functions.Like(us.NamePlan, pattern));
-            }
-
             // Trạng thái
             if (request.status.HasValue)
                 q = q.Where(us => us.Status == request.status.Value);
-
-            // Khoảng thời gian tạo
-            if (request.CreateAt.From.HasValue)
-                q = q.Where(us => us.CreatAt >= request.CreateAt.From.Value);
-
-            if (request.CreateAt.To.HasValue)
-                q = q.Where(us => us.CreatAt <= request.CreateAt.To.Value);
-
-            // Khoảng thời gian hết hạn
-            if (request.ExpiredAt.From.HasValue)
-                q = q.Where(us => us.ExpiredAt >= request.ExpiredAt.From.Value);
-
-            if (request.ExpiredAt.To.HasValue)
-                q = q.Where(us => us.ExpiredAt <= request.ExpiredAt.To.Value);
 
             // Keyword tổng hợp
             if (!string.IsNullOrWhiteSpace(request.Keyword))
@@ -240,30 +220,6 @@ namespace Fusion.Repository.Repositories
                     .Include(us => us.TransactionPayment)
                     .Where(us => us.TransactionPayment.UserId == userId)
                     .AsQueryable();
-
-            if (!string.IsNullOrWhiteSpace(request.PlanName))
-            {
-                var pattern = $"%{request.PlanName.Trim()}%";
-                q = q.Where(us => us.NamePlan != null && EF.Functions.Like(us.NamePlan, pattern));
-            }
-
-            // Trạng thái
-            if (request.status.HasValue)
-                q = q.Where(us => us.Status == request.status.Value);
-
-            // Khoảng thời gian tạo
-            if (request.CreateAt.From.HasValue)
-                q = q.Where(us => us.CreatAt >= request.CreateAt.From.Value);
-
-            if (request.CreateAt.To.HasValue)
-                q = q.Where(us => us.CreatAt <= request.CreateAt.To.Value);
-
-            // Khoảng thời gian hết hạn
-            if (request.ExpiredAt.From.HasValue)
-                q = q.Where(us => us.ExpiredAt >= request.ExpiredAt.From.Value);
-
-            if (request.ExpiredAt.To.HasValue)
-                q = q.Where(us => us.ExpiredAt <= request.ExpiredAt.To.Value);
 
             // Keyword tổng hợp
             if (!string.IsNullOrWhiteSpace(request.Keyword))

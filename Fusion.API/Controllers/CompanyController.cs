@@ -1,5 +1,4 @@
-﻿using Fusion.API.Auth;
-using Fusion.Repository.Bases.Page;
+﻿using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.Company;
 using Fusion.Repository.Bases.Responses;
 using Fusion.Service.Commons.BaseResponses;
@@ -60,6 +59,16 @@ namespace Fusion.API.Controllers
             return Ok(ResponseModel<PagedResult<CompanyResponseVersion2>>.Ok(
                 data: result,
                 message: "Get paged companies successfully"));
+        }
+
+        [HttpGet("current-user")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<List<CompanyListResponse>>))]
+        public async Task<IActionResult> GetAllCompaniesOfCurrentUser(CancellationToken cancellationToken)
+        {
+            var result = await _companyService.GetAllCompanyOfCurrentIdAsync();
+            return Ok(ResponseModel<List<CompanyListResponse>>.Ok(
+                data: result,
+                message: "Get list companies successfully"));
         }
 
         [HttpGet("admin/paged")]

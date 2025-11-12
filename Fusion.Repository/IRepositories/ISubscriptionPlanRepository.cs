@@ -14,5 +14,6 @@ public interface ISubscriptionPlanRepository : IGenericRepository<SubscriptionPl
     Task<PagedResult<SubscriptionPlan>> GetAllAsync(SubscriptionPlanPagedRequest request, CancellationToken cancellationToken = default);
     Task<SubscriptionPlan?> GetByIdWithNavAsync(Guid id, CancellationToken ct = default);
     Task<bool> DeleteAsync(Guid id, CancellationToken ct = default);
+    Task<List<SubscriptionPlan>> GetAllForCusromerAsync(CancellationToken cancellationToken = default);
     //Task<bool> ExistsUsed(Guid planId);
 }

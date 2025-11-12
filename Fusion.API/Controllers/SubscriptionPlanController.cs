@@ -2,11 +2,11 @@
 using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.SubscriptionPlans;
 using Fusion.Repository.Bases.Responses;
-using Fusion.Repository.Entities;
 using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.SubscriptionPlan.Requests;
 using Fusion.Service.ViewModels.SubscriptionPlan.Responses;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Fusion.API.Controllers
@@ -21,6 +21,8 @@ namespace Fusion.API.Controllers
         {
             _subscriptionPlanService = subscriptionPlanService;
         }
+
+        [Authorize(Roles = "Admin")]
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PagedResult<SubscriptionPlanResponse>>))]
         public async Task<IActionResult> GetPaged(
@@ -34,6 +36,19 @@ namespace Fusion.API.Controllers
                 message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "subscription plans")));
         }
 
+        [HttpGet("for_customer")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<List<SubscriptionPlanResponse>>))]
+        public async Task<IActionResult> GetAllForCustomer(
+           CancellationToken cancellationToken)
+        {
+            var result = await _subscriptionPlanService.GetAllForCusromerAsync(cancellationToken);
+
+            return Ok(ResponseModel<List<SubscriptionPlanResponse>>.Ok(
+                data: result,
+                message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "subscription plans")));
+        }
+
+        [Authorize(Roles = "Admin")]
         [HttpPost("create")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<SubscriptionPlanResponse>))]
         public async Task<IActionResult> Create(
@@ -47,6 +62,7 @@ namespace Fusion.API.Controllers
                 message: ResponseMessageHelper.FormatMessage(ResponseMessages.CREATE_SUCCESS, "subscription plan")));
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPut("update")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<SubscriptionPlanResponse>))]
         public async Task<IActionResult> Update(
@@ -71,6 +87,7 @@ namespace Fusion.API.Controllers
                 message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "subscription plan")));
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpDelete("{planId:guid}")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<bool>))]
         public async Task<IActionResult> Delete(Guid planId, CancellationToken cancellationToken)
