@@ -82,28 +82,23 @@ namespace Fusion.Service.Services
 			return _mapper.Map<TicketResponse>(newTicket);
 		}
 
-		public async Task<bool?> DeleteTicketAsync(Guid ticketId, CancellationToken cancellationToken = default)
-		{
+        public async Task<bool?> DeleteTicketAsync(Guid ticketId,string reason, CancellationToken cancellationToken = default)
+        {
+            var ticket = await _ticketRepository.GetTicketByIdAsync(ticketId);
+            if (ticket == null)
+                throw new KeyNotFoundException("Ticket not found");
 
-			var ticket = await _ticketRepository.GetTicketByIdAsync(ticketId);
+            var currentUserId = _currentService.GetUserId();
 
-			await _ticketRepository.DeleteTicketAsync(ticket, cancellationToken);
+            if (ticket.SubmittedBy != currentUserId)
+                throw new UnauthorizedAccessException("You are not allowed to delete this ticket");
 
-			var companyId = await GetCompanyIdAsync(ticketId);
-
-            var currentUserName = await GetUserName(_currentService.GetUserId());
-            var log = new CompanyActivityLog
-            {
-                CompanyId = companyId,
-                ActorUserId = _currentService.GetUserId(),
-                Title = "Delete ticket",
-                Description = $"User:{currentUserName} has deleted ticket '{ticket.TicketName}' from project '{ticket.Project.Name}'",
-            };
-			await _logService.CreateLog(log);
+            await _ticketRepository.DeleteTicketAsync(ticket,reason, cancellationToken);
             return true;
-		}
+        }
 
-		public async Task<PagedResult<TicketResponse>> GetPageTicketshAsync(TicketPagedSearchRequest request, CancellationToken cancellationToken = default)
+
+        public async Task<PagedResult<TicketResponse>> GetPageTicketshAsync(TicketPagedSearchRequest request, CancellationToken cancellationToken = default)
 		{
 			if (request == null)
 				throw CustomExceptionFactory.CreateBadRequestError(
@@ -194,6 +189,23 @@ namespace Fusion.Service.Services
                 PageSize = tickets.PageSize
             };
         }
+        public async Task<bool?> RestoreTicketAsync(Guid ticketId, CancellationToken cancellationToken = default)
+        {
+            var ticket = await _ticketRepository.GetTicketByIdAsync(ticketId);
+            if (ticket == null)
+                throw new KeyNotFoundException("Ticket not found");
+
+            var currentUserId = _currentService.GetUserId();
+
+            if (ticket.SubmittedBy != currentUserId)
+                throw new UnauthorizedAccessException("You are not allowed to restore this ticket");
+
+            if ((bool)!ticket.IsDeleted)
+                throw new InvalidOperationException("Ticket is not deleted");
+
+            await _ticketRepository.RestoreTicketAsync(ticket, cancellationToken);
+            return true;
+        }
 
 
         public async Task<TicketResponse?> UpdateTicketAsync(TicketRequest request, Guid ticketId, CancellationToken cancellationToken = default)
@@ -208,16 +220,7 @@ namespace Fusion.Service.Services
 
 			var result = await _ticketRepository.UpdateTicketAsync(ticketId, _mapper.Map<Ticket>(request), cancellationToken);
 
-			var companyId = await GetCompanyIdAsync(ticketId);
-            var currentUserName = await GetUserName(_currentService.GetUserId());
-            var log = new CompanyActivityLog
-			{
-				CompanyId = companyId,
-				ActorUserId = _currentService.GetUserId(),
-				Title = "Update ticket",
-				Description = $"User:{currentUserName} has updated ticket '{result.TicketName}' from project '{result.Project.Name}'",
-			};
-			await _logService.CreateLog(log);
+		
 			return _mapper.Map<TicketResponse>(result);
 		}
 

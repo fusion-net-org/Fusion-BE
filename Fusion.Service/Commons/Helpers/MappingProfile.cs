@@ -18,6 +18,7 @@ using Fusion.Service.ViewModels.SubscriptionPlan.Requests;
 using Fusion.Service.ViewModels.SubscriptionPlan.Responses;
 using Fusion.Service.ViewModels.Task.Request;
 using Fusion.Service.ViewModels.Task.Response;
+using Fusion.Service.ViewModels.TicketComment;
 using Fusion.Service.ViewModels.Tickets.Requests;
 using Fusion.Service.ViewModels.Tickets.Responses;
 using Fusion.Service.ViewModels.TransactionPayment.Responses;
@@ -327,6 +328,30 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id));
         // ===================== Workflow status =====================
         CreateMap<WorkflowStatus, WorkflowStatusResponse>().ReverseMap();
-    
+
+
+        // ===================== TicketComment =====================
+        CreateMap<TicketComment, TicketCommentResponse>()
+         .ForMember(dest => dest.AuthorUserName,
+             opt => opt.MapFrom(src => src.AuthorUser != null ? src.AuthorUser.UserName : null))
+         .ForMember(dest => dest.AuthorUserAvatar,
+             opt => opt.MapFrom(src => src.AuthorUser != null ? src.AuthorUser.Avatar : null))
+         .ForMember(dest => dest.IsOwner, opt => opt.MapFrom((src, dest, _, context) =>
+         {
+             var currentUserId = (Guid)context.Items["CurrentUserId"];
+             return src.AuthorUserId == currentUserId || (src.Ticket != null && src.Ticket.SubmittedBy == currentUserId);
+         }))
+         .ReverseMap();
+
+
+        CreateMap<TicketCommentRequest, TicketComment>()
+            .ForMember(dest => dest.CreateAt, opt => opt.Ignore())
+            .ForMember(dest => dest.UpdateAt, opt => opt.Ignore())
+            .ForMember(dest => dest.IsDeleted, opt => opt.Ignore())
+            .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
+
+        CreateMap<TicketCommentRequestUpdate, TicketComment>()
+            .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
+
     }    
 }

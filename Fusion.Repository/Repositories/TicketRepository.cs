@@ -87,10 +87,11 @@ namespace Fusion.Repository.Repositories
 			return ticket.Entity;
 		}
 
-		public async Task<bool?> DeleteTicketAsync(Ticket ticket, CancellationToken cancellationToken = default)
+		public async Task<bool?> DeleteTicketAsync(Ticket ticket, string reason, CancellationToken cancellationToken = default)
 		{
 			ticket.IsDeleted = true;
-			_context.Tickets.Update(ticket);
+            ticket.reason = reason;
+            _context.Tickets.Update(ticket);
 			await _context.SaveChangesAsync(cancellationToken);
 			return true;
 		}
@@ -102,7 +103,7 @@ namespace Fusion.Repository.Repositories
             var query = _context.Tickets
                 .Include(x => x.TicketComments)
 				.Include(x => x.SubmittedByNavigation)
-                .Where(t => t.ProjectId == request.ProjectId && t.IsDeleted == false)
+                .Where(t => t.ProjectId == request.ProjectId)
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(request.TicketName))
@@ -168,6 +169,15 @@ namespace Fusion.Repository.Repositories
                 .Include(t => t.Status) 
                 .Where(t => t.ProjectId == projectId)
                 .ToListAsync(cancellationToken);
+        }
+        public async Task<bool?> RestoreTicketAsync(Ticket ticket, CancellationToken cancellationToken = default)
+        {
+            ticket.IsDeleted = false;
+            ticket.reason = null;
+
+            _context.Tickets.Update(ticket);
+            await _context.SaveChangesAsync(cancellationToken);
+            return true;
         }
 
 

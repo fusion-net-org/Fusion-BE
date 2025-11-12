@@ -15,7 +15,6 @@ namespace Fusion.Service.ViewModels.Tickets.Requests
 		public string? Description { get; set; }
 		public Guid? StatusId { get; set; }
 		public Guid? SubmittedBy;
-		public bool? IsBillable { get; set; }
 		public decimal? Budget { get; set; }
 	}
 }
