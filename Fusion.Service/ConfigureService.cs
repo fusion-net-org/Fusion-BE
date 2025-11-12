@@ -90,6 +90,10 @@ namespace Fusion.Service
 
             // company subscription
             services.AddScoped<ICompanySubscriptionService, CompanySubscriptionService>();
+
+            // tiocket comment
+            services.AddScoped<ITicketCommentService, TicketCommentService>();
+
             // PayOS
             services.AddSingleton<PayOS>(sp =>
             {

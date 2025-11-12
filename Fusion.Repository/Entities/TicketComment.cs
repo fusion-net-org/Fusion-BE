@@ -18,17 +18,19 @@ public partial class TicketComment
     [Column("author_user_id")]
     public Guid? AuthorUserId { get; set; }
 
-    [Column("visibility")]
-    [StringLength(10)]
-    [Unicode(false)]
-    public string? Visibility { get; set; }
-
     [Column("body")]
     public string? Body { get; set; }
 
     [Column("create_at")]
     [Precision(3)]
     public DateTime CreateAt { get; set; }
+
+    [Column("update_at")]
+    [Precision(3)]
+    public DateTime UpdateAt { get; set; }
+
+    [Column("is_deleted")]
+    public bool? IsDeleted { get; set; }
 
     [ForeignKey("AuthorUserId")]
     [InverseProperty("TicketComments")]

@@ -101,29 +101,102 @@ namespace Fusion.API.Controllers
 				message: "Update ticket successfully"));
 		}
 
-		[HttpDelete("{id:guid}")]
-		[ProducesResponseType(StatusCodes.Status204NoContent)]
-		public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
-		{
-			var emailClaim = User.Claims.FirstOrDefault(c =>
-				c.Type == JwtRegisteredClaimNames.Email ||
-				c.Type == ClaimTypes.Email ||
-				c.Type == "email");
+        [HttpDelete("{id:guid}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public async Task<IActionResult> Delete(Guid id, [FromQuery] string reason, CancellationToken cancellationToken)
+        {
+            var emailClaim = User.Claims.FirstOrDefault(c =>
+                c.Type == JwtRegisteredClaimNames.Email ||
+                c.Type == ClaimTypes.Email ||
+                c.Type == "email");
 
-			var email = emailClaim?.Value;
-			if (email == null)
-			{
-				return Unauthorized(ResponseModel<TicketResponse>.Error(
-					statusCode: StatusCodes.Status401Unauthorized,
-					message: "Unauthorized: User identity not found"
-				));
-			}
+            var email = emailClaim?.Value;
+            if (email == null)
+            {
+                return Unauthorized(ResponseModel<TicketResponse>.Error(
+                    statusCode: StatusCodes.Status401Unauthorized,
+                    message: "Unauthorized: User identity not found"
+                ));
+            }
 
-			var result = await _ticketService.DeleteTicketAsync(id, cancellationToken);
-			return Ok(ResponseModel<bool>.Ok(
-				data: result ?? false,
-				message: "Delete ticket successfully"));
-		}
+            try
+            {
+                var result = await _ticketService.DeleteTicketAsync(id,reason, cancellationToken);
+                return Ok(ResponseModel<bool>.Ok(
+                    data: result ?? false,
+                    message: "Delete ticket successfully"));
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(
+                    StatusCodes.Status403Forbidden,
+                    ResponseModel<bool>.Error(
+                        statusCode: StatusCodes.Status403Forbidden,
+                        message: ex.Message
+                    )
+                );
+            }
+
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ResponseModel<bool>.Error(
+                    statusCode: StatusCodes.Status404NotFound,
+                    message: ex.Message
+                ));
+            }
+        }
+
+        [HttpPut("{id:guid}/restore")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> Restore(Guid id, CancellationToken cancellationToken)
+        {
+            var emailClaim = User.Claims.FirstOrDefault(c =>
+                c.Type == JwtRegisteredClaimNames.Email ||
+                c.Type == ClaimTypes.Email ||
+                c.Type == "email");
+
+            var email = emailClaim?.Value;
+            if (email == null)
+            {
+                return Unauthorized(ResponseModel<TicketResponse>.Error(
+                    statusCode: StatusCodes.Status401Unauthorized,
+                    message: "Unauthorized: User identity not found"
+                ));
+            }
+
+            try
+            {
+                var result = await _ticketService.RestoreTicketAsync(id, cancellationToken);
+                return Ok(ResponseModel<bool>.Ok(
+                    data: result ?? false,
+                    message: "Restore ticket successfully"));
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(
+                    StatusCodes.Status403Forbidden,
+                    ResponseModel<bool>.Error(
+                        statusCode: StatusCodes.Status403Forbidden,
+                        message: ex.Message
+                    )
+                );
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ResponseModel<bool>.Error(
+                    statusCode: StatusCodes.Status400BadRequest,
+                    message: ex.Message
+                ));
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ResponseModel<bool>.Error(
+                    statusCode: StatusCodes.Status404NotFound,
+                    message: ex.Message
+                ));
+            }
+        }
+
 
         [HttpGet("by-project")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PagedResult<TicketResponse>>))]

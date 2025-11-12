@@ -46,7 +46,11 @@ public partial class Ticket
 	[Column("is_deleted")]
 	public bool? IsDeleted { get; set; }
 
-	[Column("resolved_at")]
+    [Column("reason")]
+
+    public string? reason { get; set; }
+
+    [Column("resolved_at")]
     [Precision(3)]
     public DateTime? ResolvedAt { get; set; }
 
