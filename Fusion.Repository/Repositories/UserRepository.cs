@@ -127,6 +127,11 @@ namespace Fusion.Repository.Repositories
             return (row?.False ?? 0, row?.True ?? 0);
         }
 
+        public async Task<int> GetTotalUsersAsync(CancellationToken cancellationToken = default)
+        {
+            return await _context.Users.CountAsync(u => u.Status == true, cancellationToken);
+        }
+
         //public async Task<bool> EmailVerificationAsync(string token, CancellationToken cancellationToken = default)
         //{
         //    if (string.IsNullOrWhiteSpace(token))
