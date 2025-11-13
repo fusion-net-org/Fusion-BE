@@ -246,7 +246,8 @@ namespace Fusion.Service.Services
     : (DateTime?)null,
 
                 Status = p.Status ?? "Planned",
-                Ptype = p.IsHired ? "Outsourced" : "Internal"
+                Ptype = p.CompanyRequestId == companyId ? "Outsourced" : "Internal",
+                IsRequest = (p.CompanyRequestId == companyId)
             }).ToList();
 
             return new ProjectListResult

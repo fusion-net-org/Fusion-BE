@@ -42,7 +42,7 @@ namespace Fusion.Repository.Repositories
                 .Include(p => p.Company)
                 .Include(p => p.CompanyRequest)
                 .Include(p => p.Workflow)
-                .Where(p => p.CompanyId == companyId);
+                .Where(p => p.CompanyId == companyId || p.CompanyRequestId == companyId);
 
             // Search
             if (!string.IsNullOrWhiteSpace(q))
