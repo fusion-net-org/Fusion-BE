@@ -31,7 +31,16 @@ namespace Fusion.API.Controllers
                 message: "Overview dashboard loaded successfully"));
         }
 
+        [HttpGet("monthly-stats")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<IEnumerable<MonthlyStats>>))]
 
-        
+        public async Task<IActionResult> GetMonthlyStats(CancellationToken cancellationToken)
+        {
+            var result = await _adminService.GetMonthlyStatsAsync(cancellationToken);
+            return Ok(ResponseModel<IEnumerable<MonthlyStats>>.Ok(
+                data: result,
+                message: "Montly Stats loaded successfully"));
+        }
+
     }
 }
