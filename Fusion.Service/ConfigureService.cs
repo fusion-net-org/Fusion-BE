@@ -78,7 +78,7 @@ namespace Fusion.Service
             services.AddScoped<IProjectMemberService, ProjectMemberService>();
 
             // admin
-            //services.AddScoped<IAdminService, AdminService>();
+            services.AddScoped<IAdminService, AdminService>();
 
             //userlog 
             services.AddScoped<IUserLogService, UserLogService>();
@@ -91,6 +91,10 @@ namespace Fusion.Service
 
             // company subscription
             services.AddScoped<ICompanySubscriptionService, CompanySubscriptionService>();
+
+            // tiocket comment
+            services.AddScoped<ITicketCommentService, TicketCommentService>();
+
             // PayOS
             services.AddSingleton<PayOS>(sp =>
             {

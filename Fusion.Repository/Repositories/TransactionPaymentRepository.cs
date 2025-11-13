@@ -5,6 +5,7 @@ using Fusion.Repository.Bases.Page.TransactionPayment;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.IRepositories;
+using Fusion.Repository.ViewModels;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fusion.Repository.Repositories;
@@ -139,6 +140,46 @@ public class TransactionPaymentRepository : GenericRepository<TransactionPayment
         }
 
         return await q.ToPagedResultAsync(request, ct);
+    }
+
+    public async Task<decimal> GetTotalRevenueAsync(CancellationToken ct = default)
+    {
+        return await _context.TransactionPayments
+            .Where(t => t.Status == "Success")
+            .SumAsync(t => (decimal?)t.Amount, ct) ?? 0;
+    }
+
+    public async Task<IEnumerable<MonthlyStats>> GetMonthlyStatsAsync(int year, CancellationToken ct = default)
+    {
+        var monthlyRevenue = await _context.TransactionPayments
+            .Where(t => t.TransactionDateTime.HasValue &&
+                        t.TransactionDateTime.Value.Year == year &&
+                        t.Status == "Success")
+            .GroupBy(t => t.TransactionDateTime.Value.Month)
+            .Select(g => new { Month = g.Key, Revenue = g.Sum(x => x.Amount) })
+            .ToListAsync();
+
+        var monthlyUsers = await _context.Users
+            .Where(u => u.CreateAt.Year == year)
+            .GroupBy(u => u.CreateAt.Month)
+            .Select(g => new { Month = g.Key, Users = g.Count() })
+            .ToListAsync();
+
+        var monthlyCompanies = await _context.Companies
+            .Where(c => c.CreateAt.Year == year)
+            .GroupBy(c => c.CreateAt.Month)
+            .Select(g => new { Month = g.Key, Companies = g.Count() })
+            .ToListAsync();
+
+        var months = Enumerable.Range(1, 12).Select(m => new MonthlyStats
+        {
+            Month = m,
+            Revenue = monthlyRevenue.FirstOrDefault(x => x.Month == m)?.Revenue ?? 0,
+            Users = monthlyUsers.FirstOrDefault(x => x.Month == m)?.Users ?? 0,
+            Companies = monthlyCompanies.FirstOrDefault(x => x.Month == m)?.Companies ?? 0
+        });
+
+        return months;
     }
 
 
