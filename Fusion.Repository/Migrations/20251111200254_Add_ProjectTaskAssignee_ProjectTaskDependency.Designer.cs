@@ -4,6 +4,7 @@ using Fusion.Repository.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Fusion.Repository.Migrations
 {
     [DbContext(typeof(FusionDbContext))]
-    partial class FusionDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251111200254_Add_ProjectTaskAssignee_ProjectTaskDependency")]
+    partial class Add_ProjectTaskAssignee_ProjectTaskDependency
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -312,91 +315,6 @@ namespace Fusion.Repository.Migrations
                         .HasFilter("([company_id] IS NOT NULL AND [user_id] IS NOT NULL)");
 
                     b.ToTable("CompanyMembers");
-                });
-
-            modelBuilder.Entity("Fusion.Repository.Entities.CompanySubscription", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("(newid())");
-
-                    b.Property<Guid>("CompanyId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("company_id");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("(sysutcdatetime())");
-
-                    b.Property<DateTime>("ExpiredAt")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("expired_at");
-
-                    b.Property<string>("NameSubscription")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)")
-                        .HasColumnName("name_subscription");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasColumnName("status");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasColumnName("updated_at")
-                        .HasDefaultValueSql("(sysutcdatetime())");
-
-                    b.Property<Guid>("UserSubscriptionId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("user_subscription_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CompanyId");
-
-                    b.HasIndex("UserSubscriptionId");
-
-                    b.ToTable("CompanySubscriptions");
-                });
-
-            modelBuilder.Entity("Fusion.Repository.Entities.CompanySubscriptionEntitlement", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("(newid())");
-
-                    b.Property<Guid>("CompanySubscriptionId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("company_subscription_id");
-
-                    b.Property<string>("FeatureKey")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasColumnName("feature_key");
-
-                    b.Property<int>("Quantity")
-                        .HasColumnType("int")
-                        .HasColumnName("quantity");
-
-                    b.Property<int>("Remaining")
-                        .HasColumnType("int")
-                        .HasColumnName("remaining");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CompanySubscriptionId");
-
-                    b.ToTable("CompanySubscriptionEntitlements");
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.Contract", b =>
@@ -1502,9 +1420,11 @@ namespace Fusion.Repository.Migrations
                         .HasColumnName("updated_at")
                         .HasDefaultValueSql("(sysutcdatetime())");
 
-                    b.Property<string>("reason")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("reason");
+                    b.Property<string>("Urgency")
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("urgency");
 
                     b.HasKey("Id");
 
@@ -1541,18 +1461,15 @@ namespace Fusion.Repository.Migrations
                         .HasColumnName("create_at")
                         .HasDefaultValueSql("(sysutcdatetime())");
 
-                    b.Property<bool?>("IsDeleted")
-                        .HasColumnType("bit")
-                        .HasColumnName("is_deleted");
-
                     b.Property<Guid?>("TicketId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("ticket_id");
 
-                    b.Property<DateTime>("UpdateAt")
-                        .HasPrecision(3)
-                        .HasColumnType("datetime2(3)")
-                        .HasColumnName("update_at");
+                    b.Property<string>("Visibility")
+                        .HasMaxLength(10)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(10)")
+                        .HasColumnName("visibility");
 
                     b.HasKey("Id");
 
@@ -1899,96 +1816,6 @@ namespace Fusion.Repository.Migrations
                     b.ToTable("UserRoles");
                 });
 
-            modelBuilder.Entity("Fusion.Repository.Entities.UserSubscription", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("(newid())");
-
-                    b.Property<DateTime>("CreatAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasColumnName("create_at")
-                        .HasDefaultValueSql("(sysutcdatetime())");
-
-                    b.Property<string>("Currency")
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)")
-                        .HasDefaultValue("VND")
-                        .HasColumnName("currency");
-
-                    b.Property<DateTime>("ExpiredAt")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("expired_at");
-
-                    b.Property<string>("NamePlan")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("name_plan");
-
-                    b.Property<decimal>("Price")
-                        .HasColumnType("decimal(18,2)")
-                        .HasColumnName("price");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasColumnName("status");
-
-                    b.Property<Guid>("TransactionId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("transaction_id");
-
-                    b.Property<DateTime?>("UpdateAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasColumnName("update_at")
-                        .HasDefaultValueSql("(sysutcdatetime())");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TransactionId")
-                        .IsUnique();
-
-                    b.ToTable("UserSubscriptions");
-                });
-
-            modelBuilder.Entity("Fusion.Repository.Entities.UserSubscriptionEntitlement", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("(newid())");
-
-                    b.Property<string>("FeatureKey")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasColumnName("feature_key");
-
-                    b.Property<int>("Quantity")
-                        .HasColumnType("int")
-                        .HasColumnName("quantity");
-
-                    b.Property<int>("Remaining")
-                        .HasColumnType("int")
-                        .HasColumnName("remaining");
-
-                    b.Property<Guid>("UserSubscriptionId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("user_subscription_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserSubscriptionId");
-
-                    b.ToTable("UserSubscriptionEntitlements");
-                });
-
             modelBuilder.Entity("Fusion.Repository.Entities.Workflow", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2206,39 +2033,6 @@ namespace Fusion.Repository.Migrations
                     b.Navigation("Company");
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Fusion.Repository.Entities.CompanySubscription", b =>
-                {
-                    b.HasOne("Fusion.Repository.Entities.Company", "Company")
-                        .WithMany("CompanySubscriptions")
-                        .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("FK_CompanySubscriptions_Company");
-
-                    b.HasOne("Fusion.Repository.Entities.UserSubscription", "UserSubscription")
-                        .WithMany("CompanySubscriptions")
-                        .HasForeignKey("UserSubscriptionId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("FK_CompanySubscriptions_UserSubscription");
-
-                    b.Navigation("Company");
-
-                    b.Navigation("UserSubscription");
-                });
-
-            modelBuilder.Entity("Fusion.Repository.Entities.CompanySubscriptionEntitlement", b =>
-                {
-                    b.HasOne("Fusion.Repository.Entities.CompanySubscription", "CompanySubscription")
-                        .WithMany("CompanySubscriptionEntitlements")
-                        .HasForeignKey("CompanySubscriptionId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("FK_CompanySubscriptionEntitlements_Subscription");
-
-                    b.Navigation("CompanySubscription");
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.Contract", b =>
@@ -2660,30 +2454,6 @@ namespace Fusion.Repository.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Fusion.Repository.Entities.UserSubscription", b =>
-                {
-                    b.HasOne("Fusion.Repository.Entities.TransactionPayment", "TransactionPayment")
-                        .WithOne("UserSubscription")
-                        .HasForeignKey("Fusion.Repository.Entities.UserSubscription", "TransactionId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("FK_UserSubscriptions_TransactionPayment");
-
-                    b.Navigation("TransactionPayment");
-                });
-
-            modelBuilder.Entity("Fusion.Repository.Entities.UserSubscriptionEntitlement", b =>
-                {
-                    b.HasOne("Fusion.Repository.Entities.UserSubscription", "UserSubscription")
-                        .WithMany("UserSubscriptionEntitlements")
-                        .HasForeignKey("UserSubscriptionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("FK_UserSubscriptionEntitlements_UserSubscription");
-
-                    b.Navigation("UserSubscription");
-                });
-
             modelBuilder.Entity("Fusion.Repository.Entities.Workflow", b =>
                 {
                     b.HasOne("Fusion.Repository.Entities.Company", "Company")
@@ -2736,8 +2506,6 @@ namespace Fusion.Repository.Migrations
 
                     b.Navigation("CompanyMembers");
 
-                    b.Navigation("CompanySubscriptions");
-
                     b.Navigation("ProjectCompanies");
 
                     b.Navigation("ProjectCompanyRequests");
@@ -2751,11 +2519,6 @@ namespace Fusion.Repository.Migrations
                     b.Navigation("Roles");
 
                     b.Navigation("Workflows");
-                });
-
-            modelBuilder.Entity("Fusion.Repository.Entities.CompanySubscription", b =>
-                {
-                    b.Navigation("CompanySubscriptionEntitlements");
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.Contract", b =>
@@ -2825,11 +2588,6 @@ namespace Fusion.Repository.Migrations
                     b.Navigation("TicketComments");
                 });
 
-            modelBuilder.Entity("Fusion.Repository.Entities.TransactionPayment", b =>
-                {
-                    b.Navigation("UserSubscription");
-                });
-
             modelBuilder.Entity("Fusion.Repository.Entities.User", b =>
                 {
                     b.Navigation("Comments");
@@ -2869,13 +2627,6 @@ namespace Fusion.Repository.Migrations
                     b.Navigation("UserNotificationSettings");
 
                     b.Navigation("UserRoles");
-                });
-
-            modelBuilder.Entity("Fusion.Repository.Entities.UserSubscription", b =>
-                {
-                    b.Navigation("CompanySubscriptions");
-
-                    b.Navigation("UserSubscriptionEntitlements");
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.Workflow", b =>

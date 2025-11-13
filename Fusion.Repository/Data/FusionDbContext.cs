@@ -38,6 +38,8 @@ public partial class FusionDbContext : DbContext
     public virtual DbSet<UserDevice> UserDevices { get; set; }
     public virtual DbSet<CompanyActivityLog> CompanyActivityLogs { get; set; }
     public virtual DbSet<UserLog> UserLogs { get; set; }
+    public virtual DbSet<ProjectTaskAssignee> ProjectTaskAssignee { get; set; }
+    public virtual DbSet<ProjectTaskDependency> ProjectTaskDependency { get; set; }
 
     public virtual DbSet<UserNotificationSetting> UserNotificationSettings { get; set; }
     // Subscription
@@ -390,6 +392,38 @@ public partial class FusionDbContext : DbContext
                   .HasForeignKey(d => d.PlanId)
                   .OnDelete(DeleteBehavior.Cascade)
                   .HasConstraintName("FK_TransactionPayments_Plan");
+        });
+        modelBuilder.Entity<ProjectTaskAssignee>(e =>
+        {
+            e.ToTable("ProjectTaskAssignees");
+            e.HasKey(x => new { x.TaskId, x.UserId });               // ⬅️ khóa chính kép
+            e.Property(x => x.AssignedAt).HasPrecision(3)
+                .HasDefaultValueSql("GETUTCDATE()");
+            e.HasOne(x => x.Task).WithMany(t => t.Assignees)
+                .HasForeignKey(x => x.TaskId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.User).WithMany()
+                .HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => x.UserId);
+        });
+
+        modelBuilder.Entity<ProjectTaskDependency>(e =>
+        {
+            e.ToTable("ProjectTaskDependencies");
+            e.HasKey(x => new { x.TaskId, x.DependsOnTaskId });
+
+            e.Property(x => x.CreatedAt).HasPrecision(3).HasDefaultValueSql("GETUTCDATE()");
+
+            e.HasOne(x => x.Task)
+             .WithMany(t => t.Dependencies)     
+             .HasForeignKey(x => x.TaskId)
+             .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasOne(x => x.DependsOnTask)
+             .WithMany()                       
+             .HasForeignKey(x => x.DependsOnTaskId)
+             .OnDelete(DeleteBehavior.Restrict);
+
+            e.HasIndex(x => x.DependsOnTaskId);
         });
 
         // === UserSubscription ===

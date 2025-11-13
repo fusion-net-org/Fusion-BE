@@ -6,12 +6,11 @@ namespace Fusion.Service.IServices
 {
     public interface ITaskService
     {
-        Task<ProjectTaskResponse> CreateTaskAsync(ProjectTaskRequest task, Guid UserId);
-        Task<ProjectTaskResponse?> GetTaskByIdAsync(Guid id);
-        Task<PagedResult<ProjectTaskResponse>> GetAllTasksAsync(PagedRequest request, CancellationToken cancellationToken = default);
-        Task<ProjectTaskResponse?> UpdateTaskAsync(ProjectTaskRequest task, Guid userId);
-        Task<bool> DeleteTaskAsync(Guid id);
-        Task<ProjectTaskResponse> ChangeStatus(Guid id, string status, Guid userId);
-
+        Task<ProjectTaskResponse> CreateTaskAsync(ProjectTaskRequest req, Guid userId, CancellationToken ct = default);
+        Task<ProjectTaskResponse?> UpdateTaskAsync(ProjectTaskRequest req, Guid userId, CancellationToken ct = default);
+        Task<ProjectTaskResponse?> GetTaskByIdAsync(Guid id, CancellationToken ct = default);
+        Task<PagedResult<ProjectTaskResponse>> GetAllTasksAsync(PagedRequest request, CancellationToken ct = default);
+        Task<bool> DeleteTaskAsync(Guid id, Guid userId = default, CancellationToken ct = default);
+        Task<ProjectTaskResponse> ChangeStatus(Guid id, string status, Guid userId, CancellationToken ct = default);
     }
 }
