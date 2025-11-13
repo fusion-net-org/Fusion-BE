@@ -77,7 +77,7 @@ namespace Fusion.Service
             services.AddScoped<IProjectMemberService, ProjectMemberService>();
 
             // admin
-            //services.AddScoped<IAdminService, AdminService>();
+            services.AddScoped<IAdminService, AdminService>();
 
             //userlog 
             services.AddScoped<IUserLogService, UserLogService>();

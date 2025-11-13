@@ -3,6 +3,7 @@ using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.TransactionPayment;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
+using Fusion.Repository.ViewModels;
 
 namespace Fusion.Repository.IRepositories
 {
@@ -17,6 +18,10 @@ namespace Fusion.Repository.IRepositories
         Task<TransactionPayment?> GetByPaymentLinkIdAsync(string paymentLinkId, CancellationToken ct = default);
         Task<bool> ExistsOrderCodeAsync(long orderCode, CancellationToken ct = default);
         Task<bool> ExistsPaymentLinkIdAsync(string paymentLinkId, CancellationToken ct = default);
+
+        Task<IEnumerable<MonthlyStats>> GetMonthlyStatsAsync(int year, CancellationToken ct = default);
+
+        Task<decimal> GetTotalRevenueAsync(CancellationToken ct = default);
 
         // Paged list
         Task<PagedResult<TransactionPayment>> GetPagedAsync(TransactionPaymentPagedRequest request, CancellationToken ct = default);

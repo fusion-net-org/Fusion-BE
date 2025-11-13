@@ -303,5 +303,10 @@ namespace Fusion.Repository.Repositories
                         .SingleOrDefaultAsync(x => x.Id == projectId);
             return query;
         }
+
+        public async Task<int> GetTotalProjectsAsync(CancellationToken token)
+        {
+            return await _context.Projects.CountAsync(token);
+        }
     }
 }
