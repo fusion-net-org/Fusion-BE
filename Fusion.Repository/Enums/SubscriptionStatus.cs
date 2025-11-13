@@ -4,20 +4,86 @@ using System.Runtime.Serialization;
 
 namespace Fusion.Repository.Enums;
 
+/// <summary>
+/// Phạm vi cấp phép của gói
+/// </summary>
+public enum LicenseScope
+{
+    [EnumMember(Value = "seat_based")]
+    SeatBased = 1,
+
+    [EnumMember(Value = "company_wide")]
+    CompanyWide = 2
+
+}
+
+/// <summary>
+/// Kỳ hạn billing cho Price (áp dụng PeriodCount x BillingPeriod)
+/// </summary>
+/// 
+public enum BillingPeriod
+{
+    [EnumMember(Value = "week")]
+     Week = 1,
+
+   [EnumMember(Value = "month")]
+    Month = 2,
+
+    [EnumMember(Value = "year")]
+    Year = 3,
+}
+
+
+/// <summary>
+/// Đơn vị tính phí
+/// </summary>
+public enum ChargeUnit
+{
+    [EnumMember(Value = "per_subscription")]
+    PerSubscription = 1,
+
+    [EnumMember(Value = "per_seat")]
+    PerSeat = 2
+}
+
+
+/// <summary>
+/// Phương thức thanh toán của Price
+/// </summary>
+public enum PaymentMode
+{
+    [EnumMember(Value = "prepaid")]
+    Prepaid = 1,
+
+    [EnumMember(Value = "installments")]
+    Installments = 2
+}
+
+/// <summary>
+/// Trạng thái của Subscription (khác với PaymentStatus)
+/// </summary>
 public enum SubscriptionStatus
 {
+    [EnumMember(Value = "pending")]
+    Pending = 0,          // chờ kích hoạt / chờ thanh toán đầu
+
     [EnumMember(Value = "active")]
     Active = 1,
 
-    [EnumMember(Value = "inactive")]
-    Inactive = 2,
+    [EnumMember(Value = "paused")]
+    Paused = 2,           // tạm dừng (vi phạm, admin pause, v.v.)
 
-    [EnumMember(Value = "refunded")]
-    Refunded = 3,
+    [EnumMember(Value = "canceled")]
+    Canceled = 3,         // người dùng/hệ thống hủy trước hạn
 
     [EnumMember(Value = "expired")]
-    Expired = 4
+    Expired = 4           // quá hạn
+                        
 }
+
+/// <summary>
+/// Trạng thái của giao dịch thanh toán
+/// </summary>
 public enum PaymentStatus
 {
     [EnumMember(Value = "pending")]
@@ -36,25 +102,4 @@ public enum PaymentStatus
     Cancelled = 5
 }
 
-public enum BillingPeriod
-{
-    [EnumMember(Value = "week")]
-    Week = 1,
 
-    [EnumMember(Value = "month")]
-    Month = 2,
-
-    [EnumMember(Value = "year")]
-    Year = 3
-}
-
-public enum FeatureKeys
-{
-    [EnumMember(Value = "project")]
-    Project = 1,
-
-    [EnumMember(Value = "company")]
-    Company = 2,
-    [EnumMember(Value = "share")]
-    Share = 3,
-}

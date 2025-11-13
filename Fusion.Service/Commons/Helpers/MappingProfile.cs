@@ -5,8 +5,8 @@ using Fusion.Service.ViewModels.Comment.Request;
 using Fusion.Service.ViewModels.Comment.Response;
 using Fusion.Service.ViewModels.Companies.Requests;
 using Fusion.Service.ViewModels.Companies.Responses;
-using Fusion.Service.ViewModels.CompanySubscription.Requests;
-using Fusion.Service.ViewModels.CompanySubscription.Responses;
+using Fusion.Service.ViewModels.FeatureCatalog.Requests;
+using Fusion.Service.ViewModels.FeatureCatalog.Responses;
 using Fusion.Service.ViewModels.Notifications.Requests;
 using Fusion.Service.ViewModels.Notifications.Responses;
 using Fusion.Service.ViewModels.Project.Requests;
@@ -169,51 +169,71 @@ public class MappingProfile : Profile
 
         //--------------------------- entity: Transaction Payment ---------------------------------------------
         // List item
-        CreateMap<TransactionPayment, TransactionPaymentResponse>()
-            .ForMember(d => d.UserName, opt => opt.MapFrom(s => s.User != null ? s.User.UserName : null))
-            .ForMember(d => d.PlanName, opt => opt.MapFrom(s => s.SubscriptionPlan != null ? s.SubscriptionPlan.Name : null));
+        //CreateMap<TransactionPayment, TransactionPaymentResponse>()
+        //    .ForMember(d => d.UserName, opt => opt.MapFrom(s => s.User != null ? s.User.UserName : null))
+        //    .ForMember(d => d.PlanName, opt => opt.MapFrom(s => s.SubscriptionPlan != null ? s.SubscriptionPlan.Name : null));
 
         // Detail item
-        CreateMap<TransactionPayment, TransactionPaymentDetailResponse>();
+        //CreateMap<TransactionPayment, TransactionPaymentDetailResponse>();
         //----------------------------     entity: Project  ---------------------------------------------
         CreateMap<Project, ProjectResponse>();
 
 
         //--------------------------- entity: SubscriptionPlan ---------------------------------------------
+        // Request -> Entity
         CreateMap<SubscriptionPlanCreateRequest, SubscriptionPlan>()
-             .ForMember(dest => dest.Id, opt => opt.MapFrom(_ => Guid.NewGuid()))
-             .ForMember(dest => dest.IsActive, opt => opt.MapFrom(_ => true))
-             .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(_ => DateTime.UtcNow))
-             .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(_ => DateTime.UtcNow));
-
-        CreateMap<SubscriptionPlanFeatureRequest, SubscriptionPlanFeature>();
-        CreateMap<SubscriptionPlanPriceRequest, SubscriptionPlanPrice>();
+            .ForMember(d => d.Id, o => o.Ignore())
+            .ForMember(d => d.CreatedAt, o => o.Ignore())
+            .ForMember(d => d.UpdatedAt, o => o.Ignore())
+            .ForMember(d => d.Price, o => o.Ignore())
+            .ForMember(d => d.Features, o => o.Ignore());
 
         CreateMap<SubscriptionPlanUpdateRequest, SubscriptionPlan>()
-                     .ForMember(d => d.CreatedAt, opt => opt.Ignore())
-                     .ForMember(d => d.UpdatedAt, opt => opt.Ignore())
-                     .ForMember(d => d.Price, opt => opt.MapFrom(src => src.Price))
-                     .ForMember(d => d.Features, opt => opt.MapFrom(src => src.Features));
+            .ForMember(d => d.CreatedAt, o => o.Ignore())
+            .ForMember(d => d.UpdatedAt, o => o.Ignore())
+            .ForMember(d => d.Price, o => o.Ignore())
+            .ForMember(d => d.Features, o => o.Ignore());
 
-        CreateMap<SubscriptionPlanPriceUpdateRequest, SubscriptionPlanPrice>();
+        CreateMap<SubscriptionPlanPriceInput, SubscriptionPlanPrice>()
+            .ForMember(d => d.Id, o => o.Ignore())
+            .ForMember(d => d.PlanId, o => o.Ignore());
 
-        CreateMap<SubscriptionPlanFeatureUpsertRequest, SubscriptionPlanFeature>()
-            .ForMember(d => d.Id, opt => opt.MapFrom(s => s.Id ?? Guid.Empty))
-            .ForMember(d => d.PlanId, opt => opt.Ignore())
-            .ForMember(d => d.LimitValue, opt => opt.MapFrom(s => s.LimitValue ?? 0));
-
-
-
-        // ReverseMap
-        CreateMap<SubscriptionPlan, SubscriptionPlanResponse>();
-        CreateMap<SubscriptionPlanFeature, SubscriptionPlanFeatureRequest>();
-        CreateMap<SubscriptionPlanPrice, SubscriptionPlanPriceRequest>();
-
-        //detail
-        CreateMap<SubscriptionPlan, SubscriptionPlanDetailResponse>();
+        // Entity -> Response
         CreateMap<SubscriptionPlanPrice, SubscriptionPlanPriceResponse>();
-        CreateMap<SubscriptionPlanFeature, SubscriptionPlanFeatureResponse>();
 
+        CreateMap<SubscriptionPlan, SubscriptionPlanListItemResponse>();
+
+        CreateMap<SubscriptionPlan, SubscriptionPlanDetailResponse>()
+            .ForMember(d => d.Price, o => o.MapFrom(s => s.Price))
+            .ForMember(d => d.Features, o => o.MapFrom(s =>
+                s.Features != null
+                    ? s.Features.Select(f => new SubscriptionPlanFeatureResponse
+                    {
+                        FeatureId = f.FeatureId,
+                        FeatureCode = f.Feature != null ? f.Feature.Code : null,
+                        FeatureName = f.Feature != null ? f.Feature.Name : null,
+                        Enabled = f.Enabled
+                    })
+                    : new List<SubscriptionPlanFeatureResponse>()));
+
+        // for customer 
+        // Price -> PlanPricePreviewResponse
+        CreateMap<SubscriptionPlanPrice, PlanPricePreviewResponse>()
+            .ForMember(d => d.Amount, o => o.MapFrom(s => s.Price));
+
+        // Plan -> SubscriptionPlanCustomerResponse
+        CreateMap<SubscriptionPlan, SubscriptionPlanCustomerResponse>()
+            .ForMember(d => d.Price, o => o.MapFrom(s => s.Price))
+            .ForMember(d => d.FeaturesPreview, o => o.MapFrom(s =>
+                (s.Features ?? Enumerable.Empty<SubscriptionPlanFeature>())
+                    .Where(f => f.Enabled && f.Feature != null)
+                    .OrderBy(f => f.Feature!.Name)
+                    .Select(f => new PlanFeatureChipResponse
+                    {
+                        Name = f.Feature!.Name
+                    })
+                    .ToList()
+            ));
         //----------------------------     entity: Notification ---------------------------------------------
         CreateMap<Notification, NotificationResponse>()
             .ForMember(dest => dest.LinkUrl, opt => opt.MapFrom(src => src.LinkUrlMobile)) 
@@ -250,53 +270,69 @@ public class MappingProfile : Profile
      .ForMember(d => d.Sprints, o => o.MapFrom(s => s.Sprints.Where(x => !x.IsDeleted)));
 
 
+        // ===================== Feature Catalog =====================
+        // Request -> Entity
+        CreateMap<FeatureCreateRequest, Feature>()
+            .ForMember(d => d.Id, opt => opt.Ignore())
+            .ForMember(d => d.CreatedAt, opt => opt.Ignore())
+            .ForMember(d => d.UpdatedAt, opt => opt.Ignore());
+
+        CreateMap<FeatureUpdateRequest, Feature>()
+            .ForMember(d => d.CreatedAt, opt => opt.Ignore())
+            .ForMember(d => d.UpdatedAt, opt => opt.Ignore());
+
+        // Entity -> Response
+        CreateMap<Feature, FeatureResponse>();
+        CreateMap<Feature, FeatureActiveResponse>();
+
+
         // ===================== User Subscription =====================
-        CreateMap<UserSubscription, UserSubscriptionDetailResponse>()
-             .ForMember(d => d.Entitlements, opt => opt.MapFrom(s => s.UserSubscriptionEntitlements));
+        //CreateMap<UserSubscription, UserSubscriptionDetailResponse>()
+        //     .ForMember(d => d.Entitlements, opt => opt.MapFrom(s => s.UserSubscriptionEntitlements));
 
-        CreateMap<UserSubscriptionEntitlement, UserSubscriptionEntitlementResponse>()
-            .ForMember(d => d.FeatureKey, opt => opt.MapFrom(s => s.FeatureKey.ToString()));
+        //CreateMap<UserSubscriptionEntitlement, UserSubscriptionEntitlementResponse>()
+        //    .ForMember(d => d.FeatureKey, opt => opt.MapFrom(s => s.FeatureKey.ToString()));
 
-        CreateMap<UserSubscription, UserSubscriptionListItem>();
-        CreateMap<UserSubscriptionCreateRequest, UserSubscription>();
+        //CreateMap<UserSubscription, UserSubscriptionListItem>();
+        //CreateMap<UserSubscriptionCreateRequest, UserSubscription>();
 
         // ===================== Company Subscription =====================
 
-        #region create companysubscription
-        CreateMap<CompanySubscriptionCreateRequest, CompanySubscription>()
-            .ForMember(dest => dest.Id, opt => opt.Ignore())
-            .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
-            .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
-            .ForMember(dest => dest.Status, opt => opt.Ignore())
-            .ForMember(dest => dest.CompanySubscriptionEntitlements, opt => opt.MapFrom(src => src.Entitlements));
+        // #region create companysubscription
+        // CreateMap<CompanySubscriptionCreateRequest, CompanySubscription>()
+        //     .ForMember(dest => dest.Id, opt => opt.Ignore())
+        //     .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+        //     .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
+        //     .ForMember(dest => dest.Status, opt => opt.Ignore())
+        //     .ForMember(dest => dest.CompanySubscriptionEntitlements, opt => opt.MapFrom(src => src.Entitlements));
 
-        CreateMap<CompanySubscriptionEntitlementCreateRequest, CompanySubscriptionEntitlement>()
-              .ForMember(dest => dest.Id, opt => opt.Ignore())
-              .ForMember(dest => dest.CompanySubscriptionId, opt => opt.Ignore())
-              .ForMember(dest => dest.Remaining, opt => opt.Ignore());
+        // CreateMap<CompanySubscriptionEntitlementCreateRequest, CompanySubscriptionEntitlement>()
+        //       .ForMember(dest => dest.Id, opt => opt.Ignore())
+        //       .ForMember(dest => dest.CompanySubscriptionId, opt => opt.Ignore())
+        //       .ForMember(dest => dest.Remaining, opt => opt.Ignore());
 
-        CreateMap<CompanySubscription, CompanySubscriptionDetailResponse>();
-        CreateMap<CompanySubscriptionEntitlement, CompanySubscriptionEntitlementDetailResponse>();
-        #endregion
+        // CreateMap<CompanySubscription, CompanySubscriptionDetailResponse>();
+        // CreateMap<CompanySubscriptionEntitlement, CompanySubscriptionEntitlementDetailResponse>();
+        // #endregion
 
-        #region update companysubscription
-        CreateMap<CompanySubscriptionUpdateRequest, CompanySubscription>()
-                 .ForMember(dest => dest.CompanySubscriptionEntitlements, opt => opt.MapFrom(src => src.Entitlements));
+        // #region update companysubscription
+        // CreateMap<CompanySubscriptionUpdateRequest, CompanySubscription>()
+        //          .ForMember(dest => dest.CompanySubscriptionEntitlements, opt => opt.MapFrom(src => src.Entitlements));
 
-        CreateMap<CompanySubscriptionEntitlementUpdateRequest, CompanySubscriptionEntitlement>();
-        #endregion
-        #region detail + list companysubscription
-        CreateMap<CompanySubscription, CompanySubscriptionDetailResponse>()
-             .ForMember(dest => dest.Entitlements, opt => opt.MapFrom(src => src.CompanySubscriptionEntitlements));
+        // CreateMap<CompanySubscriptionEntitlementUpdateRequest, CompanySubscriptionEntitlement>();
+        // #endregion
+        // #region detail + list companysubscription
+        // CreateMap<CompanySubscription, CompanySubscriptionDetailResponse>()
+        //      .ForMember(dest => dest.Entitlements, opt => opt.MapFrom(src => src.CompanySubscriptionEntitlements));
 
-        CreateMap<CompanySubscriptionEntitlement, CompanySubscriptionEntitlementDetailResponse>();
+        // CreateMap<CompanySubscriptionEntitlement, CompanySubscriptionEntitlementDetailResponse>();
 
-        CreateMap<CompanySubscription, CompanySubscriptionListResponse>();
+        // CreateMap<CompanySubscription, CompanySubscriptionListResponse>();
 
-        CreateMap<CompanySubscription, CompanySubscriptionActiveResponse>()
-       .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
-       .ForMember(dest => dest.CompanySubscriptionEntitlements, opt => opt.MapFrom(src => src.CompanySubscriptionEntitlements));
-        #endregion
+        // CreateMap<CompanySubscription, CompanySubscriptionActiveResponse>()
+        //.ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
+        //.ForMember(dest => dest.CompanySubscriptionEntitlements, opt => opt.MapFrom(src => src.CompanySubscriptionEntitlements));
+        // #endregion
 
 
         // ===================== Project (Detail) =====================

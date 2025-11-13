@@ -4,32 +4,23 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Fusion.Service.ViewModels.SubscriptionPlan.Requests;
 
-public class SubscriptionPlanFeatureRequest
-{
-    [Required]
-    public FeatureKeys FeatureKey { get; set; } = FeatureKeys.Project;
-    public int? LimitValue { get; set; }
-}
-
-public class SubscriptionPlanPriceRequest
-{
-    public BillingPeriod BillingPeriod { get; set; } // Week/Month/Year
-    public int PeriodCount { get; set; } = 1;        // >= 1
-    public decimal Price { get; set; }               // >= 0
-    public string Currency { get; set; } = "VND";    // ISO 4217, 3-letter, UPPER
-    public int RefundWindowDays { get; set; }        // >= 0
-    public decimal RefundFeePercent { get; set; }    // [0..100]
-}
 public class SubscriptionPlanCreateRequest
 {
-    [Required]
-    public string Code { get; set; } = null!;
-    [Required]
-    public string Name { get; set; } = null!;
+    public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
 
-    public List<SubscriptionPlanFeatureRequest>? Features { get; set; }
+    public bool IsActive { get; set; } = true;
+    public LicenseScope LicenseScope { get; set; } = LicenseScope.SeatBased;
+    public bool IsFullPackage { get; set; } = false;
 
-    [Required]
-    public SubscriptionPlanPriceRequest Price { get; set; } = new();
+    /// <summary>Số công ty share tối đa; null = không giới hạn</summary>
+    public int? CompanyShareLimit { get; set; }
+
+    /// <summary>Số seat tối đa mỗi công ty (chỉ áp cho SeatBased); null = không giới hạn/không áp dụng</summary>
+    public int? SeatsPerCompanyLimit { get; set; }
+
+    public SubscriptionPlanPriceInput Price { get; set; } = new();
+
+    /// <summary>Danh sách FeatureId được bật cho gói</summary>
+    public List<Guid>? FeatureIds { get; set; }
 }

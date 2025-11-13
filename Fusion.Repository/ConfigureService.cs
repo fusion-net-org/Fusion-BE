@@ -51,14 +51,18 @@ namespace Fusion.Repository
             //project member
             services.AddScoped<IProjectMemberRepository, ProjectMemberRepository>();
 
+            //feature catalog
+            services.AddScoped<IFeatureCatalogRepository, FeatureCatalogRepository>();
+
             //subscriptionplan
             services.AddScoped<ISubscriptionPlanRepository, SubscriptionPlanRepository>();
 
-            // transaction payment
-            services.AddScoped<ITransactionPaymentRepository, TransactionPaymentRepository>();
+            //// transaction payment
+            //services.AddScoped<ITransactionPaymentRepository, TransactionPaymentRepository>();
 
-            //usersubscrption
-            services.AddScoped<IUserSubscriptionRepository, UserSubscriptionRepository>();
+            ////usersubscrption
+            //services.AddScoped<IUserSubscriptionRepository, UserSubscriptionRepository>();
+
 
             //refresh token
             services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
@@ -87,7 +91,7 @@ namespace Fusion.Repository
 
 
             // company subscription
-            services.AddScoped<ICompanySubscriptionRepository , CompanySubscriptionRepository>();
+            //services.AddScoped<ICompanySubscriptionRepository , CompanySubscriptionRepository>();
 
             return services;
 

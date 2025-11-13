@@ -98,6 +98,6 @@ public partial class Company
     [InverseProperty("Company")]
     public virtual ICollection<Workflow> Workflows { get; set; } = new List<Workflow>();
 
-    [InverseProperty(nameof(CompanySubscription.Company))]
-    public virtual ICollection<CompanySubscription> CompanySubscriptions { get; set; } = new List<CompanySubscription>();
+    //[InverseProperty(nameof(CompanySubscription.Company))]
+    //public virtual ICollection<CompanySubscription> CompanySubscriptions { get; set; } = new List<CompanySubscription>();
 }

@@ -21,7 +21,7 @@ namespace Fusion.Repository.IRepositories
         Task<User?> GetUserWithRolesAndPermissionsInCompanyAsync(Guid userId, Guid companyId);
         Task<int> GetAllUserAsync(CancellationToken cancellationToken = default);
         Task<(int False, int True)> GetCountUserByStatusAsync(CancellationToken cancellationToken = default);
-        //Task<bool> EmailVerificationAsync(string token, CancellationToken cancellationToken = default);
+        Task<bool> EmailVerificationAsync(string token, CancellationToken cancellationToken = default);
 
 
     }
