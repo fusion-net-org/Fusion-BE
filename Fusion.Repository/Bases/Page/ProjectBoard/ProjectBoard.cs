@@ -15,6 +15,7 @@ public record StatusMetaDto
     public int? WipLimit { get; init; } = null;                    // optional theo nghiệp vụ
     public string? Color { get; init; }
     public bool IsFinal { get; init; }
+    public bool IsStart { get; init; }
 }
 
 public record SprintVmDto
@@ -51,7 +52,7 @@ public record TaskVmDto
     public string StatusCategory { get; init; } = "TODO";
 
     public List<MemberRefDto> Assignees { get; init; } = new();
-
+    public string? StatusName { get; init; }
     public List<Guid> DependsOn { get; init; } = new();
     public Guid? ParentTaskId { get; init; }
     public int CarryOverCount { get; init; }

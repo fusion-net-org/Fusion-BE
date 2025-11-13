@@ -55,7 +55,8 @@ namespace Fusion.Service.Services
                     Order = x.Position,
                     WipLimit = null,
                     Color = x.Color,
-                    IsFinal = x.IsEnd
+                    IsFinal = x.IsEnd, 
+                    IsStart = x.IsStart
                 });
 
             var sprintDtos = sprints.Select(s => new SprintVmDto
@@ -119,7 +120,7 @@ namespace Fusion.Service.Services
                     DependsOn = new List<Guid>(),
                     ParentTaskId = t.ParentTaskId,
                     CarryOverCount = t.CarryOverCount,
-
+                    StatusName = meta.Name,
                     OpenedAt = t.CreateAt ?? DateTime.UtcNow,
                     UpdatedAt = t.UpdateAt ?? t.CreateAt ?? DateTime.UtcNow,
                     CreatedAt = t.CreateAt ?? DateTime.UtcNow,
