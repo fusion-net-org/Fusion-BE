@@ -1,12 +1,13 @@
-﻿using Fusion.API.Auth;
+﻿using System.Security.Claims;
+using Fusion.API.Auth;
 using Fusion.API.Context;
 using Fusion.Repository.Bases.Responses;
 using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.Services;
 using Fusion.Service.ViewModels.Sprint;
+using Fusion.Service.ViewModels.Sprint.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace Fusion.API.Controllers
 {
@@ -147,6 +148,29 @@ namespace Fusion.API.Controllers
                     pageSize = result.PageSize
                 }
             });
+        }
+        /// <summary>
+        /// Get charts data for a project (Sprint Status, Workload, Task Progress)
+        /// </summary>
+        [HttpGet("projects/{projectId:guid}/charts")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<SprintChartsVm>))]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> GetCharts([FromRoute] Guid projectId, CancellationToken ct)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out _))
+            {
+                return Unauthorized(ResponseModel<string>.Error(
+                    StatusCodes.Status401Unauthorized,
+                    "Don't find token!"));
+            }
+
+            var data = await _service.GetChartsDataAsync(projectId, ct);
+
+            return Ok(ResponseModel<SprintChartsVm>.Ok(
+                data: data,
+                message: "Charts data retrieved successfully"
+            ));
         }
 
         // GET /api/projects/{projectId}/sprints/{sprintId}

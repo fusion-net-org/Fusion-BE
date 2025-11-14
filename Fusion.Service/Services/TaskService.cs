@@ -2,6 +2,7 @@
 using AutoMapper;
 using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Bases.Page;
+using Fusion.Repository.Bases.Page.Task;
 using Fusion.Repository.Bases.Responses;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
@@ -750,6 +751,24 @@ public class TaskService : ITaskService
 
         return _mapper.Map<ProjectTaskResponse>(e);
     }
+    public async Task<PagedResult<ProjectTaskResponse>> GetTasksBySprintIdAsync(Guid sprintId, TaskBySprintRequest request, CancellationToken ct = default)
+    {
+        var sprintExists = await _db.Sprints.AsNoTracking().AnyAsync(s => s.Id == sprintId, ct);
+        if (!sprintExists)
+            throw CustomExceptionFactory.CreateNotFoundError(
+                ResponseMessages.NOT_FOUND.FormatMessage("Sprint"));
+
+        var paged = await _repo.GetTasksBySprintIdAsync(sprintId, request, ct);
+
+        return new PagedResult<ProjectTaskResponse>
+        {
+            Items = paged.Items.Select(_mapper.Map<ProjectTaskResponse>).ToList(),
+            TotalCount = paged.TotalCount,
+            PageNumber = paged.PageNumber,
+            PageSize = paged.PageSize
+        };
+    }
+
 
    
     #endregion

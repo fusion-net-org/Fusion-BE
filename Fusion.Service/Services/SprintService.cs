@@ -1,4 +1,9 @@
-﻿using Azure;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Azure;
 using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
@@ -8,12 +13,8 @@ using Fusion.Repository.Repositories;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.Common;
 using Fusion.Service.ViewModels.Sprint;
+using Fusion.Service.ViewModels.Sprint.Responses;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Fusion.Service.Services
 {
@@ -26,6 +27,8 @@ namespace Fusion.Service.Services
         Task CompleteAsync(Guid sprintId, Guid projectId, bool carryBacklog, Guid? nextSprintId, CancellationToken ct);
         Task<PagedResult<SprintListItemVm>> GetProjectSprintsAsync(Guid projectId, SprintQuery q, CancellationToken ct);
         Task<SprintDetailVm?> GetProjectSprintDetailAsync(Guid projectId, Guid sprintId, CancellationToken ct);
+        Task<SprintChartsVm> GetChartsDataAsync(Guid projectId, CancellationToken ct);
+
     }
     public class SprintService : ISprintService
     {
@@ -199,5 +202,45 @@ namespace Fusion.Service.Services
             var user = await _unitOfWork.Repository<User>().FindAsync(c => c.Id == userId);
             return user.UserName;
         }
+
+        public async Task<SprintChartsVm> GetChartsDataAsync(Guid projectId, CancellationToken ct)
+        {
+            var sprints = await _repo.QueryByProject(projectId)
+                .OrderBy(s => s.StartDate)
+                .Include(s => s.ProjectTasks)
+                .ToListAsync(ct);
+
+            var statusDistribution = sprints
+                .GroupBy(s => s.Status)
+                .Select(g => new SprintStatusDistributionDto
+                {
+                    Status = g.Key,
+                    Count = g.Count()
+                })
+                .ToList();
+
+            var sprintWorkload = sprints.Select(s =>
+            {
+                var tasks = s.ProjectTasks.Where(t => !t.IsDeleted);
+
+                return new SprintChartDto
+                {
+                    SprintName = s.Name ?? "",
+                    EstimatedHours = tasks.Sum(t => t.EstimateHours ?? 0),
+                    RemainingHours = tasks.Sum(t => t.RemainingHours ?? 0),
+                    TodoCount = tasks.Count(t => t.Status == "To Do"),
+                    InProgressCount = tasks.Count(t => t.Status == "In Progress"),
+                    DoneCount = tasks.Count(t => t.Status == "Done"),
+                    Review = tasks.Count(t => t.Status == "Review")
+                };
+            }).ToList();
+
+            return new SprintChartsVm
+            {
+                StatusDistribution = statusDistribution,
+                SprintWorkload = sprintWorkload
+            };
+        }
+
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Fusion.Repository.Bases.Page;
+using Fusion.Repository.Bases.Page.Task;
 using Fusion.Repository.Entities;
 
 namespace Fusion.Repository.IRepositories
@@ -10,5 +11,7 @@ namespace Fusion.Repository.IRepositories
         Task<PagedResult<ProjectTask>> GetAllAsync(PagedRequest request, CancellationToken ct = default);
         Task<ProjectTask> UpdateAsync(ProjectTask entity, CancellationToken ct = default);
         Task<bool> SoftDeleteAsync(Guid id, CancellationToken ct = default);
+        Task<PagedResult<ProjectTask>> GetTasksBySprintIdAsync(Guid sprintId, TaskBySprintRequest request, CancellationToken ct = default);
+
     }
 }
