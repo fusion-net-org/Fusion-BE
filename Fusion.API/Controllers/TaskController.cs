@@ -101,7 +101,6 @@ public class TaskController : ControllerBase
     }
 
     // ===== Change status (qua query ?status= hoặc body) =====
-    public sealed class ChangeStatusRequest { public string? Status { get; set; } }
 
     [HttpPatch("tasks/{id:guid}/status")]
     [ProducesResponseType(typeof(ResponseModel<ProjectTaskResponse>), StatusCodes.Status200OK)]
@@ -123,6 +122,76 @@ public class TaskController : ControllerBase
         return Ok(ResponseModel<ProjectTaskResponse>.Ok(
             data, $"Task status changed to '{value}'."));
     }
+    #region Handle Task
+    // PATCH /api/tasks/{id}/status-id
+    [HttpPatch("tasks/{id:guid}/status-id")]
+    [ProducesResponseType(typeof(ResponseModel<ProjectTaskResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ChangeStatusById(Guid id, [FromBody] ChangeStatusByIdRequest body, CancellationToken ct)
+    {
+        var uid = GetUserId(); if (uid is null)
+            return Unauthorized(ResponseModel<string>.Error(StatusCodes.Status401Unauthorized, "Missing token"));
+
+        if (body?.StatusId == Guid.Empty)
+            return BadRequest(ResponseModel<string>.Error(StatusCodes.Status400BadRequest, "statusId is required"));
+
+        var data = await _svc.ChangeStatusById(id, body.StatusId, uid.Value, ct);
+        return Ok(ResponseModel<ProjectTaskResponse>.Ok(data, "Task status changed."));
+    }
+
+    // PUT /api/projects/{projectId}/sprints/{sprintId}/tasks/reorder
+    [HttpPut("projects/{projectId:guid}/sprints/{sprintId:guid}/tasks/reorder")]
+    [ProducesResponseType(typeof(ResponseModel<ProjectTaskResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> Reorder(Guid projectId, Guid sprintId, [FromBody] ReorderTaskRequest req, CancellationToken ct)
+    {
+        var uid = GetUserId(); if (uid is null)
+            return Unauthorized(ResponseModel<string>.Error(StatusCodes.Status401Unauthorized, "Missing token"));
+
+        if (req == null || req.TaskId == Guid.Empty || req.ToStatusId == Guid.Empty)
+            return BadRequest(ResponseModel<string>.Error(StatusCodes.Status400BadRequest, "Invalid payload"));
+
+        var data = await _svc.ReorderAsync(projectId, sprintId, req.TaskId, req.ToStatusId, req.ToIndex, uid.Value, ct);
+        return Ok(ResponseModel<ProjectTaskResponse>.Ok(data, "Reordered."));
+    }
+
+    // POST /api/tasks/{id}/move
+    [HttpPost("tasks/{id:guid}/move")]
+    [ProducesResponseType(typeof(ResponseModel<ProjectTaskResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> MoveToSprint(Guid id, [FromBody] TaskMoveRequest req, CancellationToken ct)
+    {
+        var uid = GetUserId(); if (uid is null)
+            return Unauthorized(ResponseModel<string>.Error(StatusCodes.Status401Unauthorized, "Missing token"));
+
+        if (req?.ToSprintId == Guid.Empty)
+            return BadRequest(ResponseModel<string>.Error(StatusCodes.Status400BadRequest, "toSprintId is required"));
+
+        var data = await _svc.MoveToSprintAsync(id, req.ToSprintId, uid.Value, ct);
+        return Ok(ResponseModel<ProjectTaskResponse>.Ok(data, "Moved to sprint."));
+    }
+
+    // POST /api/tasks/{id}/mark-done
+    [HttpPost("tasks/{id:guid}/mark-done")]
+    [ProducesResponseType(typeof(ResponseModel<ProjectTaskResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> MarkDone(Guid id, CancellationToken ct)
+    {
+        var uid = GetUserId(); if (uid is null)
+            return Unauthorized(ResponseModel<string>.Error(StatusCodes.Status401Unauthorized, "Missing token"));
+
+        var data = await _svc.MarkDoneAsync(id, uid.Value, ct);
+        return Ok(ResponseModel<ProjectTaskResponse>.Ok(data, "Marked done."));
+    }
+
+    // POST /api/tasks/{id}/split
+    [HttpPost("tasks/{id:guid}/split")]
+    [ProducesResponseType(typeof(ResponseModel<SplitTaskResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> Split(Guid id, CancellationToken ct)
+    {
+        var uid = GetUserId(); if (uid is null)
+            return Unauthorized(ResponseModel<string>.Error(StatusCodes.Status401Unauthorized, "Missing token"));
+
+        var data = await _svc.SplitAsync(id, uid.Value, ct);
+        return Ok(ResponseModel<SplitTaskResponse>.Ok(data, "Task split."));
+    }
+    #endregion
     // ===== Get tasks by SprintId (paged) =====
     [HttpGet("sprints/{sprintId:guid}/tasks")]
     [ProducesResponseType(typeof(ResponseModel<PagedResult<ProjectTaskResponse>>), StatusCodes.Status200OK)]
