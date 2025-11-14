@@ -52,8 +52,8 @@ namespace Fusion.Service
             //Subscription plan
             services.AddScoped<ISubscriptionPlanService, SubscriptionPlanService>();
 
-            ////transaction payment
-            //services.AddScoped<ITransactionPaymentService, TransactionPaymentService>();
+            //transaction payment
+            services.AddScoped<ITransactionPaymentService, TransactionPaymentService>();
 
             //refesh token
             services.AddScoped<IRefreshTokenService, RefreshTokenService>();
@@ -90,23 +90,23 @@ namespace Fusion.Service
             //contract
             services.AddScoped<IContractService, ContractService>();
 
-            // company subscription
+            //company subscription
             //services.AddScoped<ICompanySubscriptionService, CompanySubscriptionService>();
-            //// PayOS
-            //services.AddSingleton<PayOS>(sp =>
-            //{
-            //    var clientId = configuration["PayOS:ClientId"];
-            //    var apiKey = configuration["PayOS:ApiKey"];
-            //    var checksumKey = configuration["PayOS:ChecksumKey"];
+            // PayOS
+            services.AddSingleton<PayOS>(sp =>
+            {
+                var clientId = configuration["PayOS:ClientId"];
+                var apiKey = configuration["PayOS:ApiKey"];
+                var checksumKey = configuration["PayOS:ChecksumKey"];
 
-            //    if (string.IsNullOrEmpty(clientId) || string.IsNullOrEmpty(apiKey) || string.IsNullOrEmpty(checksumKey))
-            //    {
-            //        throw new InvalidOperationException("Missing PayOS configuration in appsettings.json");
-            //    }
+                if (string.IsNullOrEmpty(clientId) || string.IsNullOrEmpty(apiKey) || string.IsNullOrEmpty(checksumKey))
+                {
+                    throw new InvalidOperationException("Missing PayOS configuration in appsettings.json");
+                }
 
-            //    return new PayOS(clientId, apiKey, checksumKey);
-            //});
-            //services.AddScoped<IPayOSService, PayOSService>();
+                return new PayOS(clientId, apiKey, checksumKey);
+            });
+            services.AddScoped<IPayOSService, PayOSService>();
 
             return services;
         }

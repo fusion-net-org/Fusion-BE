@@ -1,115 +1,168 @@
 ﻿
-//using AutoMapper;
-//using Fusion.Repository.Bases.Exceptions;
-//using Fusion.Repository.Bases.Page;
-//using Fusion.Repository.Bases.Page.TransactionPayment;
-//using Fusion.Repository.Bases.Responses;
-//using Fusion.Repository.Entities;
-//using Fusion.Repository.Enums;
-//using Fusion.Repository.IRepositories;
-//using Fusion.Service.Commons.Helpers;
-//using Fusion.Service.IServices;
-//using Fusion.Service.ViewModels.TransactionPayment.Requests;
-//using Fusion.Service.ViewModels.TransactionPayment.Responses;
+using AutoMapper;
+using Fusion.Repository.Bases.Exceptions;
+using Fusion.Repository.Bases.Page;
+using Fusion.Repository.Bases.Page.TransactionPayment;
+using Fusion.Repository.Bases.Responses;
+using Fusion.Repository.Entities;
+using Fusion.Repository.Enums;
+using Fusion.Repository.IRepositories;
+using Fusion.Repository.Repositories;
+using Fusion.Service.Commons.Helpers;
+using Fusion.Service.IServices;
+using Fusion.Service.ViewModels.TransactionPayment.Requests;
+using Fusion.Service.ViewModels.TransactionPayment.Responses;
 
-//namespace Fusion.Service.Services;
+namespace Fusion.Service.Services;
 
-//public class TransactionPaymentService : ITransactionPaymentService
-//{
-//    private readonly ITransactionPaymentRepository _transactionPaymentRepository;
-//    private readonly ISubscriptionPlanRepository _subscriptionPlanRepository;
-//    private readonly IUserRepository _userRepository;
-//    private readonly IMapper _mapper;
-//    private readonly ICurrentService _currentService;
+public class TransactionPaymentService : ITransactionPaymentService
+{
+    private readonly ITransactionPaymentRepository _txRepo;
+    private readonly ISubscriptionPlanRepository _planRepo;
+    private readonly IUserRepository _userRepository;
+    private readonly IMapper _mapper;
+    private readonly ICurrentService _current;
 
-//    public TransactionPaymentService(ITransactionPaymentRepository transactionPaymentRepository, ISubscriptionPlanRepository subscriptionPlanRepository,
-//        IUserRepository userRepository, IMapper mapper, ICurrentService currentService)
-//    {
-//        _transactionPaymentRepository = transactionPaymentRepository;
-//        _subscriptionPlanRepository = subscriptionPlanRepository;
-//        _userRepository = userRepository;
-//        _mapper = mapper;
-//        _currentService = currentService;
-//    }
+    public TransactionPaymentService(ITransactionPaymentRepository transactionPaymentRepository, ISubscriptionPlanRepository subscriptionPlanRepository,
+        IUserRepository userRepository, IMapper mapper, ICurrentService currentService)
+    {
+        _txRepo = transactionPaymentRepository;
+        _planRepo = subscriptionPlanRepository;
+        _userRepository = userRepository;
+        _mapper = mapper;
+        _current = currentService;
+    }
 
-//    public async Task<TransactionPaymentResponse> CreateAsync(TransactionPaymentCreateRequest req, CancellationToken ct = default)
-//    {
-//        if (req == null)
-//            throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.INVALID_INPUT);
+    public async Task<TransactionPaymentDetailResponse> CreateAsync(TransactionPaymentCreateRequest req, CancellationToken ct = default)
+    {
+        if (req == null || req.PlanId == Guid.Empty)
+            throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.INVALID_INPUT);
 
-//        if (req.PlanId == Guid.Empty)
-//            throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.INVALID_INPUT);
+        var plan = await _planRepo.GetByIdWithNavAsync(req.PlanId, ct);
+        if (plan == null)
+            throw CustomExceptionFactory.CreateNotFoundError("Subscription plan not found.");
+        if (plan.Price == null)
+            throw CustomExceptionFactory.CreateBadRequestError("Plan has no price.");
 
-//        var plan = await _subscriptionPlanRepository.GetByIdWithNavAsync(req.PlanId, ct);
 
-//        if (plan == null)
-//            throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Subscription plan"));
-//        if (plan.Price == null)
-//            throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Price"));
+        var userId = _current.GetUserId();
+        var price = plan.Price;
 
-//        var userId = _currentService.GetUserId();
-//        var entity = new TransactionPayment
-//        {
-//            Id = Guid.NewGuid(),
-//            UserId = userId,
-//            PlanId = req.PlanId,
-//            Amount = plan.Price.Price,
-//            Currency = plan.Price.Currency,
-//            Status = PaymentStatus.Pending.ToString()
-//        };
+        // Snapshot fields
+        var now = DateTimeOffset.UtcNow;
 
-//        var created = await _transactionPaymentRepository.CreateAsync(entity, ct);
+        if (price.PaymentMode == PaymentMode.Prepaid)
+        {
+            var draft = new TransactionPayment
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                PlanId = plan.Id,
+                Status = PaymentStatus.Pending,
+                Type = TransactionType.Charge,
+                CreatedAt = now,
 
-//        var withNav = await _transactionPaymentRepository.GetByIdWithNavAsync(created.Id, ct);
-//        return _mapper.Map<TransactionPaymentResponse>(withNav);
-//    }
+                // Snapshot pricing
+                ChargeUnitSnapshot = price.ChargeUnit,
+                BillingPeriodSnapshot = price.BillingPeriod,
+                PeriodCountSnapshot = price.PeriodCount,
+                PaymentModeSnapshot = price.PaymentMode,
 
-//    public Task<bool> DeleteAsync(Guid id, CancellationToken ct = default)
-//      => _transactionPaymentRepository.DeleteAsync(id, ct);
+                Amount = price.Price,
+                Currency = price.Currency
+            };
 
-//    public async Task<TransactionPaymentDetailResponse?> GetDetailAsync(Guid id, CancellationToken ct = default)
-//    {
-//        var entity = await _transactionPaymentRepository.GetByIdWithNavAsync(id, ct);
-//        return entity == null ? null : _mapper.Map<TransactionPaymentDetailResponse>(entity);
-//    }
+            var created = await _txRepo.CreateDraftChargeAsync(draft, ct);
+            var withNav = await _txRepo.GetByIdWithNavAsync(created.Id, ct);
+            return _mapper.Map<TransactionPaymentDetailResponse>(withNav!);
+        }
+        else // Installments
+        {
+            var total = price.Price;
+            var n = price.InstallmentCount ?? 0;
+            if (n <= 1) throw CustomExceptionFactory.CreateBadRequestError("InstallmentCount must be > 1 for installments.");
+            var interval = price.InstallmentInterval ?? price.BillingPeriod; // fallback hợp lý
 
-//    public async Task<PagedResult<TransactionPaymentResponse>> GetPagedAsync(TransactionPaymentPagedRequest request, CancellationToken ct = default)
-//    {
-//        var paged = await _transactionPaymentRepository.GetPagedAsync(request, ct);
-//        var items = _mapper.Map<List<TransactionPaymentResponse>>(paged.Items);
+            // Chia tiền theo n kỳ (làm tròn 2 số thập phân; kỳ cuối bù phần chênh)
+            var per = Math.Round(total / n, 2, MidpointRounding.AwayFromZero);
+            var rows = new List<TransactionPayment>(capacity: n);
+            decimal sum = 0m;
 
-//        return new PagedResult<TransactionPaymentResponse>
-//        {
-//            Items = items,
-//            TotalCount = paged.TotalCount,
-//            PageNumber = paged.PageNumber,
-//            PageSize = paged.PageSize
-//        };
+            for (int i = 1; i <= n; i++)
+            {
+                var amount = (i == n) ? (total - sum) : per; // kỳ cuối bù
+                sum += amount;
 
-//    }
+                var dueAt = AddInterval(now, interval, i - 1);
 
-//    public async Task<bool> UpdateAsync(Guid id, TransactionPaymentUpdateRequest req, CancellationToken ct = default)
-//    {
-//        var current = await _transactionPaymentRepository.GetByIdWithNavAsync(id, ct);
-//        if (current == null) return false;
+                rows.Add(new TransactionPayment
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = userId,
+                    PlanId = plan.Id,
+                    Status = PaymentStatus.Pending,
+                    Type = TransactionType.Charge,
+                    CreatedAt = now,
 
-//        if (req.OrderCode.HasValue) current.OrderCode = req.OrderCode.Value;
-//        if (req.PaymentLinkId != null) current.PaymentLinkId = req.PaymentLinkId;
+                    ChargeUnitSnapshot = price.ChargeUnit,
+                    BillingPeriodSnapshot = price.BillingPeriod,
+                    PeriodCountSnapshot = price.PeriodCount,
+                    PaymentModeSnapshot = price.PaymentMode,
+                    InstallmentIndex = i,
+                    InstallmentTotal = n,
 
-//        if (req.Amount.HasValue) current.Amount = req.Amount.Value;
-//        if (req.Description != null) current.Description = req.Description;
-//        if (req.AccountNumber != null) current.AccountNumber = req.AccountNumber;
-//        if (req.Reference != null) current.Reference = req.Reference;
-//        if (req.TransactionDateTime.HasValue) current.TransactionDateTime = req.TransactionDateTime.Value;
-//        if (req.Currency != null) current.Currency = req.Currency;
-//        if (req.CounterAccountBankId != null) current.CounterAccountBankId = req.CounterAccountBankId;
-//        if (req.CounterAccountBankName != null) current.CounterAccountBankName = req.CounterAccountBankName;
-//        if (req.CounterAccountName != null) current.CounterAccountName = req.CounterAccountName;
-//        if (req.CounterAccountNumber != null) current.CounterAccountNumber = req.CounterAccountNumber;
-//        if (req.PaymentMethod != null) current.PaymentMethod = req.PaymentMethod;
-//        if (req.Status != null) current.Status = req.Status;
+                    Amount = amount,
+                    Currency = price.Currency,
+                    DueAt = dueAt
+                });
+            }
 
-//        return await _transactionPaymentRepository.UpdateAsync(current, ct);
-//    }
+            await _txRepo.BulkCreateAsync(rows, ct);
+            var first = rows[0];
+            var withNav = await _txRepo.GetByIdWithNavAsync(first.Id, ct);
+            return _mapper.Map<TransactionPaymentDetailResponse>(withNav!);
+        }
+    }
+    public Task<TransactionPaymentDetailResponse?> GetDetailAsync(Guid id, CancellationToken ct = default)
+      => _txRepo.GetByIdWithNavAsync(id, ct).ContinueWith(t =>
+          t.Result == null ? null : _mapper.Map<TransactionPaymentDetailResponse>(t.Result), ct);
 
-//}
+    public async Task<PagedResult<TransactionPaymentResponse>> GetPagedAsync(TransactionPaymentPagedRequest request, CancellationToken ct = default)
+    {
+        var paged = await _txRepo.GetPagedAsync(request, ct);
+        return new PagedResult<TransactionPaymentResponse>
+        {
+            Items = _mapper.Map<List<TransactionPaymentResponse>>(paged.Items),
+            PageNumber = paged.PageNumber,
+            PageSize = paged.PageSize,
+            TotalCount = paged.TotalCount
+        };
+    }
+
+    public Task<bool> AttachPaymentLinkAsync(Guid transactionId, long orderCode, string paymentLinkId, string? provider, CancellationToken ct = default)
+    => _txRepo.AttachPaymentLinkAsync(transactionId, orderCode, paymentLinkId, provider, ct);
+
+    public Task<bool> MarkSuccessAsync(Guid transactionId, decimal? amount, DateTimeOffset paidAt, string? reference, CancellationToken ct = default)
+        => _txRepo.MarkSuccessAsync(transactionId, amount, paidAt, reference, ct);
+
+    public Task<bool> MarkFailedAsync(Guid transactionId, string? description, string? reference, CancellationToken ct = default)
+        => _txRepo.MarkFailedAsync(transactionId, description, reference, ct);
+
+
+    private static DateTimeOffset AddInterval(DateTimeOffset start, BillingPeriod interval, int steps)
+    {
+        return interval switch
+        {
+            BillingPeriod.Week => start.AddDays(7 * steps),
+            BillingPeriod.Month => start.AddMonths(steps),
+            BillingPeriod.Year => start.AddYears(steps),
+            _ => start
+        };
+    }
+
+    public async Task<List<TransactionPaymentResponse>> GetDueAsync(DateTimeOffset asOf, int take = 100, CancellationToken ct = default)
+    {
+        var items = await _txRepo.GetDueAsync(asOf, take, ct);
+        return _mapper.Map<List<TransactionPaymentResponse>>(items);
+    }
+}

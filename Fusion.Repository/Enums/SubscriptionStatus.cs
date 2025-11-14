@@ -102,4 +102,18 @@ public enum PaymentStatus
     Cancelled = 5
 }
 
+public enum TransactionType
+{
+    /// <summary>Thu tiền (mua mới, gia hạn, từng kỳ trả góp)</summary>
+    [EnumMember(Value = "charge")]
+    Charge = 1,
+
+    /// <summary>Hoàn tiền (toàn phần hoặc một phần)</summary>
+    [EnumMember(Value = "refund")]
+    Refund = 2,
+
+    /// <summary>Điều chỉnh sổ sách (giảm trừ/khuyến mãi/bù trừ thủ công…)</summary>
+    [EnumMember(Value = "adjustment")]
+    Adjustment = 3 
+}
 

@@ -1,146 +1,227 @@
 ﻿
 
-//using Fusion.Repository.Bases.Page;
-//using Fusion.Repository.Bases.Page.TransactionPayment;
-//using Fusion.Repository.Data;
-//using Fusion.Repository.Entities;
-//using Fusion.Repository.IRepositories;
-//using Microsoft.EntityFrameworkCore;
+using Fusion.Repository.Bases.Page;
+using Fusion.Repository.Bases.Page.TransactionPayment;
+using Fusion.Repository.Data;
+using Fusion.Repository.Entities;
+using Fusion.Repository.Enums;
+using Fusion.Repository.IRepositories;
+using Microsoft.EntityFrameworkCore;
+using System.Reflection;
+using System.Runtime.Serialization;
 
-//namespace Fusion.Repository.Repositories;
+namespace Fusion.Repository.Repositories;
 
-//public class TransactionPaymentRepository : GenericRepository<TransactionPayment>, ITransactionPaymentRepository
-//{
-//    private readonly FusionDbContext _context;
-//    public TransactionPaymentRepository(FusionDbContext context) : base(context)
-//    {
-//        _context = context;
-//    }
+public class TransactionPaymentRepository : GenericRepository<TransactionPayment>, ITransactionPaymentRepository
+{
+    private readonly FusionDbContext _context;
+    public TransactionPaymentRepository(FusionDbContext context) : base(context)
+    {
+        _context = context;
+    }
 
-//    public Task<TransactionPayment?> GetByIdWithNavAsync(Guid id, CancellationToken ct = default)
-//      => _context.TransactionPayments
-//                  .AsNoTracking()
-//                  .Include(x => x.User)
-//                  .Include(x => x.SubscriptionPlan).ThenInclude(p => p.Price)
-//                  .Include(x => x.SubscriptionPlan).ThenInclude(p => p.Features)
-//                  .FirstOrDefaultAsync(x => x.Id == id, ct);
+    /* ================== Helpers ================== */
+    private static bool TryParsePaymentStatus(string? input, out PaymentStatus value)
+    {
+        value = default;
+        if (string.IsNullOrWhiteSpace(input)) return false;
 
-//    public async Task<TransactionPayment> CreateAsync(TransactionPayment entity, CancellationToken ct = default)
-//    {
-//        _context.TransactionPayments.Add(entity);
-//        await _context.SaveChangesAsync(ct);
-//        return entity;
-//    }
+        // 1) Try enum name (Success, Pending, ...)
+        if (Enum.TryParse<PaymentStatus>(input, true, out value)) return true;
 
-//    public async Task<bool> UpdateAsync(TransactionPayment entity, CancellationToken ct = default)
-//    {
-//        var exist = await _context.TransactionPayments
-//                                  .FirstOrDefaultAsync(x => x.Id == entity.Id, ct);
-//        if (exist == null) return false;
+        // 2) Try EnumMember value ("success", "pending", ...)
+        foreach (var name in Enum.GetNames(typeof(PaymentStatus)))
+        {
+            var fi = typeof(PaymentStatus).GetField(name);
+            var em = fi?.GetCustomAttribute<EnumMemberAttribute>();
+            if (em?.Value != null && em.Value.Equals(input, StringComparison.OrdinalIgnoreCase))
+            {
+                value = (PaymentStatus)Enum.Parse(typeof(PaymentStatus), name);
+                return true;
+            }
+        }
+        return false;
+    }
 
-//        exist.Amount = entity.Amount;
-//        exist.Description = entity.Description;
-//        exist.AccountNumber = entity.AccountNumber;
-//        exist.Reference = entity.Reference;
-//        exist.TransactionDateTime = entity.TransactionDateTime;
-//        exist.Currency = entity.Currency;
-//        exist.CounterAccountBankId = entity.CounterAccountBankId;
-//        exist.CounterAccountBankName = entity.CounterAccountBankName;
-//        exist.CounterAccountName = entity.CounterAccountName;
-//        exist.CounterAccountNumber = entity.CounterAccountNumber;
-//        exist.PaymentMethod = entity.PaymentMethod;
-//        exist.Status = entity.Status;
-//        exist.OrderCode = entity.OrderCode;
-//        exist.PaymentLinkId = entity.PaymentLinkId;
+    /* ================== Gets ================== */
+    public Task<TransactionPayment?> GetByIdWithNavAsync(Guid id, CancellationToken ct = default)
+        => _context.TransactionPayments
+                   .AsNoTracking()
+                   .Include(x => x.User)
+                   .Include(x => x.SubscriptionPlan)
+                       .ThenInclude(p => p.Price)
+                   .Include(x => x.SubscriptionPlan)
+                       .ThenInclude(p => p.Features)
+                               .ThenInclude(pf => pf.Feature)
+                   .FirstOrDefaultAsync(x => x.Id == id, ct);
 
-//        await _context.SaveChangesAsync(ct);
-//        return true;
-//    }
+    public Task<TransactionPayment?> GetByOrderCodeAsync(long orderCode, CancellationToken ct = default)
+    => _context.TransactionPayments.AsNoTracking()
+               .FirstOrDefaultAsync(x => x.OrderCode == orderCode, ct);
 
-//    public async Task<bool> DeleteAsync(Guid id, CancellationToken ct = default)
-//    {
-//        var exist = await _context.TransactionPayments.FirstOrDefaultAsync(x => x.Id == id, ct);
-//        if (exist == null) return false;
+    public Task<TransactionPayment?> GetByPaymentLinkIdAsync(string paymentLinkId, CancellationToken ct = default)
+        => _context.TransactionPayments.AsNoTracking()
+                   .FirstOrDefaultAsync(x => x.PaymentLinkId == paymentLinkId, ct);
 
-//        _context.TransactionPayments.Remove(exist);
-//        await _context.SaveChangesAsync(ct);
-//        return true;
-//    }
+    public Task<bool> ExistsOrderCodeAsync(long orderCode, CancellationToken ct = default)
+        => _context.TransactionPayments.AnyAsync(x => x.OrderCode == orderCode, ct);
 
-//    public Task<bool> ExistsOrderCodeAsync(long orderCode, CancellationToken ct = default)
-//        => _context.TransactionPayments.AnyAsync(x => x.OrderCode == orderCode, ct);
+    public Task<bool> ExistsPaymentLinkIdAsync(string paymentLinkId, CancellationToken ct = default)
+        => _context.TransactionPayments.AnyAsync(x => x.PaymentLinkId == paymentLinkId, ct);
 
-//    public Task<bool> ExistsPaymentLinkIdAsync(string paymentLinkId, CancellationToken ct = default)
-//      => _context.TransactionPayments.AnyAsync(x => x.PaymentLinkId == paymentLinkId, ct);
+    /* ================== Create ================== */
+    public async Task<TransactionPayment> CreateDraftChargeAsync(TransactionPayment draft, CancellationToken ct = default)
+    {
+        // Guard: must be draft (Pending + Charge), PaidAt null
+        draft.Id = draft.Id == Guid.Empty ? Guid.NewGuid() : draft.Id;
+        draft.Status = PaymentStatus.Pending;
+        draft.Type = TransactionType.Charge;
+        draft.PaidAt = null;
+        draft.TransactionDateTime = null;
 
+        _context.TransactionPayments.Add(draft);
+        await _context.SaveChangesAsync(ct);
+        return draft;
+    }
 
-//    public Task<TransactionPayment?> GetByOrderCodeAsync(long orderCode, CancellationToken ct = default)
-//          => _context.TransactionPayments.AsNoTracking()
-//                         .FirstOrDefaultAsync(x => x.OrderCode == orderCode, ct);
+    public async Task<int> BulkCreateAsync(IEnumerable<TransactionPayment> rows, CancellationToken ct = default)
+    {
+        var list = rows.ToList();
+        foreach (var r in list)
+        {
+            r.Id = r.Id == Guid.Empty ? Guid.NewGuid() : r.Id;
+            r.Status = PaymentStatus.Pending;
+            r.Type = TransactionType.Charge;
+            r.PaidAt = null;
+            r.TransactionDateTime = null;
+        }
+        _context.TransactionPayments.AddRange(list);
+        return await _context.SaveChangesAsync(ct);
+    }
 
-//    public Task<TransactionPayment?> GetByPaymentLinkIdAsync(string paymentLinkId, CancellationToken ct = default)
-//       => _context.TransactionPayments.AsNoTracking()
-//                   .FirstOrDefaultAsync(x => x.PaymentLinkId == paymentLinkId, ct);
+    /* ================== Transitions ================== */
+    public async Task<bool> AttachPaymentLinkAsync(Guid id, long orderCode, string paymentLinkId, string? provider, CancellationToken ct = default)
+    {
+        var tx = await _context.TransactionPayments.FirstOrDefaultAsync(x => x.Id == id, ct);
+        if (tx == null) return false;
 
-//    public async Task<PagedResult<TransactionPayment>> GetPagedAsync(TransactionPaymentPagedRequest request, CancellationToken ct = default)
-//    {
-//        var q = _context.TransactionPayments
-//                        .AsNoTracking()
-//                        .Include(tp => tp.User)
-//                        .Include(tp => tp.SubscriptionPlan)
-//                        .AsQueryable();
+        if (tx.Status != PaymentStatus.Pending) return false; // only pending can attach
+        tx.OrderCode = orderCode;
+        tx.PaymentLinkId = paymentLinkId;
+        tx.Provider = provider;
+        await _context.SaveChangesAsync(ct);
+        return true;
+    }
 
-//        // ----- Filters -----
-//        if (!string.IsNullOrWhiteSpace(request.UserName))
-//        {
-//            var pattern = $"%{request.UserName.Trim()}%";
-//            q = q.Where(tp => tp.User.UserName != null &&
-//                              EF.Functions.Like(tp.User.UserName, pattern));
-//        }
+    public async Task<bool> MarkSuccessAsync(Guid id, decimal? amount, DateTimeOffset paidAt, string? reference, CancellationToken ct = default)
+    {
+        var tx = await _context.TransactionPayments.FirstOrDefaultAsync(x => x.Id == id, ct);
+        if (tx == null) return false;
+        if (tx.Status != PaymentStatus.Pending) return true; // idempotent: already set -> no-op true
 
-//        if (!string.IsNullOrWhiteSpace(request.PlanName))
-//        {
-//            var pattern = $"%{request.PlanName.Trim()}%";
-//            q = q.Where(tp => tp.SubscriptionPlan.Name != null &&
-//                              EF.Functions.Like(tp.SubscriptionPlan.Name, pattern));
-//        }
+        tx.Status = PaymentStatus.Success;
+        if (amount.HasValue) tx.Amount = amount.Value;
+        tx.PaidAt = paidAt;
+        tx.TransactionDateTime = tx.TransactionDateTime ?? paidAt; // keep if gateway provided earlier
+        tx.Reference = reference;
 
-//        if (!string.IsNullOrWhiteSpace(request.Status))
-//        {
-//            // Nếu bạn lưu Status là enum string (PaymentStatus.*.ToString())
-//            q = q.Where(tp => tp.Status == request.Status);
-//        }
+        await _context.SaveChangesAsync(ct);
+        return true;
+    }
 
-//        if (request.TransactionAt.From.HasValue)
-//            q = q.Where(tp => tp.TransactionDateTime >= request.TransactionAt.From.Value);
+    public async Task<bool> MarkFailedAsync(Guid id, string? description, string? reference, CancellationToken ct = default)
+    {
+        var tx = await _context.TransactionPayments.FirstOrDefaultAsync(x => x.Id == id, ct);
+        if (tx == null) return false;
+        if (tx.Status != PaymentStatus.Pending) return true; // idempotent
 
-//        if (request.TransactionAt.To.HasValue)
-//            q = q.Where(tp => tp.TransactionDateTime <= request.TransactionAt.To.Value);
+        tx.Status = PaymentStatus.Failed;
+        if (!string.IsNullOrWhiteSpace(description)) tx.Description = description;
+        if (!string.IsNullOrWhiteSpace(reference)) tx.Reference = reference;
 
-//        if (!string.IsNullOrWhiteSpace(request.Keyword))
-//        {
-//            var kw = request.Keyword.Trim();
-//            var pattern = $"%{kw}%";
-//            q = q.Where(tp =>
-//                (tp.Reference != null && EF.Functions.Like(tp.Reference, pattern)) ||
-//                (tp.Description != null && EF.Functions.Like(tp.Description, pattern)) ||
-//                (tp.PaymentLinkId != null && EF.Functions.Like(tp.PaymentLinkId, pattern)) ||
-//                (tp.Currency != null && EF.Functions.Like(tp.Currency, pattern)) ||
-//                // OrderCode là long? → convert sang chuỗi để tìm kiếm
-//                (tp.OrderCode.HasValue && EF.Functions.Like(tp.OrderCode.Value.ToString(), $"%{kw}%"))
-//            );
-//        }
+        await _context.SaveChangesAsync(ct);
+        return true;
+    }
 
-//        // ----- Default sort (nếu client không truyền) -----
-//        if (string.IsNullOrWhiteSpace(request.SortColumn))
-//        {
-//            request.SortColumn = nameof(TransactionPayment.TransactionDateTime);
-//            request.SortDescending = true;
-//        }
+    /* ================== Scheduled ================== */
+    public async Task<List<TransactionPayment>> GetDueAsync(DateTimeOffset asOf, int take = 100, CancellationToken ct = default)
+    {
+        return await _context.TransactionPayments
+            .AsNoTracking()
+            .Where(x => x.Type == TransactionType.Charge
+                        && x.Status == PaymentStatus.Pending
+                        && x.DueAt != null
+                        && x.DueAt <= asOf)
+            .OrderBy(x => x.DueAt)
+            .ThenBy(x => x.CreatedAt)
+            .Take(take)
+            .ToListAsync(ct);
+    }
 
-//        return await q.ToPagedResultAsync(request, ct);
-//    }
+    /* ================== Paged ================== */
+    public async Task<PagedResult<TransactionPayment>> GetPagedAsync(TransactionPaymentPagedRequest request, CancellationToken ct = default)
+    {
+        var q = _context.TransactionPayments
+                        .AsNoTracking()
+                        .Include(tp => tp.User)
+                        .Include(tp => tp.SubscriptionPlan)
+                        .AsQueryable();
 
+        // Filters
+        if (!string.IsNullOrWhiteSpace(request.UserName))
+        {
+            var pattern = $"%{request.UserName.Trim()}%";
+            q = q.Where(tp => tp.User.UserName != null && EF.Functions.Like(tp.User.UserName, pattern));
+        }
 
-//}
+        if (!string.IsNullOrWhiteSpace(request.PlanName))
+        {
+            var pattern = $"%{request.PlanName.Trim()}%";
+            q = q.Where(tp => tp.SubscriptionPlan.Name != null && EF.Functions.Like(tp.SubscriptionPlan.Name, pattern));
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Status))
+        {
+            if (TryParsePaymentStatus(request.Status, out var st))
+            {
+                q = q.Where(tp => tp.Status == st);
+            }
+        }
+
+        if (request.TransactionAt.From.HasValue)
+            q = q.Where(tp => tp.TransactionDateTime >= request.TransactionAt.From.Value);
+
+        if (request.TransactionAt.To.HasValue)
+            q = q.Where(tp => tp.TransactionDateTime <= request.TransactionAt.To.Value);
+
+        //if (request.DueAt?.From.HasValue == true)
+        //    q = q.Where(tp => tp.DueAt >= request.DueAt!.From!.Value);
+
+        //if (request.DueAt?.To.HasValue == true)
+        //    q = q.Where(tp => tp.DueAt <= request.DueAt!.To!.Value);
+
+        if (!string.IsNullOrWhiteSpace(request.Keyword))
+        {
+            var kw = request.Keyword.Trim();
+            var pattern = $"%{kw}%";
+            q = q.Where(tp =>
+                (tp.Reference != null && EF.Functions.Like(tp.Reference, pattern)) ||
+                (tp.Description != null && EF.Functions.Like(tp.Description, pattern)) ||
+                (tp.PaymentLinkId != null && EF.Functions.Like(tp.PaymentLinkId, pattern)) ||
+                (tp.Currency != null && EF.Functions.Like(tp.Currency, pattern)) ||
+                (tp.Provider != null && EF.Functions.Like(tp.Provider, pattern)) ||
+                (tp.OrderCode.HasValue && EF.Functions.Like(tp.OrderCode.Value.ToString(), $"%{kw}%"))
+            );
+        }
+
+        // Default sort
+        if (string.IsNullOrWhiteSpace(request.SortColumn))
+        {
+            request.SortColumn = nameof(TransactionPayment.TransactionDateTime);
+            request.SortDescending = true;
+        }
+
+        return await q.ToPagedResultAsync(request, ct);
+    }
+}
 

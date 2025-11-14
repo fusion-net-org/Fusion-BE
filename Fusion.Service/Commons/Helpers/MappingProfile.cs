@@ -20,11 +20,10 @@ using Fusion.Service.ViewModels.Task.Request;
 using Fusion.Service.ViewModels.Task.Response;
 using Fusion.Service.ViewModels.Tickets.Requests;
 using Fusion.Service.ViewModels.Tickets.Responses;
+using Fusion.Service.ViewModels.TransactionPayment.Requests;
 using Fusion.Service.ViewModels.TransactionPayment.Responses;
 using Fusion.Service.ViewModels.Users.Requests;
 using Fusion.Service.ViewModels.Users.Responses;
-using Fusion.Service.ViewModels.UserSubscription.Requests;
-using Fusion.Service.ViewModels.UserSubscription.Responses;
 
 namespace Fusion.Service.Commons.Helpers;
 
@@ -168,13 +167,48 @@ public class MappingProfile : Profile
             .ReverseMap();
 
         //--------------------------- entity: Transaction Payment ---------------------------------------------
-        // List item
-        //CreateMap<TransactionPayment, TransactionPaymentResponse>()
-        //    .ForMember(d => d.UserName, opt => opt.MapFrom(s => s.User != null ? s.User.UserName : null))
-        //    .ForMember(d => d.PlanName, opt => opt.MapFrom(s => s.SubscriptionPlan != null ? s.SubscriptionPlan.Name : null));
+        // Entity -> LIST response
+        CreateMap<TransactionPayment, TransactionPaymentResponse>()
+            .ForMember(d => d.UserName, o => o.MapFrom(s => s.User != null ? s.User.UserName : null))
+            .ForMember(d => d.PlanName, o => o.MapFrom(s => s.SubscriptionPlan != null ? s.SubscriptionPlan.Name : null));
 
-        // Detail item
-        //CreateMap<TransactionPayment, TransactionPaymentDetailResponse>();
+        // Entity -> DETAIL response
+        CreateMap<TransactionPayment, TransactionPaymentDetailResponse>()
+            .ForMember(d => d.UserName, o => o.MapFrom(s => s.User != null ? s.User.UserName : null))
+            .ForMember(d => d.PlanName, o => o.MapFrom(s => s.SubscriptionPlan != null ? s.SubscriptionPlan.Name : null));
+
+        // Create request -> Entity (chỉ nhận PlanId; các trường còn lại set ở Service)
+        CreateMap<TransactionPaymentCreateRequest, TransactionPayment>()
+            .ForMember(d => d.PlanId, o => o.MapFrom(s => s.PlanId))
+            .ForMember(d => d.Id, o => o.Ignore())
+            .ForMember(d => d.UserId, o => o.Ignore())
+            .ForMember(d => d.UserSubscriptionId, o => o.Ignore())
+            .ForMember(d => d.Amount, o => o.Ignore())
+            .ForMember(d => d.Currency, o => o.Ignore())
+            .ForMember(d => d.Description, o => o.Ignore())
+            .ForMember(d => d.Reference, o => o.Ignore())
+            .ForMember(d => d.OrderCode, o => o.Ignore())
+            .ForMember(d => d.PaymentLinkId, o => o.Ignore())
+            .ForMember(d => d.PaymentMethod, o => o.Ignore())
+            .ForMember(d => d.Provider, o => o.Ignore())
+            .ForMember(d => d.TransactionDateTime, o => o.Ignore())
+            .ForMember(d => d.DueAt, o => o.Ignore())
+            .ForMember(d => d.PaidAt, o => o.Ignore())
+            .ForMember(d => d.Status, o => o.Ignore())
+            .ForMember(d => d.Type, o => o.Ignore())
+            // snapshot pricing (set tại Service khi khởi tạo draft)
+            .ForMember(d => d.ChargeUnitSnapshot, o => o.Ignore())
+            .ForMember(d => d.BillingPeriodSnapshot, o => o.Ignore())
+            .ForMember(d => d.PeriodCountSnapshot, o => o.Ignore())
+            .ForMember(d => d.SeatCountSnapshot, o => o.Ignore())
+            .ForMember(d => d.PaymentModeSnapshot, o => o.Ignore())
+            .ForMember(d => d.InstallmentIndex, o => o.Ignore())
+            .ForMember(d => d.InstallmentTotal, o => o.Ignore())
+            .ForMember(d => d.CreatedAt, o => o.Ignore())
+            // navs
+            .ForMember(d => d.User, o => o.Ignore())
+            .ForMember(d => d.SubscriptionPlan, o => o.Ignore());
+
         //----------------------------     entity: Project  ---------------------------------------------
         CreateMap<Project, ProjectResponse>();
 

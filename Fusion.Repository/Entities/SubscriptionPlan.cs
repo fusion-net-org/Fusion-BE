@@ -54,8 +54,6 @@ public class SubscriptionPlan
     [InverseProperty(nameof(SubscriptionPlanFeature.SubscriptionPlans))]
     public ICollection<SubscriptionPlanFeature>? Features { get; set; }
 
-
-
-    //[InverseProperty(nameof(TransactionPayment.SubscriptionPlan))]
-    //public virtual ICollection<TransactionPayment> TransactionPayments { get; set; } = new List<TransactionPayment>();
+    [InverseProperty(nameof(TransactionPayment.SubscriptionPlan))]
+    public virtual ICollection<TransactionPayment> TransactionPayments { get; set; } = new List<TransactionPayment>();
 }

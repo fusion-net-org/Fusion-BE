@@ -120,6 +120,6 @@ public partial class User
     [InverseProperty("User")]
     public virtual ICollection<UserNotificationSetting> UserNotificationSettings { get; set; } = new List<UserNotificationSetting>();
 
-    //[InverseProperty(nameof(TransactionPayment.User))]
-    //public virtual ICollection<TransactionPayment> TransactionPayments { get; set; } = new List<TransactionPayment>();
+    [InverseProperty(nameof(TransactionPayment.User))]
+    public virtual ICollection<TransactionPayment> TransactionPayments { get; set; } = new List<TransactionPayment>();
 }

@@ -1,12 +1,12 @@
 ﻿
-//using Net.payOS.Types;
+using Net.payOS.Types;
 
-//namespace Fusion.Service.IServices;
+namespace Fusion.Service.IServices;
 
-//public interface IPayOSService
-//{
-//    Task<string> CreatePaymentLink(Guid transactionId, CancellationToken cancellationToken = default);
-//    Task HandlePaymentWebHook(WebhookType webhookData, CancellationToken cancellationToken = default);
-//    Task<string> ConfirmWebHook(string url);
-//    Task<string> RefreshStatusByGateway(long? orderCode, string? paymentLinkId, CancellationToken ct = default);
-//}
+public interface IPayOSService
+{
+    Task<string> CreatePaymentLink(Guid transactionId, CancellationToken cancellationToken = default);
+    Task HandlePaymentWebHook(WebhookType webhookData, CancellationToken ct = default);
+    Task<string> ConfirmWebHook(string url);
+    Task<string> RefreshStatusByGateway(long? orderCode, string? paymentLinkId, CancellationToken ct = default);
+}
