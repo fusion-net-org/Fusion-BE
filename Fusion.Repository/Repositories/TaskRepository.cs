@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Fusion.Repository.Bases.Exceptions;
-using Fusion.Repository.Bases.Page;
-using Fusion.Repository.Bases.Responses;
+﻿using Fusion.Repository.Bases.Page;
+using Fusion.Repository.Bases.Page.Task;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.IRepositories;
@@ -60,6 +55,57 @@ namespace Fusion.Repository.Repositories
             _db.ProjectTasks.Update(e);
             await _db.SaveChangesAsync(ct);
             return true;
+        }
+        public async Task<PagedResult<ProjectTask>> GetTasksBySprintIdAsync(
+               Guid sprintId,
+               TaskBySprintRequest request,
+               CancellationToken ct = default)
+        {
+            var query = _db.ProjectTasks
+                .Include(t => t.Assignees)
+                .Include(t => t.Project)
+                .Include(t => t.Sprint)
+                .Where(t => t.SprintId == sprintId && !t.IsDeleted)
+                .AsQueryable();
+
+            // filter Title
+            if (!string.IsNullOrWhiteSpace(request.Title))
+            {
+                var keyword = request.Title.Trim();
+                query = query.Where(t =>
+                    t.Title.Contains(keyword) ||
+                    t.Type.Contains(keyword));
+            }
+
+
+            // filter Status
+            if (!string.IsNullOrWhiteSpace(request.Status))
+                query = query.Where(t => t.Status == request.Status);
+
+            // filter Priority
+            if (!string.IsNullOrWhiteSpace(request.Priority))
+                query = query.Where(t => t.Priority == request.Priority);
+
+            // filter CreatedAt
+            if (request.CreatedFrom.HasValue && request.CreatedTo.HasValue)
+            {
+                var from = request.CreatedFrom.Value.Date;
+                var to = request.CreatedTo.Value.Date.AddDays(1).AddTicks(-1);
+
+                query = query.Where(x => x.CreateAt >= from && x.CreateAt <= to);
+            }
+            else if (request.CreatedFrom.HasValue)
+            {
+                var from = request.CreatedFrom.Value.Date;
+                query = query.Where(x => x.CreateAt >= from);
+            }
+            else if (request.CreatedTo.HasValue)
+            {
+                var to = request.CreatedTo.Value.Date.AddDays(1).AddTicks(-1);
+                query = query.Where(x => x.CreateAt <= to);
+            }
+
+            return await query.ToPagedResultAsync(request, ct);
         }
     }
 }

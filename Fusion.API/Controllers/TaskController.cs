@@ -1,4 +1,6 @@
-﻿using Fusion.Repository.Bases.Page;
+﻿using System.Security.Claims;
+using Fusion.Repository.Bases.Page;
+using Fusion.Repository.Bases.Page.Task;
 using Fusion.Repository.Bases.Responses;
 using Fusion.Service.Commons.BaseResponses;     // ResponseModel, ResponseMessages
 using Fusion.Service.IServices;
@@ -6,7 +8,6 @@ using Fusion.Service.ViewModels.Task.Request;
 using Fusion.Service.ViewModels.Task.Response;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace Fusion.API.Controllers;
 
@@ -122,4 +123,14 @@ public class TaskController : ControllerBase
         return Ok(ResponseModel<ProjectTaskResponse>.Ok(
             data, $"Task status changed to '{value}'."));
     }
+    // ===== Get tasks by SprintId (paged) =====
+    [HttpGet("sprints/{sprintId:guid}/tasks")]
+    [ProducesResponseType(typeof(ResponseModel<PagedResult<ProjectTaskResponse>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetTasksBySprintId(Guid sprintId, [FromQuery] TaskBySprintRequest request, CancellationToken ct)
+    {
+        var data = await _svc.GetTasksBySprintIdAsync(sprintId, request, ct);
+        return Ok(ResponseModel<PagedResult<ProjectTaskResponse>>.Ok(
+            data, ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "tasks")));
+    }
+
 }
