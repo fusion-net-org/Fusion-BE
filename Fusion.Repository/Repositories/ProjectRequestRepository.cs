@@ -23,6 +23,20 @@ namespace Fusion.Repository.Repositories
 
         public async Task<ProjectRequest> AddProjectRequestAsync(ProjectRequest request, string vendorEmail, string code, CancellationToken cancellationToken)
         {
+            if (!request.ContractId.HasValue)
+            {
+                throw CustomExceptionFactory.CreateBadRequestError("ContractId is required");
+            }
+
+            var contract = await _context.Contracts
+                .SingleOrDefaultAsync(c => c.Id == request.ContractId.Value, cancellationToken);
+
+            if (contract == null)
+            {
+                throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Contract"));
+            }
+
+
             // User send request - Nguoi di thue - Vendor
             var vendor = await _context.Users.SingleOrDefaultAsync(x => x.Email == vendorEmail, cancellationToken);
             if (vendor == null)
@@ -76,6 +90,8 @@ namespace Fusion.Repository.Repositories
             request.ConvertedProjectId = null;
             request.Code = code;
             request.Status = "Pending";
+            request.ContractId = request.ContractId;
+
 
             var projectRequest = await _context.ProjectRequests.AddAsync(request, cancellationToken);
             await _context.SaveChangesAsync(cancellationToken);
@@ -444,7 +460,7 @@ namespace Fusion.Repository.Repositories
             var executorMember = await _context.CompanyMembers.SingleOrDefaultAsync(x => x.UserId == executor.Id && x.CompanyId == request.ExecutorCompanyId, cancellationToken); 
             if (executorMember == null)
                 throw CustomExceptionFactory.CreateNotFoundError(
-                     ResponseMessages.NOT_FOUND.FormatMessage($"User in this {request.ExecutorCompany.Name}"));
+                     ResponseMessages.NOT_FOUND.FormatMessage($"User Not In {request.ExecutorCompany.Name}"));
 
             //Cập nhật trạng thái
             request.Status = ProjectRequestStatusEnum.Accepted.ToString();

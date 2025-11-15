@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Fusion.Repository.Bases.Page.Contract;
+using Microsoft.AspNetCore.Http;
 
 namespace Fusion.Service.ViewModels.Contract.Requests
 {
     public class CreateContractRequest
     {
-        public Guid ProjectRequestId { get; set; }
-
         public string ContractCode { get; set; } = string.Empty;
         public string ContractName { get; set; } = string.Empty;
 
@@ -18,6 +18,8 @@ namespace Fusion.Service.ViewModels.Contract.Requests
 
         public decimal Budget { get; set; }
 
-        public List<string> Appendices { get; set; } = new();
+        public List<CreateAppendixRequest> Appendices { get; set; } = new();
+
+        //public IFormFile? AttachmentFile { get; set; }
     }
 }

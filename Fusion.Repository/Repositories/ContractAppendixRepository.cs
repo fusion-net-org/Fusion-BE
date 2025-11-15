@@ -1,13 +1,14 @@
-﻿using Fusion.Repository.Bases.Exceptions;
-using Fusion.Repository.Data;
-using Fusion.Repository.Entities;
-using Fusion.Repository.IRepositories;
-using Microsoft.EntityFrameworkCore;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Fusion.Repository.Bases.Exceptions;
+using Fusion.Repository.Bases.Page.Contract;
+using Fusion.Repository.Data;
+using Fusion.Repository.Entities;
+using Fusion.Repository.IRepositories;
+using Microsoft.EntityFrameworkCore;
 
 namespace Fusion.Repository.Repositories
 {
@@ -20,7 +21,7 @@ namespace Fusion.Repository.Repositories
             _context = context;
         }
 
-        public async Task<List<ContractAppendix>> CreateContractAppendixAsync(Guid contractId, List<string> appendices , CancellationToken ct = default)
+        public async Task<List<ContractAppendix>> CreateContractAppendixAsync(Guid contractId, List<CreateAppendixRequest> appendices , CancellationToken ct = default)
         {
             var contract = await _context.Contracts
                 .Include(x => x.ContractAppendices)
@@ -42,8 +43,8 @@ namespace Fusion.Repository.Repositories
                     Id = Guid.NewGuid(),
                     ContractId = contract.Id,
                     AppendixCode = $"PL-{index:00}",
-                    Title = item,
-                    Description = null,
+                    Title = item.Title,
+                    Description = item.Description,
                     FilePath = null,
                     CreatedAt = DateTime.UtcNow
                 };

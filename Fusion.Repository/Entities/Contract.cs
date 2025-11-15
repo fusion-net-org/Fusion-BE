@@ -5,6 +5,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Fusion.Repository.Enums;
+using Microsoft.EntityFrameworkCore;
 
 namespace Fusion.Repository.Entities
 {
@@ -22,9 +24,6 @@ namespace Fusion.Repository.Entities
         [StringLength(50)]
         public string ContractName { get; set; } = string.Empty;
 
-        [Column("project_request_id")]
-        public Guid ProjectRequestId { get; set; }
-
         [Column("attachment")]
         public string? Attachment { get; set; }
 
@@ -37,8 +36,33 @@ namespace Fusion.Repository.Entities
         [Column("budget")]
         public decimal? Budget { get; set; }
 
-        // Navigation
-        [ForeignKey("ProjectRequestId")]
+        [Column("status")]
+        [StringLength(20)]
+        public string? Status { get; set; }
+
+        [Column("reason")]
+        public string? Reason { get; set; }
+
+        [Column("created_by")]
+        public Guid? CreatedBy { get; set; }
+
+        [Column("create_at")]
+        [Precision(3)]
+        public DateTime CreateAt { get; set; }
+
+        [Column("updated_by")]
+        public Guid? UpdatedBy { get; set; }
+
+        [Column("update_at")]
+        [Precision(3)]
+        public DateTime UpdateAt { get; set; }
+
+        [ForeignKey("CreatedBy")]
+        public virtual User? CreatedByNavigation { get; set; }
+
+        [ForeignKey("UpdatedBy")]
+        public virtual User? UpdatedByNavigation { get; set; }
+
         [InverseProperty("Contract")]
         public virtual ProjectRequest? ProjectRequest { get; set; }
 

@@ -19,26 +19,61 @@ namespace Fusion.Repository.Repositories
         {
             _context = context;
         }
-
-        public async Task<Contract> CreateContractAsync(Guid userId, Guid projectRequestId, Contract contract, CancellationToken ct = default)
+        public async Task<bool> ContractExistsAsync(Guid contractId, CancellationToken ct)
         {
-            var projectRequest = await _context.ProjectRequests.FirstOrDefaultAsync(x => x.Id == projectRequestId, ct);
+            return await _context.Contracts.AnyAsync(c => c.Id == contractId, ct);
+        }
 
-            if (projectRequest == null)
-                throw CustomExceptionFactory.CreateNotFoundError("Project request not found.");
-
-            // Kiểm tra user có phải requester hay không
-            if (projectRequest.CreatedBy != userId)
-                throw CustomExceptionFactory.CreateBadRequestError("You are not the requester of this project.");
-
-            bool hasContract = await _context.Contracts.AnyAsync(c => c.ProjectRequestId == projectRequestId, ct);
-
-            if (hasContract)
-                throw CustomExceptionFactory.CreateBadRequestError("This project request already has a contract.");
-
-            contract.ProjectRequestId = projectRequestId;
+        public async Task<Contract> CreateContractAsync(Guid userId,  Contract contract, CancellationToken ct = default)
+        {
+            contract.CreatedBy = userId;
+            contract.CreateAt = DateTime.UtcNow;
 
             await _context.Contracts.AddAsync(contract);
+            await _context.SaveChangesAsync(ct);
+
+            return contract;
+        }
+        public async Task<Contract> ApproveContractAsync(Guid contractId, Guid userId, CancellationToken ct = default)
+        {
+            var contract = await _context.Contracts
+                .Include(x => x.ProjectRequest)
+                .FirstOrDefaultAsync(x => x.Id == contractId, ct);
+
+            if (contract == null)
+                throw CustomExceptionFactory.CreateNotFoundError("Contract not found.");
+
+            var project = contract.ProjectRequest;
+            if (project.ExecutorCompanyId != userId)
+                throw CustomExceptionFactory.CreateBadRequestError("You cannot approve this contract.");
+
+            if (contract.Status != "PENDING")
+                throw CustomExceptionFactory.CreateBadRequestError("Contract cannot be approved in current state.");
+
+            contract.Status = "APPROVED";
+            await _context.SaveChangesAsync(ct);
+
+            return contract;
+        }
+        public async Task<Contract> RejectContractAsync(Guid contractId, Guid userId, string reason, CancellationToken ct = default)
+        {
+            var contract = await _context.Contracts
+                .Include(x => x.ProjectRequest)
+                .FirstOrDefaultAsync(x => x.Id == contractId, ct);
+
+            if (contract == null)
+                throw CustomExceptionFactory.CreateNotFoundError("Contract not found.");
+
+            var project = contract.ProjectRequest;
+            if (project.ExecutorCompanyId != userId)
+                throw CustomExceptionFactory.CreateBadRequestError("You cannot reject this contract.");
+
+            if (contract.Status != "PENDING")
+                throw CustomExceptionFactory.CreateBadRequestError("Contract cannot be rejected in current state.");
+
+            contract.Status = "REJECTED";
+            project.ReasonReject = reason;
+
             await _context.SaveChangesAsync(ct);
 
             return contract;
@@ -65,18 +100,15 @@ namespace Fusion.Repository.Repositories
             if (contract == null)
                 throw CustomExceptionFactory.CreateNotFoundError("Contract not found.");
 
-            var projectRequest = await _context.ProjectRequests.FirstOrDefaultAsync(x => x.Id == contract.ProjectRequestId, ct);
-            if (projectRequest == null)
-                throw CustomExceptionFactory.CreateNotFoundError("Project request not found.");
-
-            if (projectRequest.CreatedBy != userId)
-                throw CustomExceptionFactory.CreateBadRequestError("You are not the requester of this project.");
 
             contract.ContractCode = request.ContractCode ?? contract.ContractCode;
             contract.ContractName = request.ContractName ?? contract.ContractName;
             contract.Budget = request.Budget ?? contract.Budget;
             contract.EffectiveDate = request.EffectiveDate ?? contract.EffectiveDate;
             contract.ExpiredDate = request.ExpiredDate ?? contract.ExpiredDate;
+
+            contract.UpdatedBy = userId;
+            contract.UpdateAt = DateTime.UtcNow;
 
             _context.ContractAppendices.RemoveRange(contract.ContractAppendices);
 
@@ -110,5 +142,36 @@ namespace Fusion.Repository.Repositories
 
             return contract;
         }
+        public async Task<Contract> UpdateContractStatusAsync(Guid contractId, Guid userId, string status, CancellationToken ct = default)
+        {
+            var contract = await _context.Contracts
+                .Include(x => x.ContractAppendices)
+                .FirstOrDefaultAsync(x => x.Id == contractId, ct);
+
+            if (contract == null)
+                throw CustomExceptionFactory.CreateNotFoundError("Contract not found.");
+
+            contract.Status = status;
+            contract.UpdatedBy = userId;
+            contract.UpdateAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync(ct);
+
+            return contract;
+        }
+        public async Task<Contract> UpdateContractAttachmentAsync(Guid contractId, string attachmentUrl, Guid userId, CancellationToken ct = default)
+        {
+            var contract = await _context.Contracts.FirstOrDefaultAsync(c => c.Id == contractId, ct);
+            if (contract == null)
+                throw CustomExceptionFactory.CreateNotFoundError("Contract not found.");
+
+            contract.Attachment = attachmentUrl;
+            contract.UpdatedBy = userId;
+            contract.UpdateAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync(ct);
+            return contract;
+        }
+
     }
 }

@@ -13,6 +13,10 @@ public partial class ProjectRequest
     [Column("id")]
     public Guid Id { get; set; }
 
+    [Column("contract_id")]
+    public Guid? ContractId { get; set; }
+
+
     [Column("requester_company_id")]
     public Guid? RequesterCompanyId { get; set; }
 
@@ -87,7 +91,7 @@ public partial class ProjectRequest
     [InverseProperty("ProjectRequest")]
     public virtual Project? Project { get; set; }
 
-    [InverseProperty("ProjectRequest")]
+    [ForeignKey("ContractId")]
     public virtual Contract? Contract { get; set; }
 
     [ForeignKey("RequesterCompanyId")]

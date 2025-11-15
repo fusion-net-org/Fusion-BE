@@ -13,10 +13,12 @@ namespace Fusion.Service.ViewModels.Contract.Responses
         public string ContractCode { get; set; } = string.Empty;
         public string ContractName { get; set; } = string.Empty;
         public decimal Budget { get; set; }
+        public string Status { get; set; }
         public DateOnly EffectiveDate { get; set; }
         public DateOnly ExpiredDate { get; set; }
 
         public List<ContractAppendixResponse> Appendices { get; set; } = new();
+        public string? Attachment { get; set; }
     }
 
     public class ContractAppendixResponse

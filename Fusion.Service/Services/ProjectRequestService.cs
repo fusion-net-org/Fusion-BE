@@ -34,7 +34,8 @@ namespace Fusion.Service.Services
         private readonly ICompanyActivityService _logService;
         private readonly IMailService _mailService;
         private readonly IUnitOfWork _unitOfWork;
-        public ProjectRequestService(IProjectRequestRepository projectRequestRepository, INotificationService notificationService, IMapper mapper, ICurrentService currentService, ICompanyActivityService logService, IMailService mailService, IUnitOfWork unitOfWork)
+        private readonly IContractService _contractService;
+        public ProjectRequestService(IProjectRequestRepository projectRequestRepository, INotificationService notificationService, IMapper mapper, ICurrentService currentService, ICompanyActivityService logService, IMailService mailService, IUnitOfWork unitOfWork,IContractService contractService)
         {
             _projectRequestRepository = projectRequestRepository;
             _notificationService = notificationService;
@@ -43,12 +44,22 @@ namespace Fusion.Service.Services
             _logService = logService;
             _mailService = mailService;
             _unitOfWork = unitOfWork;
+            _contractService = contractService;
         }
 
         public async Task<ProjectRequestResponse> AcceptProjectRequestAsync(Guid requestId, string executorEmail, CancellationToken cancellationToken = default)
         {
             var result = await _projectRequestRepository.AcceptProjectRequestAsync(requestId, executorEmail, cancellationToken);
 
+            if (result.ContractId.HasValue)
+            {
+                await _contractService.UpdateContractStatusAsync(
+                    result.ContractId.Value,
+                    _currentService.GetUserId(),
+                    "Accepted", 
+                    cancellationToken
+                );
+            }
 
             var emailBody = $@"
                <h3>Dear {result.RequesterCompany?.Name},</h3>
@@ -113,6 +124,16 @@ namespace Fusion.Service.Services
             var projectRequest = _mapper.Map<ProjectRequest>(request);
             var code = ProjectCodeUtil.GenerateProjectRequestCode();
             var response = await _projectRequestRepository.AddProjectRequestAsync(projectRequest, vendorEmail, code, cancellationToken);
+
+            if (request.ContractId.HasValue)
+            {
+                await _contractService.UpdateContractStatusAsync(
+                    request.ContractId.Value,
+                    _currentService.GetUserId(),
+                    "Pending",
+                    cancellationToken
+                );
+            }
 
             var currentUserName = await GetUserName(_currentService.GetUserId());
 
@@ -288,7 +309,16 @@ namespace Fusion.Service.Services
         public async Task<ProjectRequestRejectResponse> RejectProjectRequestAsync(Guid requestId, string executorEmail, string reason, CancellationToken cancellationToken = default)
         {
             var result = await _projectRequestRepository.RejectProjectRequestAsync(requestId, executorEmail, reason, cancellationToken);
-
+         
+            if (result.ContractId.HasValue)
+            {
+                await _contractService.UpdateContractStatusAsync(
+                    result.ContractId.Value,
+                    _currentService.GetUserId(),
+                    "Rejected",
+                    cancellationToken
+                );
+            }
             if (result == null)
                 throw CustomExceptionFactory.CreateBadRequestError("Reject project request failed");
 

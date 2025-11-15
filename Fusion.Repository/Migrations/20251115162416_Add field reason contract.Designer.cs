@@ -4,6 +4,7 @@ using Fusion.Repository.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Fusion.Repository.Migrations
 {
     [DbContext(typeof(FusionDbContext))]
-    partial class FusionDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251115162416_Add field reason contract")]
+    partial class Addfieldreasoncontract
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -426,15 +429,6 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("nvarchar(50)")
                         .HasColumnName("contract_name");
 
-                    b.Property<DateTime>("CreateAt")
-                        .HasPrecision(3)
-                        .HasColumnType("datetime2(3)")
-                        .HasColumnName("create_at");
-
-                    b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("created_by");
-
                     b.Property<DateOnly?>("EffectiveDate")
                         .HasColumnType("date")
                         .HasColumnName("effective_date");
@@ -452,20 +446,7 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("nvarchar(20)")
                         .HasColumnName("status");
 
-                    b.Property<DateTime>("UpdateAt")
-                        .HasPrecision(3)
-                        .HasColumnType("datetime2(3)")
-                        .HasColumnName("update_at");
-
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("updated_by");
-
                     b.HasKey("Id");
-
-                    b.HasIndex("CreatedBy");
-
-                    b.HasIndex("UpdatedBy");
 
                     b.ToTable("Contracts");
                 });
@@ -2271,21 +2252,6 @@ namespace Fusion.Repository.Migrations
                         .HasConstraintName("FK_CompanySubscriptionEntitlements_Subscription");
 
                     b.Navigation("CompanySubscription");
-                });
-
-            modelBuilder.Entity("Fusion.Repository.Entities.Contract", b =>
-                {
-                    b.HasOne("Fusion.Repository.Entities.User", "CreatedByNavigation")
-                        .WithMany()
-                        .HasForeignKey("CreatedBy");
-
-                    b.HasOne("Fusion.Repository.Entities.User", "UpdatedByNavigation")
-                        .WithMany()
-                        .HasForeignKey("UpdatedBy");
-
-                    b.Navigation("CreatedByNavigation");
-
-                    b.Navigation("UpdatedByNavigation");
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.ContractAppendix", b =>
