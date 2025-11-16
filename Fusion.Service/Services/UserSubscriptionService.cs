@@ -130,7 +130,36 @@ namespace Fusion.Service.Services
             });
         }
 
-        
+        public async Task<RequestPlanDetailResponse> GetRequestPlansDetailAsync(Guid id, CancellationToken token = default)
+        {
+            var requestPlan = await _repository.GetRequestPlanDetailAsync(id, token);
+
+            if (requestPlan == null)
+                throw CustomExceptionFactory.CreateNotFoundError("Request Plan not found");
+
+            return new RequestPlanDetailResponse
+            {
+                Id = requestPlan.Id,
+                UserName = requestPlan.TransactionPayment?.User?.UserName ?? string.Empty,
+                NamePlan = requestPlan.NamePlan ?? string.Empty,
+                Price = requestPlan?.Price ?? 0,
+                CreateAt = requestPlan?.CreatAt ?? DateTime.MinValue,
+                ExpiredAt = requestPlan?.ExpiredAt ?? DateTime.MinValue,
+                Status = requestPlan.Status,
+                UpdateAt = requestPlan.UpdateAt ?? DateTime.MinValue,
+                Currency = requestPlan.Currency ?? string.Empty,
+                Entitlements = requestPlan.UserSubscriptionEntitlements?
+                    .Select(e => new UserSubscriptionEntitlementResponse
+                    {
+                        Id = e?.Id ?? Guid.Empty,
+                        Quantity = e?.Quantity ?? 0,
+                        FeatureKey = e?.FeatureKey.ToString() ?? string.Empty,
+                        Remaining = e?.Remaining ?? 0
+                    })
+                    .ToList()
+                ?? new List<UserSubscriptionEntitlementResponse>()
+            };
+        }
 
     }
 }
