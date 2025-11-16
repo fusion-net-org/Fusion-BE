@@ -46,6 +46,30 @@ namespace Fusion.Service.Services
             _unitOfWork = unitOfWork;
             _contractService = contractService;
         }
+        public async Task<ProjectRequestResponse?> GetProjectRequestByContractIdAsync(Guid contractId, CancellationToken cancellationToken = default)
+        {
+            var request = await _projectRequestRepository.GetProjectRequestByContractIdAsync(contractId, cancellationToken);
+
+            if (request == null)
+                return null;
+
+            return new ProjectRequestResponse
+            {
+                Id = request.Id,
+                ProjectName = request.Name,
+                Code = request.Code,
+                Status = request.Status,
+                RequesterCompanyId = request.RequesterCompanyId,
+                RequesterCompanyName = request.RequesterCompany?.Name,
+                ExecutorCompanyId = request.ExecutorCompanyId,
+                ExecutorCompanyName = request.ExecutorCompany?.Name,
+                ContractId = request.ContractId,
+                StartDate = request.StartDate,
+                EndDate = request.EndDate,
+                CreateAt = request.CreateAt,
+                UpdateAt = request.UpdateAt,
+            };
+        }
 
         public async Task<ProjectRequestResponse> AcceptProjectRequestAsync(Guid requestId, string executorEmail, CancellationToken cancellationToken = default)
         {
@@ -467,5 +491,8 @@ namespace Fusion.Service.Services
             var user = await _unitOfWork.Repository<User>().FindAsync(c => c.Id == userId);
             return user.UserName;
         }
+
+
+
     }
 }
