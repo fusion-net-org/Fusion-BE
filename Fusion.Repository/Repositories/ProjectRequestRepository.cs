@@ -470,6 +470,17 @@ namespace Fusion.Repository.Repositories
 
             return request;
         }
+        public async Task<ProjectRequest?> GetProjectRequestByContractIdAsync(Guid contractId, CancellationToken cancellationToken = default)
+        {
+            return await _context.ProjectRequests
+                .Include(x => x.RequesterCompany)
+                    .ThenInclude(rc => rc.OwnerUser)
+                .Include(x => x.ExecutorCompany)
+                    .ThenInclude(ec => ec.OwnerUser)
+                .Include(x => x.CreatedByNavigation)
+                .Include(x => x.Project)
+                .FirstOrDefaultAsync(x => x.ContractId == contractId, cancellationToken);
+        }
 
         public async Task<ProjectRequest> RejectProjectRequestAsync(Guid requestId, string executorEmail, string reason, CancellationToken cancellationToken = default)
         {
@@ -501,7 +512,6 @@ namespace Fusion.Repository.Repositories
                 throw CustomExceptionFactory.CreateNotFoundError(
                      ResponseMessages.NOT_FOUND.FormatMessage($"User not belong to {request.ExecutorCompany.Name}"));
 
-            // ✅ Cập nhật trạng thái Reject
             request.Status = ProjectRequestStatusEnum.Rejected.ToString();
             request.UpdateAt = DateTime.UtcNow.AddHours(7);
             request.ReasonReject = reason;
@@ -510,5 +520,28 @@ namespace Fusion.Repository.Repositories
 
             return request;
         }
+
+        public async Task<ProjectRequest> UpdateProjectRequestStatusAsync(Guid requestId, ProjectRequestStatusEnum status, CancellationToken cancellationToken = default)
+        {
+            var projectRequest = await _context.ProjectRequests
+                .Include(x => x.RequesterCompany)
+                    .ThenInclude(rc => rc.OwnerUser)
+                .Include(x => x.ExecutorCompany)
+                    .ThenInclude(ec => ec.OwnerUser)
+                .Include(x => x.CreatedByNavigation)
+                .Include(x => x.Project)
+                .FirstOrDefaultAsync(x => x.Id == requestId, cancellationToken);
+
+            if (projectRequest == null)
+                throw CustomExceptionFactory.CreateNotFoundError("Project request not found");
+
+            projectRequest.Status = status.ToString();
+            projectRequest.UpdateAt = DateTime.UtcNow.AddHours(7);
+
+            await _context.SaveChangesAsync(cancellationToken);
+
+            return projectRequest;
+        }
+
     }
 }

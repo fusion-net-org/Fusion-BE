@@ -11,5 +11,10 @@ namespace Fusion.Repository.Bases.Page.Contract
         public string Title { get; set; } = null!;
         public string? Description { get; set; }
     }
-
+    public class UpdateAppendixRequest
+    {
+        public Guid? Id { get; set; }
+        public string Title { get; set; } = null!;
+        public string? Description { get; set; }
+    }
 }

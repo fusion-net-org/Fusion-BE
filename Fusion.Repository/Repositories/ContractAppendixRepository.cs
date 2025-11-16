@@ -29,8 +29,8 @@ namespace Fusion.Repository.Repositories
             if (contract == null)
                 throw CustomExceptionFactory.CreateNotFoundError("Contract not found.");
 
-            if (appendices == null || !appendices.Any())
-                throw CustomExceptionFactory.CreateBadRequestError("Appendix list is empty.");
+            //if (appendices == null || !appendices.Any())
+            //    throw CustomExceptionFactory.CreateBadRequestError("Appendix list is empty.");
 
             var createdAppendices = new List<ContractAppendix>();
 
@@ -59,6 +59,73 @@ namespace Fusion.Repository.Repositories
             return createdAppendices;
 
         }
+        public async Task<List<ContractAppendix>> UpdateContractAppendixAsync(
+             Guid contractId,
+             List<UpdateAppendixRequest> appendices,
+             CancellationToken ct = default)
+        {
+            var contract = await _context.Contracts
+                .Include(c => c.ContractAppendices)
+                .FirstOrDefaultAsync(c => c.Id == contractId, ct);
+
+            if (contract == null)
+                throw CustomExceptionFactory.CreateNotFoundError("Contract not found.");
+
+            var existing = contract.ContractAppendices.ToList();
+
+            var requestWithIds = appendices.Select(a => new
+            {
+                Id = a.Id, 
+                Title = a.Title,
+                Description = a.Description
+            }).ToList();
+
+            int index = 1;
+
+            foreach (var item in requestWithIds)
+            {
+                ContractAppendix appendix = null;
+
+                if (item.Id != Guid.Empty)
+                {
+                    appendix = existing.FirstOrDefault(e => e.Id == item.Id);
+                }
+                else
+                {
+                    appendix = existing.FirstOrDefault(e => e.Title == item.Title);
+                }
+
+                if (appendix != null)
+                {
+                    appendix.Title = item.Title;
+                    appendix.Description = item.Description;
+                    appendix.AppendixCode = $"PL-{index:00}";
+                }
+                else
+                {
+                    appendix = new ContractAppendix
+                    {
+                        Id = Guid.NewGuid(),
+                        ContractId = contractId,
+                        Title = item.Title,
+                        Description = item.Description,
+                        AppendixCode = $"PL-{index:00}",
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    _context.ContractAppendices.Add(appendix);
+                }
+
+                index++;
+            }
+
+            await _context.SaveChangesAsync(ct);
+
+            return await _context.ContractAppendices
+                .Where(a => a.ContractId == contractId)
+                .OrderBy(a => a.AppendixCode)
+                .ToListAsync(ct);
+        }
+
 
     }
 }
