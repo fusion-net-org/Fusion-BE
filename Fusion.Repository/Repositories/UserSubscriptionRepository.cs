@@ -8,6 +8,7 @@ using Fusion.Repository.Entities;
 using Fusion.Repository.Enums;
 using Fusion.Repository.IRepositories;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Dynamic.Core.Tokenizer;
 
 namespace Fusion.Repository.Repositories
 {
@@ -290,7 +291,7 @@ namespace Fusion.Repository.Repositories
 
         public async Task ValidateAndConsumeEntitlementsAsync(Guid userSubscriptionId, IEnumerable<CompanySubscriptionEntitlement> requestedEntitlements, CancellationToken cancellationToken = default)
         {
-            if(requestedEntitlements == null || !requestedEntitlements.Any())
+            if (requestedEntitlements == null || !requestedEntitlements.Any())
                 return;
 
             // 1 Get userSubscription with entitlement
@@ -301,7 +302,7 @@ namespace Fusion.Repository.Repositories
             if (userSub == null)
                 throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("User subscription"));
 
-            if(userSub.Status != SubscriptionStatus.Active)
+            if (userSub.Status != SubscriptionStatus.Active)
                 throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.BAD_REQUEST.FormatMessage("User subscription not active"));
 
             //2 validate each feature
@@ -310,14 +311,14 @@ namespace Fusion.Repository.Repositories
                 var userEnt = userSub.UserSubscriptionEntitlements
                     .FirstOrDefault(x => x.FeatureKey == ent.FeatureKey);
 
-                if(userEnt == null)
+                if (userEnt == null)
                     throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage($"Feature {ent.FeatureKey} not found in user subscription"));
 
                 if (ent.Quantity > userEnt.Remaining)
                     throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.BAD_REQUEST.FormatMessage($"Not enough quota for feature {ent.FeatureKey}"));
             }
 
-            foreach( var ent in requestedEntitlements)
+            foreach (var ent in requestedEntitlements)
             {
                 var userEnt = userSub.UserSubscriptionEntitlements
                     .First(x => x.FeatureKey == ent.FeatureKey);
@@ -326,7 +327,7 @@ namespace Fusion.Repository.Repositories
             _context.UserSubscriptionEntitlements.UpdateRange(userSub.UserSubscriptionEntitlements);
         }
 
-        public async Task ConsumeFeatureAsync(Guid userSubscriptionId,FeatureKeys featureKey,int quantity = 1,CancellationToken cancellationToken = default)
+        public async Task ConsumeFeatureAsync(Guid userSubscriptionId, FeatureKeys featureKey, int quantity = 1, CancellationToken cancellationToken = default)
         {
             if (quantity <= 0)
                 throw CustomExceptionFactory.CreateBadRequestError("Quantity must be greater than 0.");
@@ -360,5 +361,25 @@ namespace Fusion.Repository.Repositories
             _context.UserSubscriptionEntitlements.Update(entitlement);
             await _context.SaveChangesAsync(cancellationToken);
         }
+
+        public async Task<IEnumerable<UserSubscription>> GetRequestPlansAsync(CancellationToken token = default)
+        {
+            return await _context.UserSubscriptions
+                .Include(u => u.TransactionPayment)
+                    .ThenInclude(t => t.User)
+                .Include(us => us.UserSubscriptionEntitlements)
+                .OrderByDescending(u => u.CreatAt)
+                .ToListAsync(token);
+        }
+
+        public async Task<UserSubscription?> GetRequestPlanDetailAsync(Guid id, CancellationToken token = default)
+        {
+            return await _context.UserSubscriptions
+                .Include(u => u.TransactionPayment)
+                    .ThenInclude(t => t.User)
+                .Include(us => us.UserSubscriptionEntitlements)
+                .FirstOrDefaultAsync(u => u.Id == id, token);
+        }
+
     }
 }

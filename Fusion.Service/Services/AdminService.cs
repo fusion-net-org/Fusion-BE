@@ -49,6 +49,11 @@ public class AdminService : IAdminService
         return await _transactionPaymentRepository.GetMonthlyStatsAsync(currentYear, cancellationToken);
     }
 
+    public async Task<IEnumerable<PlanRate>> GetTopPlanRateAsync(CancellationToken token = default)
+    {
+        return await _transactionPaymentRepository.GetTopPlanRateAsync(token);
+    }
+
 
 }
 

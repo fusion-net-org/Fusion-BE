@@ -82,5 +82,7 @@ namespace Fusion.API.Controllers
                 data: result,
                 message: $"Update user subscription status to {status} successfully"));
         }
+
+        
     }
 }

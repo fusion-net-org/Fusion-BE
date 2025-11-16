@@ -23,6 +23,8 @@ namespace Fusion.Repository.IRepositories
 
         Task<decimal> GetTotalRevenueAsync(CancellationToken ct = default);
 
+        Task<IEnumerable<PlanRate>> GetTopPlanRateAsync(CancellationToken token = default);
+
         // Paged list
         Task<PagedResult<TransactionPayment>> GetPagedAsync(TransactionPaymentPagedRequest request, CancellationToken ct = default);
     }

@@ -7,6 +7,7 @@ using Fusion.Repository.Entities;
 using Fusion.Repository.IRepositories;
 using Fusion.Repository.ViewModels;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace Fusion.Repository.Repositories;
 
@@ -180,6 +181,54 @@ public class TransactionPaymentRepository : GenericRepository<TransactionPayment
         });
 
         return months;
+    }
+
+    public async Task<IEnumerable<PlanRate>> GetTopPlanRateAsync(CancellationToken token = default)
+    {
+        var successPayments = _context.TransactionPayments
+            .Where(t => t.Status == "Success");
+
+        var totalCount = await successPayments.CountAsync(token);
+
+        var planGroups = await successPayments
+            .GroupBy(t => t.PlanId)
+            .Select(g => new
+            {
+                PlanId = g.Key,
+                Count = g.Count()
+            })
+            .ToListAsync();
+
+        var planNames = await _context.SubscriptionPlans
+            .ToDictionaryAsync(p => p.Id, p => p.Name);
+
+        var list = planGroups.Select(p => new
+        {
+            PlanName = planNames.ContainsKey(p.PlanId) ? planNames[p.PlanId] : "Unknown",
+            p.Count
+        })
+        .OrderByDescending(x => x.Count)
+        .ToList();
+
+        var top3 = list.Take(3).ToList();
+        var otherCount = list.Skip(3).Sum(x => x.Count);
+
+        var result = top3.Select(x => new PlanRate
+        {
+            PlanName = x.PlanName,
+            Percentage = totalCount == 0 ? 0 : Math.Round((decimal)x.Count / totalCount * 100, 2)
+        }).ToList();
+
+        if (otherCount > 0)
+        {
+            result.Add(new PlanRate
+            {
+                PlanName = "Other",
+                Percentage = Math.Round((decimal)otherCount / totalCount * 100, 2)
+            });
+        }
+
+        return result;
     }
 
 

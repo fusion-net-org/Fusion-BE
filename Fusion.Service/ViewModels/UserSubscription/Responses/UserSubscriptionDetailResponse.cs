@@ -25,3 +25,18 @@ public class UserSubscriptionEntitlementResponse
     public int Quantity { get; set; }
     public int Remaining { get; set; }
 }
+
+public class RequestPlanDetailResponse
+{
+    public Guid Id { get; set; }
+    public string? NamePlan { get; set; }
+    public string? UserName { get; set; }
+    public decimal Price { get; set; }
+    public string? Currency { get; set; }
+    public SubscriptionStatus Status { get; set; }
+    public DateTime? CreateAt { get; set; }
+    public DateTime? ExpiredAt { get; set; }
+    public DateTime? UpdateAt { get; set; }
+
+    public List<UserSubscriptionEntitlementResponse> Entitlements { get; set; } = new();
+}

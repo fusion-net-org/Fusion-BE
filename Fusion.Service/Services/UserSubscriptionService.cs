@@ -12,6 +12,7 @@ using Fusion.Service.Commons.Helpers;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.UserSubscription.Requests;
 using Fusion.Service.ViewModels.UserSubscription.Responses;
+using System.Collections.Generic;
 
 namespace Fusion.Service.Services
 {
@@ -97,5 +98,39 @@ namespace Fusion.Service.Services
             await _userLogService.CreateLog(userLog);
             return _mapper.Map<UserSubscriptionDetailResponse>(updated);
         }
+
+        public async Task<IEnumerable<RequestPlanDetailResponse>> GetRequestPlansAsync(CancellationToken token = default)
+        {
+            var listRequestPlan = await _repository.GetRequestPlansAsync(token);
+
+            if (!listRequestPlan.Any())
+                throw CustomExceptionFactory.CreateNotFoundError("List request Plan not found");
+
+            return listRequestPlan.Select(u => new RequestPlanDetailResponse
+            {
+                Id = u?.Id ?? Guid.Empty,
+                UserName = u?.TransactionPayment?.User?.UserName ?? string.Empty,
+                NamePlan = u?.NamePlan ?? string.Empty,
+                Price = u?.Price ?? 0,
+                CreateAt = u?.CreatAt ?? DateTime.MinValue,
+                ExpiredAt = u?.ExpiredAt ?? DateTime.MinValue,
+                Status = u.Status,
+                UpdateAt = u?.UpdateAt ?? DateTime.MinValue,
+                Currency = u?.Currency ?? string.Empty,
+                Entitlements = (u?.UserSubscriptionEntitlements ?? new List<UserSubscriptionEntitlement>())
+                    .Select(e => new UserSubscriptionEntitlementResponse
+                        {
+                            Id = e?.Id ?? Guid.Empty,
+                            Quantity = e?.Quantity ?? 0,
+                            FeatureKey = e?.FeatureKey.ToString() ?? string.Empty,
+                            Remaining = e?.Remaining ?? 0
+                        })
+                    .ToList()
+                ?? new List<UserSubscriptionEntitlementResponse>()
+            });
+        }
+
+        
+
     }
 }

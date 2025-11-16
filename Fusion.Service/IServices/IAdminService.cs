@@ -13,4 +13,6 @@ public interface IAdminService
 
     Task<IEnumerable<MonthlyStats>> GetMonthlyStatsAsync(CancellationToken ct = default);
 
+    Task<IEnumerable<PlanRate>> GetTopPlanRateAsync(CancellationToken token = default);
+
 }
