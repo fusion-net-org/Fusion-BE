@@ -1,33 +1,31 @@
 ﻿
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
-//using Fusion.Repository.Enums;
-//using System.ComponentModel.DataAnnotations;
-//using System.ComponentModel.DataAnnotations.Schema;
+namespace Fusion.Repository.Entities;
 
-//namespace Fusion.Repository.Entities;
+[Table("UserSubscriptionEntitlements")]
+public class UserSubscriptionEntitlement
+{
+    [Key]
+    [Column("id")]
+    public Guid Id { get; set; } = Guid.NewGuid();
 
-//[Table("UserSubscriptionEntitlements")]
-//public class UserSubscriptionEntitlement
-//{
-//    [Key]
-//    [Column("id")]
-//    public Guid Id { get; set; }
+    [Required]
+    [Column("user_subscription_id")]
+    public Guid UserSubscriptionId { get; set; }
 
-//    [Column("user_subscription_id")]
-//    public Guid UserSubscriptionId { get; set; }
+    [Required]
+    [Column("feature_id")]
+    public Guid FeatureId { get; set; }
 
-//    [Required, MaxLength(50)]
-//    [Column("feature_key")]
-//    public FeatureKeys FeatureKey { get; set; } = FeatureKeys.Project;
+    [Column("enabled")]
+    public bool Enabled { get; set; } = true;
 
-//    [Column("quantity")]
-//    public int Quantity { get; set; } 
+    [ForeignKey(nameof(UserSubscriptionId))]
+    public virtual UserSubscription UserSubscription { get; set; } = null!;
 
-//    [Column("remaining")]
-//    public int Remaining { get; set; }
+    [ForeignKey(nameof(FeatureId))]
+    public virtual Feature Feature { get; set; } = null!;
 
-//    [ForeignKey(nameof(UserSubscriptionId))]
-//    [InverseProperty(nameof(UserSubscription.UserSubscriptionEntitlements))]
-//    public UserSubscription? UserSubscription { get; set; }
-
-//}
+}

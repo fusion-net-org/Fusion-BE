@@ -42,8 +42,8 @@ public enum ChargeUnit
     [EnumMember(Value = "per_subscription")]
     PerSubscription = 1,
 
-    [EnumMember(Value = "per_seat")]
-    PerSeat = 2
+    //[EnumMember(Value = "per_seat")]
+    //PerSeat = 2
 }
 
 

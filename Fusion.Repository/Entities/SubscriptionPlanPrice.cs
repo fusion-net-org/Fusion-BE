@@ -9,7 +9,7 @@ public class SubscriptionPlanPrice
 {
     [Key]
     [Column("id")]
-    public Guid Id { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
 
     [Required]
     [ForeignKey(nameof(SubscriptionPlan))]

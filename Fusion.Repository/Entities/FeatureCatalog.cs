@@ -38,4 +38,5 @@ public class Feature
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     public ICollection<SubscriptionPlanFeature> PlanFeatures { get; set; } = new List<SubscriptionPlanFeature>();
+   
 }

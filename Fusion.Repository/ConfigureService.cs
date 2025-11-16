@@ -60,8 +60,8 @@ namespace Fusion.Repository
             // transaction payment
             services.AddScoped<ITransactionPaymentRepository, TransactionPaymentRepository>();
 
-            ////usersubscrption
-            //services.AddScoped<IUserSubscriptionRepository, UserSubscriptionRepository>();
+            //usersubscrption
+            services.AddScoped<IUserSubscriptionRepository, UserSubscriptionRepository>();
 
 
             //refresh token

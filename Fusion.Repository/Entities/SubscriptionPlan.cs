@@ -10,7 +10,7 @@ public class SubscriptionPlan
 {
     [Key]
     [Column("id")]
-    public Guid Id { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
 
     [Required, MaxLength(200)]
     [Column("name")]
@@ -51,9 +51,12 @@ public class SubscriptionPlan
     public virtual SubscriptionPlanPrice? Price { get; set; }
 
     // 1–n: Plan có nhiều Feature toggles
-    [InverseProperty(nameof(SubscriptionPlanFeature.SubscriptionPlans))]
+    [InverseProperty(nameof(SubscriptionPlanFeature.SubscriptionPlan))]
     public ICollection<SubscriptionPlanFeature>? Features { get; set; }
 
     [InverseProperty(nameof(TransactionPayment.SubscriptionPlan))]
     public virtual ICollection<TransactionPayment> TransactionPayments { get; set; } = new List<TransactionPayment>();
+
+    [InverseProperty(nameof(UserSubscription.Plan))]
+    public virtual ICollection<UserSubscription> UserSubscriptions { get; set; } = new List<UserSubscription>();
 }

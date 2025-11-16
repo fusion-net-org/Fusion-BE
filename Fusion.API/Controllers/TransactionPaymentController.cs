@@ -36,6 +36,23 @@ namespace Fusion.API.Controllers
                 data: result,
                 message: ResponseMessageHelper.FormatMessage(ResponseMessages.CREATE_SUCCESS, "transaction payment")));
         }
+        [HttpGet("installments/next")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<TransactionPaymentDetailResponse?>))]
+        public async Task<IActionResult> GetNextPendingInstallment(
+            [FromQuery] Guid planId,
+            [FromQuery] Guid? userSubscriptionId,
+            CancellationToken cancellationToken)
+        {
+            // Service đã tự validate planId và current user
+            var result = await _service.FindEarliestPendingInstallmentAsync(
+                planId,
+                userSubscriptionId,
+                cancellationToken);
+
+            return Ok(ResponseModel<TransactionPaymentDetailResponse?>.Ok(
+                data: result,
+                message: "get next installment transaction success"));
+        }
 
         // ====== DETAIL ======
         [HttpGet("{id:guid}")]

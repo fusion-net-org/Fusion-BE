@@ -9,7 +9,7 @@ public class SubscriptionPlanFeature
 {
     [Key]
     [Column("id")]
-    public Guid Id { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
 
     [Required]
     [ForeignKey(nameof(SubscriptionPlan))]
@@ -25,7 +25,7 @@ public class SubscriptionPlanFeature
 
 
     [ForeignKey(nameof(PlanId))]
-    public virtual SubscriptionPlan SubscriptionPlans { get; set; } = null!;
+    public virtual SubscriptionPlan SubscriptionPlan { get; set; } = null!;
 
     [ForeignKey(nameof(FeatureId))]
     public virtual Feature Feature { get; set; } = null!;

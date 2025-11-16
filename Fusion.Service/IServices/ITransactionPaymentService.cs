@@ -26,4 +26,5 @@ public interface ITransactionPaymentService
     // === Liệt kê các draft đến hạn để phát hành link (scheduler sử dụng) ===
     Task<List<TransactionPaymentResponse>> GetDueAsync(DateTimeOffset asOf, int take = 100, CancellationToken ct = default);
 
+    Task<TransactionPaymentDetailResponse?> FindEarliestPendingInstallmentAsync(Guid planId, Guid? userSubscriptionId = null, CancellationToken ct = default);
 }

@@ -3,8 +3,8 @@ using Fusion.Repository.Bases.Responses;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.Enums;
+using Fusion.Repository.IRepositories;
 using Fusion.Service.IServices;
-using Fusion.Service.ViewModels.TransactionPayment.Requests;
 using Fusion.Service.ViewModels.UserSubscription.Requests;
 using Net.payOS;
 using Net.payOS.Types;
@@ -16,26 +16,30 @@ public class PayOSService : IPayOSService
 {
     private readonly IUnitOfWork _uow;
     private readonly PayOS _payOS;
-    private readonly ITransactionPaymentService _txService;
+    private readonly ITransactionPaymentRepository _txRepo;
     private readonly ISubscriptionPlanService _planService;
-    //private readonly IUserSubscriptionService _userSubscriptionService;
-    public PayOSService(IUnitOfWork unitOfWork, PayOS payOS, ITransactionPaymentService transactionPaymentService, ISubscriptionPlanService subscriptionPlanService)
+    private readonly IUserSubscriptionService _userSubService;
+    public PayOSService(IUnitOfWork unitOfWork, PayOS payOS, ITransactionPaymentRepository txRepo,
+        ISubscriptionPlanService subscriptionPlanService, IUserSubscriptionService userSubService)
     {
         _uow = unitOfWork;
         _payOS = payOS;
-        _txService = transactionPaymentService;
+        _txRepo = txRepo;
         _planService = subscriptionPlanService;
-        //_userSubscriptionService = userSubscriptionService;
+        _userSubService = userSubService;
     }
 
-    private static PaymentStatus MapPayOsStatus(string? status) => status?.ToUpperInvariant() switch
+    private static PaymentStatus MapPayOsStatus(string? status)
     {
-        "PAID" => PaymentStatus.Success,
-        "CANCELLED" => PaymentStatus.Cancelled,
-        "EXPIRED" => PaymentStatus.Failed,
-        "PENDING" => PaymentStatus.Pending,
-        _ => PaymentStatus.Pending
-    };
+        switch (status?.ToUpperInvariant())
+        {
+            case "PAID": return PaymentStatus.Success;
+            case "CANCELLED": return PaymentStatus.Cancelled;
+            case "EXPIRED": return PaymentStatus.Failed;
+            case "PENDING":
+            default: return PaymentStatus.Pending;
+        }
+    }
     /// <summary>
     /// Confirm webhook register with PayOS
     /// </summary>
@@ -52,7 +56,7 @@ public class PayOSService : IPayOSService
     public async Task<string> CreatePaymentLink(Guid transactionId, CancellationToken cancellationToken = default)
     {
 
-        var tx = await _txService.GetDetailAsync(transactionId);
+        var tx = await _txRepo.GetByIdWithNavAsync(transactionId);
         if (tx == null)
             throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Transaction"));
 
@@ -90,7 +94,7 @@ public class PayOSService : IPayOSService
 
         var res = await _payOS.createPaymentLink(paymentData);
 
-        await _txService.AttachPaymentLinkAsync(tx.Id, tx.OrderCode.Value, res.paymentLinkId, "PayOS", cancellationToken);
+        await _txRepo.AttachPaymentLinkAsync(tx.Id, tx.OrderCode.Value, res.paymentLinkId, "PayOS", cancellationToken);
 
         return res.checkoutUrl;
 
@@ -151,7 +155,7 @@ public class PayOSService : IPayOSService
 
         if (mapped == PaymentStatus.Success)
         {
-            await _txService.MarkSuccessAsync(
+            await _txRepo.MarkSuccessAsync(
                 tx.Id,
                 amount: paidAmount,     // hoặc null nếu không muốn override
                 paidAt: paidAt,
@@ -161,7 +165,7 @@ public class PayOSService : IPayOSService
         }
         else if (mapped == PaymentStatus.Cancelled || mapped == PaymentStatus.Failed)
         {
-            await _txService.MarkFailedAsync(
+            await _txRepo.MarkFailedAsync(
                 tx.Id,
                 description: description,
                 reference: reference,
@@ -176,12 +180,10 @@ public class PayOSService : IPayOSService
     /// </summary>
     public async Task HandlePaymentWebHook(WebhookType webhookData, CancellationToken ct = default)
     {
-
         var payload = webhookData.data;
         if (payload == null) return;
 
-
-        // Tìm transaction
+        // 1) Tìm transaction theo paymentLinkId trước, rồi fallback orderCode
         var repo = _uow.Repository<TransactionPayment>();
         TransactionPayment? tx = null;
 
@@ -193,39 +195,180 @@ public class PayOSService : IPayOSService
 
         if (tx == null) return;
 
+        // 2) Lấy PaymentLinkInformation làm nguồn sự thật
+        long oc = tx.OrderCode ?? payload.orderCode;
+        if (oc <= 0) return;
 
-        // Lấy trạng thái từ gateway làm nguồn sự thật
-        var info = await _payOS.getPaymentLinkInformation(payload.orderCode);
-        var mapped = MapPayOsStatus((string)info.status);
-        DateTimeOffset paidAt = DateTimeOffset.UtcNow;
-
-        if (!string.IsNullOrWhiteSpace(payload.transactionDateTime) &&
-            DateTimeOffset.TryParse(payload.transactionDateTime, out var parsed))
+        try
         {
-            paidAt = parsed;
-        }
+            var info = await _payOS.getPaymentLinkInformation(oc);
+            var mapped = MapPayOsStatus((string)info.status);
 
-        if (mapped == PaymentStatus.Success)
-        {
-            await _txService.MarkSuccessAsync(tx.Id, amount: payload.amount, paidAt: paidAt, reference: payload.reference, ct);
-
-            // Tạo UserSubscription chỉ khi:
-            // - Prepaid (InstallmentIndex == null) HOẶC
-            // - Installments kỳ đầu tiên (InstallmentIndex == 1)
-            if (tx.InstallmentIndex == null || tx.InstallmentIndex == 1)
+            // 3) Lấy transaction item gần nhất để rút meta (paidAt/desc/reference/account…)
+            Transaction? lastTxn = null;
+            if (info.transactions != null && info.transactions.Count > 0)
             {
-                var subReq = new UserSubscriptionCreateRequest
-                {
-                    TransactionId = tx.Id
-                };
-                //await _userSubService.CreateAsync(subReq, ct);
+                lastTxn = info.transactions
+                             .OrderByDescending(t =>
+                                 DateTimeOffset.TryParse(t.transactionDateTime, out var ts) ? ts : DateTimeOffset.MinValue)
+                             .FirstOrDefault();
             }
-        }
-        else if (mapped == PaymentStatus.Cancelled || mapped == PaymentStatus.Failed)
-        {
-            await _txService.MarkFailedAsync(tx.Id, description: payload.description, reference: payload.reference, ct);
-        }
 
-        await _uow.SaveChangesAsync(ct);
+            // paidAt: ưu tiên từ item; nếu không parse được thì dùng UtcNow
+            var paidAt = DateTimeOffset.UtcNow;
+            if (lastTxn != null && DateTimeOffset.TryParse(lastTxn.transactionDateTime, out var parsedPaidAt))
+                paidAt = parsedPaidAt;
+
+            // amount theo giao dịch gần nhất (không dùng amountPaid tổng)
+            decimal? paidAmount = lastTxn != null ? Convert.ToDecimal(lastTxn.amount) : (decimal?)null;
+
+            // Lý do/ghi chú khi fail/cancel
+            string? reason = info.cancellationReason ?? lastTxn?.description ?? payload.description;
+
+            // 4) Chuyển trạng thái giao dịch theo gateway
+            if (mapped == PaymentStatus.Success)
+            {
+                // 4.a Đánh dấu success + cập nhật meta ngân hàng
+                await _txRepo.MarkSuccessAsync(
+                    tx.Id,
+                    amount: paidAmount,         
+                    paidAt: paidAt,
+                    reference: lastTxn?.reference,
+                    ct: ct
+                );
+
+                if (lastTxn != null)
+                {
+                    tx.AccountNumber = lastTxn.accountNumber ?? tx.AccountNumber;
+                    tx.Reference = lastTxn.reference ?? tx.Reference;
+                    tx.Description = lastTxn.description ?? tx.Description;
+                    tx.CounterAccountBankId = lastTxn.counterAccountBankId ?? tx.CounterAccountBankId;
+                    tx.CounterAccountBankName = lastTxn.counterAccountBankName ?? tx.CounterAccountBankName;
+                    tx.CounterAccountName = lastTxn.counterAccountName ?? tx.CounterAccountName;
+                    tx.CounterAccountNumber = lastTxn.counterAccountNumber ?? tx.CounterAccountNumber;
+                    // Currency không có trong PaymentLinkInformation → giữ nguyên tx.Currency
+                }
+
+                // 4.b Phân nhánh logic theo PaymentModeSnapshot
+                if (tx.PaymentModeSnapshot == PaymentMode.Prepaid)
+                {
+                        // Tạo subscription mới
+                        var created = await _userSubService.CreateAsync(new UserSubscriptionCreateRequest
+                        {
+                            TransactionId = tx.Id
+                        }, ct);
+
+                        tx.UserSubscriptionId = created.Id;
+       
+                }
+                else // INSTALLMENTS
+                {
+                    // Kỳ 1: thanh toán đầu tiên -> tạo subscription + gắn cho toàn bộ installment cùng batch
+                    if (tx.InstallmentIndex == null || tx.InstallmentIndex == 1)
+                    {
+                        var created = await _userSubService.CreateAsync(new UserSubscriptionCreateRequest
+                        {
+                            TransactionId = tx.Id
+                        }, ct);
+
+                        //  Gắn UserSubscriptionId cho transaction hiện tại
+                        tx.UserSubscriptionId = created.Id;
+
+          
+                        // Gắn luôn subscription này cho toàn bộ installment charge cùng user + plan
+                        await _txRepo.AttachSubscriptionToInstallmentBatchAsync(
+                            tx.UserId,
+                            tx.PlanId,
+                            created.Id,
+                            ct);
+
+                        var next = await _txRepo.FindNextPendingInstallmentAsync(
+                             tx.UserId,
+                             tx.PlanId,
+                             created.Id,                 
+                             tx.InstallmentIndex ?? 1,
+                             ct);
+
+                        await _userSubService.UpdateNextDueAsync(created.Id, next?.DueAt, ct);
+                    }
+                    else
+                    {
+                        // Kỳ 2..N: chỉ cần update NextDue cho subscription hiện hữu
+                        Guid? subId = tx.UserSubscriptionId;
+
+                        if (!subId.HasValue)
+                        {
+                            // Fallback: tìm Active cùng plan
+                            var subRepo = _uow.Repository<UserSubscription>();
+                            var sub = await subRepo.FindAsync(s =>
+                                s.UserId == tx.UserId &&
+                                s.PlanId == tx.PlanId &&
+                                s.Id == tx.UserSubscriptionId &&
+                                s.Status == SubscriptionStatus.Active, ct);
+
+                            if (sub != null)
+                            {
+                                subId = sub.Id;
+
+                                // Đảm bảo transaction này cũng được link về sub đó
+                                tx.UserSubscriptionId = sub.Id;
+                            }
+                        }
+
+                        if (subId.HasValue)
+                        {
+                            var next = await _txRepo.FindNextPendingInstallmentAsync(
+                                tx.UserId,
+                                tx.PlanId,
+                                subId,
+                                tx.InstallmentIndex  ?? 1,
+                                ct);
+
+                            await _userSubService.UpdateNextDueAsync(subId.Value, next?.DueAt, ct);
+                        }
+                    }
+                }
+            }
+            else if (mapped == PaymentStatus.Cancelled || mapped == PaymentStatus.Failed)
+            {
+                // 4.c Đánh dấu failed/cancel + ghi meta (để điều tra)
+                await _txRepo.MarkFailedAsync(
+                    tx.Id,
+                    description: reason,
+                    reference: lastTxn?.reference,
+                    ct: ct
+                );
+
+                if (lastTxn != null)
+                {
+                    tx.Reference = lastTxn.reference ?? tx.Reference;
+                    tx.Description = lastTxn.description ?? tx.Description;
+                    tx.AccountNumber = lastTxn.accountNumber ?? tx.AccountNumber;
+
+                    tx.CounterAccountBankId = lastTxn.counterAccountBankId ?? tx.CounterAccountBankId;
+                    tx.CounterAccountBankName = lastTxn.counterAccountBankName ?? tx.CounterAccountBankName;
+                    tx.CounterAccountName = lastTxn.counterAccountName ?? tx.CounterAccountName;
+                    tx.CounterAccountNumber = lastTxn.counterAccountNumber ?? tx.CounterAccountNumber;
+                }
+                // mapped == Pending => không đổi gì
+            }
+
+            // 5) Lưu
+            await _uow.SaveChangesAsync(ct);
+        }
+        catch (Exception ex)
+        {
+
+            throw;
+        }
+        // ===== Local helper =====
+        static DateTimeOffset AddInterval(DateTimeOffset start, BillingPeriod period, int count)
+            => period switch
+            {
+                BillingPeriod.Week => start.AddDays(7 * count),
+                BillingPeriod.Month => start.AddMonths(count),
+                BillingPeriod.Year => start.AddYears(count),
+                _ => start
+            };
     }
 }

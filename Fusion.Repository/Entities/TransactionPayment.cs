@@ -10,7 +10,7 @@ public class TransactionPayment
 {
     [Key]
     [Column("id")]
-    public Guid Id { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
 
     [Required]
     [Column("user_id")]
@@ -129,4 +129,6 @@ public class TransactionPayment
 
     [ForeignKey(nameof(PlanId))]
     public virtual SubscriptionPlan SubscriptionPlan { get; set; } = null!;
+    [ForeignKey(nameof(UserSubscriptionId))]
+    public virtual UserSubscription? UserSubscription { get; set; }
 }
