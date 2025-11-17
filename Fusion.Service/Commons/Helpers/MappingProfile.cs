@@ -123,6 +123,22 @@ public class MappingProfile : Profile
              .ForMember(dest => dest.NumberCompanyJoin,
                  opt => opt.MapFrom(src => src.User.CompanyMembers.Count(cm => cm.IsDeleted == false)));
 
+        CreateMap<CompanyMember, CompanyMemberResponseV2>()
+            .ForMember(d => d.CompanyName, o => o.MapFrom(s => s.Company.Name))
+            .ForMember(d => d.CompanyEmail, o => o.MapFrom(s => s.Company.Email))
+            .ForMember(d => d.CompanyOwner, o => o.MapFrom(s => s.Company.OwnerUser.UserName))
+            .ForMember(d => d.CompanyAvatar, o => o.MapFrom(s => s.Company.AvatarCompany))
+            .ForMember(d => d.CompanyPhone, o => o.MapFrom(s => s.Company.PhoneNumber))
+            .ForMember(d => d.CompanyAddress, o => o.MapFrom(s => s.Company.Address))
+            .ForMember(d => d.CompanyCreateAt, o => o.MapFrom(s => s.Company.CreateAt))
+            .ForMember(d => d.MemberJoinAt, o => o.MapFrom(s => s.JoinedAt))
+
+            .ForMember(d => d.UserName, o => o.MapFrom(s => s.User.UserName))
+            .ForMember(d => d.UserEmail, o => o.MapFrom(s => s.User.Email))
+            .ForMember(d => d.UserPhone, o => o.MapFrom(s => s.User.Phone))
+            .ForMember(d => d.UserAvatar, o => o.MapFrom(s => s.User.Avatar));
+
+
         //----------------------------     entity: Ticket ---------------------------------------------
         CreateMap<Ticket, TicketResponse>()
                   .ForMember(dest => dest.SubmittedByName,

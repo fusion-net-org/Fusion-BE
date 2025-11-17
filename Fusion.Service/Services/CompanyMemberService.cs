@@ -408,6 +408,83 @@ namespace Fusion.Service.Services
 
             return dto;
         }
+        public async Task<PagedResult<CompanyMemberResponseV2>> GetCompanyMemberByUserIdAsync(
+        Guid userId,
+        CompanyMemberPagedRequest request,
+        CancellationToken token = default)
+        {
+            var result = await _companyMemberRepository.GetCompanyMemberByUserIdAsync(userId, request, token);
+
+            var responses = result.Items.Select(cm => _mapper.Map<CompanyMemberResponseV2>(cm)).ToList();
+
+            return new PagedResult<CompanyMemberResponseV2>
+            {
+                Items = responses,
+                TotalCount = result.TotalCount,
+                PageNumber = result.PageNumber,
+                PageSize = result.PageSize
+            };
+        }
+        public async Task<CompanyMemberResponse?> AcceptJoinMemberById(long memberId, CancellationToken token = default)
+        {
+            var member = await _companyMemberRepository.AcceptJoinMemberByIdAsync(memberId, token);
+
+            var userName = await GetUserName(member.User.Id);
+
+            // Ghi log
+            await _logService.CreateLog(new CompanyActivityLog
+            {
+                CompanyId = member.CompanyId.Value,
+                ActorUserId = _currentService.GetUserId(),
+                Title = "Accept Join Member To Company",
+                Description = $"User '{userName}' has been accepted to join the company."
+            }, token);
+
+            // Tạo notification cho owner
+            await _notificationService.CreateNotificationAsync(new SendNotificationRequest
+            {
+                UserId = member.Company.OwnerUserId.Value,
+                Title = $"{userName} has joined your company",
+                Body = $"{userName} is now a member of your company.",
+                LinkKey = "MEMBER_PAGE",
+                IdLink = member.CompanyId.Value,
+                Event = "CompanyMemberAccepted",
+                NotificationType = "COMPANY"
+            }, token);
+
+            return _mapper.Map<CompanyMemberResponse>(member);
+        }
+
+        public async Task<CompanyMemberResponse?> RejectJoinMemberById(long memberId, CancellationToken token = default)
+        {
+            var member = await _companyMemberRepository.RejectJoinMemberByIdAsync(memberId, token);
+
+            var userName = await GetUserName(member.User.Id);
+
+            // Ghi log
+            await _logService.CreateLog(new CompanyActivityLog
+            {
+                CompanyId = member.CompanyId.Value,
+                ActorUserId = _currentService.GetUserId(),
+                Title = "Reject Join Member To Company",
+                Description = $"User '{userName}' has rejected the invitation to join the company."
+            }, token);
+
+            // Tạo notification cho owner
+            await _notificationService.CreateNotificationAsync(new SendNotificationRequest
+            {
+                UserId = member.Company.OwnerUserId.Value,
+                Title = $"{userName} has rejected the invite",
+                Body = $"{userName} refused to join the company.",
+                LinkKey = "HOME_PAGE",
+                IdLink = member.CompanyId.Value,
+                Event = "CompanyMemberRejected",
+                NotificationType = "COMPANY"
+            }, token);
+
+            return _mapper.Map<CompanyMemberResponse>(member);
+        }
+
 
     }
 }
