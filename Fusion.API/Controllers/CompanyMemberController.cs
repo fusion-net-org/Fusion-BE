@@ -248,6 +248,70 @@ namespace Fusion.API.Controllers
                 data: result,
                 message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "company member by companyId & userId")));
         }
+        // 1. GET company member by userId — search + filter + date range + paging
+        [HttpGet("by-user")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PagedResult<CompanyMemberResponseV2>>))]
+        public async Task<IActionResult> GetCompanyMemberByUserId(
+            [FromQuery] CompanyMemberPagedRequest request,
+            CancellationToken token)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(ResponseModel<string>.Error(
+                    StatusCodes.Status401Unauthorized,
+                    "User is not authenticated"));
+            }
+
+            var result = await _companyMemberService.GetCompanyMemberByUserIdAsync(userId, request, token);
+
+            return Ok(ResponseModel<PagedResult<CompanyMemberResponseV2>>.Ok(
+                data: result,
+                message: "Get company members by userId successfully"));
+        }
+        [HttpPut("{memberId:long}/accept")]
+        public async Task<IActionResult> AcceptJoinMember(long memberId, CancellationToken token)
+        {
+            try
+            {
+                var result = await _companyMemberService.AcceptJoinMemberById(memberId, token);
+
+                return Ok(ResponseModel<CompanyMemberResponse?>.Ok(
+                    data: result,
+                    message: ResponseMessageHelper.FormatMessage("Member successfully accepted to join the company")
+                ));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ResponseModel<string>.Error(
+                    statusCode: StatusCodes.Status400BadRequest,
+                    message: ex.Message
+                ));
+            }
+        }
+
+        [HttpPut("{memberId:long}/reject")]
+        public async Task<IActionResult> RejectJoinMember(long memberId, CancellationToken token)
+        {
+            try
+            {
+                var result = await _companyMemberService.RejectJoinMemberById(memberId, token);
+
+                return Ok(ResponseModel<CompanyMemberResponse?>.Ok(
+                    data: result,
+                    message: ResponseMessageHelper.FormatMessage("Member rejected to join the company")
+                ));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ResponseModel<string>.Error(
+                    statusCode: StatusCodes.Status400BadRequest,
+                    message: ex.Message
+                ));
+            }
+        }
+
 
     }
 }
