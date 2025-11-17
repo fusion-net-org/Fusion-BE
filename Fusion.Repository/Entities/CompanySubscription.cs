@@ -1,47 +1,51 @@
-﻿//using Fusion.Repository.Enums;
-//using System.ComponentModel.DataAnnotations;
-//using System.ComponentModel.DataAnnotations.Schema;
+﻿using Fusion.Repository.Enums;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
-//namespace Fusion.Repository.Entities;
+namespace Fusion.Repository.Entities;
 
-//[Table("CompanySubscriptions")]
-//public class CompanySubscription
-//{
-//    [Key]
-//    [Column("id")]
-//    public Guid Id { get; set; }
+[Table("CompanySubscriptions")]
+public class CompanySubscription
+{
+    [Key]
+    [Column("id")]
+    public Guid Id { get; set; } = Guid.NewGuid();
 
-//    [Required]
-//    [Column("company_id")]
-//    public Guid CompanyId { get; set; }
+    [Required]
+    [Column("company_id")]
+    public Guid CompanyId { get; set; }
 
-//    [Column("user_subscription_id")]
-//    public Guid UserSubscriptionId { get; set; }
+    [Required]
+    [Column("user_subscription_id")]
+    public Guid UserSubscriptionId { get; set; }
 
-//    [Column("name_subscription")]
-//    [MaxLength(255)]
-//    public string? NameSubscription { get; set; }
+    [Required]
+    [Column("owner_user_id")]
+    public Guid OwnerUserId { get; set; }
 
-//    [Column("status")]
-//    public SubscriptionStatus Status { get; set; } = SubscriptionStatus.Active;
+    [Column("status")]
+    public SubscriptionStatus Status { get; set; } = SubscriptionStatus.Active;
 
-//    [Column("created_at")]
-//    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    [Column("SharedOn", TypeName = "datetimeoffset")]
+    public DateTimeOffset SharedOn { get; set; } = DateTimeOffset.UtcNow;
 
-//    [Column("expired_at")]
-//    public DateTime ExpiredAt { get; set; }
+    [Column("updated_at", TypeName = "datetimeoffset")]
+    public DateTimeOffset UpdatedAt { get; set; }
 
-//    [Column("updated_at")]
-//    public DateTime? UpdatedAt { get; set; }
+    [Column("expired_at", TypeName = "datetimeoffset")]
+    public DateTimeOffset? ExpiredAt { get; set; }
 
-//    [ForeignKey(nameof(CompanyId))]
-//    [InverseProperty(nameof(Company.CompanySubscriptions))]
-//    public Company Company { get; set; } = null!;
+    [Column("seats_limit_snapshot")]
+    public int? SeatsLimitSnapshot { get; set; }
 
-//    [ForeignKey(nameof(UserSubscriptionId))]
-//    [InverseProperty(nameof(UserSubscription.CompanySubscriptions))]
-//    public UserSubscription UserSubscription { get; set; } = null!;
+    [Column("seats_limit_unit")]
+    public int? SeatsLimitUnit { get; set; }
 
-//    [InverseProperty(nameof(CompanySubscriptionEntitlement.CompanySubscription))]
-//    public ICollection<CompanySubscriptionEntitlement> CompanySubscriptionEntitlements { get; set; } = new List<CompanySubscriptionEntitlement>();
-//}
+    [ForeignKey(nameof(CompanyId))]
+    public virtual Company Company { get; set; } = null!;
+
+    [ForeignKey(nameof(UserSubscriptionId))]
+    public virtual UserSubscription UserSubscription { get; set; } = null!;
+    public virtual ICollection<CompanySubscriptionEntitlement> Entitlements { get; set; } = new List<CompanySubscriptionEntitlement>();
+
+}

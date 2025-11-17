@@ -52,8 +52,8 @@ public partial class FusionDbContext : DbContext
     public DbSet<UserSubscription> UserSubscriptions { get; set; } 
     public DbSet<UserSubscriptionEntitlement> UserSubscriptionEntitlements { get; set; }
 
-    //public DbSet<CompanySubscription> CompanySubscriptions { get; set; } = null!;
-    //public DbSet<CompanySubscriptionEntitlement> CompanySubscriptionEntitlements { get; set; } = null!;
+    public DbSet<CompanySubscription> CompanySubscriptions { get; set; } = null!;
+    public DbSet<CompanySubscriptionEntitlement> CompanySubscriptionEntitlements { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -554,7 +554,68 @@ public partial class FusionDbContext : DbContext
                   .OnDelete(DeleteBehavior.Restrict);
         });
 
+        // ================== COMPANY SUBSCRIPTION ==================
+        modelBuilder.Entity<CompanySubscription>(entity =>
+        {
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
+            // Đồng bộ default datetime
+            entity.Property(e => e.SharedOn).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(sysutcdatetime())");
+
+            // Nếu sửa lại ExpiredAt như đã bàn:
+            // entity.Property(e => e.ExpiredAt).HasColumnType("datetimeoffset");
+
+            // Map enum -> string
+            entity.Property(e => e.Status)
+                  .HasConversion(new EnumMemberValueConverter<SubscriptionStatus>())
+                  .HasMaxLength(32);
+
+            // UNIQUE: 1 UserSubscription chỉ share 1 lần cho 1 company
+            entity.HasIndex(e => new { e.UserSubscriptionId, e.CompanyId })
+                  .IsUnique()
+                  .HasDatabaseName("UX_CompanySubscriptions_UserSub_Company");
+
+            // FK -> Company (RESTRICT để không cascade delete)
+            entity.HasOne(e => e.Company)
+                  .WithMany(c => c.CompanySubscriptions)
+                  .HasForeignKey(e => e.CompanyId)
+                  .HasConstraintName("FK_CompanySubscriptions_Companies_CompanyId")
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            // FK -> UserSubscription (RESTRICT để tránh multipath)
+            entity.HasOne(e => e.UserSubscription)
+                  .WithMany(us => us.CompanySubscriptions)
+                  .HasForeignKey(e => e.UserSubscriptionId)
+                  .HasConstraintName("FK_CompanySubscriptions_UserSubscriptions_UserSubscriptionId")
+                  .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // ================== COMPANY SUBSCRIPTION ENTITLEMENT ==================
+        modelBuilder.Entity<CompanySubscriptionEntitlement>(entity =>
+        {
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Enabled).HasDefaultValue(true);
+
+            // UNIQUE: 1 CompanySubscription chỉ có 1 entitlement cho mỗi Feature
+            entity.HasIndex(e => new { e.CompanySubscriptionId, e.FeatureId })
+                  .IsUnique()
+                  .HasDatabaseName("UX_CompanySubscriptionEntitlements_Sub_Feature");
+
+            // FK -> CompanySubscription (RESTRICT để tránh cascade chain phức tạp)
+            entity.HasOne(e => e.CompanySubscription)
+                  .WithMany(cs => cs.Entitlements)
+                  .HasForeignKey(e => e.CompanySubscriptionId)
+                  .HasConstraintName("FK_CompanySubscriptionEntitlements_CompanySubscriptions_CompanySubscriptionId")
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            // FK -> Feature (RESTRICT cho thống nhất)
+            entity.HasOne(e => e.Feature)
+                  .WithMany()
+                  .HasForeignKey(e => e.FeatureId)
+                  .HasConstraintName("FK_CompanySubscriptionEntitlements_Features_FeatureId")
+                  .OnDelete(DeleteBehavior.Restrict);
+        });
         OnModelCreatingPartial(modelBuilder);
     }
 

@@ -97,5 +97,7 @@ public class UserSubscription
 
     public virtual ICollection<TransactionPayment> TransactionPayments { get; set; } = new List<TransactionPayment>();
     public virtual ICollection<UserSubscriptionEntitlement> Entitlements { get; set; } = new List<UserSubscriptionEntitlement>();
-    //public virtual ICollection<CompanySubscription> CompanySubscriptions { get; set; } = new List<CompanySubscription>();
+
+    [InverseProperty(nameof(CompanySubscription.UserSubscription))]
+    public virtual ICollection<CompanySubscription> CompanySubscriptions { get; set; }= new List<CompanySubscription>();
 }
