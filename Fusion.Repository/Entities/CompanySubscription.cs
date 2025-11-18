@@ -47,5 +47,6 @@ public class CompanySubscription
     [ForeignKey(nameof(UserSubscriptionId))]
     public virtual UserSubscription UserSubscription { get; set; } = null!;
     public virtual ICollection<CompanySubscriptionEntitlement> Entitlements { get; set; } = new List<CompanySubscriptionEntitlement>();
+    public virtual ICollection<CompanySubscriptionEntry> Entries { get; set; }= new List<CompanySubscriptionEntry>();
 
 }

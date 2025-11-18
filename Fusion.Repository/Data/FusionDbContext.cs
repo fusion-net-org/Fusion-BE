@@ -54,6 +54,8 @@ public partial class FusionDbContext : DbContext
 
     public DbSet<CompanySubscription> CompanySubscriptions { get; set; } = null!;
     public DbSet<CompanySubscriptionEntitlement> CompanySubscriptionEntitlements { get; set; } = null!;
+    public virtual DbSet<CompanySubscriptionEntry> CompanySubscriptionEntries { get; set; } = null!;
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -616,6 +618,31 @@ public partial class FusionDbContext : DbContext
                   .HasConstraintName("FK_CompanySubscriptionEntitlements_Features_FeatureId")
                   .OnDelete(DeleteBehavior.Restrict);
         });
+
+        // ================== COMPANY SUBSCRIPTION ENTRY ==================
+        modelBuilder.Entity<CompanySubscriptionEntry>(entity =>
+        {
+            entity.Property(e => e.UsedAt)
+                  .HasDefaultValueSql("(sysutcdatetime())");
+
+            // Mỗi member chỉ được ghi 1 lần cho 1 company subscription
+            entity.HasIndex(e => new { e.CompanySubscriptionId, e.CompanyMemberId })
+                  .IsUnique()
+                  .HasDatabaseName("UX_CompanySubscriptionEntries_Sub_Member");
+
+            entity.HasOne(e => e.CompanySubscription)
+                  .WithMany(s => s.Entries)
+                  .HasForeignKey(e => e.CompanySubscriptionId)
+                  .HasConstraintName("FK_CompanySubscriptionEntries_CompanySubscriptions_SubId")
+                  .OnDelete(DeleteBehavior.Restrict); // tránh multiple cascade paths
+
+            entity.HasOne(e => e.CompanyMember)
+                  .WithMany(m => m.CompanySubscriptionEntries)
+                  .HasForeignKey(e => e.CompanyMemberId)
+                  .HasConstraintName("FK_CompanySubscriptionEntries_CompanyMembers_MemberId")
+                  .OnDelete(DeleteBehavior.Restrict); // tránh multiple cascade paths
+        });
+
         OnModelCreatingPartial(modelBuilder);
     }
 

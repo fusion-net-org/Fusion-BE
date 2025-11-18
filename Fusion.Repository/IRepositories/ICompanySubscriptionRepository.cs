@@ -13,4 +13,5 @@ public interface ICompanySubscriptionRepository
     Task<PagedResult<CompanySubscription>> GetAllByCompanyIdAsync(Guid companyId, CompanySubscriptionPagedRequest request, CancellationToken ct = default);
     Task<List<CompanySubscription>> GetAllActiveByCompanyIdAsync( Guid companyId, CancellationToken ct = default);
     Task<int> UpdateEnabledByFeatureIdAsync(Guid featureId, bool newStatus, CancellationToken ct = default);
+    Task UseFeatureAsync(Guid companySubscriptionId, long companyMemberId, string featureName, CancellationToken ct = default);
 }

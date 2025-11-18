@@ -3,6 +3,7 @@
 using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.CompanySubscriptions;
+using Fusion.Repository.Bases.Responses;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.Enums;
@@ -15,12 +16,14 @@ namespace Fusion.Repository.Repositories
     {
         private readonly FusionDbContext _context;
         private readonly IUserSubscriptionRepository _userSubscriptionRepository;
-        public CompanySubscriptionRepository(FusionDbContext context, IUserSubscriptionRepository userSubscriptionRepository) : base(context)
+        private readonly ICompanySubscriptionEntryRepository _entry;
+        public CompanySubscriptionRepository(FusionDbContext context, IUserSubscriptionRepository userSubscriptionRepository
+            , ICompanySubscriptionEntryRepository entry) : base(context)
         {
             _context = context;
             _userSubscriptionRepository = userSubscriptionRepository;
+            _entry = entry;
         }
-
         public async Task<CompanySubscription> CreateAsync(CompanySubscription companySubscription, CancellationToken cancellationToken = default)
         {
             // 1. Load UserSubscription + Entitlements
@@ -194,6 +197,50 @@ namespace Fusion.Repository.Repositories
 
 
             return ents.Count;
+        }
+        public async Task UseFeatureAsync(Guid companySubscriptionId, long companyMemberId, string featureName, CancellationToken ct = default)
+        {
+            if (string.IsNullOrWhiteSpace(featureName))
+                throw CustomExceptionFactory.CreateBadRequestError("Feature code is required.");
+
+            featureName = featureName.Trim();
+
+            // 1. Load subscription + entitlements + feature để so sánh theo code
+            var sub = await _context.CompanySubscriptions
+                .Include(cs => cs.Entitlements)
+                    .ThenInclude(e => e.Feature)
+                .FirstOrDefaultAsync(cs => cs.Id == companySubscriptionId, ct);
+
+            if (sub == null)
+                throw CustomExceptionFactory.CreateNotFoundError(
+                    ResponseMessages.NOT_FOUND.FormatMessage("Company subscription."));
+
+            if (sub.Status != SubscriptionStatus.Active)
+                throw CustomExceptionFactory.CreateBadRequestError(
+                    "Company subscription is not active.");
+
+            if (sub.ExpiredAt.HasValue && sub.ExpiredAt.Value < DateTimeOffset.UtcNow)
+                throw CustomExceptionFactory.CreateBadRequestError(
+                    "Company subscription has expired.");
+
+            // 2. Tìm entitlement theo Feature.Code (thay vì FeatureId)
+            var entitlement = sub.Entitlements
+                .FirstOrDefault(e =>
+                    e.Enabled &&
+                    e.Feature != null &&
+                    e.Feature.Name != null &&
+                    e.Feature.Name.Equals(featureName, StringComparison.OrdinalIgnoreCase));
+
+            if (entitlement == null)
+                throw CustomExceptionFactory.CreateBadRequestError(
+         $"Feature '{featureName}' is not enabled for the selected company subscription.");
+
+            // 3. Ghi nhận user dùng gói (consume seat)
+            //    Hàm CreateAsync bên CompanySubscriptionEntryRepository sẽ:
+            //    - Không double count nếu member đã có entry
+            //    - Check SeatsLimitSnapshot / SeatsLimitUnit
+            //    - Tạo entry + tăng SeatsLimitUnit nếu cần
+            await _entry.CreateAsync(companySubscriptionId, companyMemberId, ct);
         }
     }
 }

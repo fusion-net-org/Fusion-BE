@@ -100,5 +100,10 @@ namespace Fusion.Service.Services
 
             return _mapper.Map<CompanySubscriptionDetailResponse>(entity);
         }
+        public async Task<bool> UseFeatureAsync(UserFeatureRequest request, CancellationToken ct = default)
+        {
+            await _companySubscriptionRepository.UseFeatureAsync(request.companySubscriptionId, request.companyMemberId, request.featureName, ct);
+            return true;
+        }
     }
 }
