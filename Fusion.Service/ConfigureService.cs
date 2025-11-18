@@ -47,6 +47,9 @@ namespace Fusion.Service
             //project request
             services.AddScoped<IProjectRequestService , ProjectRequestService>();
 
+            //user feature catalog
+            services.AddScoped<IFeatureCatalogService, FeatureCatalogService>();
+
             //Subscription plan
             services.AddScoped<ISubscriptionPlanService, SubscriptionPlanService>();
 
@@ -58,6 +61,8 @@ namespace Fusion.Service
 
             //user subscrption
             services.AddScoped<IUserSubscriptionService, UserSubscriptionService>();
+
+
 
             //notification
             services.AddScoped<INotificationService, NotificationService>();
@@ -90,6 +95,7 @@ namespace Fusion.Service
             services.AddScoped<IWorkflowStatusService, WorkflowStatusService>();
 
             // company subscription
+            //company subscription
             services.AddScoped<ICompanySubscriptionService, CompanySubscriptionService>();
 
             // tiocket comment

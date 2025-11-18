@@ -10,22 +10,22 @@ public class CompanySubscriptionEntitlement
 {
     [Key]
     [Column("id")]
-    public Guid Id { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
 
+    [Required]
     [Column("company_subscription_id")]
     public Guid CompanySubscriptionId { get; set; }
 
     [Required]
-    [Column("feature_key")]
-    public FeatureKeys FeatureKey { get; set; }
+    [Column("feature_id")]
+    public Guid FeatureId { get; set; }
 
-    [Column("quantity")]
-    public int Quantity { get; set; }
-
-    [Column("remaining")]
-    public int Remaining { get; set; }
+    [Column("enabled")]
+    public bool Enabled { get; set; } = true;
 
     [ForeignKey(nameof(CompanySubscriptionId))]
-    [InverseProperty(nameof(CompanySubscription.CompanySubscriptionEntitlements))]
-    public CompanySubscription CompanySubscription { get; set; } = null!;
+    public virtual CompanySubscription CompanySubscription { get; set; } = null!;
+
+    [ForeignKey(nameof(FeatureId))]
+    public virtual Feature Feature { get; set; } = null!;
 }

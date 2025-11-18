@@ -32,7 +32,6 @@ namespace Fusion.Service.Services
         private readonly IProjectMemberRepository _projMemberRepo;
         private readonly IWorkflowDesignerRepository _workflowReadRepo;
         private readonly FusionDbContext _ctx;
-
         public ProjectService(
             IMapper mapper,
             IValidator<ProjectCreateRequest> validator,
@@ -134,6 +133,7 @@ namespace Fusion.Service.Services
                 await tx.RollbackAsync(ct);
                 throw;
             }
+
 
             // 9) Return
             var created = await _projectRepo.GetByIdWithSprintsAsync(project.Id, ct);

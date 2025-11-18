@@ -16,217 +16,88 @@ namespace Fusion.Repository.Repositories
     {
         private readonly FusionDbContext _context;
         private readonly IUserSubscriptionRepository _userSubscriptionRepository;
-        public CompanySubscriptionRepository(FusionDbContext context, IUserSubscriptionRepository userSubscriptionRepository) : base(context)
+        private readonly ICompanySubscriptionEntryRepository _entry;
+        public CompanySubscriptionRepository(FusionDbContext context, IUserSubscriptionRepository userSubscriptionRepository
+            , ICompanySubscriptionEntryRepository entry) : base(context)
         {
             _context = context;
             _userSubscriptionRepository = userSubscriptionRepository;
-        }
-
-        public async Task<CompanySubscription> UpdateAsync(Guid userId, CompanySubscription update, CancellationToken ct = default)
-        {
-            var comanySub = await GetByIdWithNavAsync(update.Id);
-            if (comanySub == null)
-                throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Company Subscription"));
-
-           var userSub = await _context.UserSubscriptions
-                .Include(u => u.UserSubscriptionEntitlements)
-                .FirstOrDefaultAsync( us => us.Id == comanySub.UserSubscriptionId);
-            if (userSub == null)
-                throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.BAD_REQUEST.FormatMessage("User subscription"));
-
-            var transaction = await _context.TransactionPayments
-                .FirstOrDefaultAsync(x => x.Id == userSub.TransactionId);
-            if (transaction == null)
-                throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Transaction."));
-
-            if (userId != transaction.UserId)
-                throw CustomExceptionFactory.CreateForbiddenError();
-
-            using var tx = await _context.Database.BeginTransactionAsync(ct);
-            try
-            {
-                // Update status
-                if (update.Status != comanySub.Status)
-                    comanySub.Status = update.Status;
-
-                // Normalize incoming entilements list
-                var incoming = (update.CompanySubscriptionEntitlements ?? new List<CompanySubscriptionEntitlement>())
-                              .ToList();
-
-                //  ====================== Handle removals  ======================
-                // any existing entiliement that us not present in incoming list should be removed
-                // when removing, refund its Quantitty back to user's remaing 
-                var incomingIds = incoming.Where(i => i.Id != default).Select(i => i.Id).ToHashSet();
-                var toRemove = comanySub.CompanySubscriptionEntitlements
-                    .Where(e => e.Id != default && !incomingIds.Contains(e.Id))
-                    .ToList();
-
-                foreach( var rem in toRemove)
-                {
-                    // find corresponging user entitlement by FeatureKey
-                    var useEnt = userSub.UserSubscriptionEntitlements.FirstOrDefault(u => u.FeatureKey == rem.FeatureKey);
-                    if(useEnt == null)
-                        throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Feature Key of user subscription"));
-
-                    // refund the entire quatity back to user's reaining 
-                    useEnt.Remaining += rem.Quantity;
-
-                    // Remove from existing list
-                    _context.CompanySubscriptionEntitlements.Remove(rem);
-                }
-
-
-                // ===============Hand update amd mew emtilements ==========
-                foreach( var inc in incoming)
-                {
-
-                    // if incoming item has an Id and matches and existing entitlement => update
-                    CompanySubscriptionEntitlement? existingEnt = null;
-                    if(inc.Id != default)
-                    {
-                        existingEnt = comanySub.CompanySubscriptionEntitlements.FirstOrDefault(e => e.Id == inc.Id);
-                    }
-                    else
-                    {
-                        // if no id, try match by FeatureKey
-                        existingEnt = comanySub.CompanySubscriptionEntitlements.FirstOrDefault(e => e.FeatureKey == inc.FeatureKey);
-                    }
-
-                    if(existingEnt != null)
-                    {
-                        //Existing entitlement -> may change quantity up or down
-                        var newQty = inc.Quantity;
-                        if(newQty < 0)
-                            throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.BAD_REQUEST.FormatMessage("Quantity must be non-negative"));
-                        
-                        var olQuy = existingEnt.Quantity;
-
-                        var diff = newQty - olQuy;
-
-                        // find the corresponding user entitlement 
-                        var userEnt = userSub.UserSubscriptionEntitlements.FirstOrDefault(u => u.FeatureKey == existingEnt.FeatureKey);
-                        if(userEnt == null)
-                            throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage($"Feature {existingEnt.FeatureKey} not found in user subscription"));
-
-                        if(diff > 0)
-                        {
-
-                            // Need to cosume additional quota from user subscription
-                            if(userEnt.Remaining < diff)
-                                throw CustomExceptionFactory.CreateBadRequestError(
-                                    ResponseMessages.BAD_REQUEST.FormatMessage($"Not enough quota for feature {existingEnt.FeatureKey}"));
-
-                            userEnt.Remaining -= diff;
-                            existingEnt.Quantity = newQty;
-                            existingEnt.Remaining += diff;  // company gets additional remaining quota
-                        }
-
-                        else if( diff < 0)
-                        {
-                            // Decease company quota -> refund to user subscription
-                            var refund = -diff;
-
-                            // check if reaminng of company < diff
-                            var used = existingEnt.Quantity - existingEnt.Remaining;
-                            if(refund > existingEnt.Remaining)
-                                throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.BAD_REQUEST.FormatMessage(
-                                    $"Cannot reduce quota for feature {existingEnt.FeatureKey} below the amount already used ({used})."));
-                        
-                            // update company quota
-                            existingEnt.Quantity = newQty;
-                            existingEnt.Remaining -= refund;
-                            userEnt.Remaining += refund;
-
-                            // If remaining < 0, fix
-                            if (existingEnt.Remaining < 0)
-                                existingEnt.Remaining = 0;
-                        }
-
-                        _context.CompanySubscriptionEntitlements.Update(existingEnt);
-                    }
-                    else
-                    {
-                        // new entitlement being added for the copany
-                        var feature = inc.FeatureKey;
-                        var qty = inc.Quantity;
-
-                        if(qty <= 0)
-                            throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.BAD_REQUEST.FormatMessage("Quantity must be greater than 0 for new entitlement"));
-
-                        var userEnt = userSub.UserSubscriptionEntitlements.FirstOrDefault(u => u.FeatureKey == feature);
-                        if (userEnt == null)
-                            throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage($"Feature {feature} not found in user subscription"));
-
-                        if (userEnt.Remaining < qty)
-                            throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.BAD_REQUEST.FormatMessage($"Not enough quota for feature {feature}"));
-
-                        // Consume user's quota
-                        userEnt.Remaining -= qty;
-
-                        // Create new company entitlement
-                        var newCompanyEnt = new CompanySubscriptionEntitlement
-                        {
-                            Id = default,
-                            CompanySubscriptionId = comanySub.Id,
-                            FeatureKey = feature,
-                            Quantity = qty,
-                            Remaining = qty
-                        };
-                        await _context.CompanySubscriptionEntitlements.AddAsync(newCompanyEnt, ct);
-                        //comanySub.CompanySubscriptionEntitlements.Add(newCompanyEnt);
-                    }
-                }
-               
-                comanySub.UpdatedAt = DateTime.UtcNow;
-                _context.UserSubscriptionEntitlements.UpdateRange(userSub.UserSubscriptionEntitlements);
-                _context.CompanySubscriptions.Update(comanySub);
-                await _context.SaveChangesAsync(ct);
-                await tx.CommitAsync();
-
-                var result = await GetByIdWithNavAsync(comanySub.Id);
-                return result;
-
-            }
-            catch
-            {
-                await tx.RollbackAsync();
-                throw;
-            }
+            _entry = entry;
         }
         public async Task<CompanySubscription> CreateAsync(CompanySubscription companySubscription, CancellationToken cancellationToken = default)
         {
-            // 1. check user subscription 
-            var userSub = await _userSubscriptionRepository.GetByIdWithNavAsync(companySubscription.UserSubscriptionId);
+            // 1. Load UserSubscription + Entitlements
+            var userSub = await _userSubscriptionRepository
+                .GetByIdWithNavAsync(companySubscription.UserSubscriptionId, cancellationToken);
+
+            if (userSub == null)
+                throw CustomExceptionFactory.CreateNotFoundError("User subscription not found");
+
+            if (userSub.Status != SubscriptionStatus.Active)
+                throw CustomExceptionFactory.CreateBadRequestError("User subscription is not active.");
+
+            if (userSub.TermEnd.HasValue && userSub.TermEnd.Value < DateTimeOffset.UtcNow)
+                throw CustomExceptionFactory.CreateBadRequestError("User subscription has expired.");
+
+            // 2. Check share limit
+            if (userSub.CompanyShareLimitSnapshot.HasValue)
+            {
+                if (userSub.CompanyShareLimitSnapshot.Value <= 0)
+                    throw CustomExceptionFactory.CreateBadRequestError("No remaining company shares for this subscription.");
+            }
+
+            // 3. Kiểm tra share trùng
+            var exists = await _context.CompanySubscriptions
+                .AnyAsync(cs =>
+                    cs.UserSubscriptionId == companySubscription.UserSubscriptionId &&
+                    cs.CompanyId == companySubscription.CompanyId,
+                    cancellationToken);
+
+            if (exists)
+                throw CustomExceptionFactory.CreateBadRequestError("This subscription has already been shared to the specified company.");
 
             using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
             try
             {
-                // 2.validate entitlement list
-                if (companySubscription.CompanySubscriptionEntitlements == null || !companySubscription.CompanySubscriptionEntitlements.Any())
-                    throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.BAD_REQUEST.FormatMessage("At least one entitlement is required"));
+                // 4. Trừ hạn mức share nếu có
+                await _userSubscriptionRepository.DecreaseCompanyShareLimitAsync(userSub.Id, 1, cancellationToken);
 
-                // 3. Validate & different quota of userSubscription
-                await _userSubscriptionRepository.ValidateAndConsumeEntitlementsAsync(
-                    companySubscription.UserSubscriptionId,
-                    companySubscription.CompanySubscriptionEntitlements,
-                    cancellationToken);
-
-                // 4.Assign information inherited from user subscription
-
-                companySubscription.NameSubscription ??= userSub.NamePlan;
-                companySubscription.CreatedAt = DateTime.UtcNow;
-                companySubscription.UpdatedAt = null;
+                // 5. Gán thông tin CompanySubscription từ UserSubscription
                 companySubscription.Status = SubscriptionStatus.Active;
-                companySubscription.ExpiredAt = userSub.ExpiredAt;
+                companySubscription.SharedOn = DateTimeOffset.UtcNow;
+                companySubscription.UpdatedAt = DateTimeOffset.UtcNow;
+                companySubscription.ExpiredAt = userSub.TermEnd;
 
-                // 5. Assign information Entitlements
-                foreach (var ent in companySubscription.CompanySubscriptionEntitlements)
+                // Nếu OwnerUserId chưa set (Guid.Empty) thì dùng chủ sở hữu userSub
+                if (companySubscription.OwnerUserId == Guid.Empty)
                 {
-                    ent.Id = default;
-                    ent.CompanySubscriptionId = companySubscription.Id;
-                    ent.Remaining = ent.Quantity;
+                    companySubscription.OwnerUserId = userSub.UserId;
                 }
-                _context.CompanySubscriptions.Add(companySubscription);
+
+                companySubscription.SeatsLimitSnapshot = userSub.SeatsPerCompanyLimitSnapshot;
+                // SeatsLimitUnit hiện chưa dùng, để null
+
+                await _context.CompanySubscriptions.AddAsync(companySubscription, cancellationToken);
+
+                //  Copy entitlements từ UserSubscription -> CompanySubscription
+                var userEntitlements = userSub.Entitlements
+                    .Where(e => e.Enabled)
+                    .ToList();
+
+                if (userEntitlements.Count > 0)
+                {
+                    var companyEntitlements = userEntitlements.Select(e => new CompanySubscriptionEntitlement
+                    {
+                        CompanySubscriptionId = companySubscription.Id,
+                        FeatureId = e.FeatureId,
+                        Enabled = true
+                    }).ToList();
+
+                    await _context.CompanySubscriptionEntitlements
+                        .AddRangeAsync(companyEntitlements, cancellationToken);
+                }
+
+                // 6. Save & Commit
                 await _context.SaveChangesAsync(cancellationToken);
                 await transaction.CommitAsync(cancellationToken);
 
@@ -237,190 +108,139 @@ namespace Fusion.Repository.Repositories
                 await transaction.RollbackAsync(cancellationToken);
                 throw;
             }
-
         }
-        public async Task<PagedResult<CompanySubscription>> GetAllAsync(CompanySubscriptionPagedRequest request, CancellationToken ct = default)
+        public async Task<List<CompanySubscription>> GetAllActiveByCompanyIdAsync(Guid companyId, CancellationToken ct = default)
+        {
+            return await _context.CompanySubscriptions
+                     .AsNoTracking()
+        .Include(cs => cs.UserSubscription)
+            .ThenInclude(us => us.Plan)
+        .Include(cs => cs.Entitlements
+            .Where(e => e.Feature.Category != "User"))
+            .ThenInclude(e => e.Feature)
+        .Where(cs => cs.CompanyId == companyId &&
+                     cs.Status == SubscriptionStatus.Active)
+        .ToListAsync(ct);
+        }
+        public async Task<PagedResult<CompanySubscription>> GetAllByCompanyIdAsync(Guid companyId, CompanySubscriptionPagedRequest request, CancellationToken ct = default)
         {
             var q = _context.CompanySubscriptions
                             .AsNoTracking()
                             .Include(cs => cs.Company)
                             .Include(cs => cs.UserSubscription)
-                            .Include(cs => cs.CompanySubscriptionEntitlements)
-                            .AsQueryable();
+                              .ThenInclude(us => us.Plan)
 
-            // --- Lọc theo tên gói ---
-            if (!string.IsNullOrWhiteSpace(request.PlanName))
+                            .Include(cs => cs.UserSubscription)
+                              .ThenInclude(us => us.User)
+                            .Where(cs => cs.CompanyId == companyId);
+
+
+            if (request.Status.HasValue)
             {
-                var pattern = $"%{request.PlanName.Trim()}%";
-                q = q.Where(cs => cs.NameSubscription != null && EF.Functions.Like(cs.NameSubscription, pattern));
+                q = q.Where(x => x.Status == request.Status.Value);
             }
 
-            // --- Lọc theo trạng thái ---
-
-            if (request.status.HasValue)
-            {
-                q = q.Where(cs => cs.UserSubscription != null && cs.UserSubscription.Status == request.status.Value);
-            }
-
-            // --- Lọc theo thời gian tạo ---
-            if (request.CreateAt.From.HasValue)
-                q = q.Where(cs => cs.CreatedAt >= request.CreateAt.From.Value);
-
-            if (request.CreateAt.To.HasValue)
-                q = q.Where(cs => cs.CreatedAt <= request.CreateAt.To.Value);
-
-            // --- Lọc theo thời gian hết hạn ---
-            if (request.ExpiredAt.From.HasValue)
-                q = q.Where(cs => cs.ExpiredAt >= request.ExpiredAt.From.Value);
-
-            if (request.ExpiredAt.To.HasValue)
-                q = q.Where(cs => cs.ExpiredAt <= request.ExpiredAt.To.Value);
-
-            // --- Tìm kiếm tổng hợp ---
             if (!string.IsNullOrWhiteSpace(request.Keyword))
             {
-                var kw = $"%{request.Keyword.Trim()}%";
-                q = q.Where(cs =>
-                    (cs.NameSubscription != null && EF.Functions.Like(cs.NameSubscription, kw)) ||
-                    (cs.UserSubscription != null && EF.Functions.Like(cs.UserSubscription.NamePlan!, kw))
-                );
+                var kw = request.Keyword.Trim();
+                var like = $"%{kw}%";
+
+                q = q.Where(x =>
+                    (x.Company.Name != null && EF.Functions.Like(x.Company.Name, like)) ||
+                    (x.UserSubscription.Plan.Name != null && EF.Functions.Like(x.UserSubscription.Plan.Name, like)));
             }
 
-            // --- Sắp xếp ---
-            string sortColumn = nameof(CompanySubscription.CreatedAt);
-            bool sortDescending = true;
+            if (!string.IsNullOrWhiteSpace(request.SortColumn) &&
+                CompanySubscriptionPagedRequest.SortMap.TryGetValue(request.SortColumn, out var mapped))
+            {
+                request.SortColumn = mapped;
+            }
+            else if (string.IsNullOrWhiteSpace(request.SortColumn))
+            {
+                request.SortColumn = nameof(CompanySubscription.SharedOn);
+                request.SortDescending = true;
+            }
 
-            if (!string.IsNullOrWhiteSpace(request.SortColumn) && CompanySubscriptionPagedRequest.SortMap.TryGetValue(request.SortColumn, out var mapped))
-                sortColumn = mapped;
-            else
-                sortColumn = nameof(CompanySubscription.CreatedAt);
-
-            sortDescending = request.SortDescending;
-
-            // --- Phân trang ---
             return await q.ToPagedResultAsync(request, ct);
+
         }
-        public async Task<PagedResult<CompanySubscription>> GetAllByCompanyIdAsync(Guid companyId, CompanySubscriptionPagedRequest request, CancellationToken ct = default)
+        public async Task<CompanySubscription?> GetByIdWithNavAsync(Guid id, CancellationToken ct = default)
         {
-            var q = _context.CompanySubscriptions
-                           .AsNoTracking()
-                           .Include(cs => cs.Company)
-                           .Where(cs => cs.Company.Id == companyId)
-                           .Include(cs => cs.UserSubscription)
-                           .Include(cs => cs.CompanySubscriptionEntitlements)
-                           .AsQueryable();
-
-            // --- Lọc theo tên gói ---
-            if (!string.IsNullOrWhiteSpace(request.PlanName))
-            {
-                var pattern = $"%{request.PlanName.Trim()}%";
-                q = q.Where(cs => cs.NameSubscription != null && EF.Functions.Like(cs.NameSubscription, pattern));
-            }
-
-            // --- Lọc theo trạng thái ---
-
-            if (request.status.HasValue)
-            {
-                q = q.Where(cs => cs.UserSubscription != null && cs.UserSubscription.Status == request.status.Value);
-            }
-
-            // --- Lọc theo thời gian tạo ---
-            if (request.CreateAt.From.HasValue)
-                q = q.Where(cs => cs.CreatedAt >= request.CreateAt.From.Value);
-
-            if (request.CreateAt.To.HasValue)
-                q = q.Where(cs => cs.CreatedAt <= request.CreateAt.To.Value);
-
-            // --- Lọc theo thời gian hết hạn ---
-            if (request.ExpiredAt.From.HasValue)
-                q = q.Where(cs => cs.ExpiredAt >= request.ExpiredAt.From.Value);
-
-            if (request.ExpiredAt.To.HasValue)
-                q = q.Where(cs => cs.ExpiredAt <= request.ExpiredAt.To.Value);
-
-            // --- Tìm kiếm tổng hợp ---
-            if (!string.IsNullOrWhiteSpace(request.Keyword))
-            {
-                var kw = $"%{request.Keyword.Trim()}%";
-                q = q.Where(cs =>
-                    (cs.NameSubscription != null && EF.Functions.Like(cs.NameSubscription, kw)) ||
-                    (cs.UserSubscription != null && EF.Functions.Like(cs.UserSubscription.NamePlan!, kw))
-                );
-            }
-            // --- Sắp xếp ưu tiên ---
-            // Ưu tiên: Active lên đầu → sắp xếp theo ngày ExpiredAt gần nhất → sau đó CreatedAt giảm dần
-            q = q.OrderByDescending(cs => cs.Status == SubscriptionStatus.Active)
-                 .ThenBy(cs => cs.ExpiredAt)
-                 .ThenByDescending(cs => cs.CreatedAt);
-
-            // Nếu có sortColumn được gửi từ request → áp dụng bổ sung
-            if (!string.IsNullOrWhiteSpace(request.SortColumn)
-                && CompanySubscriptionPagedRequest.SortMap.TryGetValue(request.SortColumn, out var mapped))
-            {
-                q = request.SortDescending
-                    ? q.OrderByDescending(e => EF.Property<object>(e, mapped))
-                    : q.OrderBy(e => EF.Property<object>(e, mapped));
-            }
-
-            // --- Phân trang ---
-            return await q.ToPagedResultAsync(request, ct);
-        }
-        public async Task<List<CompanySubscription>> GetAllActiveByCompanyIdAsync(Guid companyId, CancellationToken ct = default)
-        {
-            var now = DateTime.UtcNow;
-
-            var activeSubscriptions = await _context.CompanySubscriptions
+            return await _context.CompanySubscriptions
                 .AsNoTracking()
-                .Include(cs => cs.CompanySubscriptionEntitlements)
-                .Where(cs =>
-                    cs.CompanyId == companyId &&
-                    cs.Status == SubscriptionStatus.Active &&
-                    (cs.ExpiredAt == null || cs.ExpiredAt > now))
-                .OrderBy(cs => cs.ExpiredAt)
-                .ThenByDescending(cs => cs.CreatedAt)
-                .ToListAsync(ct);
-
-            return activeSubscriptions;
-        }
-        public Task<CompanySubscription?> GetByIdWithNavAsync(Guid id, CancellationToken ct = default)
-            => _context.CompanySubscriptions
                 .Include(cs => cs.Company)
                 .Include(cs => cs.UserSubscription)
-                .Include(cs => cs.CompanySubscriptionEntitlements)
+                    .ThenInclude(us => us.Plan)
+                .Include(cs => cs.UserSubscription)
+                    .ThenInclude(us => us.User)
+                .Include(cs => cs.Entitlements
+                    .Where(e => e.Feature.Category != "User"))
+                    .ThenInclude(e => e.Feature)
                 .FirstOrDefaultAsync(cs => cs.Id == id, ct);
-
-        public async Task UseFeatureAsync(Guid companySubscriptionId, FeatureKeys featureKey, int quantity, CancellationToken ct = default)
+        }
+        public async Task<int> UpdateEnabledByFeatureIdAsync(Guid featureId, bool newStatus, CancellationToken ct = default)
         {
-            if (quantity <= 0)
-                throw new ArgumentException("Quantity must be greater than 0", nameof(quantity));
+            var ents = await _context.CompanySubscriptionEntitlements
+                       .Where(e => e.FeatureId == featureId)
+                       .ToListAsync(ct);
 
-            var now = DateTime.UtcNow;
+            if (ents.Count == 0)
+                return 0;
 
-            // 1. Lấy gói company subscription kèm entitlements
-            var companySub = await _context.CompanySubscriptions
-                .Include(cs => cs.CompanySubscriptionEntitlements)
+            foreach (var e in ents)
+            {
+                if (e.Enabled != newStatus)
+                {
+                    e.Enabled = newStatus;
+                }
+            }
+
+
+            return ents.Count;
+        }
+        public async Task UseFeatureAsync(Guid companySubscriptionId, long companyMemberId, string featureName, CancellationToken ct = default)
+        {
+            if (string.IsNullOrWhiteSpace(featureName))
+                throw CustomExceptionFactory.CreateBadRequestError("Feature code is required.");
+
+            featureName = featureName.Trim();
+
+            // 1. Load subscription + entitlements + feature để so sánh theo code
+            var sub = await _context.CompanySubscriptions
+                .Include(cs => cs.Entitlements)
+                    .ThenInclude(e => e.Feature)
                 .FirstOrDefaultAsync(cs => cs.Id == companySubscriptionId, ct);
 
-            if (companySub == null)
-                throw CustomExceptionFactory.CreateNotFoundError("Company subscription not found");
+            if (sub == null)
+                throw CustomExceptionFactory.CreateNotFoundError(
+                    ResponseMessages.NOT_FOUND.FormatMessage("Company subscription."));
 
-            if (companySub.Status != SubscriptionStatus.Active || (companySub.ExpiredAt != null && companySub.ExpiredAt <= now))
-                throw CustomExceptionFactory.CreateBadRequestError("Company subscription is inactive or expired");
+            if (sub.Status != SubscriptionStatus.Active)
+                throw CustomExceptionFactory.CreateBadRequestError(
+                    "Company subscription is not active.");
 
-            // 2. Lấy entitlement tương ứng
-            var entitlement = companySub.CompanySubscriptionEntitlements.FirstOrDefault(e => e.FeatureKey == featureKey);
+            if (sub.ExpiredAt.HasValue && sub.ExpiredAt.Value < DateTimeOffset.UtcNow)
+                throw CustomExceptionFactory.CreateBadRequestError(
+                    "Company subscription has expired.");
+
+            // 2. Tìm entitlement theo Feature.Code (thay vì FeatureId)
+            var entitlement = sub.Entitlements
+                .FirstOrDefault(e =>
+                    e.Enabled &&
+                    e.Feature != null &&
+                    e.Feature.Name != null &&
+                    e.Feature.Name.Equals(featureName, StringComparison.OrdinalIgnoreCase));
+
             if (entitlement == null)
-                throw CustomExceptionFactory.CreateBadRequestError($"Feature {featureKey} not available in this subscription");
+                throw CustomExceptionFactory.CreateBadRequestError(
+         $"Feature '{featureName}' is not enabled for the selected company subscription.");
 
-            if (entitlement.Remaining < quantity)
-                throw CustomExceptionFactory.CreateBadRequestError($"Not enough remaining quota for feature {featureKey}");
-
-            // 3. Trừ remaining
-            entitlement.Remaining -= quantity;
-
-            // 4. Lưu lại
-            _context.CompanySubscriptionEntitlements.Update(entitlement);
-            await _context.SaveChangesAsync(ct);
+            // 3. Ghi nhận user dùng gói (consume seat)
+            //    Hàm CreateAsync bên CompanySubscriptionEntryRepository sẽ:
+            //    - Không double count nếu member đã có entry
+            //    - Check SeatsLimitSnapshot / SeatsLimitUnit
+            //    - Tạo entry + tăng SeatsLimitUnit nếu cần
+            await _entry.CreateAsync(companySubscriptionId, companyMemberId, ct);
         }
     }
 }
