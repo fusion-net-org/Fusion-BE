@@ -92,25 +92,25 @@ namespace Fusion.API.Controllers
             return ok ? NoContent() : NotFound();
         }
 
-        [HttpGet("{id:guid}/request_plan")]
-        public async Task<IActionResult> GetRequestPlanDetail(Guid id, CancellationToken token)
-        {
-            var result = await _userSubscriptionService.GetRequestPlansDetailAsync(id, token);
+        //[HttpGet("{id:guid}/request_plan")]
+        //public async Task<IActionResult> GetRequestPlanDetail(Guid id, CancellationToken token)
+        //{
+        //    var result = await _userSubscriptionService.GetRequestPlansDetailAsync(id, token);
 
-            return Ok(ResponseModel<RequestPlanDetailResponse>.Ok(
-                data: result,
-                message: $"Get request plan successfully"));
-        }
+        //    return Ok(ResponseModel<RequestPlanDetailResponse>.Ok(
+        //        data: result,
+        //        message: $"Get request plan successfully"));
+        //}
 
-        [HttpGet("request_plan")]
-        public async Task<IActionResult> GetRequestPlans(CancellationToken token)
-        {
-            var result = await _userSubscriptionService.GetRequestPlansAsync(token);
+        //[HttpGet("request_plan")]
+        //public async Task<IActionResult> GetRequestPlans(CancellationToken token)
+        //{
+        //    var result = await _userSubscriptionService.GetRequestPlansAsync(token);
 
-            return Ok(ResponseModel<IEnumerable<RequestPlanDetailResponse>>.Ok(
-                data: result,
-                message: $"Get list request plan successfully"));
-        }
+        //    return Ok(ResponseModel<IEnumerable<RequestPlanDetailResponse>>.Ok(
+        //        data: result,
+        //        message: $"Get list request plan successfully"));
+        //}
 
 
     }
