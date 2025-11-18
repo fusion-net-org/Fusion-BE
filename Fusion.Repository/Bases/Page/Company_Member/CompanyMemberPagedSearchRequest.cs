@@ -24,4 +24,28 @@ namespace Fusion.Repository.Bases.Page.Company_Member
         public DateRange<DateOnly>? DateRange { get; set; }
 
     }
+
+    public class CompanyMemberPagedRequest : PagedRequest
+    {
+ 
+        public string? KeyWord { get; set; }
+
+     
+        public string? Status { get; set; }
+
+ 
+        public DateRange? CreateAtRange { get; set; }
+
+        public DateRange? JoinedAtRange { get; set; }
+
+        public string? CompanyName { get; set; }
+
+  
+        public string? MemberName { get; set; }
+    }
+    public class DateRange
+    {
+        public DateTime? From { get; set; }
+        public DateTime? To { get; set; }
+    }
 }

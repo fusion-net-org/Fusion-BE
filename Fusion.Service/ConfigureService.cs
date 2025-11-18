@@ -33,6 +33,7 @@ namespace Fusion.Service
             //company
             services.AddScoped<ICompanyService, CompanyService>();
             services.AddScoped<ICompanyMemberService, CompanyMemberService>();
+            services.AddScoped<IProjectBoardService, ProjectBoardService>();
 
             //task
             services.AddScoped<ITaskService, TaskService>();
@@ -82,7 +83,7 @@ namespace Fusion.Service
             services.AddScoped<IProjectMemberService, ProjectMemberService>();
 
             // admin
-            //services.AddScoped<IAdminService, AdminService>();
+            services.AddScoped<IAdminService, AdminService>();
 
             //userlog 
             services.AddScoped<IUserLogService, UserLogService>();
@@ -90,8 +91,16 @@ namespace Fusion.Service
             //contract
             services.AddScoped<IContractService, ContractService>();
 
+            //workflow status
+            services.AddScoped<IWorkflowStatusService, WorkflowStatusService>();
+
+            // company subscription
             //company subscription
             services.AddScoped<ICompanySubscriptionService, CompanySubscriptionService>();
+
+            // tiocket comment
+            services.AddScoped<ITicketCommentService, TicketCommentService>();
+
             // PayOS
             services.AddSingleton<PayOS>(sp =>
             {

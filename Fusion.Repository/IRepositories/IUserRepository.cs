@@ -23,6 +23,6 @@ namespace Fusion.Repository.IRepositories
         Task<(int False, int True)> GetCountUserByStatusAsync(CancellationToken cancellationToken = default);
         Task<bool> EmailVerificationAsync(string token, CancellationToken cancellationToken = default);
 
-
+        Task<int> GetTotalUsersAsync(CancellationToken cancellationToken = default);
     }
 }

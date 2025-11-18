@@ -21,6 +21,7 @@ namespace Fusion.Service.ViewModels.Projects.Responses
         public Guid? ExecutorCompanyId { get; set; } //GOOGOLE
 
         public string? ExecutorCompanyName { get; set; }
+        public Guid? ContractId { get; set; }
 
         public string? ExecutorCompanyLogoUrl { get; set; }
 

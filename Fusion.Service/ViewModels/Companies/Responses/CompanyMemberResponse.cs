@@ -45,4 +45,32 @@ namespace Fusion.Service.ViewModels.Companies.Responses
 
         public bool IsOwner { get; set; }
     }
+
+    public class CompanyMemberResponseV2
+    {
+        public long Id { get; set; }
+
+        // Company Info
+        public Guid? CompanyId { get; set; }
+        public string? CompanyName { get; set; }
+        public string? CompanyEmail { get; set; }
+        public string? CompanyOwner { get; set; }
+        public string? CompanyAvatar { get; set; }
+
+        public string? CompanyPhone { get; set; }
+        public string? CompanyAddress { get; set; }
+        public DateTime CompanyCreateAt { get; set; }
+
+        // Member Info (From CompanyMember)
+        public Guid? UserId { get; set; }
+        public DateTime MemberJoinAt { get; set; }
+        public string? Status { get; set; }
+
+        // User 
+        public string? UserName { get; set; }
+        public string? UserEmail { get; set; }
+        public string? UserPhone { get; set; }
+        public string? UserAvatar { get; set; }
+    }
+
 }

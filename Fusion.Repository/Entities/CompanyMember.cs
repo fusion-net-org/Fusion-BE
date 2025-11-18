@@ -28,7 +28,7 @@ public partial class CompanyMember
 
     [Column("joined_at")]
     [Precision(3)]
-    public DateTime JoinedAt { get; set; }
+    public DateTime? JoinedAt { get; set; }
 
     [ForeignKey("CompanyId")]
     [InverseProperty("CompanyMembers")]

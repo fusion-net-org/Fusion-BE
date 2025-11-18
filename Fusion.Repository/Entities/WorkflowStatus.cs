@@ -42,6 +42,10 @@ public partial class WorkflowStatus
     [ForeignKey("WorkflowId")]
     [InverseProperty("WorkflowStatuses")]
     public virtual Workflow? Workflow { get; set; }
+    //---------------------------------------------------
+    [Column("code"), StringLength(60)] public string? Code { get; set; }
+    [Column("category"), StringLength(20)] public string? Category { get; set; }
+    //---------------------------------------------------
 
     [InverseProperty("FromStatus")]
     public virtual ICollection<WorkflowTransition> WorkflowTransitionFromStatuses { get; set; } = new List<WorkflowTransition>();

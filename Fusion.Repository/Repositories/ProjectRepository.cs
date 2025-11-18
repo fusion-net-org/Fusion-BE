@@ -42,7 +42,7 @@ namespace Fusion.Repository.Repositories
                 .Include(p => p.Company)
                 .Include(p => p.CompanyRequest)
                 .Include(p => p.Workflow)
-                .Where(p => p.CompanyId == companyId);
+                .Where(p => p.CompanyId == companyId || p.CompanyRequestId == companyId);
 
             // Search
             if (!string.IsNullOrWhiteSpace(q))
@@ -302,6 +302,11 @@ namespace Fusion.Repository.Repositories
                         .Include(p => p.CreatedByNavigation)
                         .SingleOrDefaultAsync(x => x.Id == projectId);
             return query;
+        }
+
+        public async Task<int> GetTotalProjectsAsync(CancellationToken token)
+        {
+            return await _context.Projects.CountAsync(token);
         }
     }
 }

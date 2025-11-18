@@ -1,6 +1,7 @@
 ﻿using Azure.Core;
 using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.Ticket;
+using Fusion.Repository.Bases.Page.Workflowstatus;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.IRepositories;
@@ -41,7 +42,12 @@ namespace Fusion.Repository.Repositories
 
 		public async Task<Ticket?> GetTicketByIdAsync(Guid Id)
 		{
-			return await _context.Tickets.Include(x => x.TicketComments).SingleOrDefaultAsync(x => x.Id == Id);
+			return await _context.Tickets
+                .Include(x => x.TicketComments)
+                .Include(x => x.SubmittedByNavigation)
+                .Include(x => x.Project)
+                .Include(x => x.Status)
+                .SingleOrDefaultAsync(x => x.Id == Id);
 		}
 
 		public async Task<Ticket?> GetTicketByTicketName(string ticketName)
@@ -68,7 +74,6 @@ namespace Fusion.Repository.Repositories
 
 			existedTicket.TicketName = updateTicket.TicketName ?? existedTicket.TicketName;
 			existedTicket.Priority = updateTicket.Priority ?? existedTicket?.Priority;
-			existedTicket.Urgency = updateTicket.Urgency ?? existedTicket?.Urgency;
 			existedTicket.Budget = updateTicket.Budget ?? existedTicket.Budget;
 			existedTicket.Description = updateTicket.Description ?? existedTicket.Description;
 			existedTicket.IsHighestUrgen = updateTicket.IsHighestUrgen;
@@ -82,12 +87,99 @@ namespace Fusion.Repository.Repositories
 			return ticket.Entity;
 		}
 
-		public async Task<bool?> DeleteTicketAsync(Ticket ticket, CancellationToken cancellationToken = default)
+		public async Task<bool?> DeleteTicketAsync(Ticket ticket, string reason, CancellationToken cancellationToken = default)
 		{
 			ticket.IsDeleted = true;
-			_context.Tickets.Update(ticket);
+            ticket.reason = reason;
+            _context.Tickets.Update(ticket);
 			await _context.SaveChangesAsync(cancellationToken);
 			return true;
 		}
-	}
+
+        public async Task<PagedResult<Ticket>> GetTicketsByProjectIdAsync(
+      TicketByProjectPagedRequest request,
+      CancellationToken cancellationToken = default)
+        {
+            var query = _context.Tickets
+                .Include(x => x.TicketComments)
+				.Include(x => x.SubmittedByNavigation)
+                .Where(t => t.ProjectId == request.ProjectId)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(request.TicketName))
+            {
+                query = query.Where(t => (t.TicketName ?? "").Contains(request.TicketName));
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.Priority))
+            {
+                query = query.Where(t => t.Priority == request.Priority);
+            }
+
+            if (request.MinBudget.HasValue)
+            {
+                query = query.Where(t => t.Budget >= request.MinBudget.Value);
+            }
+
+            if (request.MaxBudget.HasValue)
+            {
+                query = query.Where(t => t.Budget <= request.MaxBudget.Value);
+            }
+
+            if (request.ResolvedFrom.HasValue)
+            {
+                query = query.Where(t => t.ResolvedAt >= request.ResolvedFrom.Value);
+            }
+
+            if (request.ResolvedTo.HasValue)
+            {
+                query = query.Where(t => t.ResolvedAt <= request.ResolvedTo.Value);
+            }
+
+            if (request.ClosedFrom.HasValue)
+            {
+                query = query.Where(t => t.ClosedAt >= request.ClosedFrom.Value);
+            }
+
+            if (request.ClosedTo.HasValue)
+            {
+                query = query.Where(t => t.ClosedAt <= request.ClosedTo.Value);
+            }
+
+            if (request.CreateFrom.HasValue)
+            {
+                query = query.Where(t => t.CreatedAt >= request.CreateFrom.Value);
+            }
+
+            if (request.CreateTo.HasValue)
+            {
+                query = query.Where(t => t.CreatedAt <= request.CreateTo.Value);
+            }
+
+
+
+            return await query.ToPagedResultAsync(request, cancellationToken);
+        }
+
+        public async Task<List<Ticket>> GetTicketsForDashboardAsync(Guid projectId, CancellationToken cancellationToken = default)
+        {
+            return await _context.Tickets
+                .Include(t => t.Project)
+                .Include(t => t.SubmittedByNavigation)
+                .Include(t => t.Status) 
+                .Where(t => t.ProjectId == projectId)
+                .ToListAsync(cancellationToken);
+        }
+        public async Task<bool?> RestoreTicketAsync(Ticket ticket, CancellationToken cancellationToken = default)
+        {
+            ticket.IsDeleted = false;
+            ticket.reason = null;
+
+            _context.Tickets.Update(ticket);
+            await _context.SaveChangesAsync(cancellationToken);
+            return true;
+        }
+
+
+    }
 }

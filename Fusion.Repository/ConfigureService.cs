@@ -38,7 +38,7 @@ namespace Fusion.Repository
             services.AddScoped<ICompanyRepository,CompanyRepository>();
             services.AddScoped<ICompanyMemberRepository, CompanyMemberRepository>();
             services.AddScoped<IPermissionQuery, PermissionQuery>();
-
+            services.AddScoped<IProjectBoardRepository, ProjectBoardRepository>();
             //task
             services.AddScoped<ITaskRepository, TaskRepository>();
 
@@ -89,10 +89,14 @@ namespace Fusion.Repository
             services.AddScoped<IContractRepository, ContractRepository>();
             services.AddScoped<IContractAppendixRepository, ContractAppendixRepository>();
 
+            //workflow status
+            services.AddScoped<IWorkflowStatusRepository, WorkflowStatusRepository>();
 
             // company subscription
             services.AddScoped<ICompanySubscriptionRepository, CompanySubscriptionRepository>();
 
+            //TicketCOmment
+            services.AddScoped<ITicketCommentRepository, TicketCommentRepository>();
             // company entry
             services.AddScoped<ICompanySubscriptionEntryRepository, CompanySubscriptionEntryRepository>();
             return services;

@@ -282,7 +282,7 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("bit")
                         .HasColumnName("is_deleted");
 
-                    b.Property<DateTime>("JoinedAt")
+                    b.Property<DateTime?>("JoinedAt")
                         .ValueGeneratedOnAdd()
                         .HasPrecision(3)
                         .HasColumnType("datetime2(3)")
@@ -467,6 +467,15 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("nvarchar(50)")
                         .HasColumnName("contract_name");
 
+                    b.Property<DateTime>("CreateAt")
+                        .HasPrecision(3)
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("create_at");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("created_by");
+
                     b.Property<DateOnly?>("EffectiveDate")
                         .HasColumnType("date")
                         .HasColumnName("effective_date");
@@ -475,14 +484,29 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("date")
                         .HasColumnName("expired_date");
 
-                    b.Property<Guid>("ProjectRequestId")
+                    b.Property<string>("Reason")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("reason");
+
+                    b.Property<string>("Status")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("status");
+
+                    b.Property<DateTime>("UpdateAt")
+                        .HasPrecision(3)
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("update_at");
+
+                    b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uniqueidentifier")
-                        .HasColumnName("project_request_id");
+                        .HasColumnName("updated_by");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ProjectRequestId")
-                        .IsUnique();
+                    b.HasIndex("CreatedBy");
+
+                    b.HasIndex("UpdatedBy");
 
                     b.ToTable("Contracts");
                 });
@@ -843,6 +867,10 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("nvarchar(50)")
                         .HasColumnName("code");
 
+                    b.Property<Guid?>("ContractId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("contract_id");
+
                     b.Property<Guid?>("ConvertedProjectId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("converted_project_id");
@@ -918,6 +946,10 @@ namespace Fusion.Repository.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ContractId")
+                        .IsUnique()
+                        .HasFilter("[contract_id] IS NOT NULL");
+
                     b.HasIndex("CreatedBy");
 
                     b.HasIndex("ExecutorCompanyId");
@@ -941,6 +973,15 @@ namespace Fusion.Repository.Migrations
                         .HasColumnName("id")
                         .HasDefaultValueSql("(newid())");
 
+                    b.Property<int>("CarryOverCount")
+                        .HasColumnType("int")
+                        .HasColumnName("carry_over_count");
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("code");
+
                     b.Property<DateTime?>("CreateAt")
                         .ValueGeneratedOnAdd()
                         .HasPrecision(3)
@@ -952,6 +993,10 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("created_by");
 
+                    b.Property<Guid?>("CurrentStatusId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("current_status_id");
+
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("description");
@@ -960,6 +1005,10 @@ namespace Fusion.Repository.Migrations
                         .HasPrecision(3)
                         .HasColumnType("datetime2(3)")
                         .HasColumnName("due_date");
+
+                    b.Property<int?>("EstimateHours")
+                        .HasColumnType("int")
+                        .HasColumnName("estimate_hours");
 
                     b.Property<string>("Img")
                         .HasMaxLength(500)
@@ -978,6 +1027,10 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("int")
                         .HasColumnName("order_in_sprint");
 
+                    b.Property<Guid?>("ParentTaskId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("parent_task_id");
+
                     b.Property<int?>("Point")
                         .HasColumnType("int")
                         .HasColumnName("point");
@@ -992,10 +1045,23 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("project_id");
 
+                    b.Property<int?>("RemainingHours")
+                        .HasColumnType("int")
+                        .HasColumnName("remaining_hours");
+
+                    b.Property<string>("Severity")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("severity");
+
                     b.Property<string>("Source")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)")
                         .HasColumnName("source");
+
+                    b.Property<Guid?>("SourceTaskId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("source_task_id");
 
                     b.Property<Guid?>("SprintId")
                         .HasColumnType("uniqueidentifier")
@@ -1030,11 +1096,67 @@ namespace Fusion.Repository.Migrations
 
                     b.HasIndex("CreatedBy");
 
+                    b.HasIndex("CurrentStatusId");
+
+                    b.HasIndex("ParentTaskId");
+
                     b.HasIndex("ProjectId");
+
+                    b.HasIndex("SourceTaskId");
 
                     b.HasIndex("SprintId");
 
                     b.ToTable("ProjectTasks");
+                });
+
+            modelBuilder.Entity("Fusion.Repository.Entities.ProjectTaskAssignee", b =>
+                {
+                    b.Property<Guid>("TaskId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("task_id")
+                        .HasColumnOrder(0);
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("user_id")
+                        .HasColumnOrder(1);
+
+                    b.Property<DateTime>("AssignedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(3)
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("assigned_at")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.HasKey("TaskId", "UserId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("ProjectTaskAssignees", (string)null);
+                });
+
+            modelBuilder.Entity("Fusion.Repository.Entities.ProjectTaskDependency", b =>
+                {
+                    b.Property<Guid>("TaskId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("task_id");
+
+                    b.Property<Guid>("DependsOnTaskId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("depends_on_task_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(3)
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.HasKey("TaskId", "DependsOnTaskId");
+
+                    b.HasIndex("DependsOnTaskId");
+
+                    b.ToTable("ProjectTaskDependencies", (string)null);
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.RefreshToken", b =>
@@ -1160,10 +1282,18 @@ namespace Fusion.Repository.Migrations
                         .HasColumnName("id")
                         .HasDefaultValueSql("(newid())");
 
+                    b.Property<int?>("CapacityHours")
+                        .HasColumnType("int")
+                        .HasColumnName("capacity_hours");
+
                     b.Property<string>("Color")
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)")
                         .HasColumnName("color");
+
+                    b.Property<int?>("CommittedPoints")
+                        .HasColumnType("int")
+                        .HasColumnName("committed_points");
 
                     b.Property<DateTime?>("CreatedAt")
                         .HasPrecision(3)
@@ -1436,6 +1566,11 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("assign_user_id");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("created_at");
+
                     b.Property<Guid?>("TaskId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("task_id");
@@ -1530,11 +1665,9 @@ namespace Fusion.Repository.Migrations
                         .HasColumnName("updated_at")
                         .HasDefaultValueSql("(sysutcdatetime())");
 
-                    b.Property<string>("Urgency")
-                        .HasMaxLength(20)
-                        .IsUnicode(false)
-                        .HasColumnType("varchar(20)")
-                        .HasColumnName("urgency");
+                    b.Property<string>("reason")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("reason");
 
                     b.HasKey("Id");
 
@@ -1571,15 +1704,18 @@ namespace Fusion.Repository.Migrations
                         .HasColumnName("create_at")
                         .HasDefaultValueSql("(sysutcdatetime())");
 
+                    b.Property<bool?>("IsDeleted")
+                        .HasColumnType("bit")
+                        .HasColumnName("is_deleted");
+
                     b.Property<Guid?>("TicketId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("ticket_id");
 
-                    b.Property<string>("Visibility")
-                        .HasMaxLength(10)
-                        .IsUnicode(false)
-                        .HasColumnType("varchar(10)")
-                        .HasColumnName("visibility");
+                    b.Property<DateTime>("UpdateAt")
+                        .HasPrecision(3)
+                        .HasColumnType("datetime2(3)")
+                        .HasColumnName("update_at");
 
                     b.HasKey("Id");
 
@@ -2183,6 +2319,16 @@ namespace Fusion.Repository.Migrations
                         .HasColumnName("id")
                         .HasDefaultValueSql("(newid())");
 
+                    b.Property<string>("Category")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("category");
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)")
+                        .HasColumnName("code");
+
                     b.Property<string>("Color")
                         .HasMaxLength(9)
                         .HasColumnType("nvarchar(9)")
@@ -2421,13 +2567,17 @@ namespace Fusion.Repository.Migrations
 
             modelBuilder.Entity("Fusion.Repository.Entities.Contract", b =>
                 {
-                    b.HasOne("Fusion.Repository.Entities.ProjectRequest", "ProjectRequest")
-                        .WithOne("Contract")
-                        .HasForeignKey("Fusion.Repository.Entities.Contract", "ProjectRequestId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.HasOne("Fusion.Repository.Entities.User", "CreatedByNavigation")
+                        .WithMany()
+                        .HasForeignKey("CreatedBy");
 
-                    b.Navigation("ProjectRequest");
+                    b.HasOne("Fusion.Repository.Entities.User", "UpdatedByNavigation")
+                        .WithMany()
+                        .HasForeignKey("UpdatedBy");
+
+                    b.Navigation("CreatedByNavigation");
+
+                    b.Navigation("UpdatedByNavigation");
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.ContractAppendix", b =>
@@ -2508,6 +2658,10 @@ namespace Fusion.Repository.Migrations
 
             modelBuilder.Entity("Fusion.Repository.Entities.ProjectRequest", b =>
                 {
+                    b.HasOne("Fusion.Repository.Entities.Contract", "Contract")
+                        .WithOne("ProjectRequest")
+                        .HasForeignKey("Fusion.Repository.Entities.ProjectRequest", "ContractId");
+
                     b.HasOne("Fusion.Repository.Entities.User", "CreatedByNavigation")
                         .WithMany("ProjectRequests")
                         .HasForeignKey("CreatedBy")
@@ -2527,6 +2681,8 @@ namespace Fusion.Repository.Migrations
                         .WithMany("UpdatedProjectRequests")
                         .HasForeignKey("UpdatedBy");
 
+                    b.Navigation("Contract");
+
                     b.Navigation("CreatedByNavigation");
 
                     b.Navigation("ExecutorCompany");
@@ -2543,10 +2699,22 @@ namespace Fusion.Repository.Migrations
                         .HasForeignKey("CreatedBy")
                         .HasConstraintName("FK_ProjectTasks_CreatedBy");
 
+                    b.HasOne("Fusion.Repository.Entities.WorkflowStatus", "CurrentStatus")
+                        .WithMany()
+                        .HasForeignKey("CurrentStatusId");
+
+                    b.HasOne("Fusion.Repository.Entities.ProjectTask", "ParentTask")
+                        .WithMany()
+                        .HasForeignKey("ParentTaskId");
+
                     b.HasOne("Fusion.Repository.Entities.Project", "Project")
                         .WithMany("ProjectTasks")
                         .HasForeignKey("ProjectId")
                         .HasConstraintName("FK_ProjectTasks_Project");
+
+                    b.HasOne("Fusion.Repository.Entities.ProjectTask", "SourceTask")
+                        .WithMany()
+                        .HasForeignKey("SourceTaskId");
 
                     b.HasOne("Fusion.Repository.Entities.Sprint", "Sprint")
                         .WithMany("ProjectTasks")
@@ -2555,9 +2723,53 @@ namespace Fusion.Repository.Migrations
 
                     b.Navigation("CreatedByNavigation");
 
+                    b.Navigation("CurrentStatus");
+
+                    b.Navigation("ParentTask");
+
                     b.Navigation("Project");
 
+                    b.Navigation("SourceTask");
+
                     b.Navigation("Sprint");
+                });
+
+            modelBuilder.Entity("Fusion.Repository.Entities.ProjectTaskAssignee", b =>
+                {
+                    b.HasOne("Fusion.Repository.Entities.ProjectTask", "Task")
+                        .WithMany("Assignees")
+                        .HasForeignKey("TaskId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Fusion.Repository.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Task");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Fusion.Repository.Entities.ProjectTaskDependency", b =>
+                {
+                    b.HasOne("Fusion.Repository.Entities.ProjectTask", "DependsOnTask")
+                        .WithMany()
+                        .HasForeignKey("DependsOnTaskId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Fusion.Repository.Entities.ProjectTask", "Task")
+                        .WithMany("Dependencies")
+                        .HasForeignKey("TaskId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DependsOnTask");
+
+                    b.Navigation("Task");
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.RefreshToken", b =>
@@ -2925,6 +3137,8 @@ namespace Fusion.Repository.Migrations
             modelBuilder.Entity("Fusion.Repository.Entities.Contract", b =>
                 {
                     b.Navigation("ContractAppendices");
+
+                    b.Navigation("ProjectRequest");
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.Feature", b =>
@@ -2957,7 +3171,11 @@ namespace Fusion.Repository.Migrations
 
             modelBuilder.Entity("Fusion.Repository.Entities.ProjectTask", b =>
                 {
+                    b.Navigation("Assignees");
+
                     b.Navigation("Comments");
+
+                    b.Navigation("Dependencies");
 
                     b.Navigation("TaskLogEvents");
 

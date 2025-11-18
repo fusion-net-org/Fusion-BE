@@ -24,7 +24,7 @@ using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace Fusion.Service.Services
 {
-	public class TicketService : ITicketService
+    public class TicketService : ITicketService
 	{
 		private readonly IMapper _mapper;
 		private readonly ITicketRepository _ticketRepository;
@@ -33,9 +33,9 @@ namespace Fusion.Service.Services
 		private readonly IUnitOfWork _unitOfWork;
 		private readonly ICompanyActivityService _logService;
 		private readonly ICurrentService _currentService;
-
+		private readonly IProjectService _projectService;
 		public TicketService(IMapper mapper, ITicketRepository ticketRepository, IUserRepository userRepository, IValidator<TicketRequest> validator,
-			IUnitOfWork unitOfWork, ICompanyActivityService logService, ICurrentService currentService)
+			IUnitOfWork unitOfWork, ICompanyActivityService logService, ICurrentService currentService,IProjectService projectService)
 		{
 			_mapper = mapper;
 			_ticketRepository = ticketRepository;
@@ -44,6 +44,7 @@ namespace Fusion.Service.Services
 			_unitOfWork = unitOfWork;
 			_logService = logService;
 			_currentService	= currentService;
+			_projectService = projectService;
 		}
 
 		public async Task<TicketResponse?> CreateTicketAsync(TicketRequest request, CancellationToken cancellationToken = default)
@@ -58,46 +59,46 @@ namespace Fusion.Service.Services
 			   cancellationToken
 			   );
 
-			var ticket = _mapper.Map<Ticket>(request);
+       
 
-			var newTicket = await _ticketRepository.AddTicketAsync(ticket, cancellationToken);
+            var ticket = _mapper.Map<Ticket>(request);
 
-			var companyId = await GetCompanyIdAsync(newTicket.Id);
+            ticket.SubmittedBy = request.SubmittedBy;
 
-            var currentUserName = await GetUserName(_currentService.GetUserId());
-            var log = new CompanyActivityLog
-			{
-                CompanyId = companyId,
-                ActorUserId = _currentService.GetUserId(),
-                Title = "Create ticket",
-                Description = $"User:{currentUserName} has created ticket '{newTicket.TicketName}' for project '{newTicket.Project.Name}'",
-            };
-			await _logService.CreateLog(log);
+
+            var newTicket = await _ticketRepository.AddTicketAsync(ticket, cancellationToken);
+
+			//var companyId = await GetCompanyIdAsync(newTicket.Id);
+
+   //         var currentUserName = await GetUserName(_currentService.GetUserId());
+   //         var log = new CompanyActivityLog
+			//{
+   //             CompanyId = companyId,
+   //             ActorUserId = _currentService.GetUserId(),
+   //             Title = "Create ticket",
+   //             Description = $"User:{currentUserName} has created ticket '{newTicket.TicketName}' for project '{newTicket.Project.Name}'",
+   //         };
+			//await _logService.CreateLog(log);
 			return _mapper.Map<TicketResponse>(newTicket);
 		}
 
-		public async Task<bool?> DeleteTicketAsync(Guid ticketId, CancellationToken cancellationToken = default)
-		{
+        public async Task<bool?> DeleteTicketAsync(Guid ticketId,string reason, CancellationToken cancellationToken = default)
+        {
+            var ticket = await _ticketRepository.GetTicketByIdAsync(ticketId);
+            if (ticket == null)
+                throw new KeyNotFoundException("Ticket not found");
 
-			var ticket = await _ticketRepository.GetTicketByIdAsync(ticketId);
+            var currentUserId = _currentService.GetUserId();
 
-			await _ticketRepository.DeleteTicketAsync(ticket, cancellationToken);
+            if (ticket.SubmittedBy != currentUserId)
+                throw new UnauthorizedAccessException("You are not allowed to delete this ticket");
 
-			var companyId = await GetCompanyIdAsync(ticketId);
-
-            var currentUserName = await GetUserName(_currentService.GetUserId());
-            var log = new CompanyActivityLog
-            {
-                CompanyId = companyId,
-                ActorUserId = _currentService.GetUserId(),
-                Title = "Delete ticket",
-                Description = $"User:{currentUserName} has deleted ticket '{ticket.TicketName}' from project '{ticket.Project.Name}'",
-            };
-			await _logService.CreateLog(log);
+            await _ticketRepository.DeleteTicketAsync(ticket,reason, cancellationToken);
             return true;
-		}
+        }
 
-		public async Task<PagedResult<TicketResponse>> GetPageTicketshAsync(TicketPagedSearchRequest request, CancellationToken cancellationToken = default)
+
+        public async Task<PagedResult<TicketResponse>> GetPageTicketshAsync(TicketPagedSearchRequest request, CancellationToken cancellationToken = default)
 		{
 			if (request == null)
 				throw CustomExceptionFactory.CreateBadRequestError(
@@ -128,7 +129,86 @@ namespace Fusion.Service.Services
 			return _mapper.Map<TicketResponse>(ticket);
 		}
 
-		public async Task<TicketResponse?> UpdateTicketAsync(TicketRequest request, Guid ticketId, CancellationToken cancellationToken = default)
+        public async Task<TicketDashboardResponse> GetTicketDashboardAsync(Guid projectId, CancellationToken cancellationToken = default)
+        {
+            var tickets = await _ticketRepository.GetTicketsForDashboardAsync(projectId, cancellationToken);
+            var dashboard = new TicketDashboardResponse();
+
+            // Ticket Status
+            var statusInProgress = tickets.Count(t => t.Status != null && t.Status.IsStart);
+            var statusResolved = tickets.Count(t => t.Status != null && t.Status.IsEnd);
+            dashboard.TicketStatusData.Add(new TicketStatusChartItem { Name = "In Progress", Value = statusInProgress });
+            dashboard.TicketStatusData.Add(new TicketStatusChartItem { Name = "Resolved", Value = statusResolved });
+
+            // Budget theo Priority
+            dashboard.BudgetByPriority = tickets
+                .GroupBy(t => t.Priority ?? "Unknown")
+                .Select(g => new BudgetByPriorityItem { Status = g.Key, Budget = g.Sum(t => t.Budget ?? 0) })
+                .ToList();
+
+            // Số lượng Priority
+            dashboard.TicketPriorityData = tickets
+                .GroupBy(t => t.Priority ?? "Unknown")
+                .Select(g => new TicketPriorityChartItem { Priority = g.Key, Value = g.Count() })
+                .ToList();
+
+            // Số lượng Resolved và Closed
+            var resolved = tickets.Count(t => t.ResolvedAt.HasValue);
+            var closed = tickets.Count(t => t.ClosedAt.HasValue);
+            dashboard.ResolvedAndClosedData.Add(new ResolvedClosedChartItem { Name = "Resolved", Value = resolved });
+            dashboard.ResolvedAndClosedData.Add(new ResolvedClosedChartItem { Name = "Closed", Value = closed });
+
+            // Resolved & Closed timeline theo tuần
+            dashboard.ResolvedClosedTimeline = tickets
+                .Where(t => t.ResolvedAt.HasValue || t.ClosedAt.HasValue)
+                .GroupBy(t => t.CreatedAt.Date)
+                .OrderBy(g => g.Key)
+                .Select(g => new ResolvedClosedTimelineItem
+                {
+                    Date = g.Key.ToString("yyyy-MM-dd"),
+                    Resolved = g.Count(t => t.ResolvedAt.HasValue),
+                    Closed = g.Count(t => t.ClosedAt.HasValue)
+                })
+                .ToList();
+
+            return dashboard;
+        }
+
+
+        public async Task<PagedResult<TicketResponse>> GetTicketsByProjectIdAsync(TicketByProjectPagedRequest request, CancellationToken cancellationToken = default)
+        {
+            var tickets = await _ticketRepository.GetTicketsByProjectIdAsync(request, cancellationToken);
+
+            var mapped = _mapper.Map<List<TicketResponse>>(tickets.Items);
+
+            return new PagedResult<TicketResponse>
+            {
+                Items = mapped,
+                TotalCount = tickets.TotalCount,
+                PageNumber = tickets.PageNumber,
+                PageSize = tickets.PageSize
+            };
+        }
+        public async Task<bool?> RestoreTicketAsync(Guid ticketId, CancellationToken cancellationToken = default)
+        {
+            var ticket = await _ticketRepository.GetTicketByIdAsync(ticketId);
+            if (ticket == null)
+                throw new KeyNotFoundException("Ticket not found");
+
+            var currentUserId = _currentService.GetUserId();
+
+            if (ticket.SubmittedBy != currentUserId)
+                throw new UnauthorizedAccessException("You are not allowed to restore this ticket");
+
+            if ((bool)!ticket.IsDeleted)
+                throw new InvalidOperationException("Ticket is not deleted");
+
+            await _ticketRepository.RestoreTicketAsync(ticket, cancellationToken);
+            return true;
+        }
+
+
+        public async Task<TicketResponse?> UpdateTicketAsync(TicketRequest request, Guid ticketId, CancellationToken cancellationToken = default)
 		{
 			if (request == null)
 				throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.INVALID_INPUT);
@@ -140,16 +220,7 @@ namespace Fusion.Service.Services
 
 			var result = await _ticketRepository.UpdateTicketAsync(ticketId, _mapper.Map<Ticket>(request), cancellationToken);
 
-			var companyId = await GetCompanyIdAsync(ticketId);
-            var currentUserName = await GetUserName(_currentService.GetUserId());
-            var log = new CompanyActivityLog
-			{
-				CompanyId = companyId,
-				ActorUserId = _currentService.GetUserId(),
-				Title = "Update ticket",
-				Description = $"User:{currentUserName} has updated ticket '{result.TicketName}' from project '{result.Project.Name}'",
-			};
-			await _logService.CreateLog(log);
+		
 			return _mapper.Map<TicketResponse>(result);
 		}
 

@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Fusion.Repository.Bases.Exceptions;
-using Fusion.Repository.Bases.Page;
-using Fusion.Repository.Bases.Responses;
+﻿using Fusion.Repository.Bases.Page;
+using Fusion.Repository.Bases.Page.Task;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.IRepositories;
@@ -12,123 +7,105 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Fusion.Repository.Repositories
 {
-    public class TaskRepository : GenericRepository<ProjectTask>, ITaskRepository
+
+    public class TaskRepository : ITaskRepository
     {
-        private readonly FusionDbContext _context;
-        public TaskRepository(FusionDbContext context) : base(context)
+        private readonly FusionDbContext _db;
+        public TaskRepository(FusionDbContext db) => _db = db;
+
+        public async Task<ProjectTask> AddAsync(ProjectTask entity, CancellationToken ct = default)
         {
-            _context = context;
+            _db.ProjectTasks.Add(entity);
+            await _db.SaveChangesAsync(ct);
+            return entity;
         }
 
-        public async Task<ProjectTask> CreateTaskAsync(ProjectTask task, Guid UserId)
+        public async Task<ProjectTask?> FindByIdAsync(Guid id, CancellationToken ct = default)
         {
-            var project = await _context.Projects.FindAsync(task.ProjectId);
-
-            if (project == null)
-                throw CustomExceptionFactory.
-                    CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Project"));
-     
-            var sprint = await _context.Sprints.FindAsync(task.SprintId);
-            if (sprint == null)
-                throw CustomExceptionFactory.
-                    CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Sprint"));
-
-            task.Id = Guid.NewGuid();
-            task.CreateAt = DateTime.UtcNow.AddHours(7);
-            task.DueDate = DateTime.UtcNow.AddHours(7);
-            task.Status = "To Do";
-            task.CreatedBy = UserId;
-
-            await _context.ProjectTasks.AddAsync(task);
-            await _context.SaveChangesAsync();
-            return task;
-        }
-
-        public async Task<ProjectTask?> GetTaskByIdAsync(Guid id)
-        {
-            var taskById = await _context.ProjectTasks
+            return await _db.ProjectTasks
+                .Include(t => t.Assignees)
                 .Include(t => t.Project)
                 .Include(t => t.Sprint)
-                .FirstOrDefaultAsync(t => t.Id == id);
-
-            if (taskById == null)
-            {
-                throw CustomExceptionFactory.
-                                    CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Task"));
-            }
-
-            return taskById;
+                .FirstOrDefaultAsync(t => t.Id == id, ct);
         }
 
-        public async Task<PagedResult<ProjectTask>> GetAllTasksAsync(
-             PagedRequest request,
-             CancellationToken cancellationToken = default)
+        public async Task<PagedResult<ProjectTask>> GetAllAsync(PagedRequest request, CancellationToken ct = default)
         {
-            var query = _context.ProjectTasks
-                .Include(t => t.Project)
-                .Include(t => t.Sprint)
-                .AsQueryable();
+            var q = _db.ProjectTasks
+                .AsNoTracking()
+                .Where(t => !t.IsDeleted);
 
-
-            return await query.ToPagedResultAsync(request, cancellationToken);
+            // (tuỳ ý: filter theo Project/Sprint/Status…)
+            return await q.ToPagedResultAsync(request, ct);
         }
 
-
-        public async Task<ProjectTask?> UpdateTaskAsync(ProjectTask task, Guid userId)
+        public async Task<ProjectTask> UpdateAsync(ProjectTask entity, CancellationToken ct = default)
         {
-            var existingTask = await _context.ProjectTasks.FindAsync(task.Id);
-            if (existingTask == null)
-                throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Task"));
-
-            if (existingTask.CreatedBy != userId)
-                throw CustomExceptionFactory.CreateForbiddenError();
-
-            var project = await _context.Projects.FirstOrDefaultAsync(x => x.Id == task.ProjectId);
-            if (project == null)
-                throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Project"));
-
-            var sprint = await _context.Sprints.FirstOrDefaultAsync(x => x.Id == task.SprintId);
-            if (sprint == null)
-                throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Sprint"));
-
-            existingTask.UpdateAt = DateTime.UtcNow.AddHours(7);
-
-            _context.ProjectTasks.Update(existingTask);
-            await _context.SaveChangesAsync();
-            return existingTask;
+            _db.ProjectTasks.Update(entity);
+            await _db.SaveChangesAsync(ct);
+            return entity;
         }
 
-
-
-        public async Task<bool> DeleteTaskAsync(Guid id)
+        public async Task<bool> SoftDeleteAsync(Guid id, CancellationToken ct = default)
         {
-            var task = await _context.ProjectTasks.FindAsync(id);
-            if (task == null)
-                throw CustomExceptionFactory.
-                    CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Task"));
-
-            task.Status = "Inactive";
-
-            _context.ProjectTasks.Update(task);
-            await _context.SaveChangesAsync();
+            var e = await _db.ProjectTasks.FirstOrDefaultAsync(x => x.Id == id, ct);
+            if (e == null) return false;
+            e.IsDeleted = true;
+            e.UpdateAt = DateTime.UtcNow;
+            _db.ProjectTasks.Update(e);
+            await _db.SaveChangesAsync(ct);
             return true;
         }
-
-        public async Task<ProjectTask> ChangeStatus(Guid id, string status, Guid userId)
+        public async Task<PagedResult<ProjectTask>> GetTasksBySprintIdAsync(
+               Guid sprintId,
+               TaskBySprintRequest request,
+               CancellationToken ct = default)
         {
-            var existingTask = await _context.ProjectTasks.FindAsync(id);
-            if (existingTask == null)
-                throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Task"));
+            var query = _db.ProjectTasks
+                .Include(t => t.Assignees)
+                .Include(t => t.Project)
+                .Include(t => t.Sprint)
+                .Where(t => t.SprintId == sprintId && !t.IsDeleted)
+                .AsQueryable();
 
-            if (existingTask.CreatedBy != userId)
-                throw CustomExceptionFactory.CreateForbiddenError();
+            // filter Title
+            if (!string.IsNullOrWhiteSpace(request.Title))
+            {
+                var keyword = request.Title.Trim();
+                query = query.Where(t =>
+                    t.Title.Contains(keyword) ||
+                    t.Type.Contains(keyword));
+            }
 
-            existingTask.Status = status;
-            existingTask.UpdateAt = DateTime.UtcNow.AddHours(7);
 
-            _context.ProjectTasks.Update(existingTask);
-            await _context.SaveChangesAsync();
-            return existingTask;
+            // filter Status
+            if (!string.IsNullOrWhiteSpace(request.Status))
+                query = query.Where(t => t.Status == request.Status);
+
+            // filter Priority
+            if (!string.IsNullOrWhiteSpace(request.Priority))
+                query = query.Where(t => t.Priority == request.Priority);
+
+            // filter CreatedAt
+            if (request.CreatedFrom.HasValue && request.CreatedTo.HasValue)
+            {
+                var from = request.CreatedFrom.Value.Date;
+                var to = request.CreatedTo.Value.Date.AddDays(1).AddTicks(-1);
+
+                query = query.Where(x => x.CreateAt >= from && x.CreateAt <= to);
+            }
+            else if (request.CreatedFrom.HasValue)
+            {
+                var from = request.CreatedFrom.Value.Date;
+                query = query.Where(x => x.CreateAt >= from);
+            }
+            else if (request.CreatedTo.HasValue)
+            {
+                var to = request.CreatedTo.Value.Date.AddDays(1).AddTicks(-1);
+                query = query.Where(x => x.CreateAt <= to);
+            }
+
+            return await query.ToPagedResultAsync(request, ct);
         }
     }
 }

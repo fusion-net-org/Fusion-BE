@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Fusion.Repository.Bases.Page.Contract;
 
 namespace Fusion.Service.ViewModels.Contract.Requests
 {
@@ -13,6 +14,6 @@ namespace Fusion.Service.ViewModels.Contract.Requests
         public decimal Budget { get; set; }
         public DateOnly EffectiveDate { get; set; }
         public DateOnly ExpiredDate { get; set; }
-        public List<string> Appendices { get; set; } = new();
+        public List<UpdateAppendixRequest> Appendices { get; set; } = new();
     }
 }

@@ -1,13 +1,14 @@
-﻿using Fusion.Repository.Bases.Page;
-using Fusion.Repository.Bases.Page.ProjectRequest;
-using Fusion.Repository.Entities;
-using Fusion.Service.ViewModels.Projects.Requests;
-using Fusion.Service.ViewModels.Projects.Responses;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Fusion.Repository.Bases.Page;
+using Fusion.Repository.Bases.Page.ProjectRequest;
+using Fusion.Repository.Entities;
+using Fusion.Repository.Enums;
+using Fusion.Service.ViewModels.Projects.Requests;
+using Fusion.Service.ViewModels.Projects.Responses;
 
 namespace Fusion.Service.IServices
 {
@@ -29,5 +30,7 @@ namespace Fusion.Service.IServices
         Task<ProjectRequestResponse> AcceptProjectRequestAsync(Guid requestId, string executorEmail, CancellationToken cancellationToken = default);
 
         Task<ProjectRequestRejectResponse> RejectProjectRequestAsync(Guid requestId, string executorEmail, string reason, CancellationToken cancellationToken = default);
+        Task<ProjectRequestResponse?> GetProjectRequestByContractIdAsync(Guid contractId, CancellationToken cancellationToken = default);
+
     }
 }

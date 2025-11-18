@@ -480,5 +480,10 @@ namespace Fusion.Repository.Repositories
 
             return await query.ToPagedResultAsync(req, ct);
         }
+
+        public async Task<int> GetTotalCompaniesAsync(CancellationToken ct = default)
+        {
+            return await _context.Companies.CountAsync(c => c.IsDeleted == false || c.IsDeleted == null, ct);
+        }
     }
 }

@@ -6,6 +6,7 @@ using Fusion.Repository.Bases.Page.Project;
 using Fusion.Repository.Bases.Responses;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
+using Fusion.Repository.Enums;
 using Fusion.Repository.IRepositories;
 using Fusion.Repository.Repositories;
 using Fusion.Repository.ViewModels;
@@ -246,7 +247,8 @@ namespace Fusion.Service.Services
     : (DateTime?)null,
 
                 Status = p.Status ?? "Planned",
-                Ptype = p.IsHired ? "Outsourced" : "Internal"
+                Ptype = p.CompanyRequestId == companyId ? "Outsourced" : "Internal",
+                IsRequest = (p.CompanyRequestId == companyId)
             }).ToList();
 
             return new ProjectListResult
@@ -413,7 +415,7 @@ namespace Fusion.Service.Services
             return response;
         }
 
-
+       
         public async Task<ProjectSummaryResponseV2?> GetProjectsByIdForAdminAsync(Guid projectId, CancellationToken cancellationToken = default)
         {
             var result = await _projectRepo.GetProjectsByIdForAdminAsync(projectId, cancellationToken);
@@ -480,6 +482,7 @@ namespace Fusion.Service.Services
 
             return _mapper.Map<ProjectResponseVersion3>(project);
         }
+
 
     }
 }

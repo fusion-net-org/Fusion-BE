@@ -3,6 +3,7 @@ using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.TransactionPayment;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
+using Fusion.Repository.ViewModels;
 
 namespace Fusion.Repository.IRepositories;
 

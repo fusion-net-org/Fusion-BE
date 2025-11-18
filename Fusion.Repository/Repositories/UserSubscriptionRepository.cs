@@ -7,6 +7,7 @@ using Fusion.Repository.Entities;
 using Fusion.Repository.Enums;
 using Fusion.Repository.IRepositories;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Dynamic.Core.Tokenizer;
 
 namespace Fusion.Repository.Repositories
 {

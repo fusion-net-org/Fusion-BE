@@ -6,6 +6,7 @@ using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.Enums;
 using Fusion.Repository.IRepositories;
+using Fusion.Repository.ViewModels;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
 using System.Runtime.Serialization;

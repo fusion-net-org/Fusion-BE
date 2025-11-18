@@ -20,6 +20,7 @@ using Fusion.Service.ViewModels.SubscriptionPlan.Requests;
 using Fusion.Service.ViewModels.SubscriptionPlan.Responses;
 using Fusion.Service.ViewModels.Task.Request;
 using Fusion.Service.ViewModels.Task.Response;
+using Fusion.Service.ViewModels.TicketComment;
 using Fusion.Service.ViewModels.Tickets.Requests;
 using Fusion.Service.ViewModels.Tickets.Responses;
 using Fusion.Service.ViewModels.TransactionPayment.Requests;
@@ -27,6 +28,7 @@ using Fusion.Service.ViewModels.TransactionPayment.Responses;
 using Fusion.Service.ViewModels.Users.Requests;
 using Fusion.Service.ViewModels.Users.Responses;
 using Fusion.Service.ViewModels.UserSubscription.Responses;
+using Fusion.Service.ViewModels.WorkflowStatus;
 
 namespace Fusion.Service.Commons.Helpers;
 
@@ -123,8 +125,27 @@ public class MappingProfile : Profile
              .ForMember(dest => dest.NumberCompanyJoin,
                  opt => opt.MapFrom(src => src.User.CompanyMembers.Count(cm => cm.IsDeleted == false)));
 
+        CreateMap<CompanyMember, CompanyMemberResponseV2>()
+            .ForMember(d => d.CompanyName, o => o.MapFrom(s => s.Company.Name))
+            .ForMember(d => d.CompanyEmail, o => o.MapFrom(s => s.Company.Email))
+            .ForMember(d => d.CompanyOwner, o => o.MapFrom(s => s.Company.OwnerUser.UserName))
+            .ForMember(d => d.CompanyAvatar, o => o.MapFrom(s => s.Company.AvatarCompany))
+            .ForMember(d => d.CompanyPhone, o => o.MapFrom(s => s.Company.PhoneNumber))
+            .ForMember(d => d.CompanyAddress, o => o.MapFrom(s => s.Company.Address))
+            .ForMember(d => d.CompanyCreateAt, o => o.MapFrom(s => s.Company.CreateAt))
+            .ForMember(d => d.MemberJoinAt, o => o.MapFrom(s => s.JoinedAt))
+
+            .ForMember(d => d.UserName, o => o.MapFrom(s => s.User.UserName))
+            .ForMember(d => d.UserEmail, o => o.MapFrom(s => s.User.Email))
+            .ForMember(d => d.UserPhone, o => o.MapFrom(s => s.User.Phone))
+            .ForMember(d => d.UserAvatar, o => o.MapFrom(s => s.User.Avatar));
+
+
         //----------------------------     entity: Ticket ---------------------------------------------
-        CreateMap<Ticket, TicketResponse>().ReverseMap();
+        CreateMap<Ticket, TicketResponse>()
+                  .ForMember(dest => dest.SubmittedByName,
+                             opt => opt.MapFrom(src => src.SubmittedByNavigation != null ? src.SubmittedByNavigation.UserName : null))
+                  .ReverseMap(); 
         CreateMap<TicketRequest, Ticket>().ReverseMap();
 
 
@@ -448,7 +469,50 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.IsViewAll, opt => opt.MapFrom(src => src.IsViewAll))
             .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.UserId))
             .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id));
+        // ===================== Workflow status =====================
+        CreateMap<WorkflowStatus, WorkflowStatusResponse>().ReverseMap();
 
-    }
+        // ===================== Project task =====================
+        CreateMap<ProjectTaskRequest, ProjectTask>()
+            .ForMember(d => d.Id, opt => opt.Ignore()) // create: service tự gán
+            .ForMember(d => d.CreateAt, opt => opt.Ignore())
+            .ForMember(d => d.UpdateAt, opt => opt.Ignore())
+            .ForMember(d => d.Code, opt => opt.Ignore())
+            .ForMember(d => d.Status, opt => opt.Ignore())
+            .ForMember(d => d.CurrentStatusId, opt => opt.Ignore())
+            .ForMember(d => d.OrderInSprint, opt => opt.Ignore())
+            .ForMember(d => d.IsBacklog, opt => opt.Ignore())
+            .ForMember(d => d.RemainingHours, opt => opt.Ignore())
+            .ForMember(d => d.IsDeleted, opt => opt.Ignore())
+            .ForMember(d => d.Assignees, opt => opt.Ignore());
 
+        CreateMap<ProjectTask, ProjectTaskResponse>()
+            .ForMember(d => d.AssigneeIds, opt => opt.MapFrom(s => s.Assignees.Select(a => a.UserId)));
+
+
+
+        // ===================== TicketComment =====================
+        CreateMap<TicketComment, TicketCommentResponse>()
+         .ForMember(dest => dest.AuthorUserName,
+             opt => opt.MapFrom(src => src.AuthorUser != null ? src.AuthorUser.UserName : null))
+         .ForMember(dest => dest.AuthorUserAvatar,
+             opt => opt.MapFrom(src => src.AuthorUser != null ? src.AuthorUser.Avatar : null))
+         .ForMember(dest => dest.IsOwner, opt => opt.MapFrom((src, dest, _, context) =>
+         {
+             var currentUserId = (Guid)context.Items["CurrentUserId"];
+             return src.AuthorUserId == currentUserId || (src.Ticket != null && src.Ticket.SubmittedBy == currentUserId);
+         }))
+         .ReverseMap();
+
+
+        CreateMap<TicketCommentRequest, TicketComment>()
+            .ForMember(dest => dest.CreateAt, opt => opt.Ignore())
+            .ForMember(dest => dest.UpdateAt, opt => opt.Ignore())
+            .ForMember(dest => dest.IsDeleted, opt => opt.Ignore())
+            .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
+
+        CreateMap<TicketCommentRequestUpdate, TicketComment>()
+            .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
+
+    }    
 }
