@@ -126,7 +126,6 @@ namespace Fusion.Repository.Repositories
 
             return (row?.False ?? 0, row?.True ?? 0);
         }
-
         public async Task<bool> EmailVerificationAsync(string token, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(token))
@@ -148,6 +147,11 @@ namespace Fusion.Repository.Repositories
 
             await _context.SaveChangesAsync(cancellationToken);
             return true;
+        }
+
+        public Task<int> GetTotalUsersAsync(CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
         }
     }
 }
