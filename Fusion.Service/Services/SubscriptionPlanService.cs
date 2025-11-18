@@ -57,6 +57,47 @@ namespace Fusion.Service.Services
                     throw CustomExceptionFactory.CreateBadRequestError("Prepaid price must not have installment fields.");
             }
         }
+        private static void ValidateDiscounts(SubscriptionPlanPriceInput pr)
+        {
+            // Prepaid thì không được có discount
+            if (pr.PaymentMode == PaymentMode.Prepaid)
+            {
+                if (pr.Discounts != null && pr.Discounts.Count > 0)
+                    throw CustomExceptionFactory.CreateBadRequestError("Prepaid price must not have discounts.");
+                return;
+            }
+
+            // Installments
+            var discounts = pr.Discounts;
+            if (discounts == null || discounts.Count == 0)
+                return; // không cấu hình discount cũng ok
+
+            var seenIndexes = new HashSet<int>();
+
+            foreach (var d in discounts)
+            {
+                if (d.InstallmentIndex <= 0)
+                    throw CustomExceptionFactory.CreateBadRequestError("Discount.InstallmentIndex must be > 0.");
+
+                if (pr.InstallmentCount.HasValue && d.InstallmentIndex > pr.InstallmentCount.Value)
+                    throw CustomExceptionFactory.CreateBadRequestError(
+                        $"Discount.InstallmentIndex {d.InstallmentIndex} cannot be greater than InstallmentCount {pr.InstallmentCount}."
+                    );
+
+                if (!seenIndexes.Add(d.InstallmentIndex))
+                    throw CustomExceptionFactory.CreateBadRequestError(
+                        $"Duplicate discount for installment index {d.InstallmentIndex}."
+                    );
+
+                if (d.DiscountValue < 0 || d.DiscountValue > 100)
+                    throw CustomExceptionFactory.CreateBadRequestError(
+                        "DiscountValue must be between 0 and 100 (percent)."
+                    );
+
+                if (!string.IsNullOrWhiteSpace(d.Note) && d.Note.Length > 250)
+                    throw CustomExceptionFactory.CreateBadRequestError("Discount.Note max length is 250 characters.");
+            }
+        }
 
         private async Task<List<SubscriptionPlanFeature>> BuildFeatureTogglesAsync(
        bool isFullPackage, List<Guid>? featureIds, CancellationToken ct)
@@ -95,6 +136,8 @@ namespace Fusion.Service.Services
 
             ValidatePlan(entity);
             ValidatePrice(entity.Price);
+            ValidateDiscounts(req.Price);
+
 
             var created = await _subscriptionPlanRepository.CreatePlanAsync(entity, cancellationToken);
             var withNav = await _subscriptionPlanRepository.GetByIdWithNavAsync(created.Id, cancellationToken);

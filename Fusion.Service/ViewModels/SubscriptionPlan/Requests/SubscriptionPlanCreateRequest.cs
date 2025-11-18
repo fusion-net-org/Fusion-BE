@@ -1,6 +1,5 @@
 ﻿
 using Fusion.Repository.Enums;
-using System.ComponentModel.DataAnnotations;
 
 namespace Fusion.Service.ViewModels.SubscriptionPlan.Requests;
 

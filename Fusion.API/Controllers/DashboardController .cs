@@ -31,27 +31,27 @@ namespace Fusion.API.Controllers
                 message: "Overview dashboard loaded successfully"));
         }
 
-        [HttpGet("monthly-stats")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<IEnumerable<MonthlyStats>>))]
+        //[HttpGet("monthly-stats")]
+        //[ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<IEnumerable<MonthlyStats>>))]
 
-        public async Task<IActionResult> GetMonthlyStats(CancellationToken cancellationToken)
-        {
-            var result = await _adminService.GetMonthlyStatsAsync(cancellationToken);
-            return Ok(ResponseModel<IEnumerable<MonthlyStats>>.Ok(
-                data: result,
-                message: "Montly Stats loaded successfully"));
-        }
+        //public async Task<IActionResult> GetMonthlyStats(CancellationToken cancellationToken)
+        //{
+        //    var result = await _adminService.GetMonthlyStatsAsync(cancellationToken);
+        //    return Ok(ResponseModel<IEnumerable<MonthlyStats>>.Ok(
+        //        data: result,
+        //        message: "Montly Stats loaded successfully"));
+        //}
 
-        [HttpGet("plan-rate")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<IEnumerable<PlanRate>>))]
+        //[HttpGet("plan-rate")]
+        //[ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<IEnumerable<PlanRate>>))]
 
-        public async Task<IActionResult> GetPlanRate(CancellationToken token)
-        {
-            var result = await _adminService.GetTopPlanRateAsync(token);
-            return Ok(ResponseModel<IEnumerable<PlanRate>>.Ok(
-               data: result,
-               message: "Plan Rate loaded successfully"));
-        }
+        //public async Task<IActionResult> GetPlanRate(CancellationToken token)
+        //{
+        //    var result = await _adminService.GetTopPlanRateAsync(token);
+        //    return Ok(ResponseModel<IEnumerable<PlanRate>>.Ok(
+        //       data: result,
+        //       message: "Plan Rate loaded successfully"));
+        //}
 
     }
 }

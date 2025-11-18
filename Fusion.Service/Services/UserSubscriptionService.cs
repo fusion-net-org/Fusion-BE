@@ -99,7 +99,7 @@ public class UserSubscriptionService : IUserSubscriptionService
             PaymentModeSnapshot = tx.PaymentModeSnapshot,
             InstallmentCountSnapshot = tx.InstallmentTotal,
             InstallmentIntervalSnapshot = tx.PaymentModeSnapshot == PaymentMode.Installments
-               ? plan.Price.InstallmentInterval                      
+               ? plan.Price.InstallmentInterval
                : null,
 
             CurrencySnapshot = (tx.Currency ?? plan.Price.Currency) ?? "VND",
@@ -177,7 +177,7 @@ public class UserSubscriptionService : IUserSubscriptionService
 
     public async Task UpdateNextDueAsync(Guid subId, DateTimeOffset? nextDueAt, CancellationToken ct = default)
     {
-         await _repo.UpdateNextDueAsync(subId, nextDueAt, ct);
+        await _repo.UpdateNextDueAsync(subId, nextDueAt, ct);
     }
     // ===== Helpers =====
     private static DateTimeOffset AddInterval(DateTimeOffset start, BillingPeriod period, int count)
@@ -195,7 +195,7 @@ public class UserSubscriptionService : IUserSubscriptionService
         if (paidTx.PaymentModeSnapshot != PaymentMode.Installments) return null;
 
         // Lấy đúng interval của installment (ưu tiên snapshot trên Transaction; fallback về Plan.Price)
-        var interval =  paidTx.SubscriptionPlan?.Price?.InstallmentInterval
+        var interval = paidTx.SubscriptionPlan?.Price?.InstallmentInterval
                      ?? paidTx.BillingPeriodSnapshot; // cuối cùng mới fallback
 
         if (!(paidTx.InstallmentIndex.HasValue && paidTx.InstallmentTotal.HasValue)) return null;
@@ -253,70 +253,9 @@ public class UserSubscriptionService : IUserSubscriptionService
             default:
                 return count;
         }
-
-        public async Task<IEnumerable<RequestPlanDetailResponse>> GetRequestPlansAsync(CancellationToken token = default)
-        {
-            var listRequestPlan = await _repository.GetRequestPlansAsync(token);
-
-            if (!listRequestPlan.Any())
-                throw CustomExceptionFactory.CreateNotFoundError("List request Plan not found");
-
-            return listRequestPlan.Select(u => new RequestPlanDetailResponse
-            {
-                Id = u?.Id ?? Guid.Empty,
-                UserName = u?.TransactionPayment?.User?.UserName ?? string.Empty,
-                NamePlan = u?.NamePlan ?? string.Empty,
-                Price = u?.Price ?? 0,
-                CreateAt = u?.CreatAt ?? DateTime.MinValue,
-                ExpiredAt = u?.ExpiredAt ?? DateTime.MinValue,
-                Status = u.Status,
-                UpdateAt = u?.UpdateAt ?? DateTime.MinValue,
-                Currency = u?.Currency ?? string.Empty,
-                Entitlements = (u?.UserSubscriptionEntitlements ?? new List<UserSubscriptionEntitlement>())
-                    .Select(e => new UserSubscriptionEntitlementResponse
-                        {
-                            Id = e?.Id ?? Guid.Empty,
-                            Quantity = e?.Quantity ?? 0,
-                            FeatureKey = e?.FeatureKey.ToString() ?? string.Empty,
-                            Remaining = e?.Remaining ?? 0
-                        })
-                    .ToList()
-                ?? new List<UserSubscriptionEntitlementResponse>()
-            });
-        }
-
-        public async Task<RequestPlanDetailResponse> GetRequestPlansDetailAsync(Guid id, CancellationToken token = default)
-        {
-            var requestPlan = await _repository.GetRequestPlanDetailAsync(id, token);
-
-            if (requestPlan == null)
-                throw CustomExceptionFactory.CreateNotFoundError("Request Plan not found");
-
-            return new RequestPlanDetailResponse
-            {
-                Id = requestPlan.Id,
-                UserName = requestPlan.TransactionPayment?.User?.UserName ?? string.Empty,
-                NamePlan = requestPlan.NamePlan ?? string.Empty,
-                Price = requestPlan?.Price ?? 0,
-                CreateAt = requestPlan?.CreatAt ?? DateTime.MinValue,
-                ExpiredAt = requestPlan?.ExpiredAt ?? DateTime.MinValue,
-                Status = requestPlan.Status,
-                UpdateAt = requestPlan.UpdateAt ?? DateTime.MinValue,
-                Currency = requestPlan.Currency ?? string.Empty,
-                Entitlements = requestPlan.UserSubscriptionEntitlements?
-                    .Select(e => new UserSubscriptionEntitlementResponse
-                    {
-                        Id = e?.Id ?? Guid.Empty,
-                        Quantity = e?.Quantity ?? 0,
-                        FeatureKey = e?.FeatureKey.ToString() ?? string.Empty,
-                        Remaining = e?.Remaining ?? 0
-                    })
-                    .ToList()
-                ?? new List<UserSubscriptionEntitlementResponse>()
-            };
-        }
-
     }
+
+
     private async Task<List<Guid>> BuildEntitlementFeatureIdsAsync(SubscriptionPlan plan, CancellationToken ct)
     {
         if (plan.IsFullPackage)

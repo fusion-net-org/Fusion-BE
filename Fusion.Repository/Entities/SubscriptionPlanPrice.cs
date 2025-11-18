@@ -49,4 +49,7 @@ public class SubscriptionPlanPrice
 
     [ForeignKey(nameof(PlanId))]
     public virtual SubscriptionPlan SubscriptionPlan { get; set; } = null!;
+    [InverseProperty(nameof(SubscriptionPlanPriceDiscount.Price))]
+    public virtual ICollection<SubscriptionPlanPriceDiscount> Discounts { get; set; } = new List<SubscriptionPlanPriceDiscount>();
+
 }
