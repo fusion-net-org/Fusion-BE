@@ -1,6 +1,8 @@
 ﻿
 
 using Fusion.Repository.Bases.Exceptions;
+using Fusion.Repository.Bases.Page;
+using Fusion.Repository.Bases.Page.CompanySubscriptions;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.Enums;
@@ -55,29 +57,26 @@ namespace Fusion.Repository.Repositories
             try
             {
                 // 4. Trừ hạn mức share nếu có
-                if (userSub.CompanyShareLimitSnapshot.HasValue)
-                {
-                    userSub.CompanyShareLimitSnapshot -= 1;
-                    _context.UserSubscriptions.Update(userSub);
-                }
+                await _userSubscriptionRepository.DecreaseCompanyShareLimitAsync(userSub.Id, 1, cancellationToken);
 
-                // 5. Hoàn thiện entity CompanySubscription
+                // 5. Gán thông tin CompanySubscription từ UserSubscription
                 companySubscription.Status = SubscriptionStatus.Active;
                 companySubscription.SharedOn = DateTimeOffset.UtcNow;
                 companySubscription.UpdatedAt = DateTimeOffset.UtcNow;
+                companySubscription.ExpiredAt = userSub.TermEnd;
 
-                // nếu OwnerUserId chưa set (Guid.Empty) thì lấy từ userSub
+                // Nếu OwnerUserId chưa set (Guid.Empty) thì dùng chủ sở hữu userSub
                 if (companySubscription.OwnerUserId == Guid.Empty)
                 {
                     companySubscription.OwnerUserId = userSub.UserId;
                 }
 
                 companySubscription.SeatsLimitSnapshot = userSub.SeatsPerCompanyLimitSnapshot;
-                // SeatsLimitUnit hiện chưa dùng, để null hoặc bỏ property khỏi entity
+                // SeatsLimitUnit hiện chưa dùng, để null
 
                 await _context.CompanySubscriptions.AddAsync(companySubscription, cancellationToken);
 
-                // 6. Copy entitlements từ UserSubscription -> CompanySubscription
+                //  Copy entitlements từ UserSubscription -> CompanySubscription
                 var userEntitlements = userSub.Entitlements
                     .Where(e => e.Enabled)
                     .ToList();
@@ -95,7 +94,7 @@ namespace Fusion.Repository.Repositories
                         .AddRangeAsync(companyEntitlements, cancellationToken);
                 }
 
-                // 7. Save + Commit
+                // 6. Save & Commit
                 await _context.SaveChangesAsync(cancellationToken);
                 await transaction.CommitAsync(cancellationToken);
 
@@ -107,15 +106,94 @@ namespace Fusion.Repository.Repositories
                 throw;
             }
         }
+        public async Task<List<CompanySubscription>> GetAllActiveByCompanyIdAsync(Guid companyId, CancellationToken ct = default)
+        {
+            return await _context.CompanySubscriptions
+                     .AsNoTracking()
+        .Include(cs => cs.UserSubscription)
+            .ThenInclude(us => us.Plan)
+        .Include(cs => cs.Entitlements
+            .Where(e => e.Feature.Category != "User"))
+            .ThenInclude(e => e.Feature)
+        .Where(cs => cs.CompanyId == companyId &&
+                     cs.Status == SubscriptionStatus.Active)
+        .ToListAsync(ct);
+        }
+        public async Task<PagedResult<CompanySubscription>> GetAllByCompanyIdAsync(Guid companyId, CompanySubscriptionPagedRequest request, CancellationToken ct = default)
+        {
+            var q = _context.CompanySubscriptions
+                            .AsNoTracking()
+                            .Include(cs => cs.Company)
+                            .Include(cs => cs.UserSubscription)
+                              .ThenInclude(us => us.Plan)
 
+                            .Include(cs => cs.UserSubscription)
+                              .ThenInclude(us => us.User)
+                            .Where(cs => cs.CompanyId == companyId);
+
+
+            if (request.Status.HasValue)
+            {
+                q = q.Where(x => x.Status == request.Status.Value);
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.Keyword))
+            {
+                var kw = request.Keyword.Trim();
+                var like = $"%{kw}%";
+
+                q = q.Where(x =>
+                    (x.Company.Name != null && EF.Functions.Like(x.Company.Name, like)) ||
+                    (x.UserSubscription.Plan.Name != null && EF.Functions.Like(x.UserSubscription.Plan.Name, like)));
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.SortColumn) &&
+                CompanySubscriptionPagedRequest.SortMap.TryGetValue(request.SortColumn, out var mapped))
+            {
+                request.SortColumn = mapped;
+            }
+            else if (string.IsNullOrWhiteSpace(request.SortColumn))
+            {
+                request.SortColumn = nameof(CompanySubscription.SharedOn);
+                request.SortDescending = true;
+            }
+
+            return await q.ToPagedResultAsync(request, ct);
+
+        }
         public async Task<CompanySubscription?> GetByIdWithNavAsync(Guid id, CancellationToken ct = default)
-            => await _context.CompanySubscriptions
-              .Include(cs => cs.Company)
+        {
+            return await _context.CompanySubscriptions
+                .AsNoTracking()
+                .Include(cs => cs.Company)
                 .Include(cs => cs.UserSubscription)
                     .ThenInclude(us => us.Plan)
-                .Include(cs => cs.Entitlements)
+                .Include(cs => cs.UserSubscription)
+                    .ThenInclude(us => us.User)
+                .Include(cs => cs.Entitlements
+                    .Where(e => e.Feature.Category != "User"))
                     .ThenInclude(e => e.Feature)
                 .FirstOrDefaultAsync(cs => cs.Id == id, ct);
+        }
+        public async Task<int> UpdateEnabledByFeatureIdAsync(Guid featureId, bool newStatus, CancellationToken ct = default)
+        {
+            var ents = await _context.CompanySubscriptionEntitlements
+                       .Where(e => e.FeatureId == featureId)
+                       .ToListAsync(ct);
 
+            if (ents.Count == 0)
+                return 0;
+
+            foreach (var e in ents)
+            {
+                if (e.Enabled != newStatus)
+                {
+                    e.Enabled = newStatus;
+                }
+            }
+
+
+            return ents.Count;
+        }
     }
 }

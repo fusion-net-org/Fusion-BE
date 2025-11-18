@@ -1,5 +1,10 @@
 ﻿
 using AutoMapper;
+using Fusion.Repository.Bases.Exceptions;
+using Fusion.Repository.Bases.Page;
+using Fusion.Repository.Bases.Page.CompanySubscriptions;
+using Fusion.Repository.Data;
+using Fusion.Repository.Entities;
 using Fusion.Repository.IRepositories;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.CompanySubscription.Requests;
@@ -11,22 +16,89 @@ namespace Fusion.Service.Services
     {
         private readonly ICompanySubscriptionRepository _companySubscriptionRepository;
         private readonly IMapper _mapper;
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly IUserLogService _userLogService;
 
-        public CompanySubscriptionService(ICompanySubscriptionRepository companySubscriptionRepository, IMapper mapper)
+        public CompanySubscriptionService(ICompanySubscriptionRepository companySubscriptionRepository, IMapper mapper, IUnitOfWork unitOfWork, IUserLogService userLogService)
         {
             _companySubscriptionRepository = companySubscriptionRepository;
             _mapper = mapper;
+            _unitOfWork = unitOfWork;
+            _userLogService = userLogService;
+        }
+
+        public async Task<CompanySubscriptionDetailResponse> CreateAsync(CompanySubscriptionCreateRequest request, CancellationToken ct = default)
+        {
+            var userSubscription = await _unitOfWork.Repository<UserSubscription>().FindAsync(x => x.Id == request.UserSubscriptionId, ct);
+            if (userSubscription == null)
+                throw CustomExceptionFactory.CreateNotFoundError("User subscription.");
+
+            if(request.OwnerUserId == Guid.Empty)
+                throw CustomExceptionFactory.CreateNotFoundError("Owner.");
+
+            if (userSubscription.UserId != request.OwnerUserId)
+                throw CustomExceptionFactory.CreateForbiddenError();
+
+            var entity = _mapper.Map<CompanySubscription>(request);
+            entity.CompanyId = request.CompanyId;
+            entity.UserSubscriptionId = request.UserSubscriptionId;
+            entity.OwnerUserId = request.OwnerUserId;
+
+            var createdEntity = await _companySubscriptionRepository.CreateAsync(entity, ct);
+
+            // 4. Log hành động
+            var company = await _unitOfWork.Repository<Company>()
+                .FindAsync(x => x.Id == entity.CompanyId, ct);
+
+            var userLog = new UserLog
+            {
+                ActorUserId = request.OwnerUserId,
+                Title = "Create company subscription",
+                Description =
+                    $"User created a company subscription for company '{company?.Name}' (Id: {entity.CompanyId}) " +
+                    $"from user subscription '{userSubscription.Plan?.Name}' (Id: {userSubscription.Id})."
+            };
+            await _userLogService.CreateLog(userLog, ct);
+
+
+            // 5. Load lại đầy đủ nav để trả detail
+            var full = await _companySubscriptionRepository.GetByIdWithNavAsync(createdEntity.Id, ct)
+                       ?? createdEntity;
+
+            return _mapper.Map<CompanySubscriptionDetailResponse>(full);
+
 
         }
 
-        public Task<CompanySubscriptionDetailResponse> CreateAsync(CompanySubscriptionCreateRequest request, CancellationToken ct = default)
+        public async Task<List<CompanySubscriptionActiveResponse>> GetAllActiveByCompanyIdAsync(Guid companyId, CancellationToken ct = default)
         {
-            throw new NotImplementedException();
+            var entities = await _companySubscriptionRepository.GetAllActiveByCompanyIdAsync(companyId, ct);
+
+            return _mapper.Map<List<CompanySubscriptionActiveResponse>>(entities);
         }
 
-        public Task<CompanySubscriptionDetailResponse?> GetDetailAsync(Guid id, CancellationToken ct = default)
+        public async Task<PagedResult<CompanySubscriptionListResponse>> GetAllByCompanyAsync(Guid companyId, CompanySubscriptionPagedRequest request, CancellationToken ct = default)
         {
-            throw new NotImplementedException();
+            var entities = await _companySubscriptionRepository
+            .GetAllByCompanyIdAsync(companyId, request, ct);
+
+            return new PagedResult<CompanySubscriptionListResponse>
+            {
+                Items = _mapper.Map<List<CompanySubscriptionListResponse>>(entities.Items),
+                TotalCount = entities.TotalCount,
+                PageNumber = entities.PageNumber,
+                PageSize = entities.PageSize
+            };
+        }
+
+        public async Task<CompanySubscriptionDetailResponse?> GetDetailAsync(Guid id, CancellationToken ct = default)
+        {
+            var entity = await _companySubscriptionRepository.GetByIdWithNavAsync(id, ct);
+
+            if (entity == null)
+                throw CustomExceptionFactory.CreateNotFoundError("Company subscription.");
+
+            return _mapper.Map<CompanySubscriptionDetailResponse>(entity);
         }
     }
 }

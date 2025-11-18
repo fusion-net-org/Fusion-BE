@@ -5,6 +5,7 @@ using Fusion.Service.ViewModels.Comment.Request;
 using Fusion.Service.ViewModels.Comment.Response;
 using Fusion.Service.ViewModels.Companies.Requests;
 using Fusion.Service.ViewModels.Companies.Responses;
+using Fusion.Service.ViewModels.CompanySubscription.Requests;
 using Fusion.Service.ViewModels.CompanySubscription.Responses;
 using Fusion.Service.ViewModels.FeatureCatalog.Requests;
 using Fusion.Service.ViewModels.FeatureCatalog.Responses;
@@ -355,13 +356,28 @@ public class MappingProfile : Profile
             .ForMember(d => d.Entitlements, o => o.MapFrom(s => s.Entitlements));
 
         // ===================== Company Subscription =====================
+
+        CreateMap<CompanySubscriptionCreateRequest, CompanySubscription>()
+            .ForMember(d => d.Id, o => o.Ignore()) 
+            .ForMember(d => d.Status, o => o.Ignore()) 
+            .ForMember(d => d.SharedOn, o => o.Ignore()) 
+            .ForMember(d => d.UpdatedAt, o => o.Ignore()) 
+            .ForMember(d => d.ExpiredAt, o => o.Ignore())
+            .ForMember(d => d.SeatsLimitSnapshot, o => o.Ignore())
+            .ForMember(d => d.SeatsLimitUnit, o => o.Ignore()) 
+            .ForMember(d => d.Company, o => o.Ignore()) // nav
+            .ForMember(d => d.UserSubscription, o => o.Ignore()) 
+            .ForMember(d => d.Entitlements, o => o.Ignore());
+
         CreateMap<CompanySubscription, CompanySubscriptionListResponse>()
-             .ForMember(d => d.CompanyName, o => o.MapFrom(s => s.Company.Name))
-             .ForMember(d => d.PlanName, o => o.MapFrom(s => s.UserSubscription.Plan.Name))
-             .ForMember(d => d.Status, o => o.MapFrom(s => s.Status.ToString()))
-             .ForMember(d => d.SharedOn, o => o.MapFrom(s => s.SharedOn))
-             .ForMember(d => d.ExpiredAt, o => o.Ignore()) // hoặc map từ cs.ExpiredAt nếu bạn có
-             .ForMember(d => d.SeatsLimitSnapshot, o => o.MapFrom(s => s.SeatsLimitSnapshot));
+            .ForMember(d => d.CompanyName, o => o.MapFrom(s => s.Company.Name))
+            .ForMember(d => d.PlanName, o => o.MapFrom(s => s.UserSubscription.Plan.Name))
+            .ForMember(d => d.UserName, o => o.MapFrom(s => s.UserSubscription.User.UserName))
+            .ForMember(d => d.Status, o => o.MapFrom(s => s.Status.ToString()))
+            .ForMember(d => d.SharedOn, o => o.MapFrom(s => s.SharedOn))
+            .ForMember(d => d.ExpiredAt, o => o.MapFrom(s => s.ExpiredAt))  
+            .ForMember(d => d.SeatsLimitSnapshot, o => o.MapFrom(s => s.SeatsLimitSnapshot))
+            .ForMember(d => d.SeatsLimitUnit, o => o.MapFrom(s => s.SeatsLimitUnit));
 
         CreateMap<CompanySubscription, CompanySubscriptionDetailResponse>()
             .IncludeBase<CompanySubscription, CompanySubscriptionListResponse>()
@@ -374,7 +390,26 @@ public class MappingProfile : Profile
             .ForMember(d => d.FeatureId, o => o.MapFrom(s => s.FeatureId))
             .ForMember(d => d.FeatureCode, o => o.MapFrom(s => s.Feature.Code))
             .ForMember(d => d.FeatureName, o => o.MapFrom(s => s.Feature.Name))
+            .ForMember(d => d.Category, o => o.MapFrom(s => s.Feature.Category))
             .ForMember(d => d.Enabled, o => o.MapFrom(s => s.Enabled));
+
+
+        // Dùng cho màn dropdown chọn subscription active
+        CreateMap<CompanySubscription, CompanySubscriptionActiveResponse>()
+            .ForMember(d => d.NameSubscription,
+                o => o.MapFrom(s => s.UserSubscription.Plan.Name)) // hoặc s.UserSubscription.Plan.DisplayName nếu có
+            .ForMember(d => d.SeatsLimitSnapshot,
+                o => o.MapFrom(s => s.SeatsLimitSnapshot))
+            .ForMember(d => d.SeatsLimitUnit,
+                o => o.MapFrom(s => s.SeatsLimitUnit))
+            .ForMember(d => d.CompanySubscriptionEntitlements,
+                o => o.MapFrom(s => s.Entitlements));
+
+        CreateMap<CompanySubscriptionEntitlement, CompanySubscriptionEntitlementDropdownResponse>()
+            .ForMember(d => d.Id,
+                o => o.MapFrom(s => s.Id))
+            .ForMember(d => d.FeatureName,
+                o => o.MapFrom(s => s.Feature.Name));
 
         // ===================== Project (Detail) =====================
         CreateMap<Project, ProjectDetailResponse>()

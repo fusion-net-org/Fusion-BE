@@ -91,7 +91,7 @@ namespace Fusion.Service
             services.AddScoped<IContractService, ContractService>();
 
             //company subscription
-            //services.AddScoped<ICompanySubscriptionService, CompanySubscriptionService>();
+            services.AddScoped<ICompanySubscriptionService, CompanySubscriptionService>();
             // PayOS
             services.AddSingleton<PayOS>(sp =>
             {

@@ -91,7 +91,7 @@ namespace Fusion.Repository
 
 
             // company subscription
-            //services.AddScoped<ICompanySubscriptionRepository , CompanySubscriptionRepository>();
+            services.AddScoped<ICompanySubscriptionRepository, CompanySubscriptionRepository>();
 
             return services;
 

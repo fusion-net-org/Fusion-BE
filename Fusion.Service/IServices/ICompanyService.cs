@@ -25,6 +25,6 @@ namespace Fusion.Service.IServices
         Task<CompanyMonthlyStatsVm> GetCompaniesCreatedByMonthAsync(int year, CancellationToken ct = default);
         Task<PagedResult<CompanyOfOwnerResponse>> GetAllCompanyOfOwnerAsync(Guid userId, CancellationToken ct = default);
         Task<PagedResult<CompanyOfUserResponse>> GetAllCompanyOfMemberAsync(Guid userId, CancellationToken ct = default);
-        Task<List<CompanyListResponse>> GetAllCompanyOfCurrentIdAsync(CancellationToken ct = default);
+        Task<List<CompanyListResponse>> GetAllCompanyActiveOfCurrentIdAsync(CancellationToken ct = default);
     }
 }

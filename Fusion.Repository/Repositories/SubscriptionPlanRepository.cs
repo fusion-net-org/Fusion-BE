@@ -240,5 +240,25 @@ namespace Fusion.Repository.Repositories
             }
         }
 
+        public async Task<int> UpdateEnabledByFeatureIdAsync(Guid featureId, bool newStatus, CancellationToken ct = default)
+        {
+            var ents = await _context.SubscriptionPlanFeatures
+                       .Where(e => e.FeatureId == featureId)
+                       .ToListAsync(ct);
+
+            if (ents.Count == 0)
+                return 0;
+
+            foreach (var e in ents)
+            {
+                if (e.Enabled != newStatus)
+                {
+                    e.Enabled = newStatus;
+                }
+            }
+
+
+            return ents.Count;
+        }
     }
 }

@@ -1,4 +1,5 @@
 ﻿
+using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.UserSubscriptions;
 using Fusion.Repository.Data;
@@ -56,7 +57,6 @@ namespace Fusion.Repository.Repositories
 
             return await q.ToPagedResultAsync(request, ct);
         }
-
         public Task<UserSubscription?> GetByIdWithNavAsync(Guid id, CancellationToken ct = default)
       => _context.Set<UserSubscription>()
                  .AsNoTracking()
@@ -64,25 +64,20 @@ namespace Fusion.Repository.Repositories
                  .Include(x => x.Plan).ThenInclude(p => p.Price)
                  .Include(x => x.Entitlements).ThenInclude(e => e.Feature)
                  .FirstOrDefaultAsync(x => x.Id == id, ct);
-
         public Task<UserSubscription?> GetActiveByUserAsync(Guid userId, CancellationToken ct = default)
     => _context.Set<UserSubscription>()
                .AsNoTracking()
                .FirstOrDefaultAsync(x => x.UserId == userId && x.Status == Enums.SubscriptionStatus.Active, ct);
-
         public Task<UserSubscription?> GetByTransactionAsync(Guid txId, CancellationToken ct = default)
           => _context.Set<UserSubscription>()
                      .AsNoTracking()
                      .FirstOrDefaultAsync(x => x.CreatedByTransactionId == txId, ct);
-
-
         public async Task<UserSubscription> CreateAsync(UserSubscription entity, CancellationToken ct = default)
         {
             _context.UserSubscriptions.Add(entity);
             await _context.SaveChangesAsync(ct);
             return entity;
         }
-
         public async Task<bool> UpdateAsync(UserSubscription entity, CancellationToken ct = default)
         {
             var exist = await _context.UserSubscriptions.FirstOrDefaultAsync(x => x.Id == entity.Id, ct);
@@ -99,14 +94,12 @@ namespace Fusion.Repository.Repositories
             await _context.SaveChangesAsync(ct);
             return true;
         }
-
         public async Task BulkAddEntitlementsAsync(IEnumerable<UserSubscriptionEntitlement> ents, CancellationToken ct = default)
         {
             if (ents == null) return;
             await _context.UserSubscriptionEntitlements.AddRangeAsync(ents, ct);
             //await _context.SaveChangesAsync(ct);
         }
-
         public Task<List<UserSubscription>> GetExpiringAsync(DateTimeOffset until, int take = 100, CancellationToken ct = default)
      => _context.UserSubscriptions
                 .AsNoTracking()
@@ -116,8 +109,6 @@ namespace Fusion.Repository.Repositories
                 .OrderBy(x => x.TermEnd)
                 .Take(take)
                 .ToListAsync(ct);
-
-
         public async Task UpdateNextDueAsync(Guid subId, DateTimeOffset? nextDueAt, CancellationToken ct = default)
         {
             var sub = await _context.UserSubscriptions
@@ -127,6 +118,49 @@ namespace Fusion.Repository.Repositories
             sub.UpdatedAt = DateTimeOffset.UtcNow;
 
             await _context.SaveChangesAsync(ct);
+        }
+        public async Task DecreaseCompanyShareLimitAsync(Guid userSubscriptionId, int amount = 1,CancellationToken ct = default)
+        {
+            if (amount <= 0)
+                return;
+
+            var sub = await _context.UserSubscriptions
+                                    .FirstOrDefaultAsync(x => x.Id == userSubscriptionId, ct);
+
+            if (sub == null)
+                throw CustomExceptionFactory.CreateNotFoundError("User subscription.");
+
+            // Nếu null = unlimited -> không trừ, coi như luôn còn
+            if (!sub.CompanyShareLimitSnapshot.HasValue)
+                return;
+
+            if (sub.CompanyShareLimitSnapshot.Value < amount)
+                throw CustomExceptionFactory.CreateBadRequestError("No remaining company shares for this subscription.");
+
+            sub.CompanyShareLimitSnapshot -= amount;
+            sub.UpdatedAt = DateTimeOffset.UtcNow;
+
+            await _context.SaveChangesAsync(ct);
+        }
+        public async Task<int> UpdateEnabledByFeatureIdAsync(Guid featureId, bool newStatus, CancellationToken ct = default)
+        {
+            var ents = await _context.CompanySubscriptionEntitlements
+                       .Where(e => e.FeatureId == featureId)
+                       .ToListAsync(ct);
+
+            if (ents.Count == 0)
+                return 0;
+
+            foreach (var e in ents)
+            {
+                if (e.Enabled != newStatus)
+                {
+                    e.Enabled = newStatus;
+                }
+            }
+
+
+            return ents.Count;
         }
     }
 }

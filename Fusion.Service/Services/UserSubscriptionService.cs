@@ -267,4 +267,9 @@ public class UserSubscriptionService : IUserSubscriptionService
             .ToList() ?? new List<Guid>();
         return ids;
     }
+
+    public async Task DecreaseCompanyShareLimitAsync(Guid userSubscriptionId, int amount = 1, CancellationToken ct = default)
+    {
+        await _repo.DecreaseCompanyShareLimitAsync(userSubscriptionId, amount, ct);
+    }
 }

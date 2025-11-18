@@ -65,7 +65,7 @@ namespace Fusion.API.Controllers
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<List<CompanyListResponse>>))]
         public async Task<IActionResult> GetAllCompaniesOfCurrentUser(CancellationToken cancellationToken)
         {
-            var result = await _companyService.GetAllCompanyOfCurrentIdAsync();
+            var result = await _companyService.GetAllCompanyActiveOfCurrentIdAsync();
             return Ok(ResponseModel<List<CompanyListResponse>>.Ok(
                 data: result,
                 message: "Get list companies successfully"));

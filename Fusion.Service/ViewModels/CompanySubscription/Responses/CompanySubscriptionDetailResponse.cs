@@ -13,6 +13,7 @@ public class CompanySubscriptionEntitlementDetailResponse
     public Guid FeatureId { get; set; }
     public string? FeatureCode { get; set; }
     public string? FeatureName { get; set; }
+    public string? Category { get; set; }
     public bool Enabled { get; set; }
 }
 

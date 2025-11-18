@@ -851,10 +851,10 @@ namespace Fusion.Service.Services
                 PageSize = result.PageSize
             };
         }
-        public async Task<List<CompanyListResponse>> GetAllCompanyOfCurrentIdAsync(CancellationToken ct = default)
+        public async Task<List<CompanyListResponse>> GetAllCompanyActiveOfCurrentIdAsync(CancellationToken ct = default)
         {
             var currentId = _currentService.GetUserId();
-            var list = await _companyRepository.GetAllCompanyOfCurrentIdAsync(currentId, ct);
+            var list = await _companyRepository.GetAllCompanyActiveOfCurrentIdAsync(currentId, ct);
 
             var result = list
         .Select(c => new CompanyListResponse

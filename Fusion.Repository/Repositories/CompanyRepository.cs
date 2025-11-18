@@ -448,14 +448,21 @@ namespace Fusion.Repository.Repositories
 
             return await query.ToPagedResultAsync(req, ct);
         }
-        public async Task<List<Company>> GetAllCompanyOfCurrentIdAsync(Guid userId, CancellationToken ct = default)
+        public async Task<List<Company>> GetAllCompanyActiveOfCurrentIdAsync(Guid userId, CancellationToken ct = default)
         {
-            var companies = await _context.Companies
-                .AsNoTracking()
-                .Where(c => c.OwnerUserId == userId)
-                .ToListAsync(ct);
+            var query = _context.Companies
+                  .AsNoTracking()
+                  .Where(c => c.IsDeleted != true &&
+                   (
+                       c.OwnerUserId == userId ||
+                       c.CompanyMembers.Any(m =>
+                           m.UserId == userId &&
+                           m.IsDeleted != true)
+                   )).ToList();
 
-            return companies;
+          
+
+            return query;
         }
         public async Task<PagedResult<Company>> GetAllCompanyOfMemberAsync(Guid userId, CancellationToken ct = default)
         {

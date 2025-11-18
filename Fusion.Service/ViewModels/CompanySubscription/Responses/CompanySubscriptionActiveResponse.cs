@@ -1,23 +1,18 @@
 ﻿
-//using Fusion.Repository.Enums;
 
-//namespace Fusion.Service.ViewModels.CompanySubscription.Responses;
+namespace Fusion.Service.ViewModels.CompanySubscription.Responses;
 
-//public class CompanySubscriptionActiveResponse
-//{
-//    public Guid Id { get; set; }
-//    public string? NameSubscription { get; set; }
-//    public string? Status { get; set; }
-//    public DateTime ExpiredAt { get; set; }
-//    public List<CompanySubscriptionEntitlementDropdownResponse> CompanySubscriptionEntitlements { get; set; } = new();
-//}
+public class CompanySubscriptionActiveResponse
+{
+    public Guid Id { get; set; }
+    public string? NameSubscription { get; set; }
+    public int? SeatsLimitSnapshot { get; set; }
+    public int? SeatsLimitUnit { get; set; }
+    public List<CompanySubscriptionEntitlementDropdownResponse> CompanySubscriptionEntitlements { get; set; } = new();
+}
 
-//public class CompanySubscriptionEntitlementDropdownResponse
-//{
-//    public Guid Id { get; set; }
-//    public FeatureKeys FeatureKey { get; set; }
-
-//    public int Quantity { get; set; }
-
-//    public int Remaining { get; set; }
-//}
+public class CompanySubscriptionEntitlementDropdownResponse
+{
+    public Guid Id { get; set; }
+    public string FeatureName { get; set; } = string.Empty;
+}

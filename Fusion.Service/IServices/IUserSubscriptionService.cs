@@ -24,4 +24,5 @@ public interface IUserSubscriptionService
     //Dùng khi: Mở lại sau khi pause.
     Task<bool> ResumeAsync(Guid id, CancellationToken ct = default);
     Task UpdateNextDueAsync(Guid subId, DateTimeOffset? nextDueAt, CancellationToken ct = default);
+    Task DecreaseCompanyShareLimitAsync(Guid userSubscriptionId, int amount = 1, CancellationToken ct = default);
 }

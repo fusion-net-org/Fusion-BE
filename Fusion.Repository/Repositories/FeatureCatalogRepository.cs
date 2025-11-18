@@ -13,9 +13,16 @@ namespace Fusion.Repository.Repositories;
 public class FeatureCatalogRepository : GenericRepository<Feature>, IFeatureCatalogRepository
 {
     private readonly FusionDbContext _context;
-    public FeatureCatalogRepository(FusionDbContext context) : base(context)
+    private readonly ICompanySubscriptionRepository _comSubRepo;
+    private readonly IUserSubscriptionRepository _usbRepo;
+    private readonly ISubscriptionPlanRepository _planRepo;
+    public FeatureCatalogRepository(FusionDbContext context, ICompanySubscriptionRepository comSubRepo,
+        IUserSubscriptionRepository usbRepo, ISubscriptionPlanRepository planRepo) : base(context)
     {
         _context = context;
+        _comSubRepo = comSubRepo;
+        _usbRepo = usbRepo;
+        _planRepo = planRepo;
     }
 
     public async Task<Feature> CreateAsync(Feature entity, CancellationToken ct = default)
@@ -77,6 +84,9 @@ public class FeatureCatalogRepository : GenericRepository<Feature>, IFeatureCata
         db.Description = entity.Description;
         db.Category = entity.Category;
         db.IsActive = entity.IsActive;
+        await _usbRepo.UpdateEnabledByFeatureIdAsync(db.Id, db.IsActive, ct);
+        await _comSubRepo.UpdateEnabledByFeatureIdAsync(db.Id, db.IsActive, ct);
+        await _planRepo.UpdateEnabledByFeatureIdAsync(db.Id, db.IsActive, ct);
         db.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync(ct);
