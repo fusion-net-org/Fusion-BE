@@ -264,6 +264,19 @@ namespace Fusion.Repository.Repositories
             if (!string.IsNullOrWhiteSpace(filter.Keyword))
                 query = query.Where(x => x.Name.Contains(filter.Keyword) || x.Code.Contains(filter.Keyword));
 
+            // Deleted filter 
+            if (filter.Deleted.HasValue)
+                query = query.Where(x => x.IsDeleted == filter.Deleted.Value);
+
+            // isHaveProject filter
+            if (filter.IsHaveProject.HasValue)
+            {
+                if (filter.IsHaveProject.Value)
+                    query = query.Where(x => x.Project != null && x.Project.Id != Guid.Empty);
+                else
+                    query = query.Where(x => x.Project == null || x.Project.Id == Guid.Empty);
+            }
+
             // Status
             if (filter.Status.HasValue)
                 query = query.Where(x => x.Status == filter.Status.Value.ToString());
@@ -356,6 +369,8 @@ namespace Fusion.Repository.Repositories
             if (filter.Status.HasValue)
                 query = query.Where(x => x.Status == filter.Status.Value.ToString());
 
+
+            //date filter
             if (filter.DateFilterType.HasValue)
             {
                 if (filter.DateRange?.From != null && filter.DateRange?.To != null)

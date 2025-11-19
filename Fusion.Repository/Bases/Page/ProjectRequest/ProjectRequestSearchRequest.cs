@@ -10,8 +10,9 @@ namespace Fusion.Repository.Bases.Page.ProjectRequest
     public class ProjectRequestSearchRequest : PagedRequest
     {
         public string? Keyword { get; set; } 
-        public ProjectRequestStatusEnum? Status { get; set; }    
-
+        public ProjectRequestStatusEnum? Status { get; set; }
+        public bool? Deleted { get; set; }
+        public bool? IsHaveProject { get; set; }
         public ProjectRequestViewMode? ViewMode { get; set; }
 
         public DateFilterType? DateFilterType { get; set; }
