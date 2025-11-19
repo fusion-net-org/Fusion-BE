@@ -423,9 +423,9 @@ namespace Fusion.Service.Services
 
             var result = await _projectRequestRepository.SearchProjectRequestAsync(filter, userCompanyId, cancellationToken);
 
-            if (result == null || result.Items.Count == 0)
-                throw CustomExceptionFactory.CreateNotFoundError(
-                    ResponseMessages.NOT_FOUND.FormatMessage("Project Request"));
+            //if (result == null || result.Items.Count == 0)
+            //    throw CustomExceptionFactory.CreateNotFoundError(
+            //        ResponseMessages.NOT_FOUND.FormatMessage("Project Request"));
 
             var list = new PagedResult<ProjectRequestResponse>
             {
