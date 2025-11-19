@@ -40,6 +40,7 @@ public partial class FusionDbContext : DbContext
     public virtual DbSet<UserLog> UserLogs { get; set; }
     public virtual DbSet<ProjectTaskAssignee> ProjectTaskAssignee { get; set; }
     public virtual DbSet<ProjectTaskDependency> ProjectTaskDependency { get; set; }
+    public virtual DbSet<ProjectTaskChecklistItem> ProjectTaskChecklistItems { get; set; }
 
     public virtual DbSet<UserNotificationSetting> UserNotificationSettings { get; set; }
     // Subscription
@@ -527,6 +528,24 @@ public partial class FusionDbContext : DbContext
                   .OnDelete(DeleteBehavior.Restrict)
                   .HasConstraintName("FK_CompanySubscriptionEntitlements_Subscription");
         });
+        modelBuilder.Entity<ProjectTaskChecklistItem>(e =>
+        {
+            e.ToTable("ProjectTaskChecklistItems");
+
+            e.Property(x => x.Label)
+                .HasMaxLength(255);
+
+            e.Property(x => x.CreatedAt)
+                .HasPrecision(3)
+                .HasDefaultValueSql("SYSUTCDATETIME()");
+
+            e.HasOne(x => x.Task)
+                .WithMany(t => t.ChecklistItems)
+                .HasForeignKey(x => x.TaskId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_ProjectTaskChecklistItems_Task");
+        });
+
 
         OnModelCreatingPartial(modelBuilder);
     }

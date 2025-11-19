@@ -59,10 +59,13 @@ public partial class Project
     [Column("update_at")]
     [Precision(3)]
     public DateTime UpdateAt { get; set; }
+    [Column("sprint_length_weeks")]
+    public int? SprintLengthWeeks { get; set; }
 
     [ForeignKey("CompanyId")]
     [InverseProperty("ProjectCompanies")]
     public virtual Company? Company { get; set; }
+
 
     [ForeignKey("CompanyRequestId")]
     [InverseProperty("ProjectCompanyRequests")]
@@ -87,7 +90,7 @@ public partial class Project
 
     [InverseProperty("Project")]
     public virtual ICollection<Ticket> Tickets { get; set; } = new List<Ticket>();
-
+   
     [ForeignKey("WorkflowId")]
     [InverseProperty("Projects")]
     public virtual Workflow? Workflow { get; set; }

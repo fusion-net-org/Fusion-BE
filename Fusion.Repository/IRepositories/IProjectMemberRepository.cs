@@ -23,6 +23,7 @@ namespace Fusion.Repository.IRepositories
         Task<PagedResult<ProjectMember>> GetProjectMemberByProjectId(Guid projectId, ProjectMemberSearchRequestV2 request, CancellationToken ct = default);
 
         Task<MemberPerformanceStats> GetMemberPerformanceAsync(Guid userId, Guid companyId, CancellationToken token = default);
+        Task RemoveAsync(Guid projectId, Guid userId, CancellationToken ct = default);
 
     }
 }

@@ -37,9 +37,11 @@ namespace Fusion.Service
 
             //task
             services.AddScoped<ITaskService, TaskService>();
+            //checklist
+            services.AddScoped<ITaskChecklistService, TaskChecklistService>();
 
-			//ticket
-			services.AddScoped<ITicketService, TicketService>();
+            //ticket
+            services.AddScoped<ITicketService, TicketService>();
 
             //comment
             services.AddScoped<ICommentService, CommentService>();

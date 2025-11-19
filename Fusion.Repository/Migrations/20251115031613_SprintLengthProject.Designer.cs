@@ -4,6 +4,7 @@ using Fusion.Repository.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Fusion.Repository.Migrations
 {
     [DbContext(typeof(FusionDbContext))]
-    partial class FusionDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251115031613_SprintLengthProject")]
+    partial class SprintLengthProject
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -652,7 +655,7 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("project_request_id");
 
-                    b.Property<int?>("SprintLengthWeeks")
+                    b.Property<int>("SprintLengthWeeks")
                         .HasColumnType("int")
                         .HasColumnName("sprint_length_weeks");
 
@@ -1007,45 +1010,6 @@ namespace Fusion.Repository.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("ProjectTaskAssignees", (string)null);
-                });
-
-            modelBuilder.Entity("Fusion.Repository.Entities.ProjectTaskChecklistItem", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("id");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasPrecision(3)
-                        .HasColumnType("datetime2(3)")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("SYSUTCDATETIME()");
-
-                    b.Property<bool>("IsDone")
-                        .HasColumnType("bit")
-                        .HasColumnName("is_done");
-
-                    b.Property<string>("Label")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)")
-                        .HasColumnName("label");
-
-                    b.Property<int>("OrderIndex")
-                        .HasColumnType("int")
-                        .HasColumnName("order_index");
-
-                    b.Property<Guid>("TaskId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("task_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TaskId");
-
-                    b.ToTable("ProjectTaskChecklistItems", (string)null);
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.ProjectTaskDependency", b =>
@@ -2462,18 +2426,6 @@ namespace Fusion.Repository.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Fusion.Repository.Entities.ProjectTaskChecklistItem", b =>
-                {
-                    b.HasOne("Fusion.Repository.Entities.ProjectTask", "Task")
-                        .WithMany("ChecklistItems")
-                        .HasForeignKey("TaskId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("FK_ProjectTaskChecklistItems_Task");
-
-                    b.Navigation("Task");
-                });
-
             modelBuilder.Entity("Fusion.Repository.Entities.ProjectTaskDependency", b =>
                 {
                     b.HasOne("Fusion.Repository.Entities.ProjectTask", "DependsOnTask")
@@ -2844,8 +2796,6 @@ namespace Fusion.Repository.Migrations
             modelBuilder.Entity("Fusion.Repository.Entities.ProjectTask", b =>
                 {
                     b.Navigation("Assignees");
-
-                    b.Navigation("ChecklistItems");
 
                     b.Navigation("Comments");
 

@@ -41,6 +41,8 @@ namespace Fusion.Repository
             services.AddScoped<IProjectBoardRepository, ProjectBoardRepository>();
             //task
             services.AddScoped<ITaskRepository, TaskRepository>();
+            //checklist
+            services.AddScoped<ITaskChecklistRepository, TaskChecklistRepository>();
 
             //comment
             services.AddScoped<ICommentRepository, CommentRepository>();
