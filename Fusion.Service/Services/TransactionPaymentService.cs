@@ -77,24 +77,23 @@ public class TransactionPaymentService : ITransactionPaymentService
             var withNav = await _txRepo.GetByIdWithNavAsync(created.Id, ct);
             return _mapper.Map<TransactionPaymentDetailResponse>(withNav!);
         }
-        else // Installments
+        else // ================= INSTALLMENTS =================
         {
             var total = price.Price;
             var n = price.InstallmentCount ?? 0;
             if (n <= 1)
                 throw CustomExceptionFactory.CreateBadRequestError("InstallmentCount must be > 1 for installments.");
 
-            // 1) Quy toàn bộ thời gian gói về đơn vị "tháng" hoặc "tuần"
-            //    - Nếu gói theo Month/Year => dùng THÁNG
-            //    - Nếu gói theo Week      => dùng TUẦN
+            //  LẤY DANH SÁCH DISCOUNT TỪ PLAN PRICE
+            var discounts = price.Discounts?.ToList() ?? new List<SubscriptionPlanPriceDiscount>();
+
+            // 1) Quy toàn bộ thời gian gói về "tháng" hoặc "tuần"
             bool useMonths = price.BillingPeriod == BillingPeriod.Month
                              || price.BillingPeriod == BillingPeriod.Year;
 
-            int totalUnits; // tổng tháng hoặc tổng tuần
+            int totalUnits;
             if (useMonths)
             {
-                // Month: PeriodCount = số tháng
-                // Year : PeriodCount = số năm -> nhân 12 để ra tháng
                 totalUnits = price.BillingPeriod switch
                 {
                     BillingPeriod.Month => price.PeriodCount,
@@ -104,38 +103,52 @@ public class TransactionPaymentService : ITransactionPaymentService
             }
             else
             {
-                // Gói theo tuần thì xử lý theo tuần
-                totalUnits = price.PeriodCount; // số tuần
+                totalUnits = price.PeriodCount; 
             }
 
-            // 2) Khoảng cách "trung bình" giữa 2 kỳ thanh toán
-            //    Ví dụ: 3 năm (36 tháng) / 6 kỳ = 6 tháng/kỳ
             var unitsPerInstallment = (double)totalUnits / n;
 
-            // 3) Chia tiền theo n kỳ (kỳ cuối bù phần lẻ)
-            var per = Math.Round(total / n, 2, MidpointRounding.AwayFromZero);
             var rows = new List<TransactionPayment>(capacity: n);
-            decimal sum = 0m;
+
+            decimal basePerRaw = total / n;
+            decimal sumBase = 0m;
 
             for (int i = 1; i <= n; i++)
             {
-                var amount = (i == n) ? (total - sum) : per;
-                sum += amount;
+                // Base amount trước giảm
+                decimal baseAmount;
+                if (i == n)
+                {
+                    baseAmount = total - sumBase;
+                }
+                else
+                {
+                    baseAmount = Math.Round(basePerRaw, 2, MidpointRounding.AwayFromZero);
+                    sumBase += baseAmount;
+                }
 
-                // i = 1 -> offset = 0
-                // i = 2 -> offset ≈ unitsPerInstallment
-                // i = 3 -> offset ≈ 2 * unitsPerInstallment ...
+                // 👇 Tìm discount config cho kỳ i (nếu có)
+                var discountCfg = discounts.FirstOrDefault(d => d.InstallmentIndex == i);
+                decimal finalAmount = baseAmount;
+
+                if (discountCfg != null && discountCfg.DiscountValue > 0)
+                {
+                    var percent = discountCfg.DiscountValue / 100m; // 10 => 0.10
+                    finalAmount = Math.Round(
+                        baseAmount * (1 - percent),
+                        2,
+                        MidpointRounding.AwayFromZero
+                    );
+                }
+
                 int offsetUnits = (int)Math.Round(unitsPerInstallment * (i - 1));
-
                 DateTimeOffset dueAt;
                 if (useMonths)
                 {
-                    // offsetUnits = số THÁNG
                     dueAt = now.AddMonths(offsetUnits);
                 }
                 else
                 {
-                    // offsetUnits = số TUẦN
                     dueAt = now.AddDays(offsetUnits * 7);
                 }
 
@@ -155,13 +168,11 @@ public class TransactionPaymentService : ITransactionPaymentService
                     InstallmentIndex = i,
                     InstallmentTotal = n,
 
-                    Amount = amount,
+                    Amount = finalAmount,
                     Currency = price.Currency,
                     DueAt = dueAt
                 });
             }
-
-
 
             await _txRepo.BulkCreateAsync(rows, ct);
             var first = rows[0];

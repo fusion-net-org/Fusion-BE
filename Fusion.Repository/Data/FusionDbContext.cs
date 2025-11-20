@@ -58,6 +58,7 @@ public partial class FusionDbContext : DbContext
     public DbSet<CompanySubscriptionEntitlement> CompanySubscriptionEntitlements { get; set; } = null!;
     public virtual DbSet<CompanySubscriptionEntry> CompanySubscriptionEntries { get; set; } = null!;
 
+    public virtual DbSet<SubscriptionPlanPriceDiscount> SubscriptionPlanPriceDiscounts { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -409,6 +410,31 @@ public partial class FusionDbContext : DbContext
             entity.HasIndex(e => e.PlanId)
                   .IsUnique()
                   .HasDatabaseName("UX_SubscriptionPlanPrices_Plan");
+        });
+        // ---- SubscriptionPlanPriceDiscount ----
+        modelBuilder.Entity<SubscriptionPlanPriceDiscount>(entity =>
+        {
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
+
+            entity.Property(e => e.CreatedAt)
+                  .HasDefaultValueSql("(sysutcdatetime())");
+
+            entity.Property(e => e.UpdatedAt)
+                  .HasDefaultValueSql("(sysutcdatetime())");
+
+            entity.Property(e => e.DiscountValue)
+                  .HasColumnType("decimal(18,2)");
+
+            // UNIQUE: 1 price, 1 kỳ chỉ có 1 cấu hình discount
+            entity.HasIndex(e => new { e.PriceId, e.InstallmentIndex })
+                  .IsUnique()
+                  .HasDatabaseName("UX_SubscriptionPlanPriceDiscounts_Price_Installment");
+
+            entity.HasOne(d => d.Price)
+                  .WithMany(p => p.Discounts)
+                  .HasForeignKey(d => d.PriceId)
+                  .HasConstraintName("FK_SubscriptionPlanPriceDiscounts_Price")
+                  .OnDelete(DeleteBehavior.Cascade);
         });
 
         // ---- SubscriptionPlanFeature ----

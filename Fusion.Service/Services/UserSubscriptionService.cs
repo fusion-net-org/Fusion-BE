@@ -99,7 +99,7 @@ public class UserSubscriptionService : IUserSubscriptionService
             PaymentModeSnapshot = tx.PaymentModeSnapshot,
             InstallmentCountSnapshot = tx.InstallmentTotal,
             InstallmentIntervalSnapshot = tx.PaymentModeSnapshot == PaymentMode.Installments
-               ? plan.Price.InstallmentInterval                      
+               ? plan.Price.InstallmentInterval
                : null,
 
             CurrencySnapshot = (tx.Currency ?? plan.Price.Currency) ?? "VND",
@@ -177,7 +177,7 @@ public class UserSubscriptionService : IUserSubscriptionService
 
     public async Task UpdateNextDueAsync(Guid subId, DateTimeOffset? nextDueAt, CancellationToken ct = default)
     {
-         await _repo.UpdateNextDueAsync(subId, nextDueAt, ct);
+        await _repo.UpdateNextDueAsync(subId, nextDueAt, ct);
     }
     // ===== Helpers =====
     private static DateTimeOffset AddInterval(DateTimeOffset start, BillingPeriod period, int count)
@@ -195,7 +195,7 @@ public class UserSubscriptionService : IUserSubscriptionService
         if (paidTx.PaymentModeSnapshot != PaymentMode.Installments) return null;
 
         // Lấy đúng interval của installment (ưu tiên snapshot trên Transaction; fallback về Plan.Price)
-        var interval =  paidTx.SubscriptionPlan?.Price?.InstallmentInterval
+        var interval = paidTx.SubscriptionPlan?.Price?.InstallmentInterval
                      ?? paidTx.BillingPeriodSnapshot; // cuối cùng mới fallback
 
         if (!(paidTx.InstallmentIndex.HasValue && paidTx.InstallmentTotal.HasValue)) return null;
@@ -254,6 +254,8 @@ public class UserSubscriptionService : IUserSubscriptionService
                 return count;
         }
     }
+
+
     private async Task<List<Guid>> BuildEntitlementFeatureIdsAsync(SubscriptionPlan plan, CancellationToken ct)
     {
         if (plan.IsFullPackage)

@@ -256,8 +256,17 @@ public class MappingProfile : Profile
             .ForMember(d => d.Id, o => o.Ignore())
             .ForMember(d => d.PlanId, o => o.Ignore());
 
+        CreateMap<SubscriptionPlanPriceDiscountInput, SubscriptionPlanPriceDiscount>()
+            .ForMember(d => d.Id, o => o.Ignore())
+            .ForMember(d => d.PriceId, o => o.Ignore())
+            .ForMember(d => d.CreatedAt, o => o.Ignore())
+            .ForMember(d => d.UpdatedAt, o => o.Ignore());
         // Entity -> Response
-        CreateMap<SubscriptionPlanPrice, SubscriptionPlanPriceResponse>();
+
+        CreateMap<SubscriptionPlanPriceDiscount, SubscriptionPlanPriceDiscountResponse>();
+
+        CreateMap<SubscriptionPlanPrice, SubscriptionPlanPriceResponse>()
+            .ForMember(d => d.Discounts, o => o.MapFrom(s => s.Discounts));
 
         CreateMap<SubscriptionPlan, SubscriptionPlanListItemResponse>();
 
@@ -273,6 +282,7 @@ public class MappingProfile : Profile
                         Enabled = f.Enabled
                     })
                     : new List<SubscriptionPlanFeatureResponse>()));
+
 
         // for customer 
         // Price -> PlanPricePreviewResponse
