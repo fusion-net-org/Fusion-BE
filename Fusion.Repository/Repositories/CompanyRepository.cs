@@ -57,14 +57,35 @@ namespace Fusion.Repository.Repositories
                         break;
                 }
             }
+            else
+            {
+                query = query.Where(c =>
+                    c.OwnerUser.Email == userMail ||
+                    c.CompanyMembers.Any(m => m.User.Email == userMail));
+            }
 
             // search
             if (!string.IsNullOrWhiteSpace(request.Keyword))
             {
                 var keyword = request.Keyword.Trim().ToLower();
                 query = query.Where(u =>
-                    (u.Name ?? "").ToLower().Contains(keyword) ||
-                    (u.TaxCode ?? "").ToLower().Contains(keyword));
+                    (u.Name ?? string.Empty).ToLower().Contains(keyword) ||
+                    (u.TaxCode ?? string.Empty).ToLower().Contains(keyword) ||
+                    (u.PhoneNumber ?? string.Empty).ToLower().Contains(keyword) ||
+                    (u.Email ?? string.Empty).ToLower().Contains(keyword) ||
+                    (u.Website ?? string.Empty).ToLower().Contains(keyword) ||
+                    (u.Address ?? string.Empty).ToLower().Contains(keyword)
+                );
+            }
+
+            if (request.DayFrom.HasValue)
+            {
+                query = query.Where(c => c.CreateAt >= request.DayFrom.Value);
+            }
+
+            if (request.DayTo.HasValue)
+            {
+                query = query.Where(c => c.CreateAt <= request.DayTo.Value);
             }
 
             if (!string.IsNullOrWhiteSpace(request.OwnerUserName))
