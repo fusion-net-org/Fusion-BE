@@ -1,9 +1,8 @@
-﻿    using Fusion.Repository.Bases.Page;
+﻿using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.User;
 using Fusion.Repository.Entities;
 using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.IServices;
-using Fusion.Service.Services;
 using Fusion.Service.ViewModels.Users.Requests;
 using Fusion.Service.ViewModels.Users.Responses;
 using Microsoft.AspNetCore.Authorization;
