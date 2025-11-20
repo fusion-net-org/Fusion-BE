@@ -2,8 +2,12 @@
 
 using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.TransactionPayment;
+using Fusion.Repository.ViewModels.SubscriptionPlan;
+using Fusion.Repository.ViewModels.Transactions;
+using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.ViewModels.TransactionPayment.Requests;
 using Fusion.Service.ViewModels.TransactionPayment.Responses;
+using Fusion.Service.ViewModels.TransactionPayment.Responses.Overview;
 
 namespace Fusion.Service.IServices;
 
@@ -21,10 +25,25 @@ public interface ITransactionPaymentService
 
     // === Đọc dữ liệu ===
     Task<TransactionPaymentDetailResponse?> GetDetailAsync(Guid id, CancellationToken ct = default);
-    Task<PagedResult<TransactionPaymentResponse>> GetPagedAsync(TransactionPaymentPagedRequest request, CancellationToken ct = default);
+    Task<TransactionPaymentPagedSummaryResponse> GetPagedAsync(TransactionPaymentPagedRequest request, CancellationToken ct = default);
 
     // === Liệt kê các draft đến hạn để phát hành link (scheduler sử dụng) ===
     Task<List<TransactionPaymentResponse>> GetDueAsync(DateTimeOffset asOf, int take = 100, CancellationToken ct = default);
 
     Task<TransactionPaymentDetailResponse?> FindEarliestPendingInstallmentAsync(Guid planId, Guid? userSubscriptionId = null, CancellationToken ct = default);
+
+    // =================================OVERVIEW ==================================
+    #region Transaction
+    Task<TransactionMonthlyRevenueResponse> GetMonthlyRevenueAsync(int? year,CancellationToken ct = default);
+    Task<TransactionMonthlyRevenueThreeYearsResponse> GetMonthlyRevenueThreeYearsAsync(int? year,CancellationToken ct = default);
+    Task<TransactionMonthlyStatusResponse> GetMonthlyStatusAsync(int year, CancellationToken ct = default);
+    Task<TransactionDailyCashflowResponse> GetDailyCashflowAsync(int lastDays,CancellationToken ct = default);
+    Task<TransactionInstallmentAgingResponse> GetInstallmentAgingAsync(DateTimeOffset? asOf,CancellationToken ct = default);
+    Task<TransactionTopCustomersResponse> GetTopCustomersAsync( int year, int topN,CancellationToken ct = default);
+    #endregion
+
+    #region SubsciptionPlan
+    Task<TransactionPaymentModeInsightResponse> GetPaymentModeInsightAsync(int year,CancellationToken ct = default);
+    Task<TransactionPlanRevenueInsightResponse> GetPlanRevenueInsightAsync(int year, CancellationToken ct = default);
+    #endregion
 }
