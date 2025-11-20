@@ -9,14 +9,17 @@ public class RegisterRequestValidator : AbstractValidator<RegisterRequest>
     public RegisterRequestValidator()
     {
         RuleFor(x => x.FirstName)
+            .Cascade(CascadeMode.Stop)
               .NotEmpty().WithMessage("First name must not be empty!")
               .MaximumLength(50).WithMessage("First name must not exceed 50 characters!");
 
         RuleFor(x => x.LastName)
+            .Cascade(CascadeMode.Stop)
             .NotEmpty().WithMessage("Last name must not be empty!")
             .MaximumLength(50).WithMessage("Last name must not exceed 50 characters");
 
         RuleFor(x => x.Email)
+            .Cascade(CascadeMode.Stop)
             .NotEmpty().WithMessage("Email must not be empty")
             .EmailAddress().WithMessage("Invalid email format")
             .Matches(@"@gmail\.com$").WithMessage("Only ...@gmail.com email addresses are allowed");

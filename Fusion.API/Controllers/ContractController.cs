@@ -38,6 +38,7 @@ namespace Fusion.API.Controllers
                 message: ResponseMessageHelper.FormatMessage(ResponseMessages.CREATE_SUCCESS, "contract")));
         }
 
+
         [HttpPut("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<ContractResponse>))]
         public async Task<IActionResult> UpdateContractAsync( Guid id, [FromBody] UpdateContractRequest request)
@@ -72,5 +73,23 @@ namespace Fusion.API.Controllers
                 data: result,
                 message: "Get contracts successfully"));
         }
+        [HttpPost("{id:guid}/upload")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<string>))]
+        public async Task<IActionResult> UploadContractAttachment(Guid id, IFormFile file, CancellationToken cancellationToken)
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest(ResponseModel<string>.Error(StatusCodes.Status400BadRequest, "File is required."));
+
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+                return Unauthorized(ResponseModel<string>.Error(StatusCodes.Status401Unauthorized, "Don't find token!"));
+
+            var attachmentUrl = await _contractService.UploadContractAttachmentAsync(id, file, userId, cancellationToken);
+
+            return Ok(ResponseModel<string>.Ok(
+                data: attachmentUrl,
+                message: "Contract file uploaded successfully"));
+        }
+
     }
 }

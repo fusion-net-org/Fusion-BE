@@ -2,363 +2,166 @@
 using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.UserSubscriptions;
-using Fusion.Repository.Bases.Responses;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.Enums;
 using Fusion.Repository.IRepositories;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Dynamic.Core.Tokenizer;
 
 namespace Fusion.Repository.Repositories
 {
     public class UserSubscriptionRepository : GenericRepository<UserSubscription>, IUserSubscriptionRepository
     {
         private readonly FusionDbContext _context;
-        private readonly ITransactionPaymentRepository _transactionPaymentRepository;
-        private readonly ISubscriptionPlanRepository _subscriptionPlanRepository;
-        public UserSubscriptionRepository(FusionDbContext context, ITransactionPaymentRepository transactionPaymentRepository, ISubscriptionPlanRepository subscriptionPlanRepository) : base(context)
+        public UserSubscriptionRepository(FusionDbContext context) : base(context)
         {
             _context = context;
-            _transactionPaymentRepository = transactionPaymentRepository;
-            _subscriptionPlanRepository = subscriptionPlanRepository;
         }
 
-
-        public Task<UserSubscription?> GetByIdWithNavAsync(Guid id, CancellationToken ct = default)
-            => _context.UserSubscriptions
-               .Include(u => u.UserSubscriptionEntitlements)
-               .Include(x => x.TransactionPayment)
-                       .ThenInclude(x => x.SubscriptionPlan)
-               .FirstOrDefaultAsync(u => u.Id == id, ct);
-
-        public async Task<UserSubscription> CreateAsync(UserSubscription userSubscription, CancellationToken cancellationToken = default)
+        public async Task<PagedResult<UserSubscription>> GetPagedByUserIdAsync(Guid id, UserSubscriptionPagedRequest request, CancellationToken ct = default)
         {
-            var transaction = await _transactionPaymentRepository.GetByIdWithNavAsync(userSubscription.TransactionId);
-            if (transaction == null)
-                throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Transaction"));
+            var q = _context.Set<UserSubscription>()
+              .AsNoTracking()
+              .Include(x => x.User)
+              .Include(x => x.Plan).ThenInclude(p => p.Price)
+              .Include(x => x.Entitlements).ThenInclude(e => e.Feature)
+              .Where(x => x.UserId == id);
 
-            var plan = await _subscriptionPlanRepository.GetByIdWithNavAsync(transaction.PlanId);
-            if (plan == null)
-                throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("subscription plan"));
-
-            if (plan.Price == null)
-                throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.BAD_REQUEST.FormatMessage("plan has no pricing info"));
-
-            // calculator expried
-            var now = DateTime.UtcNow;
-            var expiredAt = plan.Price.BillingPeriod switch
+            if (!string.IsNullOrWhiteSpace(request.Status))
             {
-                BillingPeriod.Week => now.AddDays(7 * plan.Price.PeriodCount),
-                BillingPeriod.Month => now.AddMonths(plan.Price.PeriodCount),
-                BillingPeriod.Year => now.AddYears(plan.Price.PeriodCount),
-                _ => now
-            };
-
-            userSubscription.NamePlan = plan.Name;
-            userSubscription.Price = plan.Price.Price;
-            userSubscription.Currency = plan.Price.Currency;
-            userSubscription.Status = SubscriptionStatus.Active;
-            userSubscription.CreatAt = DateTime.UtcNow;
-            userSubscription.ExpiredAt = expiredAt;
-            userSubscription.UpdateAt = null;
-
-            // create list eentilement 
-            if (plan.Features != null && plan.Features.Any())
-            {
-                userSubscription.UserSubscriptionEntitlements = plan.Features.Select(f => new UserSubscriptionEntitlement
+                var statusStr = request.Status.Trim();
+                if (Enum.TryParse<SubscriptionStatus>(statusStr, ignoreCase: true, out var st))
                 {
-                    FeatureKey = f.FeatureKey,
-                    Quantity = f.LimitValue,
-                    Remaining = f.LimitValue
-                }).ToList();
-            }
-            else
-            {
-                userSubscription.UserSubscriptionEntitlements = new List<UserSubscriptionEntitlement>();
-            }
-
-            // save
-            await _context.UserSubscriptions.AddAsync(userSubscription, cancellationToken);
-            //await _context.SaveChangesAsync(cancellationToken);
-
-            return userSubscription;
-
-        }
-
-        public async Task<bool> Delete(Guid id, CancellationToken ct = default)
-        {
-            var userSubscription = await GetByIdWithNavAsync(id);
-            if (userSubscription == null)
-                return false;
-
-            _context.UserSubscriptions.Remove(userSubscription);
-            await _context.SaveChangesAsync(ct);
-
-            return true;
-        }
-
-        public async Task<PagedResult<UserSubscription>> GetAllAsync(UserSubscriptionPagedRequest request, CancellationToken cancellationToken = default)
-        {
-            var q = _context.UserSubscriptions
-                .AsNoTracking()
-                .Include(us => us.UserSubscriptionEntitlements)
-                .Include(us => us.TransactionPayment)
-                .AsQueryable();
-
-            if (!string.IsNullOrWhiteSpace(request.PlanName))
-            {
-                var pattern = $"%{request.PlanName.Trim()}%";
-                q = q.Where(us => us.NamePlan != null && EF.Functions.Like(us.NamePlan, pattern));
-            }
-
-            // Trạng thái
-            if (request.status.HasValue)
-                q = q.Where(us => us.Status == request.status.Value);
-
-            // Khoảng thời gian tạo
-            if (request.CreateAt.From.HasValue)
-                q = q.Where(us => us.CreatAt >= request.CreateAt.From.Value);
-
-            if (request.CreateAt.To.HasValue)
-                q = q.Where(us => us.CreatAt <= request.CreateAt.To.Value);
-
-            // Khoảng thời gian hết hạn
-            if (request.ExpiredAt.From.HasValue)
-                q = q.Where(us => us.ExpiredAt >= request.ExpiredAt.From.Value);
-
-            if (request.ExpiredAt.To.HasValue)
-                q = q.Where(us => us.ExpiredAt <= request.ExpiredAt.To.Value);
-
-            // Keyword tổng hợp
-            if (!string.IsNullOrWhiteSpace(request.Keyword))
-            {
-                var kw = request.Keyword.Trim();
-                var pattern = $"%{kw}%";
-                q = q.Where(us =>
-                    (us.NamePlan != null && EF.Functions.Like(us.NamePlan, pattern)) ||
-                    (us.Currency != null && EF.Functions.Like(us.Currency, pattern)) ||
-                    (us.Status.ToString() != null && EF.Functions.Like(us.Status.ToString(), pattern))
-                );
-            }
-
-            // --- Sorting (nếu client truyền SortColumn, ưu tiên SortMap) ---
-            if (string.IsNullOrWhiteSpace(request.SortColumn))
-            {
-                request.SortColumn = nameof(UserSubscription.CreatAt);
-                request.SortDescending = true;
-            }
-
-            // --- Paging ---
-            return await q.ToPagedResultAsync(request, cancellationToken);
-        }
-
-        public async Task<UserSubscription> UpdateAsync(Guid userId, UserSubscription userSubscription, CancellationToken cancellationToken = default)
-        {
-            var user = await _context.Users
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.Id == userId, cancellationToken);
-
-            var transaction = await _context.TransactionPayments
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.Id == userSubscription.TransactionId, cancellationToken);
-
-            if (!user.IsSystemAdmin)
-            {
-                if (user.Id != transaction.UserId)
-                    throw CustomExceptionFactory.CreateForbiddenError();
-            }
-
-            var existing = await _context.UserSubscriptions
-                          .Include(us => us.UserSubscriptionEntitlements)
-                          .FirstOrDefaultAsync(us => us.Id == userSubscription.Id, cancellationToken);
-
-            if (existing == null)
-                throw CustomExceptionFactory.CreateNotFoundError(
-                    ResponseMessages.NOT_FOUND.FormatMessage("User subscription"));
-
-            // --- Cập nhật thông tin cơ bản ---
-            existing.NamePlan = userSubscription.NamePlan ?? existing.NamePlan;
-            existing.Price = userSubscription.Price;
-            existing.Currency = userSubscription.Currency ?? existing.Currency;
-            existing.Status = userSubscription.Status;
-            existing.ExpiredAt = userSubscription.ExpiredAt;
-            existing.UpdateAt = DateTime.UtcNow;
-
-            // --- Cập nhật entitlements ---
-            if (userSubscription.UserSubscriptionEntitlements != null && userSubscription.UserSubscriptionEntitlements.Any())
-            {
-                // Xóa entitlement cũ
-                _context.UserSubscriptionEntitlements.RemoveRange(existing.UserSubscriptionEntitlements ?? []);
-
-                // Add entitlement mới
-                foreach (var ent in userSubscription.UserSubscriptionEntitlements)
-                {
-                    ent.UserSubscriptionId = existing.Id;
-                    await _context.UserSubscriptionEntitlements.AddAsync(ent, cancellationToken);
+                    q = q.Where(x => x.Status == st);
                 }
             }
 
-            await _context.SaveChangesAsync(cancellationToken);
-            return existing;
-        }
 
-        public async Task<UserSubscription> UpdateStatusAsync(Guid id, Guid userId, SubscriptionStatus status, CancellationToken cancellationToken = default)
-        {
-            var user = await _context.Users
-                       .AsNoTracking()
-                       .FirstOrDefaultAsync(x => x.Id == userId, cancellationToken);
-
-            var userSubscription = await GetByIdWithNavAsync(id);
-
-            var transaction = await _context.TransactionPayments
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.Id == userSubscription.TransactionId, cancellationToken);
-
-            if (!user.IsSystemAdmin)
-            {
-                if (user.Id != transaction.UserId)
-                    throw CustomExceptionFactory.CreateForbiddenError();
-            }
-
-
-            if (userSubscription == null)
-                throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Transaction"));
-
-            userSubscription.Status = status;
-            userSubscription.UpdateAt = DateTime.UtcNow;
-
-            await _context.SaveChangesAsync(cancellationToken);
-
-            return userSubscription;
-        }
-
-        public async Task<PagedResult<UserSubscription>> GetAllByUserIdAsync(Guid userId, UserSubscriptionPagedRequest request, CancellationToken cancellationToken = default)
-        {
-            var q = _context.UserSubscriptions
-                    .AsNoTracking()
-                    .Include(us => us.UserSubscriptionEntitlements)
-                    .Include(us => us.TransactionPayment)
-                    .Where(us => us.TransactionPayment.UserId == userId)
-                    .AsQueryable();
-
-            if (!string.IsNullOrWhiteSpace(request.PlanName))
-            {
-                var pattern = $"%{request.PlanName.Trim()}%";
-                q = q.Where(us => us.NamePlan != null && EF.Functions.Like(us.NamePlan, pattern));
-            }
-
-            // Trạng thái
-            if (request.status.HasValue)
-                q = q.Where(us => us.Status == request.status.Value);
-
-            // Khoảng thời gian tạo
-            if (request.CreateAt.From.HasValue)
-                q = q.Where(us => us.CreatAt >= request.CreateAt.From.Value);
-
-            if (request.CreateAt.To.HasValue)
-                q = q.Where(us => us.CreatAt <= request.CreateAt.To.Value);
-
-            // Khoảng thời gian hết hạn
-            if (request.ExpiredAt.From.HasValue)
-                q = q.Where(us => us.ExpiredAt >= request.ExpiredAt.From.Value);
-
-            if (request.ExpiredAt.To.HasValue)
-                q = q.Where(us => us.ExpiredAt <= request.ExpiredAt.To.Value);
-
-            // Keyword tổng hợp
             if (!string.IsNullOrWhiteSpace(request.Keyword))
             {
                 var kw = request.Keyword.Trim();
-                var pattern = $"%{kw}%";
-                q = q.Where(us =>
-                    (us.NamePlan != null && EF.Functions.Like(us.NamePlan, pattern)) ||
-                    (us.Currency != null && EF.Functions.Like(us.Currency, pattern)) ||
-                    (us.Status.ToString() != null && EF.Functions.Like(us.Status.ToString(), pattern))
+                var like = $"%{kw}%";
+
+                q = q.Where(x =>
+
+                    (x.Plan.Name != null && EF.Functions.Like(x.Plan.Name, like)) ||
+                    EF.Functions.Like(x.CurrencySnapshot, like)
                 );
             }
 
-            // --- Sorting (nếu client truyền SortColumn, ưu tiên SortMap) ---
             if (string.IsNullOrWhiteSpace(request.SortColumn))
             {
-                request.SortColumn = nameof(UserSubscription.CreatAt);
+                request.SortColumn = nameof(UserSubscription.CreatedAt);
                 request.SortDescending = true;
             }
 
-            // --- Paging ---
-            return await q.ToPagedResultAsync(request, cancellationToken);
+            return await q.ToPagedResultAsync(request, ct);
         }
-
-        public async Task ValidateAndConsumeEntitlementsAsync(Guid userSubscriptionId, IEnumerable<CompanySubscriptionEntitlement> requestedEntitlements, CancellationToken cancellationToken = default)
+        public Task<UserSubscription?> GetByIdWithNavAsync(Guid id, CancellationToken ct = default)
+      => _context.Set<UserSubscription>()
+                 .AsNoTracking()
+                 .Include(x => x.User)
+                 .Include(x => x.Plan).ThenInclude(p => p.Price)
+                 .Include(x => x.Entitlements).ThenInclude(e => e.Feature)
+                 .FirstOrDefaultAsync(x => x.Id == id, ct);
+        public Task<UserSubscription?> GetActiveByUserAsync(Guid userId, CancellationToken ct = default)
+    => _context.Set<UserSubscription>()
+               .AsNoTracking()
+               .FirstOrDefaultAsync(x => x.UserId == userId && x.Status == Enums.SubscriptionStatus.Active, ct);
+        public Task<UserSubscription?> GetByTransactionAsync(Guid txId, CancellationToken ct = default)
+          => _context.Set<UserSubscription>()
+                     .AsNoTracking()
+                     .FirstOrDefaultAsync(x => x.CreatedByTransactionId == txId, ct);
+        public async Task<UserSubscription> CreateAsync(UserSubscription entity, CancellationToken ct = default)
         {
-            if(requestedEntitlements == null || !requestedEntitlements.Any())
+            _context.UserSubscriptions.Add(entity);
+            await _context.SaveChangesAsync(ct);
+            return entity;
+        }
+        public async Task<bool> UpdateAsync(UserSubscription entity, CancellationToken ct = default)
+        {
+            var exist = await _context.UserSubscriptions.FirstOrDefaultAsync(x => x.Id == entity.Id, ct);
+            if (exist == null) return false;
+
+            // chỉ update các field thay đổi phổ biến; snapshots không đổi
+            exist.Status = entity.Status;
+            exist.TermStart = entity.TermStart;
+            exist.TermEnd = entity.TermEnd;
+            exist.NextPaymentDueAt = entity.NextPaymentDueAt;
+            exist.UpdatedAt = DateTimeOffset.UtcNow;
+            exist.CanceledAt = entity.CanceledAt;
+
+            await _context.SaveChangesAsync(ct);
+            return true;
+        }
+        public async Task BulkAddEntitlementsAsync(IEnumerable<UserSubscriptionEntitlement> ents, CancellationToken ct = default)
+        {
+            if (ents == null) return;
+            await _context.UserSubscriptionEntitlements.AddRangeAsync(ents, ct);
+            //await _context.SaveChangesAsync(ct);
+        }
+        public Task<List<UserSubscription>> GetExpiringAsync(DateTimeOffset until, int take = 100, CancellationToken ct = default)
+     => _context.UserSubscriptions
+                .AsNoTracking()
+                .Where(x => x.Status == Enums.SubscriptionStatus.Active
+                         && x.TermEnd != null
+                         && x.TermEnd <= until)
+                .OrderBy(x => x.TermEnd)
+                .Take(take)
+                .ToListAsync(ct);
+        public async Task UpdateNextDueAsync(Guid subId, DateTimeOffset? nextDueAt, CancellationToken ct = default)
+        {
+            var sub = await _context.UserSubscriptions
+                                    .FirstOrDefaultAsync(x => x.Id == subId, ct);
+
+            sub.NextPaymentDueAt = nextDueAt;
+            sub.UpdatedAt = DateTimeOffset.UtcNow;
+
+            await _context.SaveChangesAsync(ct);
+        }
+        public async Task DecreaseCompanyShareLimitAsync(Guid userSubscriptionId, int amount = 1,CancellationToken ct = default)
+        {
+            if (amount <= 0)
                 return;
 
-            // 1 Get userSubscription with entitlement
-            var userSub = await _context.UserSubscriptions
-                .Include(x => x.UserSubscriptionEntitlements)
-                .FirstOrDefaultAsync(u => u.Id == userSubscriptionId, cancellationToken);
+            var sub = await _context.UserSubscriptions
+                                    .FirstOrDefaultAsync(x => x.Id == userSubscriptionId, ct);
 
-            if (userSub == null)
-                throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("User subscription"));
+            if (sub == null)
+                throw CustomExceptionFactory.CreateNotFoundError("User subscription.");
 
-            if(userSub.Status != SubscriptionStatus.Active)
-                throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.BAD_REQUEST.FormatMessage("User subscription not active"));
+            // Nếu null = unlimited -> không trừ, coi như luôn còn
+            if (!sub.CompanyShareLimitSnapshot.HasValue)
+                return;
 
-            //2 validate each feature
-            foreach (var ent in requestedEntitlements)
-            {
-                var userEnt = userSub.UserSubscriptionEntitlements
-                    .FirstOrDefault(x => x.FeatureKey == ent.FeatureKey);
+            if (sub.CompanyShareLimitSnapshot.Value < amount)
+                throw CustomExceptionFactory.CreateBadRequestError("No remaining company shares for this subscription.");
 
-                if(userEnt == null)
-                    throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage($"Feature {ent.FeatureKey} not found in user subscription"));
+            sub.CompanyShareLimitSnapshot -= amount;
+            sub.UpdatedAt = DateTimeOffset.UtcNow;
 
-                if (ent.Quantity > userEnt.Remaining)
-                    throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.BAD_REQUEST.FormatMessage($"Not enough quota for feature {ent.FeatureKey}"));
-            }
-
-            foreach( var ent in requestedEntitlements)
-            {
-                var userEnt = userSub.UserSubscriptionEntitlements
-                    .First(x => x.FeatureKey == ent.FeatureKey);
-                userEnt.Remaining -= ent.Quantity;
-            }
-            _context.UserSubscriptionEntitlements.UpdateRange(userSub.UserSubscriptionEntitlements);
+            await _context.SaveChangesAsync(ct);
         }
-
-        public async Task ConsumeFeatureAsync(Guid userSubscriptionId,FeatureKeys featureKey,int quantity = 1,CancellationToken cancellationToken = default)
+        public async Task<int> UpdateEnabledByFeatureIdAsync(Guid featureId, bool newStatus, CancellationToken ct = default)
         {
-            if (quantity <= 0)
-                throw CustomExceptionFactory.CreateBadRequestError("Quantity must be greater than 0.");
+            var ents = await _context.CompanySubscriptionEntitlements
+                       .Where(e => e.FeatureId == featureId)
+                       .ToListAsync(ct);
 
-            // Load user subscription + entitlements
-            var userSub = await _context.UserSubscriptions
-                .Include(us => us.UserSubscriptionEntitlements)
-                .FirstOrDefaultAsync(us => us.Id == userSubscriptionId, cancellationToken);
+            if (ents.Count == 0)
+                return 0;
 
-            if (userSub == null)
-                throw CustomExceptionFactory.CreateNotFoundError("User subscription not found.");
+            foreach (var e in ents)
+            {
+                if (e.Enabled != newStatus)
+                {
+                    e.Enabled = newStatus;
+                }
+            }
 
-            if (userSub.Status != SubscriptionStatus.Active || (userSub.ExpiredAt != null && userSub.ExpiredAt <= DateTime.UtcNow))
-                throw CustomExceptionFactory.CreateBadRequestError("User subscription is inactive or expired.");
 
-            // Find entitlement
-            var entitlement = userSub.UserSubscriptionEntitlements
-                .FirstOrDefault(e => e.FeatureKey == featureKey);
-
-            if (entitlement == null)
-                throw CustomExceptionFactory.CreateBadRequestError($"Feature {featureKey} not found in user subscription.");
-
-            // Check remaining
-            if (entitlement.Remaining < quantity)
-                throw CustomExceptionFactory.CreateBadRequestError(
-                    $"Not enough remaining quota for feature {featureKey}. Requested: {quantity}, Remaining: {entitlement.Remaining}");
-
-            // Consume
-            entitlement.Remaining -= quantity;
-
-            _context.UserSubscriptionEntitlements.Update(entitlement);
-            await _context.SaveChangesAsync(cancellationToken);
+            return ents.Count;
         }
     }
 }

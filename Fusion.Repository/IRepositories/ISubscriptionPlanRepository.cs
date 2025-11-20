@@ -9,10 +9,11 @@ namespace Fusion.Repository.IRepositories;
 
 public interface ISubscriptionPlanRepository : IGenericRepository<SubscriptionPlan>
 {
-    Task<SubscriptionPlan> CreatePlanAsync(SubscriptionPlan req, CancellationToken cancellationToken = default);
-    Task<SubscriptionPlan> UpdatePlan(SubscriptionPlan req, CancellationToken cancellationToken = default);
-    Task<PagedResult<SubscriptionPlan>> GetAllAsync(SubscriptionPlanPagedRequest request, CancellationToken cancellationToken = default);
+    Task<SubscriptionPlan> CreatePlanAsync(SubscriptionPlan req, CancellationToken ct = default);
+    Task<SubscriptionPlan> UpdatePlanAsync(SubscriptionPlan payload, CancellationToken ct = default);
+    Task<PagedResult<SubscriptionPlan>> GetAllAsync(SubscriptionPlanPagedRequest request, CancellationToken ct = default);
     Task<SubscriptionPlan?> GetByIdWithNavAsync(Guid id, CancellationToken ct = default);
     Task<bool> DeleteAsync(Guid id, CancellationToken ct = default);
-    //Task<bool> ExistsUsed(Guid planId);
+    Task<List<SubscriptionPlan>> GetAllForCusromerAsync(CancellationToken ct = default);
+    Task<int> UpdateEnabledByFeatureIdAsync(Guid featureId, bool newStatus, CancellationToken ct = default);
 }

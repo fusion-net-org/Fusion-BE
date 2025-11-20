@@ -4,19 +4,24 @@ using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.UserSubscriptions;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
-using Fusion.Repository.Enums;
 
 namespace Fusion.Repository.IRepositories;
 
 public interface IUserSubscriptionRepository : IGenericRepository<UserSubscription>
 {
-    Task<UserSubscription> CreateAsync(UserSubscription userSubscription, CancellationToken cancellationToken = default);
-    Task<UserSubscription> UpdateAsync(Guid userId, UserSubscription userSubscription, CancellationToken cancellationToken = default);
-    Task<bool> Delete(Guid id, CancellationToken ct = default);
     Task<UserSubscription?> GetByIdWithNavAsync(Guid id, CancellationToken ct = default);
-    Task<PagedResult<UserSubscription>> GetAllAsync(UserSubscriptionPagedRequest request, CancellationToken cancellationToken = default);
-    Task<UserSubscription> UpdateStatusAsync(Guid id,Guid userId, SubscriptionStatus status, CancellationToken cancellationToken = default);
-    Task<PagedResult<UserSubscription>> GetAllByUserIdAsync(Guid userId, UserSubscriptionPagedRequest request, CancellationToken cancellationToken = default);
-    Task ValidateAndConsumeEntitlementsAsync(Guid userSubscriptionId, IEnumerable<CompanySubscriptionEntitlement> requestedEntitlements, CancellationToken cancellationToken = default);
-    Task ConsumeFeatureAsync(Guid userSubscriptionId, FeatureKeys featureKey, int quantity = 1, CancellationToken cancellationToken = default);
+    Task<UserSubscription?> GetActiveByUserAsync(Guid userId, CancellationToken ct = default);
+    Task<UserSubscription?> GetByTransactionAsync(Guid txId, CancellationToken ct = default);
+
+    Task<UserSubscription> CreateAsync(UserSubscription entity, CancellationToken ct = default);
+    Task<bool> UpdateAsync(UserSubscription entity, CancellationToken ct = default);
+
+    Task BulkAddEntitlementsAsync(IEnumerable<UserSubscriptionEntitlement> ents, CancellationToken ct = default);
+
+    Task<PagedResult<UserSubscription>> GetPagedByUserIdAsync(Guid id, UserSubscriptionPagedRequest request, CancellationToken ct = default);
+    Task<List<UserSubscription>> GetExpiringAsync(DateTimeOffset until, int take = 100, CancellationToken ct = default);
+    Task UpdateNextDueAsync(Guid subId, DateTimeOffset? nextDueAt, CancellationToken ct = default);
+    Task DecreaseCompanyShareLimitAsync(Guid userSubscriptionId, int amount = 1, CancellationToken ct = default);
+
+    Task<int> UpdateEnabledByFeatureIdAsync(Guid featureId, bool newStatus, CancellationToken ct = default);
 }

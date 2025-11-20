@@ -32,6 +32,10 @@ namespace Fusion.Service.IServices
 
         Task<AddMemberRoleInCompanyResponse?> AddRoleForMemberInCompany(Guid companyId, List<int> roleIds, Guid memberId, string inviterEmail, CancellationToken token = default);
         Task<CompanyMemberResponse?> GetCompanyMemberByCompanyIdAndUserIdAsync(Guid companyId, Guid userId, CancellationToken token = default);
+        Task<PagedResult<CompanyMemberResponseV2>> GetCompanyMemberByUserIdAsync(Guid userId,CompanyMemberPagedRequest request,CancellationToken token = default);
 
+        Task<CompanyMemberResponse?> AcceptJoinMemberById(long memberId, CancellationToken token = default);
+        Task<CompanyMemberResponse?> RejectJoinMemberById(long memberId, CancellationToken token = default);
     }
+
 }

@@ -47,7 +47,7 @@ public class AuthenService : IAuthenService
         // 2. check email exist
         if (await _userRepository.CheckEmailExistAsync(request.Email, cancellationToken))
             throw CustomExceptionFactory.
-                CreateBadRequestError(ResponseMessages.EXISTED.FormatMessage("Email"));
+                CreateBadRequestError(ResponseMessages.EXISTED, "Email");
 
         //3. Map request to user entity
         var user = _mapper.Map<User>(request);
@@ -132,11 +132,11 @@ public class AuthenService : IAuthenService
             return false;
         }
     }
-    //public async Task<bool> EmailVerificationAsync(string token, CancellationToken cancellationToken = default)
-    //{
-    //    var result = await _userRepository.EmailVerificationAsync(token, cancellationToken);
-    //    return result;
-    //}
+    public async Task<bool> EmailVerificationAsync(string token, CancellationToken cancellationToken = default)
+    {
+        var result = await _userRepository.EmailVerificationAsync(token, cancellationToken);
+        return result;
+    }
     public async Task<LoginResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken)
     {
         // 1. validate input
@@ -148,7 +148,7 @@ public class AuthenService : IAuthenService
         var user = await _userRepository.GetUserByEmailAsync(request.Email, cancellationToken);
         if (user == null)
             throw CustomExceptionFactory.
-                CreateBadRequestError(ResponseMessages.INVALID_INPUT.FormatMessage("Email incorrect!"));
+                CreateBadRequestError(ResponseMessages.INVALID_INPUT,"Email incorrect!");
         if (user.Status == false)
             throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.BAD_REQUEST,"Please verify gmail");
 
@@ -160,12 +160,12 @@ public class AuthenService : IAuthenService
         // Optional: check length
         if (computedHash.Length != user.PasswordHash.Length)
             throw CustomExceptionFactory.
-                CreateBadRequestError(ResponseMessages.INVALID_INPUT.FormatMessage("Password incorrect!"));
+                CreateBadRequestError("Password incorrect!");
 
         // So sánh constant-time
         if (!CryptographicOperations.FixedTimeEquals(computedHash, user.PasswordHash))
             throw CustomExceptionFactory.
-                CreateBadRequestError(ResponseMessages.INVALID_INPUT.FormatMessage("Password incorrect!"));
+                CreateBadRequestError("Password incorrect!");
 
         // 4. Generate JWT tokens
         var tokens = await _jwtService.GenerateTokensAsync(user);

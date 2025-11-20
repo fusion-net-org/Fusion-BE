@@ -1,12 +1,13 @@
-﻿using Fusion.Repository.Bases.Page;
-using Fusion.Repository.Bases.Page.ProjectRequest;
-using Fusion.Repository.Data;
-using Fusion.Repository.Entities;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Fusion.Repository.Bases.Page;
+using Fusion.Repository.Bases.Page.ProjectRequest;
+using Fusion.Repository.Data;
+using Fusion.Repository.Entities;
+using Fusion.Repository.Enums;
 
 namespace Fusion.Repository.IRepositories
 {
@@ -29,6 +30,7 @@ namespace Fusion.Repository.IRepositories
         Task<ProjectRequest> AcceptProjectRequestAsync(Guid requestId, string executorEmail, CancellationToken cancellationToken = default);
 
         Task<ProjectRequest?> RejectProjectRequestAsync(Guid requestId, string executorEmail, string reason, CancellationToken cancellationToken = default);
-
+        Task<ProjectRequest?> GetProjectRequestByContractIdAsync(Guid contractId, CancellationToken cancellationToken = default);
+        Task<ProjectRequest> UpdateProjectRequestStatusAsync(Guid requestId, ProjectRequestStatusEnum status, CancellationToken cancellationToken = default);
     }
 }

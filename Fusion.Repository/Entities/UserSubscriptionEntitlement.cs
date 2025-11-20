@@ -1,6 +1,4 @@
 ﻿
-
-using Fusion.Repository.Enums;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -11,23 +9,23 @@ public class UserSubscriptionEntitlement
 {
     [Key]
     [Column("id")]
-    public Guid Id { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
 
+    [Required]
     [Column("user_subscription_id")]
     public Guid UserSubscriptionId { get; set; }
 
-    [Required, MaxLength(50)]
-    [Column("feature_key")]
-    public FeatureKeys FeatureKey { get; set; } = FeatureKeys.Project;
+    [Required]
+    [Column("feature_id")]
+    public Guid FeatureId { get; set; }
 
-    [Column("quantity")]
-    public int Quantity { get; set; } 
-
-    [Column("remaining")]
-    public int Remaining { get; set; }
+    [Column("enabled")]
+    public bool Enabled { get; set; } = true;
 
     [ForeignKey(nameof(UserSubscriptionId))]
-    [InverseProperty(nameof(UserSubscription.UserSubscriptionEntitlements))]
-    public UserSubscription? UserSubscription { get; set; }
+    public virtual UserSubscription UserSubscription { get; set; } = null!;
+
+    [ForeignKey(nameof(FeatureId))]
+    public virtual Feature Feature { get; set; } = null!;
 
 }

@@ -11,6 +11,8 @@ public interface IAdminService
 
     Task<OverviewDashBoardResponse> GetTotalsAsync(CancellationToken ct = default);
 
-    Task<IEnumerable<MonthlyStats>> GetMonthlyStatsAsync(CancellationToken ct = default);
+    //Task<IEnumerable<MonthlyStats>> GetMonthlyStatsAsync(CancellationToken ct = default);
+
+    //Task<IEnumerable<PlanRate>> GetTopPlanRateAsync(CancellationToken token = default);
 
 }

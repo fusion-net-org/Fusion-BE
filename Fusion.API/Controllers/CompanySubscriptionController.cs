@@ -34,21 +34,31 @@ namespace Fusion.API.Controllers
                 message: "Create company subscription successfully"));
         }
 
+        [HttpPost("use")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<bool>))]
+        public async Task<IActionResult> UseFeature([FromBody] UserFeatureRequest request, CancellationToken cancellationToken)
+        {
+            var result = await _service.UseFeatureAsync(request, cancellationToken);
+            return Ok(ResponseModel<bool>.Ok(
+               data: result,
+               message: "Use success."));
+        }
+
         /// <summary>
         ///  Cập nhật Company Subscription (chỉ status + entitlements)
         /// </summary>
-        [HttpPut]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<CompanySubscriptionDetailResponse>))]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> Update([FromBody] CompanySubscriptionUpdateRequest request, CancellationToken cancellationToken)
-        {
+        //[HttpPut]
+        //[ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<CompanySubscriptionDetailResponse>))]
+        //[ProducesResponseType(StatusCodes.Status400BadRequest)]
+        //[ProducesResponseType(StatusCodes.Status404NotFound)]
+        //public async Task<IActionResult> Update([FromBody] CompanySubscriptionUpdateRequest request, CancellationToken cancellationToken)
+        //{
 
-            var result = await _service.UpdateAsync(request, cancellationToken);
-            return Ok(ResponseModel<CompanySubscriptionDetailResponse>.Ok(
-                data: result,
-                message: "Update company subscription successfully."));
-        }
+        //    var result = await _service.UpdateAsync(request, cancellationToken);
+        //    return Ok(ResponseModel<CompanySubscriptionDetailResponse>.Ok(
+        //        data: result,
+        //        message: "Update company subscription successfully."));
+        //}
 
         /// <summary>
         /// Lấy chi tiết một Company Subscription theo ID
@@ -58,7 +68,7 @@ namespace Fusion.API.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
         {
-            var result = await _service.GetByIdAsync(id, cancellationToken);
+            var result = await _service.GetDetailAsync(id, cancellationToken);
             return Ok(ResponseModel<CompanySubscriptionDetailResponse>.Ok(
                 data: result,
                 message: "Get company subscription detail successfully."));
@@ -67,17 +77,18 @@ namespace Fusion.API.Controllers
         /// <summary>
         /// Lấy danh sách tất cả Company Subscription (phân trang)
         /// </summary>
-        [HttpGet]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PagedResult<CompanySubscriptionListResponse>>))]
-        public async Task<IActionResult> GetAll(
-            [FromQuery] CompanySubscriptionPagedRequest request,
-            CancellationToken cancellationToken)
-        {
-            var result = await _service.GetAllAsync(request, cancellationToken);
-            return Ok(ResponseModel<PagedResult<CompanySubscriptionListResponse>>.Ok(
-                data: result,
-                message: "Get list company subscription successfully."));
-        }
+        //[HttpGet]
+        //[ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PagedResult<CompanySubscriptionListResponse>>))]
+        //public async Task<IActionResult> GetAll(
+        //    [FromBody] Guid companyId,
+        //    [FromQuery] CompanySubscriptionPagedRequest request,
+        //    CancellationToken cancellationToken)
+        //{
+        //    var result = await _service.GetAllByCompanyAsync(companyId, request, cancellationToken);
+        //    return Ok(ResponseModel<PagedResult<CompanySubscriptionListResponse>>.Ok(
+        //        data: result,
+        //        message: "Get list company subscription successfully."));
+        //}
 
         /// <summary>
         /// Lấy danh sách Company Subscription theo CompanyId

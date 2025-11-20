@@ -32,22 +32,27 @@ public class AdminService : IAdminService
         var totalCompanies = await _companyRepository.GetTotalCompaniesAsync(ct);
         var totalProjects = await _projectRepository.GetTotalProjectsAsync(ct);
         var totalUsers = await _userRepository.GetTotalUsersAsync(ct);
-        var totalRevenue = await _transactionPaymentRepository.GetTotalRevenueAsync(ct);
+        //var totalRevenue = await _transactionPaymentRepository.GetTotalRevenueAsync(ct);
 
         return new OverviewDashBoardResponse
         {
             CompanyCount = totalCompanies,
             ProjectCount = totalProjects,
             UserCount = totalUsers,
-            RevenueSum = totalRevenue
+            //RevenueSum = totalRevenue
         };
     }
 
-    public async Task<IEnumerable<MonthlyStats>> GetMonthlyStatsAsync(CancellationToken cancellationToken =  default)
-    {
-        int currentYear = DateTime.UtcNow.Year;
-        return await _transactionPaymentRepository.GetMonthlyStatsAsync(currentYear, cancellationToken);
-    }
+    //public async Task<IEnumerable<MonthlyStats>> GetMonthlyStatsAsync(CancellationToken cancellationToken =  default)
+    //{
+    //    int currentYear = DateTime.UtcNow.Year;
+    //    return await _transactionPaymentRepository.GetMonthlyStatsAsync(currentYear, cancellationToken);
+    //}
+
+    //public async Task<IEnumerable<PlanRate>> GetTopPlanRateAsync(CancellationToken token = default)
+    //{
+    //    return await _transactionPaymentRepository.GetTopPlanRateAsync(token);
+    //}
 
 
 }
