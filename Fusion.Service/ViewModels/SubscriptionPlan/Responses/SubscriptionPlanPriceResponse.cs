@@ -15,5 +15,6 @@ namespace Fusion.Service.ViewModels.SubscriptionPlan.Responses
         public PaymentMode PaymentMode { get; set; }
         public int? InstallmentCount { get; set; }
         public BillingPeriod? InstallmentInterval { get; set; }
+        public List<SubscriptionPlanPriceDiscountResponse>? Discounts { get; set; }
     }
 }
