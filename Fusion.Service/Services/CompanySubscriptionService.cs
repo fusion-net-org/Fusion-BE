@@ -19,6 +19,7 @@ namespace Fusion.Service.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IUserLogService _userLogService;
 
+
         public CompanySubscriptionService(ICompanySubscriptionRepository companySubscriptionRepository, IMapper mapper, IUnitOfWork unitOfWork, IUserLogService userLogService)
         {
             _companySubscriptionRepository = companySubscriptionRepository;
@@ -100,9 +101,14 @@ namespace Fusion.Service.Services
 
             return _mapper.Map<CompanySubscriptionDetailResponse>(entity);
         }
-        public async Task<bool> UseFeatureAsync(UserFeatureRequest request, CancellationToken ct = default)
+        public async Task<bool> UseFeatureInCompanyAsync(UserFeatureRequest request, CancellationToken ct = default)
         {
-            await _companySubscriptionRepository.UseFeatureAsync(request.companySubscriptionId, request.companyMemberId, request.featureName, ct);
+            await _companySubscriptionRepository.UseFeatureInCompanyAsync(request.companySubscriptionId, request.companyMemberId, request.featureName, ct);
+            return true;
+        }
+        public async Task<bool> UseFeatureInUserAsync(Guid userSubscriptionId, Guid userId, string featureName, CancellationToken ct = default)
+        {
+            await _companySubscriptionRepository.UseFeatureInUserAsync(userSubscriptionId, userId, featureName, ct);
             return true;
         }
     }
