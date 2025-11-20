@@ -3,6 +3,7 @@ using Fusion.Repository.Bases.Page.ProjectMember;
 using Fusion.Repository.Bases.Responses;
 using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.IServices;
+using Fusion.Service.ViewModels.ProjectMembers.Request;
 using Fusion.Service.ViewModels.ProjectMembers.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -83,12 +84,53 @@ namespace Fusion.API.Controllers
             ));
         }
 
+        [HttpGet("project/{projectId:guid}/members-with-role")]
+        public async Task<IActionResult> GetProjectMembersWithRole(
+           Guid projectId,
+           CancellationToken cancellationToken)
+        {
+            var result = await _projectMemberService.GetProjectMembersWithRoleAsync(
+                projectId,
+                cancellationToken);
 
+            return Ok(ResponseModel<List<ProjectMemberRoleResponse>>.Ok(
+                data: result,
+                message: ResponseMessageHelper.FormatMessage(
+                    ResponseMessages.SUCCESS,
+                    "Successfully retrieved project members with roles")
+            ));
+        }
         [HttpGet("charts/{projectId}")]
         public async Task<IActionResult> GetCharts(Guid projectId, CancellationToken ct)
         {
             var data = await _projectMemberService.GetProjectMemberChartsAsync(projectId, ct);
             return Ok(data);
         }
+        [HttpPost]
+        public async Task<IActionResult> AddMember(
+    [FromBody] ProjectMemberCreateRequest request,
+    CancellationToken cancellationToken)
+        {
+            var result = await _projectMemberService.AddMemberAsync(request, cancellationToken);
+
+            return Ok(ResponseModel<ProjectMemberResponseV2>.Ok(
+                data: result,
+                message: ResponseMessageHelper.FormatMessage(ResponseMessages.SUCCESS, "Member assigned to project successfully")
+            ));
+        }
+        [HttpDelete("project/{projectId:guid}/member/{memberId:guid}")]
+        public async Task<IActionResult> RemoveMember(
+    Guid projectId,
+    Guid memberId,
+    CancellationToken cancellationToken)
+        {
+            await _projectMemberService.RemoveMemberAsync(projectId, memberId, cancellationToken);
+
+            return Ok(ResponseModel<bool>.Ok(
+                data: true,
+                message: ResponseMessageHelper.FormatMessage(ResponseMessages.SUCCESS, "Member removed from project")
+            ));
+        }
+
     }
 }

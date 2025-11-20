@@ -24,7 +24,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="ViewModels\ProjectMembers\Request\" />
     <Folder Include="ViewModels\Project\Validators\" />
     <Folder Include="ViewModels\Workflow\" />
   </ItemGroup>

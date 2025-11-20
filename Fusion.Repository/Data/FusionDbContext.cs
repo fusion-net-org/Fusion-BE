@@ -400,8 +400,7 @@ public partial class FusionDbContext : DbContext
             e.HasKey(x => new { x.TaskId, x.UserId });               // ⬅️ khóa chính kép
             e.Property(x => x.AssignedAt).HasPrecision(3)
                 .HasDefaultValueSql("GETUTCDATE()");
-            e.HasOne(x => x.Task).WithMany(t => t.Assignees)
-                .HasForeignKey(x => x.TaskId).OnDelete(DeleteBehavior.Cascade);
+          
             e.HasOne(x => x.User).WithMany()
                 .HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => x.UserId);

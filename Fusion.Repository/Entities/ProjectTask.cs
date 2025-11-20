@@ -105,7 +105,7 @@ public partial class ProjectTask
 
     [Column("source_task_id")] public Guid? SourceTaskId { get; set; }
     [ForeignKey(nameof(SourceTaskId))] public ProjectTask? SourceTask { get; set; }
-    public ICollection<ProjectTaskAssignee> Assignees { get; set; } = new List<ProjectTaskAssignee>();
+    public ICollection<TaskWorkflow> Assignees { get; set; } = new List<TaskWorkflow>();
     public ICollection<ProjectTaskDependency> Dependencies { get; set; } = new List<ProjectTaskDependency>();
     //---------------------------------------------------------
 

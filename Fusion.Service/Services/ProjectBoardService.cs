@@ -93,9 +93,9 @@ namespace Fusion.Service.Services
 
                 var assignees = assigneesMap.TryGetValue(t.Id, out var rows)
                     ? rows.Select(a => new MemberRefDto(
-                            a.UserId.ToString(),
-                            a.User?.UserName ?? a.User?.Email ?? "Member",
-                            a.User?.Avatar
+                            a.AssignUserId.ToString(),
+                            a.AssignUser?.UserName ?? a.AssignUser?.Email ?? "Member",
+                            a.AssignUser?.Avatar
                         )).ToList()
                     : new List<MemberRefDto>();
 
@@ -206,9 +206,9 @@ namespace Fusion.Service.Services
 
             var assRows = await _repo.GetAssigneesForTasksAsync(new[] { task.Id }, ct);
             var assignees = assRows.Select(a => new MemberRefDto(
-                a.UserId.ToString(),
-                a.User?.UserName ?? a.User?.Email ?? "Member",
-                a.User?.Avatar
+                a.AssignUserId.ToString(),
+                a.AssignUser?.UserName ?? a.AssignUser?.Email ?? "Member",
+                a.AssignUser?.Avatar
             )).ToList();
 
             return new TaskVmDto
