@@ -39,4 +39,7 @@ public class ProjectTaskResponse
 
     public DateTime? CreateAt { get; set; }
     public DateTime? UpdateAt { get; set; }
+    public TaskWorkflowAssignmentsResponse? WorkflowAssignments { get; set; }  
+
+
 }

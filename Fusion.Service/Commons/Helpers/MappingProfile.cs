@@ -13,6 +13,7 @@ using Fusion.Service.ViewModels.Notifications.Requests;
 using Fusion.Service.ViewModels.Notifications.Responses;
 using Fusion.Service.ViewModels.Project.Requests;
 using Fusion.Service.ViewModels.Project.Responses;
+using Fusion.Service.ViewModels.ProjectMembers.Request;
 using Fusion.Service.ViewModels.ProjectMembers.Responses;
 using Fusion.Service.ViewModels.Projects.Requests;
 using Fusion.Service.ViewModels.Projects.Responses;
@@ -62,6 +63,24 @@ public class MappingProfile : Profile
         CreateMap<User, AdminUserResponse>();
         CreateMap<User, CompanyUserResponse>();
         CreateMap<User, SelfUserResponse>();
+
+        //----------------------------     entity: projectmember role ---------------------------------------------
+        CreateMap<ProjectMember, ProjectMemberRoleResponse>()
+    .ForMember(d => d.ProjectId, o => o.MapFrom(s => s.ProjectId))
+    .ForMember(d => d.UserId, o => o.MapFrom(s => s.UserId))
+    .ForMember(d => d.UserName, o => o.MapFrom(s => s.User!.UserName ?? s.User.UserName))
+    .ForMember(d => d.Email, o => o.MapFrom(s => s.User!.Email))
+    .ForMember(d => d.AvatarUrl, o => o.MapFrom(s => s.User!.Avatar))
+    .ForMember(d => d.CompanyRoleName, o => o.MapFrom(s =>
+        s.User!.UserRoles
+            .Where(ur => ur.Role != null &&
+                         // nếu project outsourced thì lấy role theo company request
+                         (ur.Role.CompanyId == (s.Project!.IsHired
+                             ? s.Project.CompanyRequestId
+                             : s.Project.CompanyId)))
+            .Select(ur => ur.Role!.RoleName)
+            .FirstOrDefault()
+    ));
 
         //----------------------------     entity: Company ---------------------------------------------
         CreateMap<Company, CompanyResponse>()
@@ -487,7 +506,7 @@ public class MappingProfile : Profile
             .ForMember(d => d.Assignees, opt => opt.Ignore());
 
         CreateMap<ProjectTask, ProjectTaskResponse>()
-            .ForMember(d => d.AssigneeIds, opt => opt.MapFrom(s => s.Assignees.Select(a => a.UserId)));
+            .ForMember(d => d.AssigneeIds, opt => opt.MapFrom(s => s.Assignees.Select(a => a.AssignUserId)));
 
 
 

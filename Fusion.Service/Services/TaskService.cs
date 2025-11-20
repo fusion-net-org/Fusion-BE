@@ -23,19 +23,21 @@ public class TaskService : ITaskService
     private readonly IMapper _mapper;
     private readonly ICompanyActivityService _log;
     private readonly ICurrentService _current;
-
+    private readonly ITaskWorkflowService _taskWorkflowService;
     public TaskService(
         FusionDbContext db,
         ITaskRepository repo,
         IMapper mapper,
         ICompanyActivityService log,
-        ICurrentService current)
+        ICurrentService current,
+        ITaskWorkflowService taskWorkflowService)
     {
         _db = db;
         _repo = repo;
         _mapper = mapper;
         _log = log;
         _current = current;
+        _taskWorkflowService = taskWorkflowService;
     }
     #region Helpers
     /* -------------------- Helpers -------------------- */
@@ -532,15 +534,42 @@ public class TaskService : ITaskService
         entity.IsDeleted = false;
 
         // Assignees
-        entity.Assignees = new List<ProjectTaskAssignee>();
+        entity.Assignees = new List<TaskWorkflow>();
         if (req.AssigneeIds?.Count > 0)
         {
             foreach (var uid in req.AssigneeIds.Distinct())
-                entity.Assignees.Add(new ProjectTaskAssignee { TaskId = entity.Id, UserId = uid });
+                entity.Assignees.Add(new TaskWorkflow { TaskId = entity.Id, AssignUserId = uid });
         }
 
         // 7) Persist
         await _repo.AddAsync(entity, ct);
+        if (req.WorkflowAssignments != null)
+        {
+            var validItems = req.WorkflowAssignments
+                .Where(x => x.AssignUserId.HasValue && x.AssignUserId.Value != Guid.Empty)
+                .Select(x => new TaskWorkflowAssignmentItemRequest
+                {
+                    WorkflowStatusId = x.WorkflowStatusId,
+                    AssignUserId = x.AssignUserId
+                })
+                .ToList();
+
+            if (validItems.Count > 0)
+            {
+                var wfReq = new TaskWorkflowAssignmentsRequest
+                {
+                    TaskId = entity.Id,
+                    Items = validItems
+                };
+
+                await _taskWorkflowService.UpsertAssignmentsForTaskAsync(
+                    wfReq,
+                    userId,
+                    ct);
+            }
+        }
+
+
         var companyId = await _db.Projects
     .Where(p => p.Id == entity.ProjectId)
     .Select(p => (Guid)p.CompanyId)    // ép về Guid
@@ -636,7 +665,7 @@ public class TaskService : ITaskService
         {
             e.Assignees.Clear();
             foreach (var uid in req.AssigneeIds.Distinct())
-                e.Assignees.Add(new ProjectTaskAssignee { TaskId = e.Id, UserId = uid });
+                e.Assignees.Add(new TaskWorkflow { TaskId = e.Id, AssignUserId = uid });
         }
 
         e.UpdateAt = DateTime.UtcNow;
@@ -646,6 +675,25 @@ public class TaskService : ITaskService
        .Where(p => p.Id == e.ProjectId)
        .Select(p => (Guid)p.CompanyId)    // ép về Guid
        .FirstAsync(ct);
+        if (req.WorkflowAssignments != null)
+        {
+            var wfReq = new TaskWorkflowAssignmentsRequest
+            {
+                TaskId = e.Id,
+                Items = req.WorkflowAssignments
+                    .Select(x => new TaskWorkflowAssignmentItemRequest
+                    {
+                        WorkflowStatusId = x.WorkflowStatusId,
+                        AssignUserId = x.AssignUserId
+                    })
+                    .ToList()
+            };
+
+            await _taskWorkflowService.UpsertAssignmentsForTaskAsync(
+                wfReq,
+                userId,
+                ct);
+        }
 
         await _log.CreateLog(new CompanyActivityLog
         {
@@ -664,7 +712,14 @@ public class TaskService : ITaskService
         var e = await _repo.FindByIdAsync(id, ct)
             ?? throw CustomExceptionFactory.CreateNotFoundError(
                 ResponseMessages.NOT_FOUND.FormatMessage("Task"));
-        return _mapper.Map<ProjectTaskResponse>(e);
+
+        // map task trước
+        var vm = _mapper.Map<ProjectTaskResponse>(e);
+
+        var wfAssignments = await _taskWorkflowService.GetAssignmentsForTaskAsync(id, ct);
+        vm.WorkflowAssignments = wfAssignments;
+
+        return vm;
     }
 
     public async Task<PagedResult<ProjectTaskResponse>> GetAllTasksAsync(

@@ -40,6 +40,7 @@ public partial class FusionDbContext : DbContext
     public virtual DbSet<UserLog> UserLogs { get; set; }
     public virtual DbSet<ProjectTaskAssignee> ProjectTaskAssignee { get; set; }
     public virtual DbSet<ProjectTaskDependency> ProjectTaskDependency { get; set; }
+    public virtual DbSet<ProjectTaskChecklistItem> ProjectTaskChecklistItems { get; set; }
 
     public virtual DbSet<UserNotificationSetting> UserNotificationSettings { get; set; }
     // Subscription
@@ -487,8 +488,7 @@ public partial class FusionDbContext : DbContext
             e.HasKey(x => new { x.TaskId, x.UserId });               // ⬅️ khóa chính kép
             e.Property(x => x.AssignedAt).HasPrecision(3)
                 .HasDefaultValueSql("GETUTCDATE()");
-            e.HasOne(x => x.Task).WithMany(t => t.Assignees)
-                .HasForeignKey(x => x.TaskId).OnDelete(DeleteBehavior.Cascade);
+          
             e.HasOne(x => x.User).WithMany()
                 .HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => x.UserId);
@@ -676,6 +676,24 @@ public partial class FusionDbContext : DbContext
                   .HasConstraintName("FK_CompanySubscriptionEntries_CompanyMembers_MemberId")
                   .OnDelete(DeleteBehavior.Restrict); // tránh multiple cascade paths
         });
+        modelBuilder.Entity<ProjectTaskChecklistItem>(e =>
+        {
+            e.ToTable("ProjectTaskChecklistItems");
+
+            e.Property(x => x.Label)
+                .HasMaxLength(255);
+
+            e.Property(x => x.CreatedAt)
+                .HasPrecision(3)
+                .HasDefaultValueSql("SYSUTCDATETIME()");
+
+            e.HasOne(x => x.Task)
+                .WithMany(t => t.ChecklistItems)
+                .HasForeignKey(x => x.TaskId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_ProjectTaskChecklistItems_Task");
+        });
+
 
         OnModelCreatingPartial(modelBuilder);
     }

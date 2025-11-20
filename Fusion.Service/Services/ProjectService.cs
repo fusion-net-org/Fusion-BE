@@ -100,6 +100,7 @@ namespace Fusion.Service.Services
                 StartDate = request.StartDate,
                 EndDate = request.EndDate,
                 CreatedBy = actorUserId,
+                SprintLengthWeeks = request.SprintLengthWeeks,
                 CreateAt = DateTime.UtcNow,
                 UpdateAt = DateTime.UtcNow
             };
@@ -108,11 +109,44 @@ namespace Fusion.Service.Services
             var sprints = GenerateSprints(project.Id, request);
 
             // 7) Validate + stage members
-            var validCompanies = new HashSet<Guid> { companyId };
-            if (request.IsHired && request.CompanyRequestId.HasValue)
-                validCompanies.Add(request.CompanyRequestId.Value);
-
             var stagedMembers = new List<(Guid userId, bool isPartner)>();
+
+            if (request.MemberIds != null && request.MemberIds.Count > 0)
+            {
+                // owner company luôn có
+                var ownerCompanyId = companyId;
+                Guid? hiredCompanyId = request.IsHired ? request.CompanyRequestId : null;
+
+                foreach (var uid in request.MemberIds.Distinct())
+                {
+                    // 7.1: check user thuộc owner company?
+                    var belongsOwner = await _projMemberRepo
+                        .UserBelongsToCompanyAsync(uid, ownerCompanyId, ct);
+
+                    var belongsHired = false;
+                    if (hiredCompanyId.HasValue)
+                    {
+                        belongsHired = await _projMemberRepo
+                            .UserBelongsToCompanyAsync(uid, hiredCompanyId.Value, ct);
+                    }
+
+                    if (!belongsOwner && !belongsHired)
+                    {
+                        throw CustomExceptionFactory.CreateBadRequestError(
+                            $"User {uid} is not a member of the owner/hired company.");
+                    }
+
+                    var isPartner = belongsHired && !belongsOwner;
+                    stagedMembers.Add((uid, isPartner));
+                }
+            }
+
+            // (option) tự add luôn actor thành member nếu chưa có
+            if (!stagedMembers.Any(m => m.userId == actorUserId))
+            {
+                stagedMembers.Add((actorUserId, isPartner: false));
+            }
+
 
 
             // 8) Transactional save
