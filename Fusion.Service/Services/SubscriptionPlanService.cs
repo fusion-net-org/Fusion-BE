@@ -27,8 +27,8 @@ namespace Fusion.Service.Services
 
         private static void ValidatePlan(SubscriptionPlan p)
         {
-            if (p.LicenseScope == LicenseScope.CompanyWide && p.SeatsPerCompanyLimit != null)
-                throw CustomExceptionFactory.CreateBadRequestError("SeatsPerCompanyLimit must be null for CompanyWide plans.");
+            if (p.LicenseScope == LicenseScope.EntireCompany && p.SeatsPerCompanyLimit != null)
+                throw CustomExceptionFactory.CreateBadRequestError("SeatsPerCompanyLimit must be null for EntireCompany plans.");
 
             if (p.CompanyShareLimit.HasValue && p.CompanyShareLimit <= 0)
                 throw CustomExceptionFactory.CreateBadRequestError("CompanyShareLimit must be > 0 or null.");

@@ -10,7 +10,7 @@ public class SubscriptionPlanCreateRequest
     public string? Description { get; set; }
 
     public bool IsActive { get; set; } = true;
-    public LicenseScope LicenseScope { get; set; } = LicenseScope.SeatBased;
+    public LicenseScope LicenseScope { get; set; } = LicenseScope.Userlimits;
     public bool IsFullPackage { get; set; } = false;
 
     /// <summary>Số công ty share tối đa; null = không giới hạn</summary>

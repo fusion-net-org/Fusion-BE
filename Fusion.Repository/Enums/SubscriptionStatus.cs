@@ -14,7 +14,6 @@ public enum LicenseScope
 
     [EnumMember(Value = "entire_company")]
     EntireCompany = 2
-
 }
 
 /// <summary>
