@@ -25,17 +25,24 @@ namespace Fusion.Service.ViewModels.Project.Responses
     {
         public Guid Id { get; set; }
         public string Name { get; set; }
+        public string? Code { get; set; }
+
+        public string? Description { get; set; }
+
+        public string? Status { get; set; }
+
 
         public string ProjectType { get; set; }
 
 
-        public Guid CompanyId { get; set; }
-        public string? CompanyName { get; set; }
+        public Guid CompanyExecutorId { get; set; }
+        public string? CompanyExecutorName { get; set; }
 
+        public Guid? CompanyRequestId { get; set; }
+        public string? CompanyRequestName { get; set; }
 
-        public Guid? CompanyHiredId { get; set; }
-        public string? CompanyHiredName { get; set; }
-
+        public DateOnly? StartDate { get; set; }
+        public DateOnly? EndDate { get; set; }
 
         public Guid WorkflowId { get; set; }
         public string? WorkflowName { get; set; }
@@ -45,6 +52,7 @@ namespace Fusion.Service.ViewModels.Project.Responses
 
         public List<ProjectMemberSummaryResponse> Members { get; set; } = new();
 
+        public int MembersCount { get; set; }
         public int SprintCount { get; set; }
         public int TotalTask { get; set; }
         public int TotalPoint { get; set; }
