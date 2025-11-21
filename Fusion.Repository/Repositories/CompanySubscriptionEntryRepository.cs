@@ -1,7 +1,4 @@
-﻿
-
-using Fusion.Repository.Bases.Exceptions;
-using Fusion.Repository.Bases.Responses;
+﻿using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.Enums;
@@ -18,17 +15,18 @@ public class CompanySubscriptionEntryRepository : GenericRepository<CompanySubsc
         _ctx = context;
     }
 
-    public async Task<CompanySubscriptionEntry> CreateAsync(Guid companySubscriptionId, long companyMemberId, CancellationToken ct = default)
+    public async Task<CompanySubscriptionEntry> CreateAsync(Guid companySubscriptionId, Guid actorUserId,Guid companyId, CancellationToken ct = default)
     {
-        using var tx = await _ctx.Database.BeginTransactionAsync(ct);
-        try
-        {
             var sub = await _ctx.CompanySubscriptions
                     .FirstOrDefaultAsync(s => s.Id == companySubscriptionId, ct);
+            if (sub == null)
+                throw CustomExceptionFactory.CreateNotFoundError("Company subscription.");
 
-        if (sub == null)
-            throw CustomExceptionFactory.CreateNotFoundError(
-                ResponseMessages.NOT_FOUND.FormatMessage("Company subscription."));
+            var user = await _ctx.CompanyMembers
+                .FirstOrDefaultAsync(m => m.UserId == actorUserId && m.CompanyId == companyId, ct);
+
+            if (user == null)
+            throw CustomExceptionFactory.CreateNotFoundError("User");
 
         if (sub.Status != SubscriptionStatus.Active)
             throw CustomExceptionFactory.CreateBadRequestError(
@@ -42,12 +40,11 @@ public class CompanySubscriptionEntryRepository : GenericRepository<CompanySubsc
         var existing = await _ctx.CompanySubscriptionEntries
             .FirstOrDefaultAsync(e =>
                 e.CompanySubscriptionId == companySubscriptionId &&
-                e.CompanyMemberId == companyMemberId,
+                e.CompanyMemberId == user.Id,
                 ct);
 
         if (existing != null)
         {
-            await tx.CommitAsync(ct);
             return existing;
         }
             // 3. Check seat limit
@@ -63,7 +60,7 @@ public class CompanySubscriptionEntryRepository : GenericRepository<CompanySubsc
             var entry = new CompanySubscriptionEntry
             {
                 CompanySubscriptionId = companySubscriptionId,
-                CompanyMemberId = companyMemberId,
+                CompanyMemberId = user.Id,
                 UsedAt = DateTimeOffset.UtcNow
             };
 
@@ -77,18 +74,8 @@ public class CompanySubscriptionEntryRepository : GenericRepository<CompanySubsc
                 _ctx.CompanySubscriptions.Update(sub);
             }
 
-            await _ctx.SaveChangesAsync(ct);
-            await tx.CommitAsync(ct);
-
             return entry;
-        }
-        catch
-        {
-            await tx.RollbackAsync(ct);
-            throw;
-        }
     }
-
     public async Task<List<CompanySubscriptionEntry>> GetByCompanySubscriptionIdAsync(Guid companySubscriptionId, CancellationToken ct = default)
     {
         return await _ctx.CompanySubscriptionEntries

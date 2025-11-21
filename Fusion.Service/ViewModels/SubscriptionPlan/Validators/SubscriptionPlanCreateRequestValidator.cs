@@ -17,12 +17,12 @@ public class SubscriptionPlanCreateRequestValidator : AbstractValidator<Subscrip
             .MaximumLength(400)
             .When(x => !string.IsNullOrWhiteSpace(x.Description));
 
-        // CompanyWide ⇒ SeatsPerCompanyLimit phải null
-        When(x => x.LicenseScope == LicenseScope.CompanyWide, () =>
+        // EntireCompany ⇒ SeatsPerCompanyLimit phải null
+        When(x => x.LicenseScope == LicenseScope.EntireCompany, () =>
         {
             RuleFor(x => x.SeatsPerCompanyLimit)
                 .Must(v => v == null)
-                .WithMessage("SeatsPerCompanyLimit must be null for CompanyWide plans.");
+                .WithMessage("SeatsPerCompanyLimit must be null for EntireCompany plans.");
         });
 
         // Limits > 0 nếu có

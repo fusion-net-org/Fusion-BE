@@ -275,8 +275,17 @@ public class MappingProfile : Profile
             .ForMember(d => d.Id, o => o.Ignore())
             .ForMember(d => d.PlanId, o => o.Ignore());
 
+        CreateMap<SubscriptionPlanPriceDiscountInput, SubscriptionPlanPriceDiscount>()
+            .ForMember(d => d.Id, o => o.Ignore())
+            .ForMember(d => d.PriceId, o => o.Ignore())
+            .ForMember(d => d.CreatedAt, o => o.Ignore())
+            .ForMember(d => d.UpdatedAt, o => o.Ignore());
         // Entity -> Response
-        CreateMap<SubscriptionPlanPrice, SubscriptionPlanPriceResponse>();
+
+        CreateMap<SubscriptionPlanPriceDiscount, SubscriptionPlanPriceDiscountResponse>();
+
+        CreateMap<SubscriptionPlanPrice, SubscriptionPlanPriceResponse>()
+            .ForMember(d => d.Discounts, o => o.MapFrom(s => s.Discounts));
 
         CreateMap<SubscriptionPlan, SubscriptionPlanListItemResponse>();
 
@@ -292,6 +301,7 @@ public class MappingProfile : Profile
                         Enabled = f.Enabled
                     })
                     : new List<SubscriptionPlanFeatureResponse>()));
+
 
         // for customer 
         // Price -> PlanPricePreviewResponse
@@ -394,6 +404,22 @@ public class MappingProfile : Profile
                                                                       ? s.InstallmentIntervalSnapshot.Value.ToString()
                                                                       : null))
             .ForMember(d => d.Entitlements, o => o.MapFrom(s => s.Entitlements));
+
+        // Entitlement -> dropdown item
+        CreateMap<UserSubscriptionEntitlement, UserSubscriptionEntitlementDropdownResponse>()
+            .ForMember(d => d.Id,
+                o => o.MapFrom(s => s.Id))
+            .ForMember(d => d.FeatureName,
+                o => o.MapFrom(s => s.Feature != null ? s.Feature.Name : string.Empty));
+
+        // UserSubscription -> active response
+        CreateMap<UserSubscription, UserSubscriptionActiveResponse>()
+            .ForMember(d => d.Id,
+                o => o.MapFrom(s => s.Id))
+            .ForMember(d => d.NameSubscription,
+                o => o.MapFrom(s => s.Plan != null ? s.Plan.Name : null))
+            .ForMember(d => d.UserSubscriptionEntitlements,
+                o => o.MapFrom(s => s.Entitlements));
 
         // ===================== Company Subscription =====================
 

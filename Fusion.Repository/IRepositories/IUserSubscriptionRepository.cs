@@ -24,4 +24,5 @@ public interface IUserSubscriptionRepository : IGenericRepository<UserSubscripti
     Task DecreaseCompanyShareLimitAsync(Guid userSubscriptionId, int amount = 1, CancellationToken ct = default);
 
     Task<int> UpdateEnabledByFeatureIdAsync(Guid featureId, bool newStatus, CancellationToken ct = default);
+    Task<List<UserSubscription>> GetAllActiveByUserIdAsync(Guid userId, CancellationToken ct = default);
 }

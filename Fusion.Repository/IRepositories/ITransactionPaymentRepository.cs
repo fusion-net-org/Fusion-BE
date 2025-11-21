@@ -3,7 +3,8 @@ using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.TransactionPayment;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
-using Fusion.Repository.ViewModels;
+using Fusion.Repository.ViewModels.SubscriptionPlan;
+using Fusion.Repository.ViewModels.Transactions;
 
 namespace Fusion.Repository.IRepositories;
 
@@ -17,7 +18,7 @@ public interface ITransactionPaymentRepository : IGenericRepository<TransactionP
     Task<bool> ExistsPaymentLinkIdAsync(string paymentLinkId, CancellationToken ct = default);
     Task<bool> LinkToSubscriptionAsync(Guid transactionId, Guid userSubscriptionId, CancellationToken ct = default);
     // Paged
-    Task<PagedResult<TransactionPayment>> GetPagedAsync(TransactionPaymentPagedRequest request, CancellationToken ct = default);
+    Task<TransactionPaymentPagedRepoResult> GetPagedAsync(TransactionPaymentPagedRequest request, CancellationToken ct = default);
 
     // Create
     Task<TransactionPayment> CreateDraftChargeAsync(TransactionPayment draft, CancellationToken ct = default);
@@ -34,11 +35,23 @@ public interface ITransactionPaymentRepository : IGenericRepository<TransactionP
     // Scheduled queries
     Task<List<TransactionPayment>> GetDueAsync(DateTimeOffset asOf, int take = 100, CancellationToken ct = default);
 
-    Task<int> AttachSubscriptionToInstallmentBatchAsync( Guid userId, Guid planId, Guid userSubscriptionId,CancellationToken ct = default);
+    Task<int> AttachSubscriptionToInstallmentBatchAsync(Guid userId, Guid planId, Guid userSubscriptionId, CancellationToken ct = default);
+    Task<TransactionPayment?> FindEarliestPendingInstallmentAsync(Guid userId, Guid planId, Guid? userSubscriptionId, CancellationToken ct = default);
 
-    /// <summary>
-    /// Lấy transaction installment tiếp theo cần thanh toán:
-    /// transaction có Status = Pending, nhỏ nhất InstallmentIndex (và DueAt).
-    /// </summary>
-    Task<TransactionPayment?> FindEarliestPendingInstallmentAsync( Guid userId,Guid planId,Guid? userSubscriptionId, CancellationToken ct = default);
+    // OVerView
+    #region Transaction
+    Task<List<TransactionMonthlyRevenueRepoItem>> GetMonthlyRevenueAsync(int year, CancellationToken ct = default);
+    Task<TransactionMonthlyStatusRepoResult> GetMonthlyStatusAsync( int year,CancellationToken ct = default);
+    Task<List<DailyCashflowAgg>> GetDailyCashflowAggAsync(DateTimeOffset from, DateTimeOffset toExclusive, CancellationToken ct = default);
+    Task<TransactionInstallmentAgingResult> GetInstallmentAgingAsync( DateTimeOffset? asOf = null, CancellationToken ct = default);
+    Task<List<TransactionTopCustomerItemResponse>> GetTopCustomersAsync(int year, int topN, CancellationToken ct = default);
+    #endregion
+
+    #region SubsciptionPlan
+    Task<List<TransactionPaymentModeInsightItemDto>> GetPaymentModeInsightAsync(int year,CancellationToken ct = default);
+    Task<List<TransactionPlanRevenueInsightItem>> GetPlanRevenueInsightAsync(int year,CancellationToken ct);
+
+    #endregion
+
 }
+

@@ -9,12 +9,11 @@ namespace Fusion.Repository.Enums;
 /// </summary>
 public enum LicenseScope
 {
-    [EnumMember(Value = "seat_based")]
-    SeatBased = 1,
+    [EnumMember(Value = "user_limits")]
+    Userlimits = 1,
 
-    [EnumMember(Value = "company_wide")]
-    CompanyWide = 2
-
+    [EnumMember(Value = "entire_company")]
+    EntireCompany = 2
 }
 
 /// <summary>
