@@ -19,7 +19,7 @@ public static class ResponseMessages
 
     // Success messages
     public const string CREATE_SUCCESS = "Created {0} successfully!";
-    public const string INVITE_SUCESS = "Invited {0} successfully";
+    public const string INVITE_SUCCESS = "Invited {0} successfully";
     public const string UPDATE_SUCCESS = "Updated {0} successfully!";
     public const string DELETE_SUCCESS = "Deleted {0} successfully!";
     public const string GET_SUCCESS = "Retrieved {0} successfully!";

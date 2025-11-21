@@ -6,9 +6,11 @@ namespace Fusion.Service.ViewModels.CompanySubscription.Requests;
 public class UserFeatureRequest
 {
     [Required]
-    public Guid companySubscriptionId {  get; set; }
+    public Guid CompanySubscriptionId {  get; set; }
     [Required]
-    public long companyMemberId { get; set; }
+    public Guid ActorUserId { get; set; }
     [Required]
-    public string featureName {  get; set; }
+    public Guid CompanyId { get; set; }
+    [Required]
+    public string FeatureName {  get; set; }
 }

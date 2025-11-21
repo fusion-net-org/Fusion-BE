@@ -111,6 +111,17 @@ namespace Fusion.API.Controllers
             ));
         }
 
+        [HttpGet("detail/{projectId:guid}")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<ProjectSummaryResponseV2>))]
+        public async Task<IActionResult> GetProjectsByIdDetailAsync(Guid projectId, CancellationToken cancellationToken = default)
+        {
+            var response = await _service.GetProjectsByIdDetailsAsync(projectId, cancellationToken);
+            return Ok(ResponseModel<ProjectSummaryResponseV2>.Ok(
+                data: response,
+                message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "Project Admin")
+            ));
+        }
+
         [HttpGet("projects/{projectId:guid}")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<ProjectResponseVersion3>))]
         public async Task<IActionResult> GetProjectByID(Guid projectId, CancellationToken ct = default)

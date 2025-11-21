@@ -24,7 +24,7 @@ public class SubscriptionPlan
 
     /// <summary>SeatBased: giới hạn theo user; CompanyWide: áp dụng toàn công ty</summary>
     [Column("license_scope")]
-    public LicenseScope LicenseScope { get; set; } = LicenseScope.SeatBased;
+    public LicenseScope LicenseScope { get; set; } = LicenseScope.Userlimits;
 
     /// <summary>True = bật toàn bộ features</summary>
     [Column("is_full_package")]

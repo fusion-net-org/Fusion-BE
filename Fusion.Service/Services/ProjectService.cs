@@ -6,20 +6,18 @@ using Fusion.Repository.Bases.Page.Project;
 using Fusion.Repository.Bases.Responses;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
-using Fusion.Repository.Enums;
 using Fusion.Repository.IRepositories;
 using Fusion.Repository.Repositories;
 using Fusion.Repository.ViewModels;
 using Fusion.Service.Commons.Helpers;
 using Fusion.Service.IServices;
+using Fusion.Service.ViewModels.CompanySubscription.Requests;
 using Fusion.Service.ViewModels.Project.Requests;
 using Fusion.Service.ViewModels.Project.Responses;
 using Fusion.Service.ViewModels.ProjectMembers.Responses;
 using Fusion.Service.ViewModels.Sprint.Responses;
 using Fusion.Service.ViewModels.Task.Response;
 using Microsoft.EntityFrameworkCore;
-using static System.Runtime.InteropServices.JavaScript.JSType;
-
 namespace Fusion.Service.Services
 {
 
@@ -32,6 +30,7 @@ namespace Fusion.Service.Services
         private readonly IProjectMemberRepository _projMemberRepo;
         private readonly IWorkflowDesignerRepository _workflowReadRepo;
         private readonly FusionDbContext _ctx;
+        private readonly ICompanySubscriptionService _companySubscriptionService;
         public ProjectService(
             IMapper mapper,
             IValidator<ProjectCreateRequest> validator,
@@ -39,7 +38,7 @@ namespace Fusion.Service.Services
             ISprintRepository sprintRepo,
             IProjectMemberRepository projMemberRepo,
             IWorkflowDesignerRepository workflowReadRepo,
-            FusionDbContext ctx)
+            FusionDbContext ctx, ICompanySubscriptionService companySubscriptionService)
         {
             _mapper = mapper;
             _validator = validator;
@@ -48,10 +47,10 @@ namespace Fusion.Service.Services
             _projMemberRepo = projMemberRepo;
             _workflowReadRepo = workflowReadRepo;
             _ctx = ctx;
+            _companySubscriptionService = companySubscriptionService;
         }
 
-        public async Task<ProjectDetailResponse> CreateProjectAsync(
-            Guid companyId, ProjectCreateRequest request, Guid actorUserId, CancellationToken ct = default)
+        public async Task<ProjectDetailResponse> CreateProjectAsync(Guid companyId, ProjectCreateRequest request, Guid actorUserId, CancellationToken ct = default)
         {
             await _validator.ValidateAndThrowAsync(request, ct);
 
@@ -153,6 +152,19 @@ namespace Fusion.Service.Services
             using var tx = await _ctx.Database.BeginTransactionAsync(ct);
             try
             {
+
+                // 8.1) Ghi nhận việc dùng feature "Project" trong company subscription
+                // (nếu bên bạn đặt tên feature khác thì đổi lại cho đúng)
+                var featureRequest = new UserFeatureRequest
+                {
+                    CompanySubscriptionId = request.CompanySubscriptionId,
+                    ActorUserId = actorUserId,
+                    CompanyId = companyId,
+                    FeatureName = "Project"
+                };
+
+                await _companySubscriptionService.UseFeatureInCompanyAsync(featureRequest, ct);
+
                 await _ctx.Projects.AddAsync(project, ct);
                 await _sprintRepo.AddRangeAsync(sprints, ct);
 
@@ -382,7 +394,6 @@ namespace Fusion.Service.Services
 
             foreach (var p in result.Items ?? new List<Project>())
             {
-                // ✅ Sprints
                 var sprintSummary = (p.Sprints ?? new List<Sprint>())
                     .Select(s => new SprintSummaryResponse
                     {
@@ -402,24 +413,25 @@ namespace Fusion.Service.Services
                     })
                     .ToList();
 
-                // ✅ Progress
                 var totalTasks = sprintSummary.Sum(s => s.TaskCount);
+
                 var doneTasks = sprintSummary
                     .SelectMany(s => s.Tasks)
                     .Count(t => (t.Status ?? "").Equals("Done", StringComparison.OrdinalIgnoreCase));
                 double progress = totalTasks == 0 ? 0 : (double)doneTasks / totalTasks * 100;
 
-                // ✅ Safe add ProjectSummaryResponseV2
                 response.Items.Add(new ProjectSummaryResponseV2
                 {
                     Id = p.Id,
                     Name = p.Name ?? "N/A",
+                    Description = p.Description ?? "",
+                    Status = p.Status ?? "Unknown",
 
-                    CompanyId = p.Company?.Id ?? Guid.Empty,
-                    CompanyName = p.Company?.Name ?? "N/A",
+                    CompanyExecutorId = p.Company?.Id ?? Guid.Empty,
+                    CompanyExecutorName = p.Company?.Name ?? "N/A",
 
-                    CompanyHiredId = p.CompanyRequest?.Id,
-                    CompanyHiredName = p.CompanyRequest?.Name ?? "N/A",
+                    CompanyRequestId = p.CompanyRequest?.Id,
+                    CompanyRequestName = p.CompanyRequest?.Name ?? "N/A",
 
                     WorkflowId = p.Workflow?.Id ?? Guid.Empty,
                     WorkflowName = p.Workflow?.Name ?? "N/A",
@@ -437,7 +449,7 @@ namespace Fusion.Service.Services
                             Avatar = m.User?.Avatar
                         })
                         .ToList(),
-
+                    MembersCount = p.ProjectMembers?.Count ?? 0,
                     SprintCount = sprintSummary.Count,
                     TotalTask = totalTasks,
                     TotalPoint = sprintSummary.Sum(s => s.TotalPoint),
@@ -473,6 +485,7 @@ namespace Fusion.Service.Services
             }).ToList();
 
             var totalTasks = sprintSummary.Sum(s => s.TaskCount);
+            var totalMembers = result.ProjectMembers?.Count ?? 0;
             var doneTasks = sprintSummary
                 .SelectMany(s => s.Tasks)
                 .Count(t => (t.Status ?? "")
@@ -484,10 +497,14 @@ namespace Fusion.Service.Services
             {
                 Id = result.Id,
                 Name = result.Name,
-                CompanyId = result.Company?.Id ?? Guid.Empty,
-                CompanyName = result.Company?.Name ?? "N/A",
-                CompanyHiredId = result.CompanyRequest?.Id,
-                CompanyHiredName = result.CompanyRequest?.Name ?? "N/A",
+                Description = result.Description ?? "",
+                Status = result.Status ?? "Unknown",
+                StartDate = result.StartDate,
+                EndDate = result.EndDate,
+                CompanyExecutorId = result.Company?.Id ?? Guid.Empty,
+                CompanyExecutorName = result.Company?.Name ?? "N/A",
+                CompanyRequestId = result.CompanyRequest?.Id,
+                CompanyRequestName = result.CompanyRequest?.Name ?? "N/A",
                 WorkflowId = result.Workflow.Id,
                 WorkflowName = result.Workflow?.Name ?? "N/A",
                 ProjectType = result.CompanyRequestId != null ? "OutSource" : "Product",
@@ -501,6 +518,72 @@ namespace Fusion.Service.Services
                     Avatar = m.User?.Avatar,
                 }).ToList() ?? new List<ProjectMemberSummaryResponse>(),
                 SprintCount = sprintSummary.Count,
+                MembersCount = totalMembers,
+                TotalTask = totalTasks,
+                TotalPoint = sprintSummary.Sum(s => s.TotalPoint),
+                Progress = Math.Round(progress, 2),
+                Sprints = sprintSummary
+            };
+        }
+
+        public async Task<ProjectSummaryResponseV2?> GetProjectsByIdDetailsAsync(Guid projectId, CancellationToken cancellationToken = default)
+        {
+            var result = await _projectRepo.GetProjectsByIdForAdminAsync(projectId, cancellationToken);
+
+            if (result == null)
+                throw CustomExceptionFactory.CreateNotFoundError("Projects Not found");
+
+            var sprintSummary = (result.Sprints ?? new List<Sprint>()).Select(s => new SprintSummaryResponse
+            {
+                Id = s.Id,
+                Name = s.Name ?? "N/A",
+                TaskCount = s.ProjectTasks?.Count ?? 0,
+                TotalPoint = s.ProjectTasks?.Sum(t => t.Point ?? 0) ?? 0,
+                Tasks = s.ProjectTasks.Select(t => new TaskSummaryResponse
+                {
+                    Id = t.Id,
+                    Title = t.Title ?? "N/A",
+                    Point = t.Point ?? 0,
+                    Status = t.Status ?? "Unknown"
+                }).ToList()
+            }).ToList();
+
+            var totalTasks = sprintSummary.Sum(s => s.TaskCount);
+            var totalMembers = result.ProjectMembers?.Count ?? 0;
+            var doneTasks = sprintSummary
+                .SelectMany(s => s.Tasks)
+                .Count(t => (t.Status ?? "")
+                .Equals("Done", StringComparison.OrdinalIgnoreCase));
+
+            double progress = totalTasks == 0 ? 0 : (double)doneTasks / totalTasks * 100;
+
+            return new ProjectSummaryResponseV2
+            {
+                Id = result.Id,
+                Name = result.Name,
+                Code = result.Code,
+                Description = result.Description ?? "",
+                Status = result.Status ?? "Unknown",
+                StartDate = result.StartDate,
+                EndDate = result.EndDate,
+                CompanyExecutorId = result.Company?.Id ?? Guid.Empty,
+                CompanyExecutorName = result.Company?.Name ?? "N/A",
+                CompanyRequestId = result.CompanyRequest?.Id,
+                CompanyRequestName = result.CompanyRequest?.Name ?? "N/A",
+                WorkflowId = result.Workflow.Id,
+                WorkflowName = result.Workflow?.Name ?? "N/A",
+                ProjectType = result.CompanyRequestId != null ? "OutSource" : "Product",
+                OwnerId = result.CreatedByNavigation?.Id ?? Guid.Empty,
+                OwnerName = result.CreatedByNavigation?.UserName ?? "Unknown",
+                Members = (result.ProjectMembers ?? new List<ProjectMember>())
+                .Select(m => new ProjectMemberSummaryResponse
+                {
+                    MemberId = m.User?.Id ?? Guid.Empty,
+                    MemberName = m.User?.UserName ?? "N/A",
+                    Avatar = m.User?.Avatar,
+                }).ToList() ?? new List<ProjectMemberSummaryResponse>(),
+                SprintCount = sprintSummary.Count,
+                MembersCount = totalMembers,
                 TotalTask = totalTasks,
                 TotalPoint = sprintSummary.Sum(s => s.TotalPoint),
                 Progress = Math.Round(progress, 2),

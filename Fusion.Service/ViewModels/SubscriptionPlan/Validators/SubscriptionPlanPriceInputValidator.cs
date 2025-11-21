@@ -24,6 +24,21 @@ public class SubscriptionPlanPriceInputValidator : AbstractValidator<Subscriptio
 
             RuleFor(x => x.InstallmentInterval)
                 .NotNull().WithMessage("InstallmentInterval is required for installments.");
+
+            // Validate từng discount
+            RuleForEach(x => x.Discounts)
+                .SetValidator(new SubscriptionPlanPriceDiscountInputValidator());
+
+            // Không trùng InstallmentIndex
+            RuleFor(x => x.Discounts)
+                .Must(list => list == null || list.Select(d => d.InstallmentIndex).Distinct().Count() == list.Count)
+                .WithMessage("Discounts contains duplicate InstallmentIndex.");
+
+            // Nếu có InstallmentCount thì InstallmentIndex không được > InstallmentCount
+            RuleFor(x => x)
+                .Must(x => x.Discounts == null || !x.InstallmentCount.HasValue ||
+                           x.Discounts.All(d => d.InstallmentIndex <= x.InstallmentCount.Value))
+                .WithMessage("Discount InstallmentIndex cannot be greater than InstallmentCount.");
         });
 
         When(x => x.PaymentMode == PaymentMode.Prepaid, () =>
@@ -32,6 +47,10 @@ public class SubscriptionPlanPriceInputValidator : AbstractValidator<Subscriptio
                 .Null().WithMessage("Prepaid must not have InstallmentCount.");
             RuleFor(x => x.InstallmentInterval)
                 .Null().WithMessage("Prepaid must not have InstallmentInterval.");
+            // Tuỳ nghiệp vụ: có thể bắt Discounts phải null luôn nếu Prepaid
+            RuleFor(x => x.Discounts)
+                .Must(d => d == null || d.Count == 0)
+                .WithMessage("Prepaid must not have Discounts.");
         });
     }
 }
