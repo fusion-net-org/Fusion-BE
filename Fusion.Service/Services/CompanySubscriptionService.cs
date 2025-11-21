@@ -103,7 +103,7 @@ namespace Fusion.Service.Services
         }
         public async Task<bool> UseFeatureInCompanyAsync(UserFeatureRequest request, CancellationToken ct = default)
         {
-            await _companySubscriptionRepository.UseFeatureInCompanyAsync(request.companySubscriptionId, request.companyMemberId, request.featureName, ct);
+            await _companySubscriptionRepository.UseFeatureInCompanyAsync(request.CompanySubscriptionId, request.ActorUserId,request.CompanyId, request.FeatureName, ct);
             return true;
         }
         public async Task<bool> UseFeatureInUserAsync(Guid userSubscriptionId, Guid userId, string featureName, CancellationToken ct = default)

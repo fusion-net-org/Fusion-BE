@@ -58,6 +58,17 @@ namespace Fusion.API.Controllers
                 message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "transactions")));
         }
 
+
+        [HttpGet("allActive")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<List<UserSubscriptionActiveResponse>>))]
+        public async Task<IActionResult> GetAllActiveByUserId( CancellationToken cancellationToken)
+        {
+            var result = await _userSubscriptionService.GetAllActiveByUserIdAsync(cancellationToken);
+            return Ok(ResponseModel<List<UserSubscriptionActiveResponse>>.Ok(
+                data: result,
+                message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "transactions")));
+        }
+
         /// <summary>Get active subscription of a user.</summary>
         [HttpGet("active/{userId:guid}")]
         public async Task<ActionResult<UserSubscriptionDetailResponse>> GetActiveByUser(

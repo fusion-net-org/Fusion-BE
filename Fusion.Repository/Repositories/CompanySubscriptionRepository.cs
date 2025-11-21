@@ -25,7 +25,7 @@ namespace Fusion.Repository.Repositories
             _userSubscriptionRepository = userSubscriptionRepository;
             _entry = entry;
         }
-        public async Task UseFeatureInCompanyAsync(Guid companySubscriptionId, long companyMemberId, string featureName, CancellationToken ct = default)
+        public async Task UseFeatureInCompanyAsync(Guid companySubscriptionId, Guid ActorUserId,Guid companyId, string featureName, CancellationToken ct = default)
         {
             if (string.IsNullOrWhiteSpace(featureName))
                 throw CustomExceptionFactory.CreateBadRequestError("Feature code is required.");
@@ -62,7 +62,7 @@ namespace Fusion.Repository.Repositories
                 throw CustomExceptionFactory.CreateBadRequestError(
          $"Feature '{featureName}' is not enabled for the selected company subscription.");
 
-            await _entry.CreateAsync(companySubscriptionId, companyMemberId, ct);
+            await _entry.CreateAsync(companySubscriptionId, ActorUserId, companyId, ct);
         }
 
         public async Task UseFeatureInUserAsync(Guid userSubscriptionId, Guid userId, string featureName, CancellationToken ct = default)
@@ -278,7 +278,6 @@ namespace Fusion.Repository.Repositories
 
 
             return ents.Count;
-        }
-      
+        }  
     }
 }

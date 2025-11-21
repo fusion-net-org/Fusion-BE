@@ -12,6 +12,7 @@ using Fusion.Repository.Repositories;
 using Fusion.Repository.ViewModels;
 using Fusion.Service.Commons.Helpers;
 using Fusion.Service.IServices;
+using Fusion.Service.ViewModels.CompanySubscription.Requests;
 using Fusion.Service.ViewModels.Project.Requests;
 using Fusion.Service.ViewModels.Project.Responses;
 using Fusion.Service.ViewModels.ProjectMembers.Responses;
@@ -32,6 +33,7 @@ namespace Fusion.Service.Services
         private readonly IProjectMemberRepository _projMemberRepo;
         private readonly IWorkflowDesignerRepository _workflowReadRepo;
         private readonly FusionDbContext _ctx;
+        private readonly ICompanySubscriptionService _companySubscriptionService;
         public ProjectService(
             IMapper mapper,
             IValidator<ProjectCreateRequest> validator,
@@ -39,7 +41,7 @@ namespace Fusion.Service.Services
             ISprintRepository sprintRepo,
             IProjectMemberRepository projMemberRepo,
             IWorkflowDesignerRepository workflowReadRepo,
-            FusionDbContext ctx)
+            FusionDbContext ctx, ICompanySubscriptionService companySubscriptionService)
         {
             _mapper = mapper;
             _validator = validator;
@@ -48,10 +50,10 @@ namespace Fusion.Service.Services
             _projMemberRepo = projMemberRepo;
             _workflowReadRepo = workflowReadRepo;
             _ctx = ctx;
+            _companySubscriptionService = companySubscriptionService;
         }
 
-        public async Task<ProjectDetailResponse> CreateProjectAsync(
-            Guid companyId, ProjectCreateRequest request, Guid actorUserId, CancellationToken ct = default)
+        public async Task<ProjectDetailResponse> CreateProjectAsync(Guid companyId, ProjectCreateRequest request, Guid actorUserId, CancellationToken ct = default)
         {
             await _validator.ValidateAndThrowAsync(request, ct);
 
@@ -119,6 +121,19 @@ namespace Fusion.Service.Services
             using var tx = await _ctx.Database.BeginTransactionAsync(ct);
             try
             {
+
+                // 8.1) Ghi nhận việc dùng feature "Project" trong company subscription
+                // (nếu bên bạn đặt tên feature khác thì đổi lại cho đúng)
+                var featureRequest = new UserFeatureRequest
+                {
+                    CompanySubscriptionId = request.CompanySubscriptionId,
+                    ActorUserId = actorUserId,
+                    CompanyId = companyId,
+                    FeatureName = "Project"
+                };
+
+                await _companySubscriptionService.UseFeatureInCompanyAsync(featureRequest, ct);
+
                 await _ctx.Projects.AddAsync(project, ct);
                 await _sprintRepo.AddRangeAsync(sprints, ct);
 

@@ -386,6 +386,22 @@ public class MappingProfile : Profile
                                                                       : null))
             .ForMember(d => d.Entitlements, o => o.MapFrom(s => s.Entitlements));
 
+        // Entitlement -> dropdown item
+        CreateMap<UserSubscriptionEntitlement, UserSubscriptionEntitlementDropdownResponse>()
+            .ForMember(d => d.Id,
+                o => o.MapFrom(s => s.Id))
+            .ForMember(d => d.FeatureName,
+                o => o.MapFrom(s => s.Feature != null ? s.Feature.Name : string.Empty));
+
+        // UserSubscription -> active response
+        CreateMap<UserSubscription, UserSubscriptionActiveResponse>()
+            .ForMember(d => d.Id,
+                o => o.MapFrom(s => s.Id))
+            .ForMember(d => d.NameSubscription,
+                o => o.MapFrom(s => s.Plan != null ? s.Plan.Name : null))
+            .ForMember(d => d.UserSubscriptionEntitlements,
+                o => o.MapFrom(s => s.Entitlements));
+
         // ===================== Company Subscription =====================
 
         CreateMap<CompanySubscriptionCreateRequest, CompanySubscription>()

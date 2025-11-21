@@ -10,10 +10,8 @@ using Fusion.Repository.Enums;
 using Fusion.Repository.IRepositories;
 using Fusion.Service.Commons.Helpers;
 using Fusion.Service.IServices;
-using Fusion.Service.ViewModels.TransactionPayment.Responses;
 using Fusion.Service.ViewModels.UserSubscription.Requests;
 using Fusion.Service.ViewModels.UserSubscription.Responses;
-using System.Collections.Generic;
 
 namespace Fusion.Service.Services;
 
@@ -165,7 +163,6 @@ public class UserSubscriptionService : IUserSubscriptionService
         entity.Status = SubscriptionStatus.Paused;
         return await _repo.UpdateAsync(entity, ct);
     }
-
     public async Task<bool> ResumeAsync(Guid id, CancellationToken ct = default)
     {
         var entity = await _repo.GetByIdWithNavAsync(id, ct);
@@ -174,7 +171,6 @@ public class UserSubscriptionService : IUserSubscriptionService
         entity.Status = SubscriptionStatus.Active;
         return await _repo.UpdateAsync(entity, ct);
     }
-
     public async Task UpdateNextDueAsync(Guid subId, DateTimeOffset? nextDueAt, CancellationToken ct = default)
     {
         await _repo.UpdateNextDueAsync(subId, nextDueAt, ct);
@@ -254,8 +250,6 @@ public class UserSubscriptionService : IUserSubscriptionService
                 return count;
         }
     }
-
-
     private async Task<List<Guid>> BuildEntitlementFeatureIdsAsync(SubscriptionPlan plan, CancellationToken ct)
     {
         if (plan.IsFullPackage)
@@ -270,9 +264,15 @@ public class UserSubscriptionService : IUserSubscriptionService
             .ToList() ?? new List<Guid>();
         return ids;
     }
-
     public async Task DecreaseCompanyShareLimitAsync(Guid userSubscriptionId, int amount = 1, CancellationToken ct = default)
     {
         await _repo.DecreaseCompanyShareLimitAsync(userSubscriptionId, amount, ct);
+    }
+    public async Task<List<UserSubscriptionActiveResponse>> GetAllActiveByUserIdAsync(CancellationToken ct = default)
+    {
+        var userId = _current.GetUserId();
+        var entities = await _repo.GetAllActiveByUserIdAsync(userId, ct);
+
+        return _mapper.Map<List<UserSubscriptionActiveResponse>>(entities);
     }
 }
