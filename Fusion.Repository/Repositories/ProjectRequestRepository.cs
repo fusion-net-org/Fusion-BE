@@ -264,6 +264,19 @@ namespace Fusion.Repository.Repositories
             if (!string.IsNullOrWhiteSpace(filter.Keyword))
                 query = query.Where(x => x.Name.Contains(filter.Keyword) || x.Code.Contains(filter.Keyword));
 
+            // Deleted filter 
+            if (filter.Deleted.HasValue)
+                query = query.Where(x => x.IsDeleted == filter.Deleted.Value);
+
+            // isHaveProject filter
+            if (filter.IsHaveProject.HasValue)
+            {
+                if (filter.IsHaveProject.Value)
+                    query = query.Where(x => x.Project != null && x.Project.Id != Guid.Empty);
+                else
+                    query = query.Where(x => x.Project == null || x.Project.Id == Guid.Empty);
+            }
+
             // Status
             if (filter.Status.HasValue)
                 query = query.Where(x => x.Status == filter.Status.Value.ToString());
@@ -356,6 +369,8 @@ namespace Fusion.Repository.Repositories
             if (filter.Status.HasValue)
                 query = query.Where(x => x.Status == filter.Status.Value.ToString());
 
+
+            //date filter
             if (filter.DateFilterType.HasValue)
             {
                 if (filter.DateRange?.From != null && filter.DateRange?.To != null)
@@ -470,6 +485,17 @@ namespace Fusion.Repository.Repositories
 
             return request;
         }
+        public async Task<ProjectRequest?> GetProjectRequestByContractIdAsync(Guid contractId, CancellationToken cancellationToken = default)
+        {
+            return await _context.ProjectRequests
+                .Include(x => x.RequesterCompany)
+                    .ThenInclude(rc => rc.OwnerUser)
+                .Include(x => x.ExecutorCompany)
+                    .ThenInclude(ec => ec.OwnerUser)
+                .Include(x => x.CreatedByNavigation)
+                .Include(x => x.Project)
+                .FirstOrDefaultAsync(x => x.ContractId == contractId, cancellationToken);
+        }
 
         public async Task<ProjectRequest> RejectProjectRequestAsync(Guid requestId, string executorEmail, string reason, CancellationToken cancellationToken = default)
         {
@@ -501,7 +527,6 @@ namespace Fusion.Repository.Repositories
                 throw CustomExceptionFactory.CreateNotFoundError(
                      ResponseMessages.NOT_FOUND.FormatMessage($"User not belong to {request.ExecutorCompany.Name}"));
 
-            // ✅ Cập nhật trạng thái Reject
             request.Status = ProjectRequestStatusEnum.Rejected.ToString();
             request.UpdateAt = DateTime.UtcNow.AddHours(7);
             request.ReasonReject = reason;
@@ -510,5 +535,28 @@ namespace Fusion.Repository.Repositories
 
             return request;
         }
+
+        public async Task<ProjectRequest> UpdateProjectRequestStatusAsync(Guid requestId, ProjectRequestStatusEnum status, CancellationToken cancellationToken = default)
+        {
+            var projectRequest = await _context.ProjectRequests
+                .Include(x => x.RequesterCompany)
+                    .ThenInclude(rc => rc.OwnerUser)
+                .Include(x => x.ExecutorCompany)
+                    .ThenInclude(ec => ec.OwnerUser)
+                .Include(x => x.CreatedByNavigation)
+                .Include(x => x.Project)
+                .FirstOrDefaultAsync(x => x.Id == requestId, cancellationToken);
+
+            if (projectRequest == null)
+                throw CustomExceptionFactory.CreateNotFoundError("Project request not found");
+
+            projectRequest.Status = status.ToString();
+            projectRequest.UpdateAt = DateTime.UtcNow.AddHours(7);
+
+            await _context.SaveChangesAsync(cancellationToken);
+
+            return projectRequest;
+        }
+
     }
 }

@@ -12,5 +12,9 @@ namespace Fusion.Repository.IRepositories
     public interface IContractAppendixRepository: IGenericRepository<ContractAppendix>
     {
         Task<List<ContractAppendix>> CreateContractAppendixAsync(Guid contractId, List<CreateAppendixRequest> appendices, CancellationToken ct = default);
+        Task<List<ContractAppendix>> UpdateContractAppendixAsync(
+              Guid contractId,
+              List<UpdateAppendixRequest> appendices,
+              CancellationToken ct = default);
     }
 }

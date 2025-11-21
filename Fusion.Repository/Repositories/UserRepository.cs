@@ -126,66 +126,32 @@ namespace Fusion.Repository.Repositories
 
             return (row?.False ?? 0, row?.True ?? 0);
         }
-
-        public async Task<int> GetTotalUsersAsync(CancellationToken cancellationToken = default)
+        public async Task<bool> EmailVerificationAsync(string token, CancellationToken cancellationToken = default)
         {
-            return await _context.Users.CountAsync(u => u.Status == true, cancellationToken);
+            if (string.IsNullOrWhiteSpace(token))
+                throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.INVALID_INPUT);
+
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.ResetToken == token, cancellationToken);
+            if (user == null)
+                throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Token"));
+
+            var nowUtc = DateTime.UtcNow;
+
+            if (!user.Status)
+            {
+                user.Status = true;
+                user.UpdateAt = nowUtc.AddHours(7);
+            }
+            user.ResetToken = null;
+            user.ResetTokenExpiry = null;
+
+            await _context.SaveChangesAsync(cancellationToken);
+            return true;
         }
 
-        //public async Task<bool> EmailVerificationAsync(string token, CancellationToken cancellationToken = default)
-        //{
-        //    if (string.IsNullOrWhiteSpace(token))
-        //        throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.INVALID_INPUT);
-
-        //    var user = await _context.Users.FirstOrDefaultAsync(u => u.ResetToken == token, cancellationToken);
-        //    if (user == null)
-        //        throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Token"));
-
-        //    var nowUtc = DateTime.UtcNow;
-
-        //    if (!user.Status)
-        //    {
-        //        user.Status = true;
-        //        user.UpdateAt = nowUtc.AddHours(7);
-        //    }
-        //    user.ResetToken = null;
-        //    user.ResetTokenExpiry = null;
-
-
-        //    var subscription = await _context.SubscriptionPackages
-        //                     .AsNoTracking()
-        //                     .FirstOrDefaultAsync(x => x.Price == 0, cancellationToken);
-
-        //    if (subscription == null)
-        //        throw CustomExceptionFactory.CreateNotFoundError("Subscription package 'NewMember' Not exsit. Let seed before.");
-
-        //    var alreadyGranted = await _context.UserSubscriptions
-        //                         .AsNoTracking()
-        //                         .AnyAsync(x => x.UserId == user.Id && x.PackageId == subscription.Id, cancellationToken);
-
-
-        //    if (!alreadyGranted)
-        //    {
-        //        var grant = new UserSubscription
-        //        {
-        //            Id = Guid.NewGuid(),
-        //            UserId = user.Id,
-        //            PackageId = subscription.Id,
-        //            PurchaseDate = nowUtc,
-
-        //            // Lấy quota từ package
-        //            QuotaCompanyAdded = subscription.QuotaCompany,
-        //            QuotaProjectAdded = subscription.QuotaProject,
-        //            QuotaCompanyRemaining = subscription.QuotaCompany,
-        //            QuotaProjectRemaining = subscription.QuotaProject,
-
-        //            ExpiryDate = null,
-        //            IsActive = true
-        //        };
-        //        _context.UserSubscriptions.Add(grant);
-        //    }
-        //    await _context.SaveChangesAsync(cancellationToken);
-        //    return true;
-        //}
+        public Task<int> GetTotalUsersAsync(CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

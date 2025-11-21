@@ -2,9 +2,11 @@
 using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.ProjectMember;
+using Fusion.Repository.Data;
 using Fusion.Repository.IRepositories;
 using Fusion.Repository.Repositories;
 using Fusion.Service.IServices;
+using Fusion.Service.ViewModels.ProjectMembers.Request;
 using Fusion.Service.ViewModels.ProjectMembers.Responses;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,10 +15,98 @@ public class ProjectMemberService : IProjectMemberService
     private readonly IProjectMemberRepository _projectMemberRepository;
     private readonly IMapper _mapper;
 
-    public ProjectMemberService(IProjectMemberRepository projectMemberRepository,IMapper mapper)
+    private readonly FusionDbContext _context;
+    public ProjectMemberService(IProjectMemberRepository projectMemberRepository, IMapper mapper, FusionDbContext context)
     {
         _projectMemberRepository = projectMemberRepository;
         _mapper = mapper;
+        _context = context;
+    }
+    public async Task<List<ProjectMemberRoleResponse>> GetProjectMembersWithRoleAsync(
+       Guid projectId,
+       CancellationToken ct = default)
+    {
+        var members = await _projectMemberRepository
+            .GetProjectMembersWithUserAndRoleAsync(projectId, ct);
+
+        if (members == null || members.Count == 0)
+            return new List<ProjectMemberRoleResponse>();
+
+        var result = members.Select(pm =>
+        {
+            // Xác định company của project (internal vs hired)
+            var projectCompanyId = pm.Project != null
+                ? (pm.Project.IsHired
+                    ? pm.Project.CompanyRequestId
+                    : pm.Project.CompanyId)
+                : null;
+
+            // Role trong company đó
+            var roleName = pm.User?.UserRoles
+                .Where(ur =>
+                    ur.Role != null &&
+                    projectCompanyId.HasValue &&
+                    ur.Role.CompanyId == projectCompanyId.Value)
+                .Select(ur => ur.Role!.RoleName)
+                .FirstOrDefault();
+
+            return new ProjectMemberRoleResponse
+            {
+                ProjectId = pm.ProjectId ?? projectId,
+                UserId = pm.UserId ?? Guid.Empty,
+                UserName = pm.User?.UserName,
+                Email = pm.User?.Email,
+                AvatarUrl = pm.User?.Avatar, 
+                CompanyRoleName = roleName,
+                IsPartner = pm.IsPartner,
+                IsViewAll = pm.IsViewAll,
+                JoinedAt = pm.JoinedAt
+            };
+        }).ToList();
+
+        return result;
+    }
+    public async Task<ProjectMemberResponseV2> AddMemberAsync(
+    ProjectMemberCreateRequest request,
+    CancellationToken ct = default)
+    {
+        // 1) Validate cơ bản
+        if (request.ProjectId == Guid.Empty || request.CompanyId == Guid.Empty || request.UserId == Guid.Empty)
+            throw CustomExceptionFactory.CreateBadRequestError("Invalid ProjectId / CompanyId / UserId.");
+
+        var belongs = await _projectMemberRepository.UserBelongsToCompanyAsync(
+            request.UserId,
+            request.CompanyId,
+            ct);
+
+        if (!belongs)
+            throw CustomExceptionFactory.CreateBadRequestError("User does not belong to this company or is inactive.");
+
+        await _projectMemberRepository.AddIfNotExistsAsync(
+            request.ProjectId,
+            request.UserId,
+            request.IsPartner,
+            request.IsViewAll,
+            ct);
+
+        await _context.SaveChangesAsync(ct);
+
+        var entity = await _projectMemberRepository
+            .GetAll()
+            .Include(pm => pm.User)
+            .Include(pm => pm.Project)
+            .FirstAsync(pm => pm.ProjectId == request.ProjectId && pm.UserId == request.UserId, ct);
+
+        return _mapper.Map<ProjectMemberResponseV2>(entity);
+    }
+
+    public async Task RemoveMemberAsync(Guid projectId, Guid userId, CancellationToken ct = default)
+    {
+        if (projectId == Guid.Empty || userId == Guid.Empty)
+            throw CustomExceptionFactory.CreateBadRequestError("Invalid ProjectId / UserId.");
+
+        await _projectMemberRepository.RemoveAsync(projectId, userId, ct);
+        await _context.SaveChangesAsync(ct);
     }
 
     public async Task<PagedResult<AllProjectOfMememberResponse>> GetAllProjectsByMemberIdAsync(Guid userId, ProjectMemberSearchRequest request, CancellationToken cancellationToken = default)

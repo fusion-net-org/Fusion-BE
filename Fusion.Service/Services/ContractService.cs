@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Entities;
+using Fusion.Repository.Enums;
 using Fusion.Repository.IRepositories;
 using Fusion.Repository.Repositories;
 using Fusion.Service.IServices;
@@ -19,13 +20,13 @@ namespace Fusion.Service.Services
         private readonly IContractRepository _contractRepository;
         private readonly IContractAppendixRepository _contractAppendixRepository;
         private readonly ICloudinaryService _cloudinaryService;
-
-
-        public ContractService(IContractRepository contractRepository, IContractAppendixRepository contractAppendixRepository, ICloudinaryService cloudinaryService)
+        private readonly IProjectRequestRepository _projectRequestRepo;
+        public ContractService(IContractRepository contractRepository, IContractAppendixRepository contractAppendixRepository, ICloudinaryService cloudinaryService, IProjectRequestRepository projectRequestRepo)
         {
             _contractRepository = contractRepository;
             _contractAppendixRepository = contractAppendixRepository;
             _cloudinaryService = cloudinaryService;
+            _projectRequestRepo = projectRequestRepo;
         }
 
         public async Task<string> UploadContractAttachmentAsync(Guid contractId, IFormFile file, Guid userId, CancellationToken ct = default)
@@ -92,37 +93,59 @@ namespace Fusion.Service.Services
             return response;
         }
 
-        public async Task<ContractResponse> UpdateContractAsync(Guid contractId, Guid userId, UpdateContractRequest request, CancellationToken ct = default)
+        public async Task<ContractResponse> UpdateContractAsync(
+            Guid contractId,
+            Guid userId,
+            UpdateContractRequest request,
+            CancellationToken ct = default)
         {
-            var contract = await _contractRepository.UpdateContractAsync(contractId, userId, new Contract
+            var contract = await _contractRepository.UpdateContractAsync(
+                contractId,
+                userId,
+                new Contract
+                {
+                    ContractCode = request.ContractCode,
+                    ContractName = request.ContractName,
+                    Budget = request.Budget,
+                    EffectiveDate = request.EffectiveDate,
+                    ExpiredDate = request.ExpiredDate,
+                },
+                request.Appendices,
+                ct
+            );
+
+            contract.Status = "PENDING";
+            await _contractRepository.UpdateContractStatusAsync(contractId, userId, "Pending", ct);
+
+            var projectRequest = await _projectRequestRepo.GetProjectRequestByContractIdAsync(contractId, ct);
+            if (projectRequest != null)
             {
-                ContractCode = request.ContractCode,
-                ContractName = request.ContractName,
-                Budget = request.Budget,
-                EffectiveDate = request.EffectiveDate,
-                ExpiredDate = request.ExpiredDate,
-            }, request.Appendices, ct);
+                ProjectRequestStatusEnum.Pending.ToString();
+                await _projectRequestRepo.UpdateProjectRequestStatusAsync(projectRequest.Id, ProjectRequestStatusEnum.Pending, ct);
+            }
 
             var response = new ContractResponse
             {
                 Id = contract.Id,
                 ContractCode = contract.ContractCode,
                 ContractName = contract.ContractName,
-                Budget = contract.Budget.Value,
-                EffectiveDate = contract.EffectiveDate.Value,
-                ExpiredDate = contract.ExpiredDate.Value,
-
+                Budget = contract.Budget ?? 0,
+                EffectiveDate = contract.EffectiveDate ?? DateOnly.MinValue,
+                ExpiredDate = contract.ExpiredDate ?? DateOnly.MinValue,
+                Status = contract.Status,
                 Appendices = contract.ContractAppendices.Select(a => new ContractAppendixResponse
                 {
                     Id = a.Id,
                     AppendixName = a.Title,
                     AppendixCode = a.AppendixCode,
-                }).ToList()
+                    AppendixDescription = a.Description
+                }).OrderBy(a => a.AppendixCode).ToList()
             };
 
             return response;
-
         }
+
+
 
         public async Task<ContractResponse> GetContractByIdAsync(Guid contractId, CancellationToken ct = default)
         {
@@ -142,6 +165,7 @@ namespace Fusion.Service.Services
                     Id = a.Id,
                     AppendixName = a.Title,
                     AppendixCode = a.AppendixCode,
+                    AppendixDescription = a.Description,
                 }).ToList(),
                 Attachment = contract.Attachment,
             };

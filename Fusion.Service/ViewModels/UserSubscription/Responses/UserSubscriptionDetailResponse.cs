@@ -5,38 +5,25 @@ using Fusion.Repository.Enums;
 
 namespace Fusion.Service.ViewModels.UserSubscription.Responses;
 
-public class UserSubscriptionDetailResponse
+public class UserSubscriptionDetailResponse : UserSubscriptionResponse
 {
-    public Guid Id { get; set; }
-    public string? NamePlan { get; set; }
-    public decimal Price { get; set; }
-    public string? Currency { get; set; }
-    public SubscriptionStatus Status { get; set; }
-    public DateTime CreatAt { get; set; }
-    public DateTime ExpiredAt { get; set; }
-    public DateTime? UpdateAt { get; set; }
+    public bool IsFullPackage { get; set; }
+    public string LicenseScope { get; set; } = "";
+    public int? CompanyShareLimit { get; set; }
+    public int? SeatsPerCompanyLimit { get; set; }
 
-    public List<UserSubscriptionEntitlementResponse> Entitlements { get; set; } = new();
+    public int PeriodCount { get; set; }
+    public string BillingPeriod { get; set; } = "";
+    public string PaymentMode { get; set; } = "";
+    public int? InstallmentCount { get; set; }
+    public string? InstallmentInterval { get; set; }
+
+    public List<EntitlementVm> Entitlements { get; set; } = new();
 }
-public class UserSubscriptionEntitlementResponse
+public class EntitlementVm
 {
-    public Guid Id { get; set; }
-    public string FeatureKey { get; set; } = string.Empty;
-    public int Quantity { get; set; }
-    public int Remaining { get; set; }
-}
-
-public class RequestPlanDetailResponse
-{
-    public Guid Id { get; set; }
-    public string? NamePlan { get; set; }
-    public string? UserName { get; set; }
-    public decimal Price { get; set; }
-    public string? Currency { get; set; }
-    public SubscriptionStatus Status { get; set; }
-    public DateTime? CreateAt { get; set; }
-    public DateTime? ExpiredAt { get; set; }
-    public DateTime? UpdateAt { get; set; }
-
-    public List<UserSubscriptionEntitlementResponse> Entitlements { get; set; } = new();
+    public Guid FeatureId { get; set; }
+    public string? Code { get; set; }
+    public string? Name { get; set; }
+    public bool Enabled { get; set; }
 }

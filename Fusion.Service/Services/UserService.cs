@@ -74,8 +74,7 @@ public class UserService : IUserService
         var result = await _userRepository.GetPagedCompanyUsersAsync(request, cancellationToken);
 
         if (result == null || result.Items.Count == 0)
-            throw CustomExceptionFactory.CreateNotFoundError(
-                ResponseMessages.NOT_FOUND.FormatMessage("Users"));
+            throw CustomExceptionFactory.CreateNotFoundError("Users");
 
         var list = new PagedResult<CompanyUserResponse>
         {
@@ -95,8 +94,7 @@ public class UserService : IUserService
         var result = await _userRepository.GetPagedAdminUsersAsync(request, cancellationToken);
 
         if (result == null || result.Items.Count == 0)
-            throw CustomExceptionFactory.CreateNotFoundError(
-                ResponseMessages.NOT_FOUND.FormatMessage("Users"));
+            throw CustomExceptionFactory.CreateNotFoundError("Users");
 
         var list = new PagedResult<AdminUserResponse>
         {
@@ -116,8 +114,7 @@ public class UserService : IUserService
 
         var result = await _userRepository.GetUserByIdAsync(userId, cancellationToken);
         if (result == null)
-            throw CustomExceptionFactory.CreateNotFoundError(
-                ResponseMessages.NOT_FOUND.FormatMessage("Users"));
+            throw CustomExceptionFactory.CreateNotFoundError("Users");
 
         var response = _mapper.Map<SelfUserResponse>(result);
 
@@ -132,8 +129,7 @@ public class UserService : IUserService
 
         var user = await _userRepository.GetUserByIdAsync(userId);
         if (user == null)
-            throw CustomExceptionFactory.CreateNotFoundError(
-                ResponseMessages.NOT_FOUND.FormatMessage("User"));
+            throw CustomExceptionFactory.CreateNotFoundError("User");
 
         await _unitOfWork.BeginTransactionAsync(cancellationToken);
         try
@@ -288,8 +284,7 @@ public class UserService : IUserService
 
         var user = await _userRepository.GetUserByIdAsync(userId);
         if (user == null)
-            throw CustomExceptionFactory.CreateNotFoundError(
-                ResponseMessages.NOT_FOUND.FormatMessage("User"));
+            throw CustomExceptionFactory.CreateNotFoundError("User");
 
         using (var hmac = new HMACSHA512(user.PasswordSalt))
         {

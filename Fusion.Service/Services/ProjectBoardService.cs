@@ -3,6 +3,7 @@ using Fusion.Repository.Bases.Page.ProjectBoard;
 using Fusion.Repository.Entities;
 using Fusion.Repository.Repositories;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace Fusion.Service.Services
 {
@@ -56,7 +57,8 @@ namespace Fusion.Service.Services
                     WipLimit = null,
                     Color = x.Color,
                     IsFinal = x.IsEnd, 
-                    IsStart = x.IsStart
+                    IsStart = x.IsStart,
+                    Roles = ParseRoles(x.RolesJson)          
                 });
 
             var sprintDtos = sprints.Select(s => new SprintVmDto
@@ -91,9 +93,9 @@ namespace Fusion.Service.Services
 
                 var assignees = assigneesMap.TryGetValue(t.Id, out var rows)
                     ? rows.Select(a => new MemberRefDto(
-                            a.UserId.ToString(),
-                            a.User?.UserName ?? a.User?.Email ?? "Member",
-                            a.User?.Avatar
+                            a.AssignUserId.ToString(),
+                            a.AssignUser?.UserName ?? a.AssignUser?.Email ?? "Member",
+                            a.AssignUser?.Avatar
                         )).ToList()
                     : new List<MemberRefDto>();
 
@@ -194,7 +196,8 @@ namespace Fusion.Service.Services
                     Order = x.Position,
                     WipLimit = null,
                     Color = x.Color,
-                    IsFinal = x.IsEnd
+                    IsFinal = x.IsEnd,
+                    Roles = ParseRoles(x.RolesJson)
                 });
             var startStatusId = statuses.FirstOrDefault(x => x.IsStart)?.Id ?? statusOrder.First();
             var curStatusId = task.CurrentStatusId ?? startStatusId;
@@ -203,9 +206,9 @@ namespace Fusion.Service.Services
 
             var assRows = await _repo.GetAssigneesForTasksAsync(new[] { task.Id }, ct);
             var assignees = assRows.Select(a => new MemberRefDto(
-                a.UserId.ToString(),
-                a.User?.UserName ?? a.User?.Email ?? "Member",
-                a.User?.Avatar
+                a.AssignUserId.ToString(),
+                a.AssignUser?.UserName ?? a.AssignUser?.Email ?? "Member",
+                a.AssignUser?.Avatar
             )).ToList();
 
             return new TaskVmDto
@@ -268,6 +271,34 @@ namespace Fusion.Service.Services
         }
 
         // --------- helpers ---------
+        private static IReadOnlyList<string> ParseRoles(string? rolesJson)
+        {
+            if (string.IsNullOrWhiteSpace(rolesJson))
+                return Array.Empty<string>();
+
+            try
+            {
+                // Dữ liệu chuẩn: ["Developer","QA"]
+                var list = JsonSerializer.Deserialize<List<string>>(rolesJson);
+                if (list == null) return Array.Empty<string>();
+
+                return list
+                    .Where(r => !string.IsNullOrWhiteSpace(r))
+                    .Select(r => r.Trim())
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToArray();
+            }
+            catch
+            {
+                // Fallback: dữ liệu cũ kiểu "Developer, QA"
+                return rolesJson
+                    .Split(',', ';')
+                    .Select(r => r.Trim())
+                    .Where(r => !string.IsNullOrWhiteSpace(r))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToArray();
+            }
+        }
         private static string Slug(string? name)
         {
             if (string.IsNullOrWhiteSpace(name)) return "unknown";

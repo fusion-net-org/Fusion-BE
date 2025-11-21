@@ -122,4 +122,8 @@ public partial class User
 
     [InverseProperty(nameof(TransactionPayment.User))]
     public virtual ICollection<TransactionPayment> TransactionPayments { get; set; } = new List<TransactionPayment>();
+
+
+    [InverseProperty(nameof(UserSubscription.User))]
+    public virtual ICollection<UserSubscription> UserSubscriptions { get; set; } = new List<UserSubscription>();
 }

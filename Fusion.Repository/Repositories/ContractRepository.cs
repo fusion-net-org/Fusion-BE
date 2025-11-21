@@ -1,13 +1,14 @@
-﻿using Fusion.Repository.Bases.Exceptions;
-using Fusion.Repository.Data;
-using Fusion.Repository.Entities;
-using Fusion.Repository.IRepositories;
-using Microsoft.EntityFrameworkCore;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Fusion.Repository.Bases.Exceptions;
+using Fusion.Repository.Bases.Page.Contract;
+using Fusion.Repository.Data;
+using Fusion.Repository.Entities;
+using Fusion.Repository.IRepositories;
+using Microsoft.EntityFrameworkCore;
 
 namespace Fusion.Repository.Repositories
 {
@@ -34,50 +35,6 @@ namespace Fusion.Repository.Repositories
 
             return contract;
         }
-        public async Task<Contract> ApproveContractAsync(Guid contractId, Guid userId, CancellationToken ct = default)
-        {
-            var contract = await _context.Contracts
-                .Include(x => x.ProjectRequest)
-                .FirstOrDefaultAsync(x => x.Id == contractId, ct);
-
-            if (contract == null)
-                throw CustomExceptionFactory.CreateNotFoundError("Contract not found.");
-
-            var project = contract.ProjectRequest;
-            if (project.ExecutorCompanyId != userId)
-                throw CustomExceptionFactory.CreateBadRequestError("You cannot approve this contract.");
-
-            if (contract.Status != "PENDING")
-                throw CustomExceptionFactory.CreateBadRequestError("Contract cannot be approved in current state.");
-
-            contract.Status = "APPROVED";
-            await _context.SaveChangesAsync(ct);
-
-            return contract;
-        }
-        public async Task<Contract> RejectContractAsync(Guid contractId, Guid userId, string reason, CancellationToken ct = default)
-        {
-            var contract = await _context.Contracts
-                .Include(x => x.ProjectRequest)
-                .FirstOrDefaultAsync(x => x.Id == contractId, ct);
-
-            if (contract == null)
-                throw CustomExceptionFactory.CreateNotFoundError("Contract not found.");
-
-            var project = contract.ProjectRequest;
-            if (project.ExecutorCompanyId != userId)
-                throw CustomExceptionFactory.CreateBadRequestError("You cannot reject this contract.");
-
-            if (contract.Status != "PENDING")
-                throw CustomExceptionFactory.CreateBadRequestError("Contract cannot be rejected in current state.");
-
-            contract.Status = "REJECTED";
-            project.ReasonReject = reason;
-
-            await _context.SaveChangesAsync(ct);
-
-            return contract;
-        }
 
         public async Task<List<Contract>> GetAllContractsAsync(CancellationToken ct = default)
         {
@@ -90,58 +47,91 @@ namespace Fusion.Repository.Repositories
         public async Task<Contract?> GetContractByIdAsync(Guid contractId, CancellationToken ct = default)
         {
             return await _context.Contracts
-                .Include(x => x.ContractAppendices)
+                .Include(x => x.ContractAppendices.OrderBy(a => a.CreatedAt))
                 .FirstOrDefaultAsync(x => x.Id == contractId, ct);
         }
 
-        public async Task<Contract?> UpdateContractAsync(Guid contractId, Guid userId, Contract request, List<string> appendices ,CancellationToken ct = default)
+        public async Task<Contract> UpdateContractAsync(
+       Guid contractId,
+       Guid userId,
+       Contract contractToUpdate,
+       List<UpdateAppendixRequest>? appendices,
+       CancellationToken ct)
         {
-            var contract = await _context.Contracts.Include(x => x.ContractAppendices).FirstOrDefaultAsync(x => x.Id == contractId, ct);
+            var contract = await _context.Contracts
+                .Include(c => c.ContractAppendices)
+                .FirstOrDefaultAsync(c => c.Id == contractId, ct);
+
             if (contract == null)
-                throw CustomExceptionFactory.CreateNotFoundError("Contract not found.");
+                throw CustomExceptionFactory.CreateNotFoundError("Contract not found");
 
-
-            contract.ContractCode = request.ContractCode ?? contract.ContractCode;
-            contract.ContractName = request.ContractName ?? contract.ContractName;
-            contract.Budget = request.Budget ?? contract.Budget;
-            contract.EffectiveDate = request.EffectiveDate ?? contract.EffectiveDate;
-            contract.ExpiredDate = request.ExpiredDate ?? contract.ExpiredDate;
-
+            contract.ContractCode = contractToUpdate.ContractCode;
+            contract.ContractName = contractToUpdate.ContractName;
+            contract.EffectiveDate = contractToUpdate.EffectiveDate;
+            contract.ExpiredDate = contractToUpdate.ExpiredDate;
+            contract.Budget = contractToUpdate.Budget;
             contract.UpdatedBy = userId;
             contract.UpdateAt = DateTime.UtcNow;
 
-            _context.ContractAppendices.RemoveRange(contract.ContractAppendices);
-
-            contract.ContractAppendices.Clear();
-
-            var updatedAppendices = new List<ContractAppendix>();
-
-
-            int index = 1;
-
-            foreach (var item in appendices)
+            if (appendices != null && appendices.Any())
             {
-                updatedAppendices.Add(
-                    new ContractAppendix
-                    {
-                        Id = Guid.NewGuid(),
-                        ContractId = contract.Id,
-                        AppendixCode = $"PL-{index:00}",
-                        Title = item,
-                        Description = null,
-                        FilePath = null,
-                        CreatedAt = DateTime.UtcNow
-                    }
-                );
+                var existing = contract.ContractAppendices.ToList();
+                int index = 1;
 
-                index++;
+                foreach (var item in appendices)
+                {
+                    ContractAppendix appendix = null;
+
+                    if (item.Id.HasValue && item.Id.Value != Guid.Empty)
+                    {
+                        appendix = existing.FirstOrDefault(e => e.Id == item.Id.Value);
+                    }
+                    else
+                    {
+                        appendix = existing.FirstOrDefault(e => e.Title == item.Title);
+                    }
+
+                    if (appendix != null)
+                    {
+                        appendix.Title = item.Title;
+                        appendix.Description = item.Description;
+                        appendix.AppendixCode = $"PL-{index:00}";
+                    }
+                    else
+                    {
+                        appendix = new ContractAppendix
+                        {
+                            Id = Guid.NewGuid(),
+                            ContractId = contractId,
+                            Title = item.Title,
+                            Description = item.Description,
+                            AppendixCode = $"PL-{index:00}",
+                            CreatedAt = DateTime.UtcNow
+                        };
+                        _context.ContractAppendices.Add(appendix);
+                    }
+
+                    index++;
+                }
+
+                var toRemove = existing
+                    .Where(e => !appendices.Any(r => r.Id.HasValue ? r.Id.Value == e.Id : r.Title == e.Title))
+                    .ToList();
+
+                if (toRemove.Any())
+                    _context.ContractAppendices.RemoveRange(toRemove);
             }
 
-            await _context.ContractAppendices.AddRangeAsync(updatedAppendices);
             await _context.SaveChangesAsync(ct);
 
-            return contract;
+            return await _context.Contracts
+                .Include(c => c.ContractAppendices)
+                .FirstOrDefaultAsync(c => c.Id == contractId, ct);
         }
+
+
+
+
         public async Task<Contract> UpdateContractStatusAsync(Guid contractId, Guid userId, string status, CancellationToken ct = default)
         {
             var contract = await _context.Contracts

@@ -26,5 +26,6 @@ namespace Fusion.Service.ViewModels.Contract.Responses
         public Guid Id { get; set; }
         public string AppendixName { get; set; } = string.Empty;
         public string AppendixCode { get; set; } = string.Empty;
-    }
+        public string AppendixDescription { get; set; } = string.Empty;
+    } 
 }

@@ -34,18 +34,24 @@ namespace Fusion.Service
             services.AddScoped<ICompanyService, CompanyService>();
             services.AddScoped<ICompanyMemberService, CompanyMemberService>();
             services.AddScoped<IProjectBoardService, ProjectBoardService>();
+            services.AddScoped<ITaskWorkflowService, TaskWorkflowService>();
 
             //task
             services.AddScoped<ITaskService, TaskService>();
+            //checklist
+            services.AddScoped<ITaskChecklistService, TaskChecklistService>();
 
-			//ticket
-			services.AddScoped<ITicketService, TicketService>();
+            //ticket
+            services.AddScoped<ITicketService, TicketService>();
 
             //comment
             services.AddScoped<ICommentService, CommentService>();
 
             //project request
             services.AddScoped<IProjectRequestService , ProjectRequestService>();
+
+            //user feature catalog
+            services.AddScoped<IFeatureCatalogService, FeatureCatalogService>();
 
             //Subscription plan
             services.AddScoped<ISubscriptionPlanService, SubscriptionPlanService>();
@@ -58,6 +64,8 @@ namespace Fusion.Service
 
             //user subscrption
             services.AddScoped<IUserSubscriptionService, UserSubscriptionService>();
+
+
 
             //notification
             services.AddScoped<INotificationService, NotificationService>();
@@ -90,6 +98,7 @@ namespace Fusion.Service
             services.AddScoped<IWorkflowStatusService, WorkflowStatusService>();
 
             // company subscription
+            //company subscription
             services.AddScoped<ICompanySubscriptionService, CompanySubscriptionService>();
 
             // tiocket comment
