@@ -35,6 +35,9 @@ namespace Fusion.Repository.Repositories
                 .Include(c => c.ProjectCompanyRequests)
                 .Include(c => c.CompanyFriendshipCompanyAs)
                 .Include(c => c.CompanyFriendshipCompanyBs)
+                .Where(c =>
+                            c.OwnerUser.Email == userMail ||
+                            c.CompanyMembers.Any(m => m.User.Email == userMail))
                 .AsQueryable();
 
             query = query.Where(c => (bool)!c.IsDeleted);
@@ -52,7 +55,6 @@ namespace Fusion.Repository.Repositories
                     case ProjectSearchRelationShipEnums.Member:
                         // User là chủ sở hữu hoặc thành viên công ty
                         query = query.Where(c =>
-                            c.OwnerUser.Email == userMail ||
                             c.CompanyMembers.Any(m => m.User.Email == userMail));
                         break;
                 }
@@ -84,6 +86,9 @@ namespace Fusion.Repository.Repositories
                 .Include(c => c.ProjectCompanyRequests)
                 .Include(c => c.CompanyFriendshipCompanyAs)
                 .Include(c => c.CompanyFriendshipCompanyBs)
+                .Where(c =>
+                            c.OwnerUser.Email == userMail ||
+                            c.CompanyMembers.Any(m => m.User.Email == userMail))
                 .AsQueryable();
 
             if (request.RelationShipEnums.HasValue)
@@ -98,7 +103,6 @@ namespace Fusion.Repository.Repositories
                     case ProjectSearchRelationShipEnums.Member:
                         // User là chủ sở hữu hoặc thành viên công ty
                         query = query.Where(c =>
-                            c.OwnerUser.Email == userMail ||
                             c.CompanyMembers.Any(m => m.User.Email == userMail));
                         break;
                 }
@@ -177,6 +181,7 @@ namespace Fusion.Repository.Repositories
                 .Include(c => c.ProjectCompanyRequests)
                 .Include(c => c.CompanyFriendshipCompanyAs)
                 .Include(c => c.CompanyFriendshipCompanyBs)
+
                 .AsQueryable();
 
             // search
