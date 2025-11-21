@@ -3,9 +3,11 @@ using Fusion.Repository.Repositories;
 using Fusion.Service.Commons.Helpers;
 using Fusion.Service.IServices;
 using Fusion.Service.Services;
+using Fusion.Service.ViewModels.AITaskGenerate;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Net.payOS;
+using System.Net.Http.Headers;
 
 namespace Fusion.Service
 {
@@ -100,6 +102,7 @@ namespace Fusion.Service
             // company subscription
             //company subscription
             services.AddScoped<ICompanySubscriptionService, CompanySubscriptionService>();
+            services.AddScoped<IAiTaskGenerationService, AiTaskGenerationService>();
 
             // tiocket comment
             services.AddScoped<ITicketCommentService, TicketCommentService>();
@@ -120,6 +123,22 @@ namespace Fusion.Service
             });
             services.AddScoped<IPayOSService, PayOSService>();
 
+            services.Configure<AiTaskGenerationOptions>(
+                configuration.GetSection("AiTaskGeneration"));
+
+            // Named HttpClient "openai"
+            services.AddHttpClient("openai", client =>
+            {
+                var baseUrl = configuration["OpenAI:BaseUrl"] ?? "https://api.openai.com";
+                client.BaseAddress = new Uri(baseUrl);
+
+                var apiKey = configuration["OpenAI:ApiKey"];
+                if (!string.IsNullOrWhiteSpace(apiKey))
+                {
+                    client.DefaultRequestHeaders.Authorization =
+                        new AuthenticationHeaderValue("Bearer", apiKey);
+                }
+            });
             return services;
         }
      }
