@@ -18,7 +18,7 @@ namespace Fusion.Repository.Repositories
         Task<List<WorkflowStatus>> GetStatusesAsync(Guid workflowId, CancellationToken ct = default);
 
         Task<List<ProjectTask>> GetTasksForSprintsAsync(Guid projectId, IEnumerable<Guid> sprintIds, CancellationToken ct = default);
-        Task<List<ProjectTaskAssignee>> GetAssigneesForTasksAsync(IEnumerable<Guid> taskIds, CancellationToken ct = default);
+        Task<List<TaskWorkflow>> GetAssigneesForTasksAsync(IEnumerable<Guid> taskIds, CancellationToken ct = default);
 
         // ---- write ops ----
         Task<ProjectTask?> GetTaskForMoveAsync(Guid taskId, CancellationToken ct = default);
@@ -65,16 +65,21 @@ namespace Fusion.Repository.Repositories
                 .ToListAsync(ct);
         }
 
-        public Task<List<ProjectTaskAssignee>> GetAssigneesForTasksAsync(IEnumerable<Guid> taskIds, CancellationToken ct = default)
+        public Task<List<TaskWorkflow>> GetAssigneesForTasksAsync(
+    IEnumerable<Guid> taskIds,
+    CancellationToken ct = default)
         {
             var set = taskIds.Distinct().ToList();
-            if (set.Count == 0) return Task.FromResult(new List<ProjectTaskAssignee>());
+            if (set.Count == 0)
+                return Task.FromResult(new List<TaskWorkflow>());
 
-            return _db.Set<ProjectTaskAssignee>().AsNoTracking()
-                .Include(a => a.User) // cần User để map name/avatar
-                .Where(a => set.Contains(a.TaskId))
+            return _db.Set<TaskWorkflow>()
+                .AsNoTracking()
+                .Include(a => a.AssignUser) // cần User để map name/avatar
+                .Where(a => a.TaskId.HasValue && set.Contains(a.TaskId.Value))
                 .ToListAsync(ct);
         }
+
 
         // write ops giữ nguyên
         public Task<ProjectTask?> GetTaskForMoveAsync(Guid taskId, CancellationToken ct = default)

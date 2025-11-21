@@ -22,7 +22,28 @@ namespace Fusion.Repository.Repositories
         {
             _context = context;
         }
+        public async Task RemoveAsync(Guid projectId, Guid userId, CancellationToken ct = default)
+        {
+            var entity = await _context.ProjectMembers
+                .FirstOrDefaultAsync(pm => pm.ProjectId == projectId && pm.UserId == userId, ct);
 
+            if (entity == null) return;
+
+            _context.ProjectMembers.Remove(entity);
+        }
+        public async Task<List<ProjectMember>> GetProjectMembersWithUserAndRoleAsync(
+       Guid projectId,
+       CancellationToken ct = default)
+        {
+            return await _context.ProjectMembers
+                .AsNoTracking()
+                .Include(pm => pm.User)
+                    .ThenInclude(u => u.UserRoles)
+                        .ThenInclude(ur => ur.Role)
+                .Include(pm => pm.Project)
+                .Where(pm => pm.ProjectId == projectId)
+                .ToListAsync(ct);
+        }
         public async Task<int> GetTotalProjectsForMemberInCompanyAsync(Guid memberId, Guid companyId, CancellationToken cancellationToken = default)
         {
             var totalProjects = await _context.ProjectMembers

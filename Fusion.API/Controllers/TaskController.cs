@@ -1,13 +1,14 @@
-﻿using System.Security.Claims;
-using Fusion.Repository.Bases.Page;
+﻿using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.Task;
 using Fusion.Repository.Bases.Responses;
 using Fusion.Service.Commons.BaseResponses;     // ResponseModel, ResponseMessages
 using Fusion.Service.IServices;
+using Fusion.Service.Services;
 using Fusion.Service.ViewModels.Task.Request;
 using Fusion.Service.ViewModels.Task.Response;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Fusion.API.Controllers;
 
@@ -17,8 +18,13 @@ namespace Fusion.API.Controllers;
 public class TaskController : ControllerBase
 {
     private readonly ITaskService _svc;
+    private readonly ITaskChecklistService _checklistSvc;
 
-    public TaskController(ITaskService svc) => _svc = svc;
+    public TaskController(ITaskService svc, ITaskChecklistService checklistSvc)
+    {
+        _svc = svc;
+        _checklistSvc = checklistSvc;
+    }
 
     private Guid? GetUserId()
     {
@@ -201,5 +207,87 @@ public class TaskController : ControllerBase
         return Ok(ResponseModel<PagedResult<ProjectTaskResponse>>.Ok(
             data, ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "tasks")));
     }
+    // ===== CheckList =====
+    #region CheckList
+    // GET /api/tasks/{taskId}/checklist
+    [HttpGet("tasks/{taskId:guid}/checklist")]
+    [ProducesResponseType(typeof(ResponseModel<IReadOnlyList<TaskChecklistItemResponse>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetChecklist(Guid taskId, CancellationToken ct)
+    {
+        var data = await _checklistSvc.GetByTaskIdAsync(taskId, ct);
+        return Ok(ResponseModel<IReadOnlyList<TaskChecklistItemResponse>>.Ok(
+            data, ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "checklist")));
+    }
+    // POST /api/tasks/{taskId}/checklist
+    [HttpPost("tasks/{taskId:guid}/checklist")]
+    [ProducesResponseType(typeof(ResponseModel<TaskChecklistItemResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> AddChecklistItem(
+        Guid taskId,
+        [FromBody] TaskChecklistItemCreateRequest req,
+        CancellationToken ct)
+    {
+        var uid = GetUserId();
+        if (uid is null)
+            return Unauthorized(ResponseModel<string>.Error(StatusCodes.Status401Unauthorized, "Missing token"));
 
+        req.TaskId = taskId;
+
+        var data = await _checklistSvc.AddAsync(req, uid.Value, ct);
+        return Ok(ResponseModel<TaskChecklistItemResponse>.Ok(
+            data, ResponseMessageHelper.FormatMessage(ResponseMessages.CREATE_SUCCESS, "checklist item")));
+    }
+    // PUT /api/tasks/{taskId}/checklist/{id}
+    [HttpPut("tasks/{taskId:guid}/checklist/{id:guid}")]
+    [ProducesResponseType(typeof(ResponseModel<TaskChecklistItemResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> UpdateChecklistItem(
+        Guid taskId,
+        Guid id,
+        [FromBody] TaskChecklistItemUpdateRequest req,
+        CancellationToken ct)
+    {
+        var uid = GetUserId();
+        if (uid is null)
+            return Unauthorized(ResponseModel<string>.Error(StatusCodes.Status401Unauthorized, "Missing token"));
+
+        req.Id = id;
+
+        var data = await _checklistSvc.UpdateAsync(req, uid.Value, ct);
+        return Ok(ResponseModel<TaskChecklistItemResponse>.Ok(
+            data, ResponseMessageHelper.FormatMessage(ResponseMessages.UPDATE_SUCCESS, "checklist item")));
+    }
+    // PATCH /api/tasks/{taskId}/checklist/{id}/done
+    [HttpPatch("tasks/{taskId:guid}/checklist/{id:guid}/done")]
+    [ProducesResponseType(typeof(ResponseModel<TaskChecklistItemResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ToggleChecklistDone(
+        Guid taskId,
+        Guid id,
+        [FromBody] ToggleChecklistItemRequest? req,
+        CancellationToken ct)
+    {
+        var uid = GetUserId();
+        if (uid is null)
+            return Unauthorized(ResponseModel<string>.Error(StatusCodes.Status401Unauthorized, "Missing token"));
+
+        var data = await _checklistSvc.ToggleDoneAsync(id, req?.IsDone, uid.Value, ct);
+        return Ok(ResponseModel<TaskChecklistItemResponse>.Ok(
+            data, "Checklist item updated."));
+    }
+    // DELETE /api/tasks/{taskId}/checklist/{id}
+    [HttpDelete("tasks/{taskId:guid}/checklist/{id:guid}")]
+    [ProducesResponseType(typeof(ResponseModel<bool>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> DeleteChecklistItem(
+        Guid taskId,
+        Guid id,
+        CancellationToken ct)
+    {
+        var uid = GetUserId();
+        if (uid is null)
+            return Unauthorized(ResponseModel<string>.Error(StatusCodes.Status401Unauthorized, "Missing token"));
+
+        var ok = await _checklistSvc.DeleteAsync(id, uid.Value, ct);
+        return Ok(ResponseModel<bool>.Ok(
+            ok, ResponseMessageHelper.FormatMessage(ResponseMessages.DELETE_SUCCESS, "checklist item")));
+    }
+
+    #endregion
 }

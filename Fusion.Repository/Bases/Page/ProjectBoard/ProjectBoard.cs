@@ -16,6 +16,8 @@ public record StatusMetaDto
     public string? Color { get; init; }
     public bool IsFinal { get; init; }
     public bool IsStart { get; init; }
+    public IReadOnlyList<string> Roles { get; init; } = Array.Empty<string>();
+
 }
 
 public record SprintVmDto
