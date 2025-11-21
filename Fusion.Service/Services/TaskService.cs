@@ -9,8 +9,10 @@ using Fusion.Repository.Entities;
 using Fusion.Repository.IRepositories;
 using Fusion.Service.Commons.Helpers;
 using Fusion.Service.IServices;
+using Fusion.Service.ViewModels.AITaskGenerate;
 using Fusion.Service.ViewModels.Task.Request;
 using Fusion.Service.ViewModels.Task.Response;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Text.RegularExpressions;
 
@@ -823,8 +825,9 @@ public class TaskService : ITaskService
             PageSize = paged.PageSize
         };
     }
+ 
 
 
-   
+
     #endregion
 }
