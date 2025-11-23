@@ -1,6 +1,7 @@
 ﻿using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.Company;
 using Fusion.Repository.Bases.Responses;
+using Fusion.Repository.ViewModels.Companies;
 using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.Companies.Requests;
@@ -268,6 +269,35 @@ namespace Fusion.API.Controllers
             return Ok(ResponseModel<PagedResult<CompanyOfUserResponse>>.Ok(
                 data: result,
                 message: $"Get company of member success"));
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpGet("growth-and-status")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<CompanyGrowthAndStatusOverviewDto>))]
+        public async Task<IActionResult> GetGrowthAndStatus(
+            [FromQuery] DateOnly? from,
+            [FromQuery] DateOnly? to,
+            CancellationToken cancellationToken = default)
+        {
+            var overview = await _companyService.GetCompanyGrowthAndStatusOverviewAsync(from, to, cancellationToken);
+
+            var response = ResponseModel<CompanyGrowthAndStatusOverviewDto>.Ok(
+                data: overview,
+                message: "Get company growth & status overview success");
+            return Ok(response);
+        }
+        [Authorize(Roles = "Admin")]
+        [HttpGet("project-load-distribution")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<CompanyProjectLoadOverviewDto>))]
+        public async Task<IActionResult> GetProjectLoadDistribution(CancellationToken cancellationToken = default)
+        {
+            var overview = await _companyService.GetCompanyProjectLoadOverviewAsync(cancellationToken);
+
+            var response = ResponseModel<CompanyProjectLoadOverviewDto>.Ok(
+                data: overview,
+                message: "Get company project load overview success");
+
+            return Ok(response);
         }
     }
 }

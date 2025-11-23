@@ -1,5 +1,6 @@
 ﻿using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.Company;
+using Fusion.Repository.ViewModels.Companies;
 using Fusion.Service.ViewModels.Companies.Requests;
 using Fusion.Service.ViewModels.Companies.Responses;
 
@@ -28,5 +29,10 @@ namespace Fusion.Service.IServices
         Task<PagedResult<CompanyOfOwnerResponse>> GetAllCompanyOfOwnerAsync(Guid userId, CancellationToken ct = default);
         Task<PagedResult<CompanyOfUserResponse>> GetAllCompanyOfMemberAsync(Guid userId, CancellationToken ct = default);
         Task<List<CompanyListResponse>> GetAllCompanyActiveOfCurrentIdAsync(CancellationToken ct = default);
+
+        // ================== OverView =============================================
+        Task<CompanyGrowthAndStatusOverviewDto> GetCompanyGrowthAndStatusOverviewAsync( DateOnly? from = null, DateOnly? to = null, CancellationToken ct = default);
+        Task<CompanyProjectLoadOverviewDto> GetCompanyProjectLoadOverviewAsync(CancellationToken ct = default);
+
     }
 }
