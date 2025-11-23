@@ -6,6 +6,7 @@ using Fusion.Repository.Bases.Page.Company_Member;
 using Fusion.Repository.Entities;
 using Fusion.Repository.Enums;
 using Fusion.Repository.IRepositories;
+using Fusion.Repository.ViewModels;
 using Fusion.Service.Commons.Helpers;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.Companies.Email;
@@ -304,7 +305,7 @@ namespace Fusion.Service.Services
             var log = new CompanyActivityLog
             {
                 CompanyId = companyId,
-                ActorUserId =_currentService.GetUserId(),
+                ActorUserId = _currentService.GetUserId(),
                 Title = "Remove Member From Company",
                 Description = $"User:'{currentUserName}' deleted member with user '{userResult}' has left the company.",
 
@@ -337,10 +338,10 @@ namespace Fusion.Service.Services
 
         public async Task<AddMemberRoleInCompanyResponse?> AddRoleForMemberInCompany(Guid companyId, List<int> roleIds, Guid memberId, string inviterEmail, CancellationToken token)
         {
-            var addRole = await _companyMemberRepository.AddRoleForMemberInCompany(companyId, roleIds, memberId, inviterEmail, token); 
+            var addRole = await _companyMemberRepository.AddRoleForMemberInCompany(companyId, roleIds, memberId, inviterEmail, token);
 
-            if(!addRole.Any())
-                 throw CustomExceptionFactory.CreateBadRequestError("Add Role in Company Fail");
+            if (!addRole.Any())
+                throw CustomExceptionFactory.CreateBadRequestError("Add Role in Company Fail");
 
             var userWithRoles = await _userRepository.GetUserWithRolesAndPermissionsInCompanyAsync(memberId, companyId);
 
@@ -405,6 +406,27 @@ namespace Fusion.Service.Services
             dto.Communication = performance?.Communication ?? 0;
             dto.Teamwork = performance?.Teamwork ?? 0;
             dto.ProblemSolving = performance?.ProblemSolving ?? 0;
+
+            var stats = await _projectMemberRepository.GetMemberStatsAsync(userId, companyId, token);
+            dto.Score = stats?.Score ?? 0;
+            dto.HoursPerWeek = stats?.HoursPerWeek ?? 0;
+
+            dto.Efficiency = stats?.Efficiency ?? new EfficiencyChart
+            {
+                OnTimePercent = 0,
+                LatePercent = 0,
+                PendingPercent = 0,
+            };
+
+            dto.ScoreTrendChart = stats?.ScoreTrendChart ?? new LineChart
+            {
+                Data = new List<ScoreTrend>()
+            };
+
+            dto.PriorityDistribution = stats?.PriorityDistribution ?? new PieChart
+            {
+                Segments = new List<PieChartSegment>()
+            };
 
             return dto;
         }

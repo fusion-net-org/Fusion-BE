@@ -8,6 +8,7 @@ using Fusion.Service.ViewModels.Task.Request;
 using Fusion.Service.ViewModels.Task.Response;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json.Linq;
 using System.Security.Claims;
 
 namespace Fusion.API.Controllers;
@@ -290,4 +291,26 @@ public class TaskController : ControllerBase
     }
 
     #endregion
-}
+
+
+    // ===== GetTaskByUserId =====
+    #region TaskByUserId
+    [HttpGet("user")]
+    [ProducesResponseType(typeof(ResponseModel<PagedResult<TaskResponse>>), StatusCodes.Status200OK)]
+
+    public async Task<ActionResult<PagedResult<TaskResponse>>> GetAllTaskByUserId(
+        [FromQuery] TaskFilterRequest request,
+        CancellationToken cancellationToken)
+    {
+        var uid = GetUserId();
+        if (uid is null)
+            return Unauthorized(ResponseModel<string>.Error(StatusCodes.Status401Unauthorized, "Missing token"));
+
+        var data = await _svc.GetAllTaskByUserId(uid.Value, request, cancellationToken);
+
+        return Ok(ResponseModel<PagedResult<TaskResponse>>.Ok(
+            data, ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "tasks")));
+    }
+        #endregion
+
+    }
