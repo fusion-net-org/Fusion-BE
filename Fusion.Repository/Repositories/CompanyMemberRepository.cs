@@ -361,31 +361,31 @@ namespace Fusion.Repository.Repositories
             var company = await _context.Companies.FindAsync(companyId);
             if (company == null)
                 throw CustomExceptionFactory.
-                     CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Company is not existed"));
+                     CreateNotFoundError("Company is not existed");
 
             var member = await _context.Users.FindAsync(memberId);
             if (member == null)
                 throw CustomExceptionFactory.
-                     CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Member is not existed"));
+                     CreateNotFoundError("Member is not existed");
 
             var company_member = await _context.CompanyMembers.SingleOrDefaultAsync(x => x.CompanyId == companyId && x.UserId == memberId);
             if (company_member == null)
                 throw CustomExceptionFactory.
-                     CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Member company does not existed"));
+                     CreateNotFoundError("Member company does not existed");
 
             var inviter = await _context.Users.FirstOrDefaultAsync(u => u.Email == inviterEmail);
             if (inviter == null)
                 throw CustomExceptionFactory.CreateNotFoundError(
-                    ResponseMessages.NOT_FOUND.FormatMessage("Inviter does not exist"));
+                    "Inviter does not exist");
 
             var company_inviter = await _context.CompanyMembers.SingleOrDefaultAsync(x => x.CompanyId == companyId && x.UserId == inviter.Id);
             if (company_inviter == null)
                 throw CustomExceptionFactory.
-                     CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Inivter company does not existed"));
+                     CreateNotFoundError("Inivter company does not existed");
 
             if (company_inviter.CompanyId != company_member.CompanyId)
                 throw CustomExceptionFactory.
-                     CreateNotFoundError(ResponseMessages.BAD_REQUEST.FormatMessage("Inivter and Member not in the same company"));
+                     CreateNotFoundError("Inivter and Member not in the same company");
 
             var addedRoles = new List<UserRole>();
 
@@ -394,7 +394,7 @@ namespace Fusion.Repository.Repositories
                 var role = await _context.Roles.FirstOrDefaultAsync(r => r.Id == roleId && r.CompanyId == companyId);
                 if (role == null)
                     throw CustomExceptionFactory.CreateNotFoundError(
-                        ResponseMessages.NOT_FOUND.FormatMessage($"Role {roleId} does not belong to this company"));
+                       $"Role {roleId} does not belong to this company");
 
                 // check if this user already has that role
                 var exist = await _context.UserRoles.FirstOrDefaultAsync(x => x.UserId == memberId && x.RoleId == roleId);

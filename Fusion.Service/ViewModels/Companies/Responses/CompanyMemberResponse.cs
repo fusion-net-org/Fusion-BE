@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Fusion.Repository.ViewModels;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -39,6 +40,13 @@ namespace Fusion.Service.ViewModels.Companies.Responses
         public int Teamwork { get; set; }
         public int ProblemSolving { get; set; }
 
+        public int Score { get; set; }
+        public int HoursPerWeek { get; set; }
+
+        public EfficiencyChart? Efficiency { get; set; }
+        public PieChart? PriorityDistribution { get; set; }
+        public LineChart? ScoreTrendChart { get; set; }
+
         public bool? IsDeleted { get; set; }
 
         public DateTime JoinedAt { get; set; }
@@ -72,5 +80,4 @@ namespace Fusion.Service.ViewModels.Companies.Responses
         public string? UserPhone { get; set; }
         public string? UserAvatar { get; set; }
     }
-
 }
