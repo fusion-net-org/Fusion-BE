@@ -1,6 +1,7 @@
 ﻿using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.User;
 using Fusion.Repository.Entities;
+using Fusion.Repository.ViewModels.Users;
 using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.Users.Requests;
@@ -147,6 +148,44 @@ namespace Fusion.API.Controllers
             return Ok(ResponseModel<UserStatusResponse>.Ok(
                 data: result,
                 message: "Get user with status successfully"));
+        }
+
+
+        [Authorize(Roles = "Admin")]
+        [HttpGet("overview/growth-and-status")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<UserGrowthAndStatusOverviewResponse>))]
+        public async Task<IActionResult> GetGrowthAndStatusOverview( [FromQuery] int months = 12,CancellationToken cancellationToken = default)
+        {
+            var result = await _userService.GetUserGrowthAndStatusOverviewAsync(months, cancellationToken);
+
+            // Tuỳ theo kiểu ApiResponse bạn đang dùng
+            return Ok(ResponseModel<UserGrowthAndStatusOverviewResponse>.Ok(
+            data: result,
+            message: "Get user growth and status successfully"));
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpGet("overview/company-distribution")]
+        [ProducesResponseType(StatusCodes.Status200OK,Type = typeof(ResponseModel<List<UserCompanyDistributionPoint>>))]
+        public async Task<IActionResult> GetCompanyUserDistribution([FromQuery] int top = 10, CancellationToken cancellationToken = default)
+        {
+            var data = await _userService.GetTopCompaniesByUserCountAsync(top, cancellationToken);
+
+            return Ok(ResponseModel<List<UserCompanyDistributionPoint>>.Ok(
+                data: data,
+                message: "Get user distribution by company successfully"));
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpGet("overview/permission-levels")]
+        [ProducesResponseType(StatusCodes.Status200OK,Type = typeof(ResponseModel<UserPermissionLevelOverviewResponse>))]
+        public async Task<IActionResult> GetPermissionLevelOverview(CancellationToken cancellationToken = default)
+        {
+            var result = await _userService.GetUserPermissionLevelOverviewAsync(cancellationToken);
+
+            return Ok(ResponseModel<UserPermissionLevelOverviewResponse>.Ok(
+                data: result,
+                message: "Get user permission level overview successfully"));
         }
     }
 }

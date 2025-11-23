@@ -2,12 +2,13 @@
 using Fusion.Repository.Bases.Page.Company;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
+using Fusion.Repository.Entities;
+using Fusion.Repository.ViewModels.Companies;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Fusion.Repository.Entities;
 
 namespace Fusion.Repository.IRepositories
 {
@@ -35,6 +36,9 @@ namespace Fusion.Repository.IRepositories
         Task<PagedResult<Company>> GetAllCompanyOfOwnerAsync(Guid userId, CancellationToken ct = default);
         Task<PagedResult<Company>> GetAllCompanyOfMemberAsync(Guid userId, CancellationToken ct = default);
 
+        // =============== OverView =============================================
         Task<int> GetTotalCompaniesAsync(CancellationToken ct = default);
+        Task<CompanyGrowthAndStatusOverviewDto> GetCompanyGrowthAndStatusOverviewAsync(DateTime fromUtc,DateTime toUtc, CancellationToken ct = default);
+        Task<CompanyProjectLoadOverviewDto> GetCompanyProjectLoadOverviewAsync(CancellationToken ct = default);
     }
 }

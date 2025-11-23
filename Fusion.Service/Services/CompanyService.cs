@@ -1,5 +1,4 @@
 ﻿
-using System.ComponentModel.Design;
 using AutoMapper;
 using FluentValidation;
 using Fusion.Repository.Bases.Exceptions;
@@ -10,6 +9,7 @@ using Fusion.Repository.Entities;
 using Fusion.Repository.Enums;
 using Fusion.Repository.IRepositories;
 using Fusion.Repository.Repositories;
+using Fusion.Repository.ViewModels.Companies;
 using Fusion.Service.Commons.Helpers;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.Companies.Requests;
@@ -22,6 +22,7 @@ using Fusion.Service.ViewModels.Task.Response;
 using Fusion.Service.ViewModels.Users.Responses;
 using Microsoft.EntityFrameworkCore;
 using Org.BouncyCastle.Asn1;
+using System.ComponentModel.Design;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace Fusion.Service.Services
@@ -877,6 +878,32 @@ namespace Fusion.Service.Services
         .ToList();
 
             return result;
+        }
+
+        // ================== OverView =============================================
+
+        public async Task<CompanyGrowthAndStatusOverviewDto> GetCompanyGrowthAndStatusOverviewAsync(DateOnly? from = null,DateOnly? to = null, CancellationToken ct = default)
+        {
+
+            var nowUtc = DateTime.UtcNow;
+
+            // toUtc
+            var toUtc = to.HasValue
+                ? to.Value.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc)
+                : nowUtc;
+
+            // fromUtc (mặc định lùi 11 tháng = 12 tháng gần nhất)
+            var fromUtc = from.HasValue
+                ? from.Value.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc)
+                : toUtc.AddMonths(-11);
+
+            return await _companyRepository
+                .GetCompanyGrowthAndStatusOverviewAsync(fromUtc, toUtc, ct);
+        }
+        public async Task<CompanyProjectLoadOverviewDto> GetCompanyProjectLoadOverviewAsync(
+         CancellationToken ct = default)
+        {
+            return await _companyRepository.GetCompanyProjectLoadOverviewAsync(ct);
         }
     }
 }

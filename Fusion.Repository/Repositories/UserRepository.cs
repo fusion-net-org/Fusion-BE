@@ -6,9 +6,8 @@ using Fusion.Repository.Bases.Responses;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.IRepositories;
+using Fusion.Repository.ViewModels.Users;
 using Microsoft.EntityFrameworkCore;
-
-
 
 namespace Fusion.Repository.Repositories
 {
@@ -149,9 +148,116 @@ namespace Fusion.Repository.Repositories
             return true;
         }
 
+        // ================================== OverView  ================================== 
         public Task<int> GetTotalUsersAsync(CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            // bạn có thể dùng luôn method này cho các chỗ cần tổng user
+            return _context.Users
+                .AsNoTracking()
+                .CountAsync(cancellationToken);
+        }
+        public async Task<List<UserGrowthPoint>> GetUserGrowthAsync(DateTime? from, DateTime? to, CancellationToken cancellationToken = default)
+        {
+            var query = _context.Users.AsNoTracking().AsQueryable();
+
+            if (from.HasValue)
+            {
+                query = query.Where(u => u.CreateAt >= from.Value);
+            }
+
+            if (to.HasValue)
+            {
+                query = query.Where(u => u.CreateAt < to.Value);
+            }
+
+            var data = await query
+                .GroupBy(u => new { u.CreateAt.Year, u.CreateAt.Month })
+                .Select(g => new UserGrowthPoint
+                {
+                    Year = g.Key.Year,
+                    Month = g.Key.Month,
+                    Count = g.Count()
+                })
+                .OrderBy(x => x.Year)
+                .ThenBy(x => x.Month)
+                .ToListAsync(cancellationToken);
+
+            return data;
+        }
+        public async Task<List<UserCompanyDistributionPoint>> GetTopCompaniesByUserCountAsync(int top, CancellationToken cancellationToken = default)
+        {
+            if (top <= 0) top = 10;
+
+            var data = await _context.CompanyMembers
+                .AsNoTracking()
+                .Where(cm => cm.Company != null)
+                .GroupBy(cm => new
+                {
+                    cm.CompanyId,
+                    CompanyName = cm.Company!.Name
+                })
+                .Select(g => new UserCompanyDistributionPoint
+                {
+                    CompanyId = g.Key.CompanyId,
+                    CompanyName = g.Key.CompanyName ?? "Unknown",
+                    UserCount = g
+                        .Select(x => x.UserId)   // distinct user per company
+                        .Distinct()
+                        .Count()
+                })
+                .OrderByDescending(x => x.UserCount)
+                .ThenBy(x => x.CompanyName)
+                .Take(top)
+                .ToListAsync(cancellationToken);
+
+            return data;
+        }
+
+        public async Task<List<UserPermissionLevelPoint>> GetUserPermissionLevelOverviewAsync(
+            CancellationToken cancellationToken = default)
+        {
+            var query = _context.Users
+                .AsNoTracking()
+                .Select(u => new
+                {
+                    Level =
+                        u.IsSystemAdmin
+                            ? "System admin"
+                            : u.Companies.Any()
+                                ? "Company owner"
+                                : u.CompanyMembers.Any()
+                                    ? "Company member"
+                                    : "Registered only"
+                });
+
+            var grouped = await query
+                .GroupBy(x => x.Level)
+                .Select(g => new UserPermissionLevelPoint
+                {
+                    Level = g.Key,
+                    Count = g.Count()
+                })
+                .ToListAsync(cancellationToken);
+
+            // Bảo đảm đủ 4 bucket, kể cả = 0
+            var orderedLevels = new[]
+            {
+            "System admin",
+            "Company owner",
+            "Company member",
+            "Registered only"
+        };
+
+            var dict = grouped.ToDictionary(x => x.Level, StringComparer.OrdinalIgnoreCase);
+
+            var result = orderedLevels
+                .Select(level =>
+                    dict.TryGetValue(level, out var v)
+                        ? v
+                        : new UserPermissionLevelPoint { Level = level, Count = 0 })
+                .ToList();
+
+            return result;
         }
     }
 }

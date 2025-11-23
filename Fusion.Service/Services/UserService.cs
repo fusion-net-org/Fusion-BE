@@ -7,6 +7,7 @@ using Fusion.Repository.Bases.Responses;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.IRepositories;
+using Fusion.Repository.ViewModels.Users;
 using Fusion.Service.Commons.Helpers;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.Companies.Responses;
@@ -353,6 +354,8 @@ public class UserService : IUserService
 
         return response;
     }
+
+    // ================ Overview Methods ===================
     public async Task<UserStatusResponse> GetCountUserByStatusAsync(CancellationToken cancellationToken = default)
     {
         var result = await _userRepository.GetCountUserByStatusAsync(cancellationToken);
@@ -363,5 +366,91 @@ public class UserService : IUserService
             CountTrue = result.True,
         };
 
+    }
+    public async Task<UserGrowthAndStatusOverviewResponse> GetUserGrowthAndStatusOverviewAsync(int months = 12, CancellationToken cancellationToken = default)
+    {
+        if (months <= 0)
+        {
+            months = 12;
+        }
+
+        // Giả định CreateAt đang lưu giờ VN (UTC+7) giống UpdateAt
+        var now = DateTime.UtcNow.AddHours(7);
+
+        // Lấy từ đầu tháng (months-1) trước đến hết tháng hiện tại
+        var startOfCurrentMonth = new DateTime(now.Year, now.Month, 1);
+        var from = startOfCurrentMonth.AddMonths(-months + 1);
+        var to = startOfCurrentMonth.AddMonths(1); // exclusive
+
+        // 1) Growth: số user mới theo tháng
+        var rawGrowth = await _userRepository.GetUserGrowthAsync(from, to, cancellationToken);
+
+        // 2) Active / Inactive / Total
+        var statusTuple = await _userRepository.GetCountUserByStatusAsync(cancellationToken);
+        var totalUsers = await _userRepository.GetTotalUsersAsync(cancellationToken);
+
+        // 3) Fill đầy đủ các tháng (kể cả tháng không có user mới => 0)
+        var growthPoints = new List<UserGrowthPointResponse>();
+        var cursor = new DateTime(from.Year, from.Month, 1);
+
+        for (int i = 0; i < months; i++)
+        {
+            var monthData = rawGrowth
+                .FirstOrDefault(x => x.Year == cursor.Year && x.Month == cursor.Month);
+
+            growthPoints.Add(new UserGrowthPointResponse
+            {
+                Period = $"{cursor:yyyy-MM}",
+                NewUsers = monthData?.Count ?? 0
+            });
+
+            cursor = cursor.AddMonths(1);
+        }
+
+        var response = new UserGrowthAndStatusOverviewResponse
+        {
+            Growth = growthPoints,
+            TotalUsers = totalUsers,
+            ActiveUsers = statusTuple.True,
+            InactiveUsers = statusTuple.False
+        };
+
+        return response;
+    
+    }
+    public async Task<List<UserCompanyDistributionPoint>> GetTopCompaniesByUserCountAsync(
+      int top = 10,
+      CancellationToken cancellationToken = default)
+    {
+        if (top <= 0) top = 10;
+
+        var raw = await _userRepository.GetTopCompaniesByUserCountAsync(top, cancellationToken);
+
+        var result = raw
+            .Select(x => new UserCompanyDistributionPoint
+            {
+                CompanyId = x.CompanyId,
+                CompanyName = x.CompanyName,
+                UserCount = x.UserCount
+            })
+            .ToList();
+
+        return result;
+    }
+    public async Task<UserPermissionLevelOverviewResponse> GetUserPermissionLevelOverviewAsync( CancellationToken cancellationToken = default)
+    {
+        var points = await _userRepository.GetUserPermissionLevelOverviewAsync(cancellationToken);
+
+        var response = new UserPermissionLevelOverviewResponse
+        {
+            TotalUsers = points.Sum(p => p.Count),
+            Levels = points.Select(p => new UserPermissionLevelPointResponse
+            {
+                Level = p.Level,
+                Count = p.Count
+            }).ToList()
+        };
+
+        return response;
     }
 }
