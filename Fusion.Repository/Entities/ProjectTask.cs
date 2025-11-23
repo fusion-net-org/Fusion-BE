@@ -116,4 +116,7 @@ public partial class ProjectTask
     public virtual ICollection<TaskWorkflow> TaskWorkflows { get; set; } = new List<TaskWorkflow>();
     [InverseProperty(nameof(ProjectTaskChecklistItem.Task))]
     public ICollection<ProjectTaskChecklistItem> ChecklistItems { get; set; } = new List<ProjectTaskChecklistItem>();
+    [InverseProperty(nameof(ProjectTaskAttachment.Task))]
+    public ICollection<ProjectTaskAttachment> Attachments { get; set; } = new List<ProjectTaskAttachment>();
+
 }

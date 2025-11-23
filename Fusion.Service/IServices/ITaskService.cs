@@ -2,6 +2,7 @@
 using Fusion.Repository.Bases.Page.Task;
 using Fusion.Service.ViewModels.Task.Request;
 using Fusion.Service.ViewModels.Task.Response;
+using Microsoft.AspNetCore.Http;
 
 namespace Fusion.Service.IServices
 {
@@ -22,5 +23,22 @@ namespace Fusion.Service.IServices
         Task<ProjectTaskResponse> MoveToSprintAsync(Guid taskId, Guid toSprintId, Guid userId, CancellationToken ct = default);
         Task<ProjectTaskResponse> MarkDoneAsync(Guid taskId, Guid userId, CancellationToken ct = default);
         Task<SplitTaskResponse> SplitAsync(Guid taskId, Guid userId, CancellationToken ct = default);
+
+        Task<IReadOnlyList<TaskAttachmentResponse>> UploadAttachmentsAsync(
+      Guid taskId,
+      IReadOnlyList<IFormFile> files,
+      string? description,
+      Guid userId,
+      CancellationToken ct = default);
+
+        Task<IReadOnlyList<TaskAttachmentResponse>> GetAttachmentsAsync(
+            Guid taskId,
+            CancellationToken ct = default);
+
+        Task<bool> DeleteAttachmentAsync(
+            Guid taskId,
+            Guid attachmentId,
+            Guid userId,
+            CancellationToken ct = default);
     }
 }
