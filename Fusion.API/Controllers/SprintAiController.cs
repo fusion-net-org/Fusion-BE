@@ -1,8 +1,10 @@
 ﻿using AutoMapper;
+using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Bases.Responses;
 using Fusion.Service.Services;
 using Fusion.Service.ViewModels.AITaskGenerate;
 using Fusion.Service.ViewModels.Task.Response;
+using MailKit;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Fusion.API.Controllers
@@ -64,5 +66,30 @@ namespace Fusion.API.Controllers
 
             return Ok(vms);
         }
+        [HttpPost("tasks/preview")]
+        public async Task<ActionResult<AiGenerateTasksResponseDto>> PreviewTasks(
+            Guid projectId,
+            Guid sprintId,
+            [FromBody] AiTaskGenerateRequestDto dto,
+            CancellationToken ct)
+        {
+            if (dto == null)
+                throw CustomExceptionFactory.CreateBadRequestError("Invalid request.");
+
+            // Đồng bộ ProjectId & SprintId giữa route và body
+            if (dto.ProjectId == Guid.Empty)
+                dto.ProjectId = projectId;
+            else if (dto.ProjectId != projectId)
+                throw CustomExceptionFactory.CreateBadRequestError("ProjectId in body and route must match.");
+
+            if (dto.SprintId == Guid.Empty)
+                dto.SprintId = sprintId;
+            else if (dto.SprintId != sprintId)
+                throw CustomExceptionFactory.CreateBadRequestError("SprintId in body and route must match.");
+
+            var result = await _service.GenerateTasksAsync(dto, ct);
+            return Ok(result);
+        }
+
     }
 }

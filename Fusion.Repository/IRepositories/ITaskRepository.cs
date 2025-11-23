@@ -12,6 +12,8 @@ namespace Fusion.Repository.IRepositories
         Task<ProjectTask> UpdateAsync(ProjectTask entity, CancellationToken ct = default);
         Task<bool> SoftDeleteAsync(Guid id, CancellationToken ct = default);
         Task<PagedResult<ProjectTask>> GetTasksBySprintIdAsync(Guid sprintId, TaskBySprintRequest request, CancellationToken ct = default);
+        Task<bool> ExistsAsync(Guid id, CancellationToken ct = default);
+
 
     }
 }

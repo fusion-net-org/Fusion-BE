@@ -19,6 +19,12 @@ namespace Fusion.Repository.Repositories
             await _db.SaveChangesAsync(ct);
             return entity;
         }
+        public async Task<bool> ExistsAsync(Guid id, CancellationToken ct = default)
+        {
+            return await _db.ProjectTasks
+                .AsNoTracking()
+                .AnyAsync(t => t.Id == id && !t.IsDeleted, ct);
+        }
 
         public async Task<ProjectTask?> FindByIdAsync(Guid id, CancellationToken ct = default)
         {

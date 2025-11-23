@@ -12,6 +12,7 @@ using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.AITaskGenerate;
 using Fusion.Service.ViewModels.Task.Request;
 using Fusion.Service.ViewModels.Task.Response;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Text.RegularExpressions;
@@ -26,13 +27,16 @@ public class TaskService : ITaskService
     private readonly ICompanyActivityService _log;
     private readonly ICurrentService _current;
     private readonly ITaskWorkflowService _taskWorkflowService;
+    private readonly ICloudinaryService _cloudinary;
+
     public TaskService(
         FusionDbContext db,
         ITaskRepository repo,
         IMapper mapper,
         ICompanyActivityService log,
         ICurrentService current,
-        ITaskWorkflowService taskWorkflowService)
+        ITaskWorkflowService taskWorkflowService,
+        ICloudinaryService cloudinary)
     {
         _db = db;
         _repo = repo;
@@ -40,6 +44,7 @@ public class TaskService : ITaskService
         _log = log;
         _current = current;
         _taskWorkflowService = taskWorkflowService;
+        _cloudinary = cloudinary;
     }
     #region Helpers
     /* -------------------- Helpers -------------------- */
@@ -825,9 +830,145 @@ public class TaskService : ITaskService
             PageSize = paged.PageSize
         };
     }
- 
+    #endregion
+    #region Attachments
+
+    public async Task<IReadOnlyList<TaskAttachmentResponse>> UploadAttachmentsAsync(
+     Guid taskId,
+     IReadOnlyList<IFormFile> files,
+     string? description,
+     Guid userId,
+     CancellationToken ct = default)
+    {
+        if (files == null || files.Count == 0)
+            throw CustomExceptionFactory.CreateBadRequestError("No files to upload.");
+
+        var task = await _db.ProjectTasks
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t => t.Id == taskId && !t.IsDeleted, ct);
+
+        if (task == null)
+            throw CustomExceptionFactory.CreateNotFoundError(
+                ResponseMessages.NOT_FOUND.FormatMessage("Task"));
+
+        var attachments = new List<ProjectTaskAttachment>();
+
+        foreach (var file in files)
+        {
+            if (file == null || file.Length == 0) continue;
+
+            var upload = await _cloudinary.UploadFileAsync(file, "task-attachments", ct);
+
+            var entity = new ProjectTaskAttachment
+            {
+                Id = Guid.NewGuid(),
+                TaskId = taskId,
+                FileName = file.FileName,
+                Url = upload.Url,
+                ContentType = file.ContentType,
+                SizeBytes = file.Length,
+                Description = description,
+                UploadedAt = DateTime.UtcNow,
+                UploadedBy = userId,
+                PublicId = upload.PublicId, // KHÔNG ĐỂ NULL nữa
+                IsImage = upload.IsImage
+            };
+
+            attachments.Add(entity);
+            _db.ProjectTaskAttachments.Add(entity);
+        }
+
+        await _db.SaveChangesAsync(ct);
+
+        // map sang response
+        var userName = await GetUserName(userId);
+
+        return attachments.Select(a => new TaskAttachmentResponse
+        {
+            Id = a.Id,
+            TaskId = a.TaskId,
+            FileName = a.FileName,
+            Url = a.Url,
+            ContentType = a.ContentType,
+            Size = a.SizeBytes,
+            Description = a.Description,
+            UploadedAt = a.UploadedAt,
+            UploadedBy = a.UploadedBy,
+            UploadedByName = userName,
+            IsImage = a.IsImage
+        }).ToList();
+    }
 
 
+
+    public async Task<IReadOnlyList<TaskAttachmentResponse>> GetAttachmentsAsync(
+        Guid taskId,
+        CancellationToken ct = default)
+    {
+        var taskExists = await _db.ProjectTasks
+            .AnyAsync(t => t.Id == taskId && !t.IsDeleted, ct);
+
+        if (!taskExists)
+            throw CustomExceptionFactory.CreateNotFoundError(
+                ResponseMessages.NOT_FOUND.FormatMessage("Task"));
+
+        var list = await _db.ProjectTaskAttachments
+            .AsNoTracking()
+            .Where(a => a.TaskId == taskId)
+            .OrderByDescending(a => a.UploadedAt)
+            .ToListAsync(ct);
+
+        var result = new List<TaskAttachmentResponse>();
+
+        foreach (var a in list)
+        {
+            result.Add(new TaskAttachmentResponse
+            {
+                Id = a.Id,
+                TaskId = a.TaskId,
+                FileName = a.FileName,
+                Url = a.Url,
+                ContentType = a.ContentType,
+                Size = a.SizeBytes,
+                Description = a.Description,
+                UploadedAt = a.UploadedAt,
+                UploadedBy = a.UploadedBy,
+                UploadedByName = await GetUserName(a.UploadedBy)
+            });
+        }
+
+        return result;
+    }
+
+    public async Task<bool> DeleteAttachmentAsync(
+        Guid taskId,
+        Guid attachmentId,
+        Guid userId,
+        CancellationToken ct = default)
+    {
+        var attachment = await _db.ProjectTaskAttachments
+            .FirstOrDefaultAsync(a => a.Id == attachmentId && a.TaskId == taskId, ct);
+
+        if (attachment == null)
+            throw CustomExceptionFactory.CreateNotFoundError(
+                ResponseMessages.NOT_FOUND.FormatMessage("Attachment"));
+
+        // xoá trên Cloudinary nếu có
+        if (!string.IsNullOrWhiteSpace(attachment.Url))
+        {
+            var publicId = _cloudinary.ExtractPublicIdFromUrl(attachment.Url);
+            if (!string.IsNullOrEmpty(publicId))
+            {
+                await _cloudinary.DeleteImageAsync(publicId, ct);
+            }
+        }
+
+        _db.ProjectTaskAttachments.Remove(attachment);
+        await _db.SaveChangesAsync(ct);
+
+        return true;
+    }
 
     #endregion
+
 }
