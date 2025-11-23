@@ -1542,6 +1542,52 @@ namespace Fusion.Repository.Migrations
                     b.ToTable("SubscriptionPlanPrices");
                 });
 
+            modelBuilder.Entity("Fusion.Repository.Entities.SubscriptionPlanPriceDiscount", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("(newid())");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("(sysutcdatetime())");
+
+                    b.Property<decimal>("DiscountValue")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("discount_value");
+
+                    b.Property<int>("InstallmentIndex")
+                        .HasColumnType("int")
+                        .HasColumnName("installment_index");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)")
+                        .HasColumnName("note");
+
+                    b.Property<Guid>("PriceId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("price_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("(sysutcdatetime())");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PriceId", "InstallmentIndex")
+                        .IsUnique()
+                        .HasDatabaseName("UX_SubscriptionPlanPriceDiscounts_Price_Installment");
+
+                    b.ToTable("SubscriptionPlanPriceDiscounts");
+                });
+
             modelBuilder.Entity("Fusion.Repository.Entities.TaskLogEvent", b =>
                 {
                     b.Property<long>("Id")
@@ -2926,6 +2972,18 @@ namespace Fusion.Repository.Migrations
                     b.Navigation("SubscriptionPlan");
                 });
 
+            modelBuilder.Entity("Fusion.Repository.Entities.SubscriptionPlanPriceDiscount", b =>
+                {
+                    b.HasOne("Fusion.Repository.Entities.SubscriptionPlanPrice", "Price")
+                        .WithMany("Discounts")
+                        .HasForeignKey("PriceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_SubscriptionPlanPriceDiscounts_Price");
+
+                    b.Navigation("Price");
+                });
+
             modelBuilder.Entity("Fusion.Repository.Entities.TaskLogEvent", b =>
                 {
                     b.HasOne("Fusion.Repository.Entities.User", "Actor")
@@ -3233,8 +3291,6 @@ namespace Fusion.Repository.Migrations
 
             modelBuilder.Entity("Fusion.Repository.Entities.ProjectRequest", b =>
                 {
-                    b.Navigation("Contract");
-
                     b.Navigation("Project");
                 });
 
@@ -3274,6 +3330,11 @@ namespace Fusion.Repository.Migrations
                     b.Navigation("TransactionPayments");
 
                     b.Navigation("UserSubscriptions");
+                });
+
+            modelBuilder.Entity("Fusion.Repository.Entities.SubscriptionPlanPrice", b =>
+                {
+                    b.Navigation("Discounts");
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.Ticket", b =>

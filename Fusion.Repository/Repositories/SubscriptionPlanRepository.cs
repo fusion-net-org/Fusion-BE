@@ -50,6 +50,18 @@ namespace Fusion.Repository.Repositories
                 }
             }
 
+            // Discounts (nếu có)
+            if (req.Price.Discounts != null)
+            {
+                foreach (var d in req.Price.Discounts)
+                {
+                    if (d.Id == Guid.Empty)
+                        d.Id = Guid.NewGuid();
+
+                    d.PriceId = req.Price.Id; 
+                }
+            }
+
             using var tx = await _context.Database.BeginTransactionAsync(ct);
             try
             {
@@ -204,8 +216,9 @@ namespace Fusion.Repository.Repositories
             return _context.SubscriptionPlans
               .AsNoTracking()
               .Include(p => p.Price)
+                .ThenInclude(pr => pr.Discounts)
               .Include(p => p.Features)
-              .ThenInclude(pf => pf.Feature)
+                .ThenInclude(pf => pf.Feature)
               .FirstOrDefaultAsync(p => p.Id == id, ct);
         }
 

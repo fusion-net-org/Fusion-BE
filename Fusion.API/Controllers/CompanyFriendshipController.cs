@@ -98,7 +98,7 @@ namespace Fusion.API.Controllers
 
             return Ok(ResponseModel<CompanyFriendshipResponse>.Ok(
                 data: result,
-                message: ResponseMessageHelper.FormatMessage(ResponseMessages.INVITE_SUCESS, $"company friendship")));
+                message: ResponseMessageHelper.FormatMessage(ResponseMessages.INVITE_SUCCESS, $"company friendship")));
         }
 
 

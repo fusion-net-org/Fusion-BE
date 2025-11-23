@@ -10,10 +10,8 @@ using Fusion.Repository.Enums;
 using Fusion.Repository.IRepositories;
 using Fusion.Service.Commons.Helpers;
 using Fusion.Service.IServices;
-using Fusion.Service.ViewModels.TransactionPayment.Responses;
 using Fusion.Service.ViewModels.UserSubscription.Requests;
 using Fusion.Service.ViewModels.UserSubscription.Responses;
-using System.Collections.Generic;
 
 namespace Fusion.Service.Services;
 
@@ -99,7 +97,7 @@ public class UserSubscriptionService : IUserSubscriptionService
             PaymentModeSnapshot = tx.PaymentModeSnapshot,
             InstallmentCountSnapshot = tx.InstallmentTotal,
             InstallmentIntervalSnapshot = tx.PaymentModeSnapshot == PaymentMode.Installments
-               ? plan.Price.InstallmentInterval                      
+               ? plan.Price.InstallmentInterval
                : null,
 
             CurrencySnapshot = (tx.Currency ?? plan.Price.Currency) ?? "VND",
@@ -165,7 +163,6 @@ public class UserSubscriptionService : IUserSubscriptionService
         entity.Status = SubscriptionStatus.Paused;
         return await _repo.UpdateAsync(entity, ct);
     }
-
     public async Task<bool> ResumeAsync(Guid id, CancellationToken ct = default)
     {
         var entity = await _repo.GetByIdWithNavAsync(id, ct);
@@ -174,10 +171,9 @@ public class UserSubscriptionService : IUserSubscriptionService
         entity.Status = SubscriptionStatus.Active;
         return await _repo.UpdateAsync(entity, ct);
     }
-
     public async Task UpdateNextDueAsync(Guid subId, DateTimeOffset? nextDueAt, CancellationToken ct = default)
     {
-         await _repo.UpdateNextDueAsync(subId, nextDueAt, ct);
+        await _repo.UpdateNextDueAsync(subId, nextDueAt, ct);
     }
     // ===== Helpers =====
     private static DateTimeOffset AddInterval(DateTimeOffset start, BillingPeriod period, int count)
@@ -195,7 +191,7 @@ public class UserSubscriptionService : IUserSubscriptionService
         if (paidTx.PaymentModeSnapshot != PaymentMode.Installments) return null;
 
         // Lấy đúng interval của installment (ưu tiên snapshot trên Transaction; fallback về Plan.Price)
-        var interval =  paidTx.SubscriptionPlan?.Price?.InstallmentInterval
+        var interval = paidTx.SubscriptionPlan?.Price?.InstallmentInterval
                      ?? paidTx.BillingPeriodSnapshot; // cuối cùng mới fallback
 
         if (!(paidTx.InstallmentIndex.HasValue && paidTx.InstallmentTotal.HasValue)) return null;
@@ -268,9 +264,15 @@ public class UserSubscriptionService : IUserSubscriptionService
             .ToList() ?? new List<Guid>();
         return ids;
     }
-
     public async Task DecreaseCompanyShareLimitAsync(Guid userSubscriptionId, int amount = 1, CancellationToken ct = default)
     {
         await _repo.DecreaseCompanyShareLimitAsync(userSubscriptionId, amount, ct);
+    }
+    public async Task<List<UserSubscriptionActiveResponse>> GetAllActiveByUserIdAsync(CancellationToken ct = default)
+    {
+        var userId = _current.GetUserId();
+        var entities = await _repo.GetAllActiveByUserIdAsync(userId, ct);
+
+        return _mapper.Map<List<UserSubscriptionActiveResponse>>(entities);
     }
 }

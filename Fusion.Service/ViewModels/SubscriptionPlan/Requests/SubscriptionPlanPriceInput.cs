@@ -22,4 +22,6 @@ public class SubscriptionPlanPriceInput
     // Trả góp (chỉ dùng khi PaymentMode = Installments)
     public BillingPeriod? InstallmentInterval { get; set; }
     public int? InstallmentCount { get; set; }
+
+    public List<SubscriptionPlanPriceDiscountInput>? Discounts { get; set; }
 }

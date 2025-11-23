@@ -69,6 +69,18 @@ namespace Fusion.Repository.Repositories
     => _context.Set<UserSubscription>()
                .AsNoTracking()
                .FirstOrDefaultAsync(x => x.UserId == userId && x.Status == Enums.SubscriptionStatus.Active, ct);
+
+        public async Task<List<UserSubscription>> GetAllActiveByUserIdAsync(Guid userId, CancellationToken ct = default)
+        {
+            return await _context.UserSubscriptions
+                                  .AsNoTracking()
+            .Include(cs => cs.Plan)                         // để map NameSubscription
+            .Include(cs => cs.Entitlements)
+                .ThenInclude(e => e.Feature)               // để map FeatureName
+            .Where(cs => cs.Status == SubscriptionStatus.Active &&
+                        cs.UserId == userId)
+            .ToListAsync(ct);
+        }
         public Task<UserSubscription?> GetByTransactionAsync(Guid txId, CancellationToken ct = default)
           => _context.Set<UserSubscription>()
                      .AsNoTracking()

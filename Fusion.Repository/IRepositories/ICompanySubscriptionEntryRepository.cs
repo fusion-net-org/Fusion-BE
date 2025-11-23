@@ -8,7 +8,8 @@ public interface ICompanySubscriptionEntryRepository
 {
     Task<CompanySubscriptionEntry> CreateAsync(
            Guid companySubscriptionId,
-           long companyMemberId,
+           Guid actorUserId,
+           Guid companyId,
            CancellationToken ct = default);
 
     Task<List<CompanySubscriptionEntry>> GetByCompanySubscriptionIdAsync(

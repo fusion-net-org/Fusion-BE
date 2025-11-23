@@ -58,6 +58,17 @@ namespace Fusion.API.Controllers
                 message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "transactions")));
         }
 
+
+        [HttpGet("allActive")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<List<UserSubscriptionActiveResponse>>))]
+        public async Task<IActionResult> GetAllActiveByUserId( CancellationToken cancellationToken)
+        {
+            var result = await _userSubscriptionService.GetAllActiveByUserIdAsync(cancellationToken);
+            return Ok(ResponseModel<List<UserSubscriptionActiveResponse>>.Ok(
+                data: result,
+                message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "transactions")));
+        }
+
         /// <summary>Get active subscription of a user.</summary>
         [HttpGet("active/{userId:guid}")]
         public async Task<ActionResult<UserSubscriptionDetailResponse>> GetActiveByUser(
@@ -92,25 +103,6 @@ namespace Fusion.API.Controllers
             return ok ? NoContent() : NotFound();
         }
 
-        //[HttpGet("{id:guid}/request_plan")]
-        //public async Task<IActionResult> GetRequestPlanDetail(Guid id, CancellationToken token)
-        //{
-        //    var result = await _userSubscriptionService.GetRequestPlansDetailAsync(id, token);
-
-        //    return Ok(ResponseModel<RequestPlanDetailResponse>.Ok(
-        //        data: result,
-        //        message: $"Get request plan successfully"));
-        //}
-
-        //[HttpGet("request_plan")]
-        //public async Task<IActionResult> GetRequestPlans(CancellationToken token)
-        //{
-        //    var result = await _userSubscriptionService.GetRequestPlansAsync(token);
-
-        //    return Ok(ResponseModel<IEnumerable<RequestPlanDetailResponse>>.Ok(
-        //        data: result,
-        //        message: $"Get list request plan successfully"));
-        //}
 
 
     }

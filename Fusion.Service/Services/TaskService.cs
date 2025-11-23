@@ -9,6 +9,7 @@ using Fusion.Repository.Entities;
 using Fusion.Repository.IRepositories;
 using Fusion.Service.Commons.Helpers;
 using Fusion.Service.IServices;
+using Fusion.Service.ViewModels.AITaskGenerate;
 using Fusion.Service.ViewModels.Comment.Response;
 using Fusion.Service.ViewModels.Project.Responses;
 using Fusion.Service.ViewModels.ProjectMembers.Responses;
@@ -17,6 +18,7 @@ using Fusion.Service.ViewModels.Sprint.Responses;
 using Fusion.Service.ViewModels.Task.Request;
 using Fusion.Service.ViewModels.Task.Response;
 using Fusion.Service.ViewModels.WorkflowStatus;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Text.RegularExpressions;
 
@@ -876,6 +878,7 @@ public class TaskService : ITaskService
                 EndDate = t.Project?.EndDate,
                 CreatedBy = t.Project?.CreatedBy ?? Guid.Empty,
             },
+ 
 
             Sprint = t.Sprint == null ? null : new SprintResponse
             {
@@ -960,6 +963,8 @@ public class TaskService : ITaskService
             PageSize = taskData.PageSize,
         };
     }
+
+
 
     #endregion
 }
