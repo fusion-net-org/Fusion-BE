@@ -879,7 +879,6 @@ public class TaskService : ITaskService
                 CreatedBy = t.Project?.CreatedBy ?? Guid.Empty,
             },
  
-
             Sprint = t.Sprint == null ? null : new SprintResponse
             {
                 Id = t.Sprint.Id,
@@ -963,8 +962,5 @@ public class TaskService : ITaskService
             PageSize = taskData.PageSize,
         };
     }
-
-
-
     #endregion
 }
