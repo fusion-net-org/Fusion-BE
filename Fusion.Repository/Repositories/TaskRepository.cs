@@ -4,6 +4,7 @@ using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.IRepositories;
 using Microsoft.EntityFrameworkCore;
+using System.Threading;
 
 namespace Fusion.Repository.Repositories
 {
@@ -112,6 +113,73 @@ namespace Fusion.Repository.Repositories
             }
 
             return await query.ToPagedResultAsync(request, ct);
+        }
+
+        public async Task<PagedResult<ProjectTask>> GetAllTaskByUserId(Guid userId, TaskFilterRequest request, CancellationToken token = default)
+        {
+            var taskIds = await _db.TaskWorkflows
+                .Where(a => a.AssignUserId == userId)
+                .Select(a => a.TaskId)
+                .ToListAsync();
+
+            var query = _db.ProjectTasks
+                .Where(t => !t.IsDeleted && taskIds.Contains(t.Id))
+                .Include(t => t.Project)
+                    .ThenInclude(t => t.Company)
+                .Include(t => t.Project)
+                    .ThenInclude(p => p.CompanyRequest)
+                .Include(t => t.Project)
+                    .ThenInclude(p => p.ProjectRequest)
+                .Include(t => t.Sprint)
+                .Include(t => t.CurrentStatus)
+                .Include(t => t.CreatedByNavigation)
+                .Include(t => t.TaskWorkflows)
+                    .ThenInclude(a => a.AssignUser)
+                .Include(t => t.Comments)
+                .Include(t => t.ChecklistItems)
+                .Include(t => t.Dependencies)
+                    .ThenInclude(d => d.DependsOnTask)
+                .AsQueryable();
+
+
+            if (request.DateRange != null)
+            {
+                if (request.DateRange.From != null)
+                    query = query.Where(x => x.DueDate >= request.DateRange.From.Value.ToDateTime(TimeOnly.MinValue));
+
+                if (request.DateRange.To != null)
+                    query = query.Where(x => x.DueDate <= request.DateRange.To.Value.ToDateTime(TimeOnly.MaxValue));
+            }
+
+            if (request.Type.HasValue)
+                query = query.Where(x => x.Type == request.Type.ToString());
+
+            if (request.Priority.HasValue)
+                query = query.Where(x => x.Priority == request.Priority.ToString());
+
+            if (!string.IsNullOrWhiteSpace(request.Keyword))
+            {
+                var keyword = request.Keyword.Trim();
+                query = query.Where(x =>
+                    x.Title.Contains(keyword) ||
+                    x.Code.Contains(keyword)
+                );
+            }
+
+            if (request.ProjectId.HasValue)
+                query = query.Where(x => x.ProjectId == request.ProjectId);
+
+            if (request.SprintId.HasValue)
+                query = query.Where(x => x.SprintId == request.SprintId);
+
+            if (request.StatusId.HasValue)
+                query = query.Where(x => x.CurrentStatusId == request.StatusId);
+
+            if (request.OverDue == true)
+                query = query.Where(x => x.DueDate < DateTime.UtcNow && !x.CurrentStatus.IsEnd);
+
+            return await query.ToPagedResultAsync(request, token);
+
         }
     }
 }

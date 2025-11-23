@@ -15,5 +15,7 @@ namespace Fusion.Repository.IRepositories
         Task<bool> ExistsAsync(Guid id, CancellationToken ct = default);
 
 
+        Task<PagedResult<ProjectTask>> GetAllTaskByUserId(Guid userId, TaskFilterRequest request, CancellationToken token = default);
+
     }
 }

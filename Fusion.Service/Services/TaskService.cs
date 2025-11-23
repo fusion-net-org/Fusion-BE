@@ -10,8 +10,14 @@ using Fusion.Repository.IRepositories;
 using Fusion.Service.Commons.Helpers;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.AITaskGenerate;
+using Fusion.Service.ViewModels.Comment.Response;
+using Fusion.Service.ViewModels.Project.Responses;
+using Fusion.Service.ViewModels.ProjectMembers.Responses;
+using Fusion.Service.ViewModels.Projects.Responses;
+using Fusion.Service.ViewModels.Sprint.Responses;
 using Fusion.Service.ViewModels.Task.Request;
 using Fusion.Service.ViewModels.Task.Response;
+using Fusion.Service.ViewModels.WorkflowStatus;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -830,15 +836,147 @@ public class TaskService : ITaskService
             PageSize = paged.PageSize
         };
     }
+
+    /* -------------------- Get Task By UserId -------------------- */
+    public async Task<PagedResult<TaskResponse>> GetAllTaskByUserId(Guid userId, TaskFilterRequest request, CancellationToken token = default)
+    {
+        var taskData = await _repo.GetAllTaskByUserId(userId, request, token);
+
+        var mapped = taskData.Items.Select(t => new TaskResponse
+        {
+            TaskId = t.Id,
+            Code = t.Code ?? "",
+            Title = t.Title ?? "",
+            Img = t.Img,
+            Type = t.Type?.ToString() ?? "Unknown",
+            Priority = t.Priority?.ToString() ?? "None",
+            Severity = t.Severity?.ToString() ?? "None",
+            Status = t.CurrentStatus?.Name ?? "N/A",
+            Point = t.Point,
+            EstimateHours = t.EstimateHours,
+            RemainingHours = t.RemainingHours,
+            CarryOverCount = t.CarryOverCount,
+            OrderInSprint = t.OrderInSprint,
+
+            IsBacklog = t.IsBacklog,
+            CreateAt = t.CreateAt,
+            DueDate = t.DueDate,
+
+            CreateBy = t.CreatedBy ?? Guid.Empty,
+            CreateByName = t.CreatedByNavigation?.UserName ?? "Unknown",
+
+            ParentTaskId = t.ParentTaskId,
+            SourceTaskId = t.SourceTaskId,
+
+            Project = t.Project == null ? null : new ProjectResponse
+            {
+                Id = t.Project.Id,
+                Name = t.Project.Name ?? "",
+                Code = t.Project.Code ?? "",
+                CompanyHiredId = t.Project?.CompanyRequestId ?? Guid.Empty,
+                CompanyId = t.Project?.CompanyId ?? Guid.Empty,
+                Description = t.Project?.Description ?? "Unknown",
+                IsHired = t.Project?.IsHired ?? false,
+                Status = t.Project?.Status ?? "None",
+                ProjectRequestId = t.Project?.ProjectRequestId ?? Guid.Empty,
+                StartDate = t.Project?.StartDate,
+                EndDate = t.Project?.EndDate,
+                CreatedBy = t.Project?.CreatedBy ?? Guid.Empty,
+            },
+
+            Sprint = t.Sprint == null ? null : new SprintResponse
+            {
+                Id = t.Sprint.Id,
+                Name = t.Sprint.Name ?? "",
+                Start = t.Sprint.StartDate ?? DateTime.MinValue,
+                End = t.Sprint.EndDate ?? DateTime.MinValue,
+                CapacityHours = t.Sprint.CapacityHours ?? 0,
+                Color = t.Sprint.Color ?? "Unknown",
+                Status = t.Sprint.Status,
+                CommittedPoints = t.Sprint.CommittedPoints ?? 0,
+                CreatedAt = t.Sprint.CreatedAt ?? DateTime.MinValue,
+                Goal = t.Sprint.Goal ?? "Unknown",
+                IsDeleted = t.Sprint.IsDeleted,
+            },
+
+            WorkflowStatus = t.CurrentStatus == null ? null : new WorkflowStatusResponse
+            {
+                Id = t.CurrentStatus.Id,
+                Name = t.CurrentStatus.Name ?? "Unknown",
+                Position = t.CurrentStatus.Position,
+                GuardNameKey = t.CurrentStatus.GuardNameKey ?? "Unknown",
+                IsEnd = t.CurrentStatus.IsEnd,
+                IsStart = t.CurrentStatus.IsStart,
+                WorkflowId = t.CurrentStatus.WorkflowId
+            },
+
+            Members = (t.TaskWorkflows ?? new List<TaskWorkflow>())
+                .Where(a => a.AssignUser != null)
+                .Select(a => new ProjectMemberSummaryResponse
+                {
+                    MemberId = a.AssignUser?.Id ?? Guid.Empty,
+                    MemberName = a.AssignUser?.UserName ?? "Unknown",
+                    Avatar = a.AssignUser?.Avatar ?? "Unknown",
+                })
+                .ToList(),
+
+            Checklist = (t.ChecklistItems ?? new List<ProjectTaskChecklistItem>())
+                .Select(c => new TaskChecklistItemResponse
+                {
+                    Id = c.Id,
+                    Label = c.Label ?? "Unknown",
+                    IsDone = c.IsDone,
+                    OrderIndex = c.OrderIndex,
+                    CreatedAt = c.CreatedAt,
+                    TaskId = c.TaskId,
+                })
+                .ToList(),
+
+            Dependencies = (t.Dependencies ?? new List<ProjectTaskDependency>())
+                .Where(d => d.DependsOnTask != null)
+                .Select(d => new TaskDependencyResponse
+                {
+                    TaskId = d.DependsOnTaskId,
+                    Title = d.DependsOnTask?.Title ?? "",
+                    Code = d.DependsOnTask?.Code ?? "",
+                    Priority = d.DependsOnTask?.Priority?.ToString() ?? "",
+                    Status = d.DependsOnTask?.CurrentStatus?.Name ?? "N/A",
+                    Point = d.DependsOnTask?.Point,
+                    EstimateHours = d.DependsOnTask?.EstimateHours
+                })
+                .ToList(),
+
+            Comments = (t.Comments ?? new List<Comment>())
+                .Select(c => new CommentResponse
+                {
+                    Id = c.Id,
+                    AuthorUserId = c.AuthorUserId ?? Guid.Empty,
+                    Body = c.Body ?? "Unknown",
+                    CreateAt = c.CreateAt,
+                    Status = c.Status ?? "Unknown",
+                    UpdateAt = c.UpdateAt,
+                    TaskId = c.TaskId
+                })
+                .ToList()
+        }).ToList();
+
+        return new PagedResult<TaskResponse>
+        {
+            Items = mapped,
+            TotalCount = taskData.TotalCount,
+            PageNumber = taskData.PageNumber,
+            PageSize = taskData.PageSize,
+        };
+    }
     #endregion
     #region Attachments
 
     public async Task<IReadOnlyList<TaskAttachmentResponse>> UploadAttachmentsAsync(
-     Guid taskId,
-     IReadOnlyList<IFormFile> files,
-     string? description,
-     Guid userId,
-     CancellationToken ct = default)
+    Guid taskId,
+    IReadOnlyList<IFormFile> files,
+    string? description,
+    Guid userId,
+    CancellationToken ct = default)
     {
         if (files == null || files.Count == 0)
             throw CustomExceptionFactory.CreateBadRequestError("No files to upload.");
