@@ -60,12 +60,75 @@ namespace Fusion.Repository.Repositories
                         break;
                 }
             }
-            else
+        
+            // search
+            if (!string.IsNullOrWhiteSpace(request.Keyword))
             {
-                query = query.Where(c =>
-                    c.OwnerUser.Email == userMail ||
-                    c.CompanyMembers.Any(m => m.User.Email == userMail));
+                var keyword = request.Keyword.Trim().ToLower();
+                query = query.Where(u =>
+                    (u.Name ?? string.Empty).ToLower().Contains(keyword) ||
+                    (u.TaxCode ?? string.Empty).ToLower().Contains(keyword) ||
+                    (u.PhoneNumber ?? string.Empty).ToLower().Contains(keyword) ||
+                    (u.Email ?? string.Empty).ToLower().Contains(keyword) ||
+                    (u.Website ?? string.Empty).ToLower().Contains(keyword) ||
+                    (u.Address ?? string.Empty).ToLower().Contains(keyword)
+                );
             }
+
+            if (request.DayFrom.HasValue)
+            {
+                query = query.Where(c => c.CreateAt >= request.DayFrom.Value);
+            }
+
+            if (request.DayTo.HasValue)
+            {
+                query = query.Where(c => c.CreateAt <= request.DayTo.Value);
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.OwnerUserName))
+            {
+                query = query.Where(u => (u.OwnerUser.UserName ?? "").Contains(request.OwnerUserName));
+            }
+
+
+            return await query.ToPagedResultAsync(request, cancellationToken);
+        }
+
+        public async Task<PagedResult<Company>> GetAllCompaniesAsyncIncludingAllCompany(string userMail, CompanyPagedSearchRequestVersion2 request, Guid? selectedCompanyId, CancellationToken cancellationToken = default)
+        {
+
+            var query = _dbSet
+                .Include(x => x.CompanyMembers)
+                .Include(x => x.OwnerUser)
+                .Include(x => x.ProjectCompanies)
+                .Include(c => c.ProjectCompanyRequests)
+                .Include(c => c.CompanyFriendshipCompanyAs)
+                .Include(c => c.CompanyFriendshipCompanyBs)
+                //.Where(c =>
+                //            c.OwnerUser.Email == userMail ||
+                //            c.CompanyMembers.Any(m => m.User.Email == userMail))
+                .AsQueryable();
+
+            query = query.Where(c => (bool)!c.IsDeleted);
+
+
+            if (request.RelationShipEnums.HasValue)
+            {
+                switch (request.RelationShipEnums.Value)
+                {
+                    case ProjectSearchRelationShipEnums.Owner:
+                        // User là chủ sở hữu công ty
+                        query = query.Where(c => c.OwnerUser.Email == userMail);
+                        break;
+
+                    case ProjectSearchRelationShipEnums.Member:
+                        // User là chủ sở hữu hoặc thành viên công ty
+                        query = query.Where(c =>
+                            c.CompanyMembers.Any(m => m.User.Email == userMail));
+                        break;
+                }
+            }
+        
 
             // search
             if (!string.IsNullOrWhiteSpace(request.Keyword))

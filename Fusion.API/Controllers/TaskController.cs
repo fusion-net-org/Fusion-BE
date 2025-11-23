@@ -8,6 +8,7 @@ using Fusion.Service.ViewModels.Task.Request;
 using Fusion.Service.ViewModels.Task.Response;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json.Linq;
 using System.Security.Claims;
 
 namespace Fusion.API.Controllers;
@@ -290,4 +291,81 @@ public class TaskController : ControllerBase
     }
 
     #endregion
+
+
+    // ===== GetTaskByUserId =====
+    #region TaskByUserId
+    [HttpGet("user")]
+    [ProducesResponseType(typeof(ResponseModel<PagedResult<TaskResponse>>), StatusCodes.Status200OK)]
+
+    public async Task<ActionResult<PagedResult<TaskResponse>>> GetAllTaskByUserId(
+        [FromQuery] TaskFilterRequest request,
+        CancellationToken cancellationToken)
+    {
+        var uid = GetUserId();
+        if (uid is null)
+            return Unauthorized(ResponseModel<string>.Error(StatusCodes.Status401Unauthorized, "Missing token"));
+
+        var data = await _svc.GetAllTaskByUserId(uid.Value, request, cancellationToken);
+
+        return Ok(ResponseModel<PagedResult<TaskResponse>>.Ok(
+            data, ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "tasks")));
+    }
+        #endregion
+
+    #region Attachments
+
+    [HttpPost("tasks/{taskId:guid}/attachments")]
+    [Consumes("multipart/form-data")]
+    [ProducesResponseType(typeof(ResponseModel<IReadOnlyList<TaskAttachmentResponse>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> UploadAttachments(
+      Guid taskId,
+      [FromForm] TaskAttachmentUploadRequest request,
+      CancellationToken ct)
+    {
+        var uid = GetUserId();
+        if (uid is null)
+            return Unauthorized(ResponseModel<string>.Error(StatusCodes.Status401Unauthorized, "Missing token"));
+
+        if (request.Files == null || request.Files.Count == 0)
+            return BadRequest(ResponseModel<string>.Error(StatusCodes.Status400BadRequest, "File is required"));
+
+        var data = await _svc.UploadAttachmentsAsync(taskId, request.Files, request.Description, uid.Value, ct);
+
+        return Ok(ResponseModel<IReadOnlyList<TaskAttachmentResponse>>.Ok(
+            data,
+            ResponseMessageHelper.FormatMessage(ResponseMessages.CREATE_SUCCESS, "attachments")));
+    }
+
+    // GET /api/tasks/{taskId}/attachments
+    [HttpGet("tasks/{taskId:guid}/attachments")]
+    [ProducesResponseType(typeof(ResponseModel<IReadOnlyList<TaskAttachmentResponse>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetAttachments(Guid taskId, CancellationToken ct)
+    {
+        var data = await _svc.GetAttachmentsAsync(taskId, ct);
+        return Ok(ResponseModel<IReadOnlyList<TaskAttachmentResponse>>.Ok(
+            data,
+            ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "attachments")));
+    }
+
+    // DELETE /api/tasks/{taskId}/attachments/{attachmentId}
+    [HttpDelete("tasks/{taskId:guid}/attachments/{attachmentId:guid}")]
+    [ProducesResponseType(typeof(ResponseModel<bool>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> DeleteAttachment(
+        Guid taskId,
+        Guid attachmentId,
+        CancellationToken ct)
+    {
+        var uid = GetUserId();
+        if (uid is null)
+            return Unauthorized(ResponseModel<string>.Error(StatusCodes.Status401Unauthorized, "Missing token"));
+
+        var ok = await _svc.DeleteAttachmentAsync(taskId, attachmentId, uid.Value, ct);
+        return Ok(ResponseModel<bool>.Ok(
+            ok,
+            ResponseMessageHelper.FormatMessage(ResponseMessages.DELETE_SUCCESS, "attachment")));
+    }
+
+    #endregion
+
 }

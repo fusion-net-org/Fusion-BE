@@ -41,6 +41,7 @@ public partial class FusionDbContext : DbContext
     public virtual DbSet<ProjectTaskAssignee> ProjectTaskAssignee { get; set; }
     public virtual DbSet<ProjectTaskDependency> ProjectTaskDependency { get; set; }
     public virtual DbSet<ProjectTaskChecklistItem> ProjectTaskChecklistItems { get; set; }
+    public virtual DbSet<ProjectTaskAttachment> ProjectTaskAttachments { get; set; }
 
     public virtual DbSet<UserNotificationSetting> UserNotificationSettings { get; set; }
     // Subscription

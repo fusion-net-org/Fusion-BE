@@ -535,6 +535,7 @@ public class MappingProfile : Profile
             .ForMember(d => d.AssigneeIds, opt => opt.MapFrom(s => s.Assignees.Select(a => a.AssignUserId)));
 
 
+        CreateMap<ProjectTaskAttachment, TaskAttachmentResponse>();
 
         // ===================== TicketComment =====================
         CreateMap<TicketComment, TicketCommentResponse>()
