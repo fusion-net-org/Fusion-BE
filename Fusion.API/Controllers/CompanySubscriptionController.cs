@@ -1,7 +1,9 @@
 ﻿using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.CompanySubscriptions;
+using Fusion.Repository.ViewModels.CompanySubscriptionEntry;
 using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.IServices;
+using Fusion.Service.Services;
 using Fusion.Service.ViewModels.CompanySubscription.Requests;
 using Fusion.Service.ViewModels.CompanySubscription.Responses;
 using Microsoft.AspNetCore.Authorization;
@@ -85,6 +87,17 @@ namespace Fusion.API.Controllers
             return Ok(ResponseModel<List<CompanySubscriptionActiveResponse>>.Ok(
                 data: result,
                 message: "Get active company subscriptions successfully"));
+        }
+
+        [HttpGet("{companySubscriptionId:guid}/user-usage")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<List<CompanySubscriptionUserUsageItem>>))]
+        public async Task<IActionResult> GetUserUsageByCompanySubscription(Guid companySubscriptionId,CancellationToken ct = default)
+        {
+            var data = await _service.GetUserUsageAsync(companySubscriptionId, ct);
+
+            return Ok(ResponseModel<List<CompanySubscriptionUserUsageItem>>.Ok(
+                data: data,
+                message: "Get users usage for company subscription successfully"));
         }
     }
 }

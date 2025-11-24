@@ -1,5 +1,6 @@
 ﻿
 using Fusion.Repository.IRepositories;
+using Fusion.Repository.ViewModels;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.Admin.Responses;
 using Fusion.Service.ViewModels.TransactionPayment.Responses.Overview;
@@ -36,8 +37,7 @@ public class AdminService : IAdminService
             RevenueSum = totalRevenue
         };
     }
-        public async Task<IReadOnlyList<PlanPurchaseRatioItemResponse>> GetPlanPurchaseRatioAsync(
-            CancellationToken ct = default)
+        public async Task<IReadOnlyList<PlanPurchaseRatioItemResponse>> GetPlanPurchaseRatioAsync(CancellationToken ct = default)
     {
         var rows = await _transactionPaymentRepository.GetPlanPurchaseCountsAsync(ct);
 
@@ -98,5 +98,41 @@ public class AdminService : IAdminService
         }
 
         return result;
+    }
+    public async Task<PlatformYearOverviewResponse> GetPlatformYearOverviewAsync(int year,CancellationToken ct = default)
+    {
+        if (year <= 0)
+        {
+            year = DateTime.UtcNow.AddHours(7).Year;
+        }
+
+        var userPoints = await _userRepository.GetMonthlyNewUsersInYearAsync(year, ct);
+        var companyPoints = await _companyRepository.GetMonthlyNewCompaniesInYearAsync(year, ct);
+        var tranPoints = await _transactionPaymentRepository.GetMonthlyAmountInYearAsync(year, ct);
+
+        var userDict = userPoints.ToDictionary(x => x.Month, x => x.NewUsers);
+        var companyDict = companyPoints.ToDictionary(x => x.Month, x => x.NewCompanies);
+        var tranDict = tranPoints.ToDictionary(x => x.Month, x => x.TotalAmount);
+
+
+        var overview = new PlatformYearOverviewResponse
+        {
+            Year = year,
+            Months = Enumerable.Range(1, 12)
+                .Select(m => new PlatformMonthlyPointResponse
+                {
+                    Month = m,
+                    NewUsers = userDict.TryGetValue(m, out var u) ? u : 0,
+                    NewCompanies = companyDict.TryGetValue(m, out var c) ? c : 0,
+                    TotalTransactionAmount = tranDict.TryGetValue(m, out var a) ? a : 0m
+                })
+                .ToList()
+        };
+
+        overview.TotalNewUsers = overview.Months.Sum(x => x.NewUsers);
+        overview.TotalNewCompanies = overview.Months.Sum(x => x.NewCompanies);
+        overview.TotalTransactionAmount = overview.Months.Sum(x => x.TotalTransactionAmount);
+
+        return overview;
     }
 }

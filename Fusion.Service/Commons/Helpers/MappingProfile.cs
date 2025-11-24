@@ -1,6 +1,7 @@
 ﻿
 using AutoMapper;
 using Fusion.Repository.Entities;
+using Fusion.Repository.ViewModels.CompanySubscriptionEntry;
 using Fusion.Service.ViewModels.Comment.Request;
 using Fusion.Service.ViewModels.Comment.Response;
 using Fusion.Service.ViewModels.Companies.Requests;

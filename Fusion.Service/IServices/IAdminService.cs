@@ -11,4 +11,5 @@ public interface IAdminService
 
     Task<IReadOnlyList<PlanPurchaseRatioItemResponse>> GetPlanPurchaseRatioAsync(
           CancellationToken ct = default);
+    Task<PlatformYearOverviewResponse> GetPlatformYearOverviewAsync( int year,CancellationToken ct = default);
 }

@@ -3,6 +3,7 @@ using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.Enums;
 using Fusion.Repository.IRepositories;
+using Fusion.Repository.ViewModels.CompanySubscriptionEntry;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fusion.Repository.Repositories;
@@ -84,5 +85,44 @@ public class CompanySubscriptionEntryRepository : GenericRepository<CompanySubsc
                        .ThenInclude(m => m.User) 
                    .Where(e => e.CompanySubscriptionId == companySubscriptionId)
                    .ToListAsync(ct);
+    }
+
+    public async Task<List<CompanySubscriptionUserUsageItem>> GetUserUsageByCompanySubscriptionAsync(Guid companySubscriptionId, CancellationToken ct = default)
+    {
+        if (companySubscriptionId == Guid.Empty)
+            throw CustomExceptionFactory.CreateBadRequestError("CompanySubscriptionId is required.");
+
+        var query =
+          from entry in _context.CompanySubscriptionEntries.AsNoTracking()
+          where entry.CompanySubscriptionId == companySubscriptionId
+          join member in _context.CompanyMembers.AsNoTracking()
+              on entry.CompanyMemberId equals member.Id
+          join user in _context.Users.AsNoTracking()
+              on member.UserId equals user.Id
+          where member.UserId != null
+          group new { entry, user } by new
+          {
+              user.Id,
+              user.UserName,
+              user.Email,
+              user.Avatar
+          }
+          into g
+          select new CompanySubscriptionUserUsageItem
+          {
+              UserId = g.Key.Id,
+              UserName = g.Key.UserName,
+              Email = g.Key.Email,
+              Avatar = g.Key.Avatar,
+              FirstUsedAt = g.Min(x => x.entry.UsedAt),
+          };
+
+
+        // Có thể sort thời gian gần nhất
+        var result = await query
+            .OrderByDescending(x => x.FirstUsedAt)
+            .ToListAsync(ct);
+
+        return result;
     }
 }

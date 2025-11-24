@@ -2,6 +2,7 @@
 
 using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.CompanySubscriptions;
+using Fusion.Repository.ViewModels.CompanySubscriptionEntry;
 using Fusion.Service.ViewModels.CompanySubscription.Requests;
 using Fusion.Service.ViewModels.CompanySubscription.Responses;
 
@@ -15,4 +16,7 @@ public interface ICompanySubscriptionService
     Task<List<CompanySubscriptionActiveResponse>> GetAllActiveByCompanyIdAsync(Guid companyId,CancellationToken ct = default);
     Task<bool> UseFeatureInCompanyAsync(UserFeatureRequest request, CancellationToken ct = default);
     Task<bool> UseFeatureInUserAsync(Guid userSubscriptionId, Guid userId, string featureName, CancellationToken ct = default);
+    Task<List<CompanySubscriptionUserUsageItem>> GetUserUsageAsync(
+     Guid companySubscriptionId,
+     CancellationToken ct = default);
 }
