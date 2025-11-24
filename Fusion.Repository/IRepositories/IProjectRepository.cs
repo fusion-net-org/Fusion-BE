@@ -48,5 +48,10 @@ namespace Fusion.Repository.IRepositories
             DateTime? fromUtc,
             DateTime? toUtc,
             CancellationToken ct = default);
-    }
+
+        public Task<List<Project>> GetProjectsByCompanyAsync(Guid companyId,Guid? companyRequestId,Guid? executorCompanyId,
+         CancellationToken cancellationToken = default);
+
+
+        }
 }

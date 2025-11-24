@@ -3,13 +3,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Fusion.Repository.Enums;
 
 namespace Fusion.Repository.Bases.Page.Ticket
 {
 	public class TicketPagedSearchRequest : PagedRequest
 	{
-		public string? TicketName { get; set; }
-	}
+		public string? Keyword { get; set; }
+        public Guid? ProjectId { get; set; }
+        public Guid? CompanyRequestId { get; set; }   
+        public Guid? CompanyExecutorId { get; set; } 
+        public TicketStatusEnum? Status { get; set; }
+        public TicketViewMode? ViewMode { get; set; }
+    }
     public class TicketByProjectPagedRequest : PagedRequest
     {
         public Guid ProjectId { get; set; }

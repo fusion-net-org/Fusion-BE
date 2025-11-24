@@ -10,6 +10,7 @@ namespace Fusion.Service.ViewModels.Tickets.Responses
 	{
 		public Guid? Id { get; set; }
 		public Guid? ProjectId { get; set; }
+		public string? ProjectName { get; set; }
 		public string? Priority { get; set; }
 		public bool? IsHighestUrgen { get; set; }
 		public string? TicketName { get; set; }
@@ -20,7 +21,8 @@ namespace Fusion.Service.ViewModels.Tickets.Responses
 		public bool? IsBillable { get; set; }
 		public decimal? Budget { get; set; }
 		public bool? IsDeleted { get; set; }
-		public DateTime? ResolvedAt { get; set; }
+		public string? Status { get; set; }
+        public DateTime? ResolvedAt { get; set; }
 		public DateTime? ClosedAt { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
