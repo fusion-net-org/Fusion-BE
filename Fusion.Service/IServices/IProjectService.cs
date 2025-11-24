@@ -26,7 +26,7 @@ namespace Fusion.Service.IServices
         Guid companyId, ProjectListSearchRequest req, CancellationToken ct = default);
 
         Task<PagedResult<ProjectSummaryResponseV2>> GetProjectsForAdminAsync(ProjectSummarySearchRequest request, CancellationToken cancellationToken = default);
-
+        Task<PagedResult<ProjectSummaryResponseV2>> GetProjectsByUserIdAsync(ProjectSummarySearchRequest request, Guid userId, CancellationToken cancellationToken = default);
         Task<ProjectSummaryResponseV2?> GetProjectsByIdForAdminAsync(Guid projectId, CancellationToken cancellationToken = default);
         Task<ProjectSummaryResponseV2?> GetProjectsByIdDetailsAsync(Guid projectId, CancellationToken cancellationToken = default);
         Task<ProjectResponseVersion3> GetProjectById(Guid projectId, CancellationToken cancellationToken = default);
