@@ -160,12 +160,12 @@ public class AuthenService : IAuthenService
         // Optional: check length
         if (computedHash.Length != user.PasswordHash.Length)
             throw CustomExceptionFactory.
-                CreateBadRequestError("Password incorrect!");
+                CreateBadRequestError(ResponseMessages.BAD_REQUEST,"Password incorrect!");
 
         // So sánh constant-time
         if (!CryptographicOperations.FixedTimeEquals(computedHash, user.PasswordHash))
             throw CustomExceptionFactory.
-                CreateBadRequestError("Password incorrect!");
+                CreateBadRequestError(ResponseMessages.BAD_REQUEST,"Password incorrect!");
 
         // 4. Generate JWT tokens
         var tokens = await _jwtService.GenerateTokensAsync(user);

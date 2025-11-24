@@ -83,12 +83,12 @@ namespace Fusion.Service.Services
                     CreateBadRequestError(ResponseMessages.INVALID_INPUT.FormatMessage("Email incorrect!"));
 
 
-            // 3. Consume feature "Company" trước khi tạo công ty
-            await _companySubscriptionService.UseFeatureInUserAsync(
-                request.UserSubscriptionId,
-                user.Id,
-                FeatureInProject.Company.ToString(), 
-                cancellationToken);
+            //// 3. Consume feature "Company" trước khi tạo công ty
+            //await _companySubscriptionService.UseFeatureInUserAsync(
+            //    request.UserSubscriptionId,
+            //    user.Id,
+            //    FeatureInProject.Company.ToString(), 
+            //    cancellationToken);
 
 
             //check tax-code có tồn tại duy nhất hay không (trong hệ thống)
