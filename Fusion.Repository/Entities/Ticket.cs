@@ -20,7 +20,6 @@ public partial class Ticket
     [Unicode(false)]
     public string? Priority { get; set; }
 
-
     [Column("is_highest_urgen")]
     public bool IsHighestUrgen { get; set; }
 
@@ -49,6 +48,10 @@ public partial class Ticket
     [Column("reason")]
 
     public string? reason { get; set; }
+
+    [Column("status")]
+
+    public string? status { get; set; }
 
     [Column("resolved_at")]
     [Precision(3)]

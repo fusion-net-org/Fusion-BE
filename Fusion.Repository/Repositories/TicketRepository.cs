@@ -1,100 +1,144 @@
-﻿using Azure.Core;
-using Fusion.Repository.Bases.Page;
+﻿using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.Ticket;
-using Fusion.Repository.Bases.Page.Workflowstatus;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
+using Fusion.Repository.Enums;
 using Fusion.Repository.IRepositories;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.Design;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace Fusion.Repository.Repositories
 {
-	public class TicketRepository : GenericRepository<Ticket>, ITicketRepository
-	{
-		private readonly FusionDbContext _context;
+    public class TicketRepository : GenericRepository<Ticket>, ITicketRepository
+    {
+        private readonly FusionDbContext _context;
 
-		public TicketRepository(FusionDbContext context) : base(context)
-		{
-			_context = context;
-		}
+        public TicketRepository(FusionDbContext context) : base(context)
+        {
+            _context = context;
+        }
 
-		public async Task<PagedResult<Ticket>> GetPageTicketshAsync(TicketPagedSearchRequest request, CancellationToken cancellationToken = default)
-		{
-			var query = _dbSet
-				.Include(x => x.TicketComments)
-				.AsQueryable();
+        public async Task<PagedResult<Ticket>> GetPageTicketshAsync(TicketPagedSearchRequest request, CancellationToken cancellationToken = default)
+        {
+            var query = _dbSet
+                .Include(x => x.TicketComments)
+                .Include(x => x.Project)
+                .AsQueryable();
 
-			//search
-			if (!string.IsNullOrWhiteSpace(request.TicketName))
-			{
-				query = query.Where(t => (t.TicketName ?? "").Contains(request.TicketName));
-			}
 
-			return await query.ToPagedResultAsync(request, cancellationToken);
-		}
+            // Keyword
+            if (!string.IsNullOrWhiteSpace(request.Keyword))
+                query = query.Where(x => x.TicketName.Contains(request.Keyword)
+                    || x.Budget.Equals(request.Keyword)
+                    || x.Description.Equals(request.Keyword)
+                    || x.Priority.Equals(request.Keyword)
+                    || x.Project.Name.Equals(request.Keyword)
+                );
 
-		public async Task<Ticket?> GetTicketByIdAsync(Guid Id)
-		{
-			return await _context.Tickets
+            // Status
+            if (request.Status.HasValue)
+                query = query.Where(x => x.status == request.Status.Value.ToString());
+
+            // Filter ProjectId
+            if (request.ProjectId.HasValue)
+            {
+                query = query.Where(x => x.ProjectId == request.ProjectId.Value);
+            }
+
+            // ViewMode filter
+            if (request.ViewMode == TicketViewMode.AsRequester)
+            {
+                if (!request.CompanyRequestId.HasValue)
+                {
+                    return new PagedResult<Ticket>
+                    {
+                        Items = new List<Ticket>(),
+                        TotalCount = 0,
+                        PageNumber = request.PageNumber,
+                        PageSize = request.PageSize
+                    };
+                }
+
+                query = query.Where(x =>
+                    x.Project.CompanyRequestId == request.CompanyRequestId);
+
+            }
+            else if (request.ViewMode == TicketViewMode.AsExecutor)
+            {
+                if (!request.CompanyExecutorId.HasValue)
+                {
+                    return new PagedResult<Ticket>
+                    {
+                        Items = new List<Ticket>(),
+                        TotalCount = 0,
+                        PageNumber = request.PageNumber,
+                        PageSize = request.PageSize
+                    };
+                }
+
+                query = query.Where(x =>
+                    x.Project.CompanyId == request.CompanyExecutorId);
+            }
+
+            return await query.ToPagedResultAsync(request, cancellationToken);
+        }
+
+
+
+        public async Task<Ticket?> GetTicketByIdAsync(Guid Id)
+        {
+            return await _context.Tickets
                 .Include(x => x.TicketComments)
                 .Include(x => x.SubmittedByNavigation)
                 .Include(x => x.Project)
                 .Include(x => x.Status)
                 .SingleOrDefaultAsync(x => x.Id == Id);
-		}
+        }
 
-		public async Task<Ticket?> GetTicketByTicketName(string ticketName)
-		{
-			var ticket = await _context.Tickets
-				.SingleOrDefaultAsync(x => x.TicketName == ticketName);
+        public async Task<Ticket?> GetTicketByTicketName(string ticketName)
+        {
+            var ticket = await _context.Tickets
+                .SingleOrDefaultAsync(x => x.TicketName == ticketName);
 
-			return ticket;
-		}
+            return ticket;
+        }
 
-		public async Task<Ticket?> AddTicketAsync(Ticket newTicket, CancellationToken cancellationToken = default)
-		{
-			newTicket.IsDeleted = false;
-			newTicket.CreatedAt = DateTime.UtcNow.AddHours(7);
+        public async Task<Ticket?> AddTicketAsync(Ticket newTicket, CancellationToken cancellationToken = default)
+        {
+            newTicket.IsDeleted = false;
+            newTicket.CreatedAt = DateTime.UtcNow.AddHours(7);
 
-			var ticket = await _context.Tickets.AddAsync(newTicket);
-			await _context.SaveChangesAsync(cancellationToken);
-			return ticket.Entity;
-		}
+            var ticket = await _context.Tickets.AddAsync(newTicket);
+            await _context.SaveChangesAsync(cancellationToken);
+            return ticket.Entity;
+        }
 
-		public async Task<Ticket?> UpdateTicketAsync(Guid ticketId, Ticket updateTicket, CancellationToken cancellationToken = default)
-		{
-			var existedTicket = await _context.Tickets.FindAsync(ticketId);
+        public async Task<Ticket?> UpdateTicketAsync(Guid ticketId, Ticket updateTicket, CancellationToken cancellationToken = default)
+        {
+            var existedTicket = await _context.Tickets.FindAsync(ticketId);
 
-			existedTicket.TicketName = updateTicket.TicketName ?? existedTicket.TicketName;
-			existedTicket.Priority = updateTicket.Priority ?? existedTicket?.Priority;
-			existedTicket.Budget = updateTicket.Budget ?? existedTicket.Budget;
-			existedTicket.Description = updateTicket.Description ?? existedTicket.Description;
-			existedTicket.IsHighestUrgen = updateTicket.IsHighestUrgen;
-			existedTicket.ResolvedAt = updateTicket.ResolvedAt ?? existedTicket.ResolvedAt;
-			existedTicket.ClosedAt = updateTicket?.ClosedAt ?? existedTicket.ClosedAt;
-			existedTicket.UpdatedAt = DateTime.UtcNow.AddHours(7);
+            existedTicket.TicketName = updateTicket.TicketName ?? existedTicket.TicketName;
+            existedTicket.Priority = updateTicket.Priority ?? existedTicket?.Priority;
+            existedTicket.Budget = updateTicket.Budget ?? existedTicket.Budget;
+            existedTicket.Description = updateTicket.Description ?? existedTicket.Description;
+            existedTicket.IsHighestUrgen = updateTicket.IsHighestUrgen;
+            existedTicket.ResolvedAt = updateTicket.ResolvedAt ?? existedTicket.ResolvedAt;
+            existedTicket.ClosedAt = updateTicket?.ClosedAt ?? existedTicket.ClosedAt;
+            existedTicket.UpdatedAt = DateTime.UtcNow.AddHours(7);
 
-			var ticket = _context.Tickets.Update(existedTicket);
+            var ticket = _context.Tickets.Update(existedTicket);
 
-			await _context.SaveChangesAsync(cancellationToken);
-			return ticket.Entity;
-		}
+            await _context.SaveChangesAsync(cancellationToken);
+            return ticket.Entity;
+        }
 
-		public async Task<bool?> DeleteTicketAsync(Ticket ticket, string reason, CancellationToken cancellationToken = default)
-		{
-			ticket.IsDeleted = true;
+        public async Task<bool?> DeleteTicketAsync(Ticket ticket, string reason, CancellationToken cancellationToken = default)
+        {
+            ticket.IsDeleted = true;
             ticket.reason = reason;
             _context.Tickets.Update(ticket);
-			await _context.SaveChangesAsync(cancellationToken);
-			return true;
-		}
+            await _context.SaveChangesAsync(cancellationToken);
+            return true;
+        }
 
         public async Task<PagedResult<Ticket>> GetTicketsByProjectIdAsync(
       TicketByProjectPagedRequest request,
@@ -102,7 +146,7 @@ namespace Fusion.Repository.Repositories
         {
             var query = _context.Tickets
                 .Include(x => x.TicketComments)
-				.Include(x => x.SubmittedByNavigation)
+                .Include(x => x.SubmittedByNavigation)
                 .Where(t => t.ProjectId == request.ProjectId)
                 .AsQueryable();
 
@@ -166,7 +210,7 @@ namespace Fusion.Repository.Repositories
             return await _context.Tickets
                 .Include(t => t.Project)
                 .Include(t => t.SubmittedByNavigation)
-                .Include(t => t.Status) 
+                .Include(t => t.Status)
                 .Where(t => t.ProjectId == projectId)
                 .ToListAsync(cancellationToken);
         }
@@ -179,6 +223,40 @@ namespace Fusion.Repository.Repositories
             await _context.SaveChangesAsync(cancellationToken);
             return true;
         }
+
+
+        public async Task<TicketStatusCountResponse> GetTicketStatusCountAsync(
+            Guid? projectId = null,
+            Guid? companyRequestId = null,
+            Guid? companyExecutorId = null,
+            CancellationToken cancellationToken = default)
+        {
+            var query = _context.Tickets
+                .Include(t => t.Project)
+                .AsQueryable();
+
+            if (projectId.HasValue)
+                query = query.Where(t => t.ProjectId == projectId.Value);
+
+            if (companyRequestId.HasValue)
+                query = query.Where(t => t.Project != null && t.Project.CompanyRequestId == companyRequestId.Value);
+
+            if (companyExecutorId.HasValue)
+                query = query.Where(t => t.Project != null && t.Project.CompanyId == companyExecutorId.Value);
+
+            var tickets = await query.ToListAsync(cancellationToken);
+
+            var statusCount = tickets
+                 .GroupBy(t => t.status ?? "Unknown")
+                 .ToDictionary(g => g.Key, g => g.Count());
+
+            return new TicketStatusCountResponse
+            {
+                StatusCounts = statusCount,
+                Total = tickets.Count
+            };
+        }
+
 
 
     }
