@@ -2,6 +2,7 @@
 using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.User;
 using Fusion.Repository.Entities;
+using Fusion.Repository.ViewModels.Users;
 using Fusion.Service.ViewModels.Companies.Responses;
 using Fusion.Service.ViewModels.Users.Requests;
 using Fusion.Service.ViewModels.Users.Responses;
@@ -26,5 +27,10 @@ public interface IUserService
     Task<SelfUserResponse?> UpdateSelfUserByAdminAsync(Guid id, UpdateSelfUserRequest request, CancellationToken cancellationToken);
     Task<SelfUserResponse?> UpdateStatus(Guid id, bool Status, CancellationToken cancellationToken);
     Task<User?> GetFullInfoByIdAsync(Guid id, CancellationToken cancellationToken = default);
+
+    // ================ Overview Methods ===================
     Task<UserStatusResponse> GetCountUserByStatusAsync(CancellationToken cancellationToken = default);
+    Task<UserGrowthAndStatusOverviewResponse> GetUserGrowthAndStatusOverviewAsync(int months = 12, CancellationToken cancellationToken = default);
+    Task<List<UserCompanyDistributionPoint>> GetTopCompaniesByUserCountAsync( int top = 10,CancellationToken cancellationToken = default);
+    Task<UserPermissionLevelOverviewResponse> GetUserPermissionLevelOverviewAsync(CancellationToken cancellationToken = default);
 }

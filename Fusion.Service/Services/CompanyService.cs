@@ -1,5 +1,4 @@
 ﻿
-using System.ComponentModel.Design;
 using AutoMapper;
 using FluentValidation;
 using Fusion.Repository.Bases.Exceptions;
@@ -10,6 +9,7 @@ using Fusion.Repository.Entities;
 using Fusion.Repository.Enums;
 using Fusion.Repository.IRepositories;
 using Fusion.Repository.Repositories;
+using Fusion.Repository.ViewModels.Companies;
 using Fusion.Service.Commons.Helpers;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.Companies.Requests;
@@ -22,6 +22,7 @@ using Fusion.Service.ViewModels.Task.Response;
 using Fusion.Service.ViewModels.Users.Responses;
 using Microsoft.EntityFrameworkCore;
 using Org.BouncyCastle.Asn1;
+using System.ComponentModel.Design;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace Fusion.Service.Services
@@ -268,6 +269,88 @@ namespace Fusion.Service.Services
             return list;
         }
 
+
+        public async Task<PagedResult<CompanyResponseVersion2>> GetAllCompaniesAsyncIncludingAllCompany(string userMail, CompanyPagedSearchRequestVersion2 request, Guid? selectedCompanyId, CancellationToken cancellationToken = default)
+        {
+            var currentUser = await _userRepository.GetUserByEmailAsync(userMail);
+            if (currentUser == null)
+                throw CustomExceptionFactory.CreateUnauthorizedError("Don't find information user!");
+
+            var currentUserId = currentUser.Id;
+
+            Guid? currentCompanyA = selectedCompanyId ?? await _companyRepository.GetCompanyIdByUserId(currentUserId);
+
+            var partnerCompanyIds = new List<Guid>();
+
+            var pendingPartnerIds = new List<Guid>();
+
+            if (currentCompanyA != null)
+            {
+                var friendships = await _companyFriendshipRepository.GetCompanyFriendshipByCompanyID(currentUserId, currentCompanyA.Value);
+
+                partnerCompanyIds = friendships
+                     .Where(f => f.Status.ToLower() == "active")
+                     .Select(f => f.CompanyAId == currentCompanyA ? f.CompanyBId : f.CompanyAId)
+                     .Where(id => id.HasValue)
+                     .Select(id => id.Value)
+                     .Distinct()
+                     .ToList();
+
+
+
+                pendingPartnerIds = friendships
+                    .Where(f => f.Status.ToLower() == "Pending".ToLower())
+                    .Select(f => f.CompanyAId == currentCompanyA ? f.CompanyBId : f.CompanyAId)
+                    .Where(id => id.HasValue)
+                    .Select(id => id.Value)
+                    .Distinct()
+                    .ToList();
+
+            }
+
+
+            var result = await _companyRepository.GetAllCompaniesAsyncIncludingAllCompany(userMail, request, selectedCompanyId, cancellationToken);
+
+            if (result == null)
+                throw CustomExceptionFactory.CreateNotFoundError(
+                    ResponseMessages.NOT_FOUND.FormatMessage("Companies"));
+
+
+            var list = new PagedResult<CompanyResponseVersion2>
+            {
+
+                Items = result.Items.Select(company =>
+                {
+                    var item = _mapper.Map<CompanyResponseVersion2>(company);
+
+                    item.isOwner = company.OwnerUserId == currentUserId;
+                    item.isPartner = currentCompanyA != null && partnerCompanyIds.Contains(company.Id);
+                    item.isPendingAprovePartner = currentCompanyA != null && pendingPartnerIds.Contains(company.Id);
+
+                    return item;
+                }).ToList(),
+
+                TotalCount = result.TotalCount,
+                PageNumber = result.PageNumber,
+                PageSize = result.PageSize
+            };
+
+            foreach (var item in list.Items)
+            {
+                var company = result.Items.FirstOrDefault(c => c.Id == item.Id);
+                if (company == null) continue;
+
+                var friendships = company.CompanyFriendshipCompanyAs
+                    .Concat(company.CompanyFriendshipCompanyBs)
+                    .ToList();
+
+                item.TotalApproved = friendships.Count(f => f.Status == "Active");
+                item.TotalWaitForApprove = friendships.Count(f => f.Status == "Pending");
+                item.TotalPartners = friendships.Count();
+            }
+
+            return list;
+        }
         public async Task<PagedResult<CompanyResponse>> GetPagedCompaniesAdminAsync(string adminEmail, CompanyPagedSearchRequest request, CancellationToken cancellationToken = default)
         {
             if (request == null)
@@ -877,6 +960,32 @@ namespace Fusion.Service.Services
         .ToList();
 
             return result;
+        }
+
+        // ================== OverView =============================================
+
+        public async Task<CompanyGrowthAndStatusOverviewDto> GetCompanyGrowthAndStatusOverviewAsync(DateOnly? from = null,DateOnly? to = null, CancellationToken ct = default)
+        {
+
+            var nowUtc = DateTime.UtcNow;
+
+            // toUtc
+            var toUtc = to.HasValue
+                ? to.Value.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc)
+                : nowUtc;
+
+            // fromUtc (mặc định lùi 11 tháng = 12 tháng gần nhất)
+            var fromUtc = from.HasValue
+                ? from.Value.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc)
+                : toUtc.AddMonths(-11);
+
+            return await _companyRepository
+                .GetCompanyGrowthAndStatusOverviewAsync(fromUtc, toUtc, ct);
+        }
+        public async Task<CompanyProjectLoadOverviewDto> GetCompanyProjectLoadOverviewAsync(
+         CancellationToken ct = default)
+        {
+            return await _companyRepository.GetCompanyProjectLoadOverviewAsync(ct);
         }
     }
 }

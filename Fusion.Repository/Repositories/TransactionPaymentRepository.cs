@@ -650,6 +650,16 @@ public class TransactionPaymentRepository : GenericRepository<TransactionPayment
 
         return result;
     }
+    public async Task<decimal> GetTotalRevenueAsync(CancellationToken ct = default)
+    {
+        var total = await _context.TransactionPayments
+            .AsNoTracking()
+            .Where(tp =>
+                tp.Type == TransactionType.Charge &&
+                tp.Status == PaymentStatus.Success)
+            .SumAsync(tp => (decimal?)tp.Amount, ct);
+        return total ?? 0m;
+    }
     #endregion
 
     #region SubscriptionPlan
@@ -720,5 +730,27 @@ public class TransactionPaymentRepository : GenericRepository<TransactionPayment
 
         return items;
     }
-}
+
+    public async Task<List<PlanPurchaseCountRow>> GetPlanPurchaseCountsAsync(CancellationToken ct = default)
+    {
+        return await _context.TransactionPayments
+              .AsNoTracking()
+              .Where(t => t.PaidAt != null &&
+                          t.Type == TransactionType.Charge)
+              .GroupBy(t => new
+              {
+                  t.PlanId,
+                  PlanName = t.SubscriptionPlan.Name
+              })
+              .Select(g => new PlanPurchaseCountRow
+              {
+                  SubscriptionPlanId = g.Key.PlanId,
+                  PlanName = g.Key.PlanName,
+                  TransactionsCount = g.Count()
+              })
+              .OrderByDescending(x => x.TransactionsCount)
+              .ToListAsync(ct);
+    }
     #endregion
+}
+

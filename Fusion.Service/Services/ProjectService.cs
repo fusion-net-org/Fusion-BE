@@ -9,11 +9,14 @@ using Fusion.Repository.Entities;
 using Fusion.Repository.IRepositories;
 using Fusion.Repository.Repositories;
 using Fusion.Repository.ViewModels;
+using Fusion.Repository.ViewModels.Project;
 using Fusion.Service.Commons.Helpers;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.CompanySubscription.Requests;
 using Fusion.Service.ViewModels.Project.Requests;
+using Fusion.Service.ViewModels.Project.Requests.Overview;
 using Fusion.Service.ViewModels.Project.Responses;
+using Fusion.Service.ViewModels.Project.Responses.Overview;
 using Fusion.Service.ViewModels.ProjectMembers.Responses;
 using Fusion.Service.ViewModels.Sprint.Responses;
 using Fusion.Service.ViewModels.Task.Response;
@@ -461,7 +464,88 @@ namespace Fusion.Service.Services
             return response;
         }
 
-       
+        public async Task<PagedResult<ProjectSummaryResponseV2>> GetProjectsByUserIdAsync(ProjectSummarySearchRequest request, Guid userId, CancellationToken cancellationToken = default)
+        {
+            var result = await _projectRepo.GetProjectsByUserIdAsync(request, userId, cancellationToken);
+
+            var response = new PagedResult<ProjectSummaryResponseV2>
+            {
+                PageNumber = result.PageNumber,
+                TotalCount = result.TotalCount,
+                PageSize = result.PageSize,
+                Items = new List<ProjectSummaryResponseV2>()
+            };
+
+            foreach (var p in result.Items ?? new List<Project>())
+            {
+                var sprintSummary = (p.Sprints ?? new List<Sprint>())
+                    .Select(s => new SprintSummaryResponse
+                    {
+                        Id = s.Id,
+                        Name = s.Name ?? "N/A",
+                        TaskCount = s.ProjectTasks?.Count ?? 0,
+                        TotalPoint = s.ProjectTasks?.Sum(t => t.Point ?? 0) ?? 0,
+                        Tasks = (s.ProjectTasks ?? new List<ProjectTask>())
+                            .Select(t => new TaskSummaryResponse
+                            {
+                                Id = t.Id,
+                                Title = t.Title ?? "N/A",
+                                Point = t.Point ?? 0,
+                                Status = t.Status ?? "Unknown"
+                            })
+                            .ToList()
+                    })
+                    .ToList();
+
+                var totalTasks = sprintSummary.Sum(s => s.TaskCount);
+
+                var doneTasks = sprintSummary
+                    .SelectMany(s => s.Tasks)
+                    .Count(t => (t.Status ?? "").Equals("Done", StringComparison.OrdinalIgnoreCase));
+                double progress = totalTasks == 0 ? 0 : (double)doneTasks / totalTasks * 100;
+
+                response.Items.Add(new ProjectSummaryResponseV2
+                {
+                    Id = p.Id,
+                    Name = p.Name ?? "N/A",
+                    Description = p.Description ?? "",
+                    Status = p.Status ?? "Unknown",
+
+                    CompanyExecutorId = p.Company?.Id ?? Guid.Empty,
+                    CompanyExecutorName = p.Company?.Name ?? "N/A",
+
+                    CompanyRequestId = p.CompanyRequest?.Id,
+                    CompanyRequestName = p.CompanyRequest?.Name ?? "N/A",
+
+                    WorkflowId = p.Workflow?.Id ?? Guid.Empty,
+                    WorkflowName = p.Workflow?.Name ?? "N/A",
+
+                    ProjectType = p.CompanyRequestId != null ? "OutSource" : "Product",
+
+                    OwnerId = p.CreatedByNavigation?.Id ?? Guid.Empty,
+                    OwnerName = p.CreatedByNavigation?.UserName ?? "Unknown",
+
+                    Members = (p.ProjectMembers ?? new List<ProjectMember>())
+                        .Select(m => new ProjectMemberSummaryResponse
+                        {
+                            MemberId = m.User?.Id ?? Guid.Empty,
+                            MemberName = m.User?.UserName ?? "Unknown",
+                            Avatar = m.User?.Avatar
+                        })
+                        .ToList(),
+                    MembersCount = p.ProjectMembers?.Count ?? 0,
+                    SprintCount = sprintSummary.Count,
+                    TotalTask = totalTasks,
+                    TotalPoint = sprintSummary.Sum(s => s.TotalPoint),
+                    Progress = Math.Round(progress, 2),
+                    Sprints = sprintSummary
+                });
+            }
+
+            return response;
+        }
+
+
         public async Task<ProjectSummaryResponseV2?> GetProjectsByIdForAdminAsync(Guid projectId, CancellationToken cancellationToken = default)
         {
             var result = await _projectRepo.GetProjectsByIdForAdminAsync(projectId, cancellationToken);
@@ -600,6 +684,136 @@ namespace Fusion.Service.Services
             return _mapper.Map<ProjectResponseVersion3>(project);
         }
 
+        // =================== Over view =====================
+        public async Task<ProjectGrowthOverviewResponse> GetProjectGrowthOverviewAsync(ProjectGrowthOverviewRequest req, CancellationToken ct = default)
+        {
+            var nowUtc = DateTime.UtcNow;
 
+            // Default: 12 tháng gần nhất
+            var defaultFrom = new DateTime(nowUtc.Year, nowUtc.Month, 1).AddMonths(-11);
+            var from = (req.From ?? defaultFrom).ToUniversalTime();
+            var to = (req.To ?? nowUtc).ToUniversalTime();
+
+            // Lấy thống kê theo tháng từ repository
+            var monthlyStats = await _projectRepo.GetProjectMonthlyCreationAndCompletionAsync(
+                req.CompanyId,
+                from,
+                to,
+                ct);
+
+            // Build dải tháng liên tục (kể cả tháng ko có project -> 0)
+            var points = new List<ProjectGrowthPointResponse>();
+
+            var year = from.Year;
+            var month = from.Month;
+            var cumulative = 0;
+
+            while (new DateTime(year, month, 1) <= new DateTime(to.Year, to.Month, 1))
+            {
+                var stat = monthlyStats.FirstOrDefault(x => x.Year == year && x.Month == month);
+
+                var newProjects = stat?.NewProjects ?? 0;
+                var completedProjects = stat?.CompletedProjects ?? 0;
+
+                cumulative += newProjects;
+
+                points.Add(new ProjectGrowthPointResponse
+                {
+                    Year = year,
+                    Month = month,
+                    NewProjects = newProjects,
+                    CompletedProjects = completedProjects,
+                    CumulativeProjects = cumulative
+                });
+
+                month++;
+                if (month > 12)
+                {
+                    month = 1;
+                    year++;
+                }
+            }
+
+            // ===== Summary counters =====
+            var baseQuery = _ctx.Projects.AsNoTracking().AsQueryable();
+
+            if (req.CompanyId.HasValue)
+            {
+                baseQuery = baseQuery.Where(p => p.CompanyId == req.CompanyId.Value);
+            }
+
+            var totalProjects = await baseQuery.CountAsync(ct);
+
+            // Completed = có EndDate <= hôm nay
+            var todayDateOnly = DateOnly.FromDateTime(nowUtc.Date);
+
+            var completedProjectsTotal = await baseQuery
+                .Where(p => p.EndDate != null && p.EndDate <= todayDateOnly)
+                .CountAsync(ct);
+
+            var activeProjects = totalProjects - completedProjectsTotal;
+
+            var last30Days = nowUtc.AddDays(-30);
+
+            var newProjectsLast30Days = await baseQuery
+                .Where(p => p.CreateAt >= last30Days)
+                .CountAsync(ct);
+
+            return new ProjectGrowthOverviewResponse
+            {
+                TotalProjects = totalProjects,
+                ActiveProjects = activeProjects,
+                CompletedProjects = completedProjectsTotal,
+                NewProjectsLast30Days = newProjectsLast30Days,
+                Growth = points
+            };
+        }
+
+        public async Task<ProjectExecutionOverviewResponse> GetProjectExecutionOverviewAsync( ProjectGrowthOverviewRequest req, CancellationToken ct = default)
+        {
+            // Không xử lý from/to ở đây nữa,
+            // để repo handle default range (12 tháng gần nhất) cho đồng bộ.
+            var vm = await _projectRepo.GetProjectExecutionOverviewAsync(
+                req.CompanyId,
+                req.From,
+                req.To,
+                ct);
+
+            var response = new ProjectExecutionOverviewResponse
+            {
+                TotalTasks = vm.TotalTasks,
+                CompletedTasks = vm.CompletedTasks,
+                OverdueTasks = vm.OverdueTasks,
+
+                TotalSprints = vm.TotalSprints,
+                ActiveSprints = vm.ActiveSprints,
+                CompletedSprints = vm.CompletedSprints,
+
+                TaskFlow = vm.TaskFlow
+                    .Select(x => new TaskFlowPointResponse
+                    {
+                        Year = x.Year,
+                        Month = x.Month,
+                        CreatedTasks = x.CreatedTasks,
+                        CompletedTasks = x.CompletedTasks
+                    })
+                    .ToList(),
+
+                SprintVelocity = vm.SprintVelocity
+                    .Select(x => new SprintVelocityPointResponse
+                    {
+                        SprintId = x.SprintId,
+                        SprintName = x.SprintName,
+                        StartDate = x.StartDate,
+                        EndDate = x.EndDate,
+                        CommittedPoints = x.CommittedPoints,
+                        CompletedPoints = x.CompletedPoints
+                    })
+                    .ToList()
+            };
+
+            return response;
+
+        }
     }
 }

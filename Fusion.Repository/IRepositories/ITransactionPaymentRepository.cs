@@ -45,12 +45,13 @@ public interface ITransactionPaymentRepository : IGenericRepository<TransactionP
     Task<List<DailyCashflowAgg>> GetDailyCashflowAggAsync(DateTimeOffset from, DateTimeOffset toExclusive, CancellationToken ct = default);
     Task<TransactionInstallmentAgingResult> GetInstallmentAgingAsync( DateTimeOffset? asOf = null, CancellationToken ct = default);
     Task<List<TransactionTopCustomerItemResponse>> GetTopCustomersAsync(int year, int topN, CancellationToken ct = default);
+    Task<decimal> GetTotalRevenueAsync(CancellationToken ct = default);
     #endregion
 
     #region SubsciptionPlan
     Task<List<TransactionPaymentModeInsightItemDto>> GetPaymentModeInsightAsync(int year,CancellationToken ct = default);
     Task<List<TransactionPlanRevenueInsightItem>> GetPlanRevenueInsightAsync(int year,CancellationToken ct);
-
+    Task<List<PlanPurchaseCountRow>> GetPlanPurchaseCountsAsync(CancellationToken ct = default);
     #endregion
 
 }

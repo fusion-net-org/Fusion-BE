@@ -856,8 +856,7 @@ public class TaskService : ITaskService
             Type = t.Type?.ToString() ?? "Unknown",
             Priority = t.Priority?.ToString() ?? "None",
             Severity = t.Severity?.ToString() ?? "None",
-            Status = t.CurrentStatus?.Name ?? "N/A",
-            Point = t.Point,
+            Status = t.Status?.ToString() ?? "None",
             EstimateHours = t.EstimateHours,
             RemainingHours = t.RemainingHours,
             CarryOverCount = t.CarryOverCount,
@@ -887,6 +886,7 @@ public class TaskService : ITaskService
                 StartDate = t.Project?.StartDate,
                 EndDate = t.Project?.EndDate,
                 CreatedBy = t.Project?.CreatedBy ?? Guid.Empty,
+                WorkflowId = t.Project.WorkflowId ?? Guid.Empty,
             },
 
             Sprint = t.Sprint == null ? null : new SprintResponse

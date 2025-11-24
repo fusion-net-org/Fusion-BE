@@ -132,8 +132,8 @@ namespace Fusion.Repository.Repositories
             {
                 if (!ur.UserId.HasValue || !ur.RoleId.HasValue) continue;
 
-                var uid = ur.UserId.Value;    
-                var rid = ur.RoleId.Value;    
+                var uid = ur.UserId.Value;
+                var rid = ur.RoleId.Value;
 
                 if (!roleMap.TryGetValue(rid, out var roleName)) continue;
 
@@ -151,6 +151,43 @@ namespace Fusion.Repository.Repositories
             return result;
         }
 
+        public async Task<Dictionary<Guid, List<UserRoleLite>>> GetUserRolesMapInCompanyAsync(Guid companyId, IEnumerable<Guid> userIds,
+    CancellationToken token = default)
+        {
+            var result = new Dictionary<Guid, List<UserRoleLite>>();
+            var uidList = (userIds ?? Array.Empty<Guid>()).Distinct().ToList();
+            if (uidList.Count == 0) return result;
+
+            var roles = await _context.Roles
+                .AsNoTracking()
+                .Where(r => r.CompanyId == companyId)
+                .ToListAsync(token);
+
+            var roleMap = roles.ToDictionary(r => r.Id, r => r.RoleName ?? string.Empty);
+
+            var userRoles = await _context.UserRoles
+                .AsNoTracking()
+                .Where(ur => ur.UserId.HasValue && uidList.Contains(ur.UserId.Value) && ur.RoleId.HasValue)
+                .ToListAsync(token);
+
+            foreach (var ur in userRoles)
+            {
+                var uid = ur.UserId.Value;
+                var rid = ur.RoleId.Value;
+
+                if (!roleMap.TryGetValue(rid, out var roleName)) continue;
+
+                if (!result.TryGetValue(uid, out var list))
+                {
+                    list = new List<UserRoleLite>();
+                    result[uid] = list;
+                }
+
+                list.Add(new UserRoleLite { RoleId = rid, RoleName = roleName });
+            }
+
+            return result;
+        }
 
         public async Task<PagedResult<CompanyMember>> GetPagedCompanyMemberByCompanyIdAsync(Guid companyId, string mail, CompanyMemberPagedSearchRequest request, CancellationToken token)
         {
