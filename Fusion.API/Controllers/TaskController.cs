@@ -295,9 +295,8 @@ public class TaskController : ControllerBase
 
     // ===== GetTaskByUserId =====
     #region TaskByUserId
-    [HttpGet("user")]
+    [HttpGet("tasks/user")]
     [ProducesResponseType(typeof(ResponseModel<PagedResult<TaskResponse>>), StatusCodes.Status200OK)]
-
     public async Task<ActionResult<PagedResult<TaskResponse>>> GetAllTaskByUserId(
         [FromQuery] TaskFilterRequest request,
         CancellationToken cancellationToken)

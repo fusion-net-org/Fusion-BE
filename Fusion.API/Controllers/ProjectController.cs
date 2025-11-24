@@ -167,5 +167,17 @@ namespace Fusion.API.Controllers
             ));
         }
 
+        [HttpGet("projects/user")]
+        [ProducesResponseType(typeof(ResponseModel<PagedResult<ProjectSummaryResponseV2>>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetProjectsByUserId([FromQuery] ProjectSummarySearchRequest request, CancellationToken ct)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+                return Unauthorized(ResponseModel<string>.Error(StatusCodes.Status401Unauthorized, "Don't find token!"));
+
+            var result = await _service.GetProjectsByUserIdAsync(request, userId, ct);
+            return Ok(ResponseModel<PagedResult<ProjectSummaryResponseV2>>.Ok(result));
+        }
+
     }
 }

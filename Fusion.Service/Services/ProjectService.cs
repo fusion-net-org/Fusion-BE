@@ -464,6 +464,87 @@ namespace Fusion.Service.Services
             return response;
         }
 
+        public async Task<PagedResult<ProjectSummaryResponseV2>> GetProjectsByUserIdAsync(ProjectSummarySearchRequest request, Guid userId, CancellationToken cancellationToken = default)
+        {
+            var result = await _projectRepo.GetProjectsByUserIdAsync(request, userId, cancellationToken);
+
+            var response = new PagedResult<ProjectSummaryResponseV2>
+            {
+                PageNumber = result.PageNumber,
+                TotalCount = result.TotalCount,
+                PageSize = result.PageSize,
+                Items = new List<ProjectSummaryResponseV2>()
+            };
+
+            foreach (var p in result.Items ?? new List<Project>())
+            {
+                var sprintSummary = (p.Sprints ?? new List<Sprint>())
+                    .Select(s => new SprintSummaryResponse
+                    {
+                        Id = s.Id,
+                        Name = s.Name ?? "N/A",
+                        TaskCount = s.ProjectTasks?.Count ?? 0,
+                        TotalPoint = s.ProjectTasks?.Sum(t => t.Point ?? 0) ?? 0,
+                        Tasks = (s.ProjectTasks ?? new List<ProjectTask>())
+                            .Select(t => new TaskSummaryResponse
+                            {
+                                Id = t.Id,
+                                Title = t.Title ?? "N/A",
+                                Point = t.Point ?? 0,
+                                Status = t.Status ?? "Unknown"
+                            })
+                            .ToList()
+                    })
+                    .ToList();
+
+                var totalTasks = sprintSummary.Sum(s => s.TaskCount);
+
+                var doneTasks = sprintSummary
+                    .SelectMany(s => s.Tasks)
+                    .Count(t => (t.Status ?? "").Equals("Done", StringComparison.OrdinalIgnoreCase));
+                double progress = totalTasks == 0 ? 0 : (double)doneTasks / totalTasks * 100;
+
+                response.Items.Add(new ProjectSummaryResponseV2
+                {
+                    Id = p.Id,
+                    Name = p.Name ?? "N/A",
+                    Description = p.Description ?? "",
+                    Status = p.Status ?? "Unknown",
+
+                    CompanyExecutorId = p.Company?.Id ?? Guid.Empty,
+                    CompanyExecutorName = p.Company?.Name ?? "N/A",
+
+                    CompanyRequestId = p.CompanyRequest?.Id,
+                    CompanyRequestName = p.CompanyRequest?.Name ?? "N/A",
+
+                    WorkflowId = p.Workflow?.Id ?? Guid.Empty,
+                    WorkflowName = p.Workflow?.Name ?? "N/A",
+
+                    ProjectType = p.CompanyRequestId != null ? "OutSource" : "Product",
+
+                    OwnerId = p.CreatedByNavigation?.Id ?? Guid.Empty,
+                    OwnerName = p.CreatedByNavigation?.UserName ?? "Unknown",
+
+                    Members = (p.ProjectMembers ?? new List<ProjectMember>())
+                        .Select(m => new ProjectMemberSummaryResponse
+                        {
+                            MemberId = m.User?.Id ?? Guid.Empty,
+                            MemberName = m.User?.UserName ?? "Unknown",
+                            Avatar = m.User?.Avatar
+                        })
+                        .ToList(),
+                    MembersCount = p.ProjectMembers?.Count ?? 0,
+                    SprintCount = sprintSummary.Count,
+                    TotalTask = totalTasks,
+                    TotalPoint = sprintSummary.Sum(s => s.TotalPoint),
+                    Progress = Math.Round(progress, 2),
+                    Sprints = sprintSummary
+                });
+            }
+
+            return response;
+        }
+
 
         public async Task<ProjectSummaryResponseV2?> GetProjectsByIdForAdminAsync(Guid projectId, CancellationToken cancellationToken = default)
         {

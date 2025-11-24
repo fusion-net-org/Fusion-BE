@@ -110,7 +110,7 @@ namespace Fusion.Service.Services
 
             var userIds = result.Items.Where(m => m.User != null).Select(m => m.User.Id).Distinct().ToList();
             var rolesByUser = await _companyMemberRepository
-                .GetUserRoleMapInCompanyAsync(companyId, userIds, token);
+                .GetUserRolesMapInCompanyAsync(companyId, userIds, token);
 
             var memberResponses = new List<CompanyMemberResponse>(result.Items.Count);
 
@@ -122,9 +122,15 @@ namespace Fusion.Service.Services
                 var dto = _mapper.Map<CompanyMemberResponse>(member);
                 dto.NumberProductJoin = numberProjectJoin;
 
-                if (member.User != null && rolesByUser.TryGetValue(member.User.Id, out var role))
+                //if (member.User != null && rolesByUser.TryGetValue(member.User.Id, out var role))
+                //{
+                //    dto.roleName = role.RoleName;
+                //}
+
+                if (member.User != null && rolesByUser.TryGetValue(member.User.Id, out var roleList))
                 {
-                    dto.roleName = role.RoleName;
+                    // Convert list role -> "A, B, C"
+                    dto.roleName = string.Join(", ", roleList.Select(r => r.RoleName));
                 }
 
                 memberResponses.Add(dto);
@@ -138,8 +144,6 @@ namespace Fusion.Service.Services
                 PageSize = result.PageSize
             };
         }
-
-
         public async Task<PagedResult<CompanyMemberResponse>> GetPagedCompanyMemberAsync(CompanyMemberPagedSearchAdminRequest request, CancellationToken token = default)
         {
 
