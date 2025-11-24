@@ -1,11 +1,12 @@
-﻿using System;
+﻿using Fusion.Service.ViewModels.Comment.Response;
+using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
 
 namespace Fusion.Service.ViewModels.Task.Response;
 
@@ -39,7 +40,9 @@ public class ProjectTaskResponse
 
     public DateTime? CreateAt { get; set; }
     public DateTime? UpdateAt { get; set; }
-    public TaskWorkflowAssignmentsResponse? WorkflowAssignments { get; set; }  
+    public TaskWorkflowAssignmentsResponse? WorkflowAssignments { get; set; }
 
+    public List<CommentResponse> Comments { get; set; } = new();
+    public List<TaskAttachmentResponse> Attachments { get; set; } = new();
 
 }

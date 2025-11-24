@@ -47,6 +47,10 @@ namespace Fusion.Repository.Entities
 
         [Column("description")]
         public string? Description { get; set; }
+        [Column("comment_id")]
+        public long? CommentId { get; set; }
+        [ForeignKey(nameof(CommentId))]
+        public virtual Comment? Comment { get; set; }
 
         [ForeignKey(nameof(TaskId))]
         [InverseProperty(nameof(ProjectTask.Attachments))]
