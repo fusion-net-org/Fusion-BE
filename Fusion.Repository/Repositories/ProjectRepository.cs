@@ -263,13 +263,42 @@ namespace Fusion.Repository.Repositories
         public async Task<PagedResult<Project>> GetProjectsForAdminAsync(ProjectSummarySearchRequest request, CancellationToken cancellationToken = default)
         {
             var query = _context.Projects
-        .Include(p => p.CreatedByNavigation)
-        .Include(p => p.Company)
-        .Include(p => p.CompanyRequest)
-        .Include(p => p.Workflow)
-        .Include(p => p.ProjectMembers).ThenInclude(x => x.User)
-        .Include(p => p.Sprints).ThenInclude(s => s.ProjectTasks)
-        .AsQueryable();
+                .Include(p => p.CreatedByNavigation)
+                .Include(p => p.Company)
+                .Include(p => p.CompanyRequest)
+                .Include(p => p.Workflow)
+                .Include(p => p.ProjectMembers).ThenInclude(x => x.User)
+                .Include(p => p.Sprints).ThenInclude(s => s.ProjectTasks)
+                .AsQueryable();
+
+            // FILTER: companyName
+            if (!string.IsNullOrEmpty(request.CompanyName))
+            {
+                query = query.Where(p =>
+                        (p.Company != null && p.Company.Name.Contains(request.CompanyName)) ||
+                        (p.CompanyRequest != null && p.CompanyRequest.Name.Contains(request.CompanyName)));
+            }
+
+            return await query.ToPagedResultAsync(request, cancellationToken);
+        }
+
+        public async Task<PagedResult<Project>> GetProjectsByUserIdAsync(ProjectSummarySearchRequest request, Guid userId, CancellationToken cancellationToken = default)
+        {
+            var query = _context.Projects
+                .Include(p => p.CreatedByNavigation)
+                .Include(p => p.Company)
+                .Include(p => p.CompanyRequest)
+                .Include(p => p.Workflow)
+                .Include(p => p.ProjectMembers).ThenInclude(x => x.User)
+                .Include(p => p.Sprints).ThenInclude(s => s.ProjectTasks)
+                .Include(p => p.ProjectTasks)
+                    .ThenInclude(p => p.TaskWorkflows)
+                        .ThenInclude(p => p.AssignUser)
+                .Where(p =>
+                    p.ProjectTasks.Any(t =>
+                        t.TaskWorkflows.Any(tw => tw.AssignUserId == userId)
+                    ))
+                .AsQueryable();
 
             // FILTER: companyName
             if (!string.IsNullOrEmpty(request.CompanyName))
@@ -285,13 +314,13 @@ namespace Fusion.Repository.Repositories
         public async Task<Project?> GetProjectsByIdForAdminAsync(Guid projectId, CancellationToken cancellationToken = default)
         {
             var query = await _context.Projects
-        .Include(p => p.CreatedByNavigation)
-        .Include(p => p.Company)
-        .Include(p => p.CompanyRequest)
-        .Include(p => p.Workflow)
-        .Include(p => p.ProjectMembers).ThenInclude(x => x.User)
-        .Include(p => p.Sprints).ThenInclude(s => s.ProjectTasks)
-        .SingleOrDefaultAsync(x => x.Id == projectId);
+                .Include(p => p.CreatedByNavigation)
+                .Include(p => p.Company)
+                .Include(p => p.CompanyRequest)
+                .Include(p => p.Workflow)
+                .Include(p => p.ProjectMembers).ThenInclude(x => x.User)
+                .Include(p => p.Sprints).ThenInclude(s => s.ProjectTasks)
+                .SingleOrDefaultAsync(x => x.Id == projectId);
 
             return query;
         }

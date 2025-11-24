@@ -40,6 +40,9 @@ namespace Fusion.Repository.IRepositories
 
         Task<Dictionary<Guid, UserRoleLite>> GetUserRoleMapInCompanyAsync( Guid companyId, IEnumerable<Guid> userIds, CancellationToken token = default);
 
+        Task<Dictionary<Guid, List<UserRoleLite>>> GetUserRolesMapInCompanyAsync(Guid companyId, IEnumerable<Guid> userIds,
+    CancellationToken token = default);
+
         Task<PagedResult<CompanyMember>> GetCompanyMemberByUserIdAsync(Guid userId, CompanyMemberPagedRequest request,CancellationToken token = default);
         Task<CompanyMember?> AcceptJoinMemberByIdAsync(long memberId, CancellationToken token = default);
         Task<CompanyMember?> RejectJoinMemberByIdAsync(long memberId, CancellationToken token = default);
