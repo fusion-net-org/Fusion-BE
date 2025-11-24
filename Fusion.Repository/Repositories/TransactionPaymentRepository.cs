@@ -660,6 +660,20 @@ public class TransactionPaymentRepository : GenericRepository<TransactionPayment
             .SumAsync(tp => (decimal?)tp.Amount, ct);
         return total ?? 0m;
     }
+    public async Task<List<TransactionMonthlyAmountPoint>> GetMonthlyAmountInYearAsync(int year,CancellationToken ct = default)
+    {
+        return await _context.TransactionPayments
+            .AsNoTracking()
+            .Where(t => t.CreatedAt.Year == year /* && t.Status == true */)
+            .GroupBy(t => new { t.CreatedAt.Year, t.CreatedAt.Month })
+            .Select(g => new TransactionMonthlyAmountPoint
+            {
+                Year = g.Key.Year,
+                Month = g.Key.Month,
+                TotalAmount = g.Sum(x => x.Amount) // TODO: đổi sang đúng property
+            })
+            .ToListAsync(ct);
+    }
     #endregion
 
     #region SubscriptionPlan

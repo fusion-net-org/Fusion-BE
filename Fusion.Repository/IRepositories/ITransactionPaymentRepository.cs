@@ -46,6 +46,7 @@ public interface ITransactionPaymentRepository : IGenericRepository<TransactionP
     Task<TransactionInstallmentAgingResult> GetInstallmentAgingAsync( DateTimeOffset? asOf = null, CancellationToken ct = default);
     Task<List<TransactionTopCustomerItemResponse>> GetTopCustomersAsync(int year, int topN, CancellationToken ct = default);
     Task<decimal> GetTotalRevenueAsync(CancellationToken ct = default);
+    Task<List<TransactionMonthlyAmountPoint>> GetMonthlyAmountInYearAsync(int year,CancellationToken ct = default);
     #endregion
 
     #region SubsciptionPlan

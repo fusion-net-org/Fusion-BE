@@ -711,5 +711,19 @@ namespace Fusion.Repository.Repositories
                 Buckets = buckets
             };
         }
+        public async Task<List<CompanyMonthlyNewPoint>> GetMonthlyNewCompaniesInYearAsync(int year,CancellationToken ct = default)
+        {
+            return await _context.Companies
+                .AsNoTracking()
+                .Where(c => c.CreateAt.Year == year)
+                .GroupBy(c => new { c.CreateAt.Year, c.CreateAt.Month })
+                .Select(g => new CompanyMonthlyNewPoint
+                {
+                    Year = g.Key.Year,
+                    Month = g.Key.Month,
+                    NewCompanies = g.Count()
+                })
+                .ToListAsync(ct);
+        }
     }
 }

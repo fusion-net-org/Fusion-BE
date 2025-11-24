@@ -6,6 +6,7 @@ using Fusion.Repository.Bases.Page.CompanySubscriptions;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.IRepositories;
+using Fusion.Repository.ViewModels.CompanySubscriptionEntry;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.CompanySubscription.Requests;
 using Fusion.Service.ViewModels.CompanySubscription.Responses;
@@ -18,14 +19,17 @@ namespace Fusion.Service.Services
         private readonly IMapper _mapper;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IUserLogService _userLogService;
+        private readonly ICompanySubscriptionEntryRepository _companyEntryRepo;
 
 
-        public CompanySubscriptionService(ICompanySubscriptionRepository companySubscriptionRepository, IMapper mapper, IUnitOfWork unitOfWork, IUserLogService userLogService)
+        public CompanySubscriptionService(ICompanySubscriptionRepository companySubscriptionRepository, IMapper mapper,
+            IUnitOfWork unitOfWork, IUserLogService userLogService, ICompanySubscriptionEntryRepository companyEntryRepo)
         {
             _companySubscriptionRepository = companySubscriptionRepository;
             _mapper = mapper;
             _unitOfWork = unitOfWork;
             _userLogService = userLogService;
+            _companyEntryRepo = companyEntryRepo;
         }
 
         public async Task<CompanySubscriptionDetailResponse> CreateAsync(CompanySubscriptionCreateRequest request, CancellationToken ct = default)
@@ -110,6 +114,17 @@ namespace Fusion.Service.Services
         {
             await _companySubscriptionRepository.UseFeatureInUserAsync(userSubscriptionId, userId, featureName, ct);
             return true;
+        }
+
+        public async Task<List<CompanySubscriptionUserUsageItem>> GetUserUsageAsync( Guid companySubscriptionId, CancellationToken ct = default)
+        {
+            if (companySubscriptionId == Guid.Empty)
+                throw CustomExceptionFactory.CreateBadRequestError("CompanySubscriptionId is required.");
+
+            var items = await _companyEntryRepo
+                .GetUserUsageByCompanySubscriptionAsync(companySubscriptionId, ct);
+
+            return _mapper.Map<List<CompanySubscriptionUserUsageItem>>(items);
         }
     }
 }

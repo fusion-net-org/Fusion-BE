@@ -12,7 +12,6 @@ using Fusion.Service.ViewModels.Project.Requests.Overview;
 using Fusion.Service.ViewModels.Project.Responses;
 using Fusion.Service.ViewModels.Project.Responses.Overview;
 using Fusion.Service.ViewModels.ProjectMembers.Responses;
-using Fusion.Service.ViewModels.Users.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;

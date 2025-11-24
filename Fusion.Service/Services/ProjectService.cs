@@ -53,7 +53,8 @@ namespace Fusion.Service.Services
             _companySubscriptionService = companySubscriptionService;
         }
 
-        public async Task<ProjectDetailResponse> CreateProjectAsync(Guid companyId, ProjectCreateRequest request, Guid actorUserId, CancellationToken ct = default)
+        public async Task<ProjectDetailResponse> CreateProjectAsync(
+            Guid companyId, ProjectCreateRequest request, Guid actorUserId, CancellationToken ct = default)
         {
             await _validator.ValidateAndThrowAsync(request, ct);
 
@@ -155,19 +156,6 @@ namespace Fusion.Service.Services
             using var tx = await _ctx.Database.BeginTransactionAsync(ct);
             try
             {
-
-                // 8.1) Ghi nhận việc dùng feature "Project" trong company subscription
-                // (nếu bên bạn đặt tên feature khác thì đổi lại cho đúng)
-                var featureRequest = new UserFeatureRequest
-                {
-                    CompanySubscriptionId = request.CompanySubscriptionId,
-                    ActorUserId = actorUserId,
-                    CompanyId = companyId,
-                    FeatureName = "Project"
-                };
-
-                await _companySubscriptionService.UseFeatureInCompanyAsync(featureRequest, ct);
-
                 await _ctx.Projects.AddAsync(project, ct);
                 await _sprintRepo.AddRangeAsync(sprints, ct);
 
@@ -182,7 +170,6 @@ namespace Fusion.Service.Services
                 await tx.RollbackAsync(ct);
                 throw;
             }
-
 
             // 9) Return
             var created = await _projectRepo.GetByIdWithSprintsAsync(project.Id, ct);

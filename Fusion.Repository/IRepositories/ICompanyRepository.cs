@@ -41,5 +41,8 @@ namespace Fusion.Repository.IRepositories
         Task<int> GetTotalCompaniesAsync(CancellationToken ct = default);
         Task<CompanyGrowthAndStatusOverviewDto> GetCompanyGrowthAndStatusOverviewAsync(DateTime fromUtc,DateTime toUtc, CancellationToken ct = default);
         Task<CompanyProjectLoadOverviewDto> GetCompanyProjectLoadOverviewAsync(CancellationToken ct = default);
+        Task<List<CompanyMonthlyNewPoint>> GetMonthlyNewCompaniesInYearAsync(
+       int year,
+       CancellationToken ct = default);
     }
 }
