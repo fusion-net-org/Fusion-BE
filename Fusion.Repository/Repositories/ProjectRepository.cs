@@ -3,8 +3,10 @@ using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.Project;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
+using Fusion.Repository.Enums;
 using Fusion.Repository.IRepositories;
 using Fusion.Repository.ViewModels;
+using Fusion.Repository.ViewModels.Project;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fusion.Repository.Repositories
@@ -81,8 +83,8 @@ namespace Fusion.Repository.Repositories
                 .ToListAsync(ct);
 
             return (items, total);
-               
-            }
+
+        }
         public async Task<PagedResult<Project>> GetAllProjectAsync(ProjectSearchRequest req, CancellationToken ct = default)
         {
             req ??= new ProjectSearchRequest();
@@ -139,11 +141,11 @@ namespace Fusion.Repository.Repositories
                         .AsNoTracking()
                         .GroupBy(p => (p.Status ?? "").Trim().ToLower())
                         .Select(g => new StatusCountResponse
-                         {
-                               Status = string.IsNullOrWhiteSpace(g.Key) ? "(none)" : g.Key,
-                               Count = g.Count()
-                         })
-                         .OrderByDescending(x => x.Count)  
+                        {
+                            Status = string.IsNullOrWhiteSpace(g.Key) ? "(none)" : g.Key,
+                            Count = g.Count()
+                        })
+                         .OrderByDescending(x => x.Count)
                          .ToListAsync(ct);
 
             return rows;
@@ -336,6 +338,290 @@ namespace Fusion.Repository.Repositories
         public async Task<int> GetTotalProjectsAsync(CancellationToken token)
         {
             return await _context.Projects.CountAsync(token);
+        }
+
+        // =================== Over view =====================
+        public async Task<IReadOnlyList<ProjectMonthlyStat>> GetProjectMonthlyCreationAndCompletionAsync(
+           Guid? companyId,
+           DateTime? from,
+           DateTime? to,
+           CancellationToken ct = default)
+        {
+            // ===== New projects: group theo CreateAt =====
+            var newQuery = _ctx.Projects
+                .AsNoTracking()
+                .AsQueryable();
+
+            if (companyId.HasValue)
+            {
+                newQuery = newQuery.Where(p => p.CompanyId == companyId.Value);
+            }
+
+            if (from.HasValue)
+            {
+                newQuery = newQuery.Where(p => p.CreateAt >= from.Value);
+            }
+
+            if (to.HasValue)
+            {
+                newQuery = newQuery.Where(p => p.CreateAt <= to.Value);
+            }
+
+            var newPerMonth = await newQuery
+                .GroupBy(p => new { p.CreateAt.Year, p.CreateAt.Month })
+                .Select(g => new
+                {
+                    g.Key.Year,
+                    g.Key.Month,
+                    Count = g.Count()
+                })
+                .ToListAsync(ct);
+
+            // ===== Completed projects: chỉ cần có EndDate =====
+            var completedQuery = _ctx.Projects
+                .AsNoTracking()
+                .Where(p => p.EndDate != null);
+
+            if (companyId.HasValue)
+            {
+                completedQuery = completedQuery.Where(p => p.CompanyId == companyId.Value);
+            }
+
+            if (from.HasValue)
+            {
+                var fromDateOnly = DateOnly.FromDateTime(from.Value.Date);
+                completedQuery = completedQuery.Where(p => p.EndDate >= fromDateOnly);
+            }
+
+            if (to.HasValue)
+            {
+                var toDateOnly = DateOnly.FromDateTime(to.Value.Date);
+                completedQuery = completedQuery.Where(p => p.EndDate <= toDateOnly);
+            }
+
+            var completedPerMonth = await completedQuery
+                .GroupBy(p => new { Year = p.EndDate!.Value.Year, Month = p.EndDate!.Value.Month })
+                .Select(g => new
+                {
+                    g.Key.Year,
+                    g.Key.Month,
+                    Count = g.Count()
+                })
+                .ToListAsync(ct);
+
+            // ===== Merge 2 series theo Year/Month =====
+            var allKeys = newPerMonth
+                .Select(x => new { x.Year, x.Month })
+                .Concat(completedPerMonth.Select(x => new { x.Year, x.Month }))
+                .Distinct()
+                .OrderBy(x => x.Year)
+                .ThenBy(x => x.Month)
+                .ToList();
+
+            var result = new List<ProjectMonthlyStat>();
+
+            foreach (var key in allKeys)
+            {
+                var newCount = newPerMonth
+                    .FirstOrDefault(x => x.Year == key.Year && x.Month == key.Month)?.Count ?? 0;
+
+                var completedCount = completedPerMonth
+                    .FirstOrDefault(x => x.Year == key.Year && x.Month == key.Month)?.Count ?? 0;
+
+                result.Add(new ProjectMonthlyStat
+                {
+                    Year = key.Year,
+                    Month = key.Month,
+                    NewProjects = newCount,
+                    CompletedProjects = completedCount
+                });
+            }
+
+            return result;
+        }
+
+        public async Task<ProjectExecutionOverviewResponse> GetProjectExecutionOverviewAsync(
+             Guid? companyId,
+             DateTime? fromUtc,
+             DateTime? toUtc,
+             CancellationToken ct = default)
+        {
+            var nowUtc = DateTime.UtcNow;
+
+            var to = toUtc ?? nowUtc;
+            var from = fromUtc ?? to.AddMonths(-11); // last 12 months
+
+            if (from > to)
+            {
+                var tmp = from;
+                from = to;
+                to = tmp;
+            }
+
+            // base queries
+            var taskQuery = _ctx.ProjectTasks
+                .AsNoTracking()
+                .Include(t => t.CurrentStatus)
+                .Include(t => t.Project)
+                .Where(t => !t.IsDeleted);
+
+            var sprintQuery = _ctx.Sprints
+                .AsNoTracking()
+                .Include(s => s.Project)
+                .Include(s => s.ProjectTasks)
+                .Where(s => !s.IsDeleted);
+
+            if (companyId.HasValue)
+            {
+                var cid = companyId.Value;
+                taskQuery = taskQuery.Where(t => t.Project != null && t.Project.CompanyId == cid);
+                sprintQuery = sprintQuery.Where(s => s.Project != null && s.Project.CompanyId == cid);
+            }
+
+            /* =========================================================
+             * 1. Task-level stats
+             *  - Completed task = CurrentStatus.IsEnd == true
+             *  - Overdue task   = past due_date && NOT IsEnd
+             * =======================================================*/
+            var totalTasks = await taskQuery.CountAsync(ct);
+
+            var completedTasks = await taskQuery
+                .CountAsync(t => t.CurrentStatus != null && t.CurrentStatus.IsEnd, ct);
+
+            var overdueTasks = await taskQuery
+                .CountAsync(t =>
+                    t.DueDate != null &&
+                    t.DueDate < nowUtc &&
+                    (t.CurrentStatus == null || !t.CurrentStatus.IsEnd),
+                    ct);
+
+            /* =========================================================
+             * 2. Task flow by month (Created vs Completed)
+             * =======================================================*/
+            var createdByMonth = await taskQuery
+                .Where(t => t.CreateAt != null &&
+                            t.CreateAt >= from &&
+                            t.CreateAt <= to)
+                .GroupBy(t => new
+                {
+                    t.CreateAt!.Value.Year,
+                    t.CreateAt!.Value.Month
+                })
+                .Select(g => new
+                {
+                    g.Key.Year,
+                    g.Key.Month,
+                    Count = g.Count()
+                })
+                .ToListAsync(ct);
+
+            var completedByMonth = await taskQuery
+                .Where(t =>
+                    t.CurrentStatus != null &&
+                    t.CurrentStatus.IsEnd &&          // <<< dùng IsEnd thay cho IsDone
+                    t.UpdateAt != null &&
+                    t.UpdateAt >= from &&
+                    t.UpdateAt <= to)
+                .GroupBy(t => new
+                {
+                    t.UpdateAt!.Value.Year,
+                    t.UpdateAt!.Value.Month
+                })
+                .Select(g => new
+                {
+                    g.Key.Year,
+                    g.Key.Month,
+                    Count = g.Count()
+                })
+                .ToListAsync(ct);
+
+            var createdDict = createdByMonth
+                .ToDictionary(x => (x.Year, x.Month), x => x.Count);
+
+            var completedDict = completedByMonth
+                .ToDictionary(x => (x.Year, x.Month), x => x.Count);
+
+            var taskFlow = new List<TaskFlowPointResponse>();
+
+            var currentMonth = new DateTime(from.Year, from.Month, 1);
+            var lastMonth = new DateTime(to.Year, to.Month, 1);
+
+            while (currentMonth <= lastMonth)
+            {
+                var key = (currentMonth.Year, currentMonth.Month);
+                createdDict.TryGetValue(key, out var createdCount);
+                completedDict.TryGetValue(key, out var completedCount);
+
+                taskFlow.Add(new TaskFlowPointResponse
+                {
+                    Year = currentMonth.Year,
+                    Month = currentMonth.Month,
+                    CreatedTasks = createdCount,
+                    CompletedTasks = completedCount
+                });
+
+                currentMonth = currentMonth.AddMonths(1);
+            }
+
+            /* =========================================================
+             * 3. Sprint-level stats
+             * =======================================================*/
+            var totalSprints = await sprintQuery.CountAsync(ct);
+
+            // NOTE: tuỳ enum SprintStatus của bạn,
+            // giữ nguyên nếu đã có Active / Completed.
+            var activeSprints = await sprintQuery
+                .CountAsync(s => s.Status == SprintStatus.Active, ct);
+
+            var completedSprints = await sprintQuery
+                .CountAsync(s => s.Status == SprintStatus.Completed, ct);
+
+            /* =========================================================
+             * 4. Sprint velocity
+             *    - CompletedPoints = sum(Point) của tasks với CurrentStatus.IsEnd == true
+             * =======================================================*/
+            var sprintVelocityRaw = await sprintQuery
+                .OrderBy(s => s.StartDate)
+                .Select(s => new
+                {
+                    s.Id,
+                    s.Name,
+                    s.StartDate,
+                    s.EndDate,
+                    Committed = s.CommittedPoints ?? 0,
+                    Completed = s.ProjectTasks
+                        .Where(t => !t.IsDeleted &&
+                                    t.CurrentStatus != null &&
+                                    t.CurrentStatus.IsEnd)  // <<< dùng IsEnd
+                        .Sum(t => (int?)t.Point ?? 0)
+                })
+                .ToListAsync(ct);
+
+            var sprintVelocity = sprintVelocityRaw
+                .Select(x => new SprintVelocityPointResponse
+                {
+                    SprintId = x.Id,
+                    SprintName = x.Name,
+                    StartDate = x.StartDate,
+                    EndDate = x.EndDate,
+                    CommittedPoints = x.Committed,
+                    CompletedPoints = x.Completed
+                })
+                .ToList();
+
+            return new ProjectExecutionOverviewResponse
+            {
+                TotalTasks = totalTasks,
+                CompletedTasks = completedTasks,
+                OverdueTasks = overdueTasks,
+
+                TotalSprints = totalSprints,
+                ActiveSprints = activeSprints,
+                CompletedSprints = completedSprints,
+
+                TaskFlow = taskFlow,
+                SprintVelocity = sprintVelocity
+            };
         }
     }
 }

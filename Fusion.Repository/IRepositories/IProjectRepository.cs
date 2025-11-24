@@ -3,6 +3,7 @@ using Fusion.Repository.Bases.Page.Project;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.ViewModels;
+using Fusion.Repository.ViewModels.Project;
 
 namespace Fusion.Repository.IRepositories
 {
@@ -19,7 +20,7 @@ namespace Fusion.Repository.IRepositories
         Task<(List<Project> Items, int TotalCount)> GetProjectsForCompanyAsync(
        Guid companyId,
        string? q,
-       IEnumerable<string>? statuses,  
+       IEnumerable<string>? statuses,
        string? sort,
        int pageNumber,
        int pageSize,
@@ -33,5 +34,19 @@ namespace Fusion.Repository.IRepositories
 
         Task<int> GetTotalProjectsAsync(CancellationToken cancellationToken = default);
 
+        // =================== Over view =====================
+        // 1: thống kê project theo tháng
+        Task<IReadOnlyList<ProjectMonthlyStat>> GetProjectMonthlyCreationAndCompletionAsync(
+          Guid? companyId,
+          DateTime? from,
+          DateTime? to,
+          CancellationToken ct = default);
+
+        //2.(task + sprint)
+        Task<ProjectExecutionOverviewResponse> GetProjectExecutionOverviewAsync(
+            Guid? companyId,
+            DateTime? fromUtc,
+            DateTime? toUtc,
+            CancellationToken ct = default);
     }
 }

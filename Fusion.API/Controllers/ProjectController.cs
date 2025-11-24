@@ -1,12 +1,16 @@
 ﻿
+using Azure;
 using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.Project;
 using Fusion.Repository.Bases.Responses;
 using Fusion.Repository.ViewModels;
+using Fusion.Repository.ViewModels.Project;
 using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.Project.Requests;
+using Fusion.Service.ViewModels.Project.Requests.Overview;
 using Fusion.Service.ViewModels.Project.Responses;
+using Fusion.Service.ViewModels.Project.Responses.Overview;
 using Fusion.Service.ViewModels.ProjectMembers.Responses;
 using Fusion.Service.ViewModels.Users.Responses;
 using Microsoft.AspNetCore.Authorization;
@@ -24,6 +28,23 @@ namespace Fusion.API.Controllers
         public ProjectController(IProjectService service)
         {
             _service = service;
+        }
+
+
+        [Authorize(Roles = "Admin")]
+        [HttpGet("growth-and-completion")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<ProjectGrowthOverviewResponse>))]
+
+        public async Task<IActionResult> GetProjectGrowthAndCompletion(
+        [FromQuery] ProjectGrowthOverviewRequest req,
+        CancellationToken ct)
+        {
+            var data = await _service.GetProjectGrowthOverviewAsync(req, ct);
+
+            return Ok(ResponseModel<ProjectGrowthOverviewResponse>.Ok(
+                 data: data,
+                 message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "Growth and completion project")
+            ));
         }
 
         [HttpPost("companies/{companyId:guid}/projects")]
@@ -130,6 +151,19 @@ namespace Fusion.API.Controllers
             return Ok(ResponseModel<ProjectResponseVersion3>.Ok(
                 data: response,
                 message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "Project Detail")
+            ));
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpGet("project-execution-overview")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<ProjectExecutionOverviewResponse>))]
+        public async Task<IActionResult> GetProjectExecutionOverview( [FromQuery] ProjectGrowthOverviewRequest req, CancellationToken ct)
+        {
+            var data = await _service.GetProjectExecutionOverviewAsync(req, ct);
+
+            return Ok(ResponseModel<ProjectExecutionOverviewResponse>.Ok(
+                data: data,
+                message: ResponseMessageHelper.FormatMessage( ResponseMessages.GET_SUCCESS, "Project execution overview")
             ));
         }
 

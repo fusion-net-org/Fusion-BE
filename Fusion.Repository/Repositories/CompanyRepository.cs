@@ -9,6 +9,7 @@ using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.Enums;
 using Fusion.Repository.IRepositories;
+using Fusion.Repository.ViewModels.Companies;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.Design;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
@@ -59,12 +60,75 @@ namespace Fusion.Repository.Repositories
                         break;
                 }
             }
-            else
+        
+            // search
+            if (!string.IsNullOrWhiteSpace(request.Keyword))
             {
-                query = query.Where(c =>
-                    c.OwnerUser.Email == userMail ||
-                    c.CompanyMembers.Any(m => m.User.Email == userMail));
+                var keyword = request.Keyword.Trim().ToLower();
+                query = query.Where(u =>
+                    (u.Name ?? string.Empty).ToLower().Contains(keyword) ||
+                    (u.TaxCode ?? string.Empty).ToLower().Contains(keyword) ||
+                    (u.PhoneNumber ?? string.Empty).ToLower().Contains(keyword) ||
+                    (u.Email ?? string.Empty).ToLower().Contains(keyword) ||
+                    (u.Website ?? string.Empty).ToLower().Contains(keyword) ||
+                    (u.Address ?? string.Empty).ToLower().Contains(keyword)
+                );
             }
+
+            if (request.DayFrom.HasValue)
+            {
+                query = query.Where(c => c.CreateAt >= request.DayFrom.Value);
+            }
+
+            if (request.DayTo.HasValue)
+            {
+                query = query.Where(c => c.CreateAt <= request.DayTo.Value);
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.OwnerUserName))
+            {
+                query = query.Where(u => (u.OwnerUser.UserName ?? "").Contains(request.OwnerUserName));
+            }
+
+
+            return await query.ToPagedResultAsync(request, cancellationToken);
+        }
+
+        public async Task<PagedResult<Company>> GetAllCompaniesAsyncIncludingAllCompany(string userMail, CompanyPagedSearchRequestVersion2 request, Guid? selectedCompanyId, CancellationToken cancellationToken = default)
+        {
+
+            var query = _dbSet
+                .Include(x => x.CompanyMembers)
+                .Include(x => x.OwnerUser)
+                .Include(x => x.ProjectCompanies)
+                .Include(c => c.ProjectCompanyRequests)
+                .Include(c => c.CompanyFriendshipCompanyAs)
+                .Include(c => c.CompanyFriendshipCompanyBs)
+                //.Where(c =>
+                //            c.OwnerUser.Email == userMail ||
+                //            c.CompanyMembers.Any(m => m.User.Email == userMail))
+                .AsQueryable();
+
+            query = query.Where(c => (bool)!c.IsDeleted);
+
+
+            if (request.RelationShipEnums.HasValue)
+            {
+                switch (request.RelationShipEnums.Value)
+                {
+                    case ProjectSearchRelationShipEnums.Owner:
+                        // User là chủ sở hữu công ty
+                        query = query.Where(c => c.OwnerUser.Email == userMail);
+                        break;
+
+                    case ProjectSearchRelationShipEnums.Member:
+                        // User là chủ sở hữu hoặc thành viên công ty
+                        query = query.Where(c =>
+                            c.CompanyMembers.Any(m => m.User.Email == userMail));
+                        break;
+                }
+            }
+        
 
             // search
             if (!string.IsNullOrWhiteSpace(request.Keyword))
@@ -507,9 +571,145 @@ namespace Fusion.Repository.Repositories
             return await query.ToPagedResultAsync(req, ct);
         }
 
+        // =============== OverView =============================================
         public async Task<int> GetTotalCompaniesAsync(CancellationToken ct = default)
         {
             return await _context.Companies.CountAsync(c => c.IsDeleted == false || c.IsDeleted == null, ct);
+        }
+        public async Task<CompanyGrowthAndStatusOverviewDto> GetCompanyGrowthAndStatusOverviewAsync(DateTime fromUtc,DateTime toUtc,CancellationToken ct = default)
+        {
+            var nowUtc = DateTime.UtcNow;
+
+            var baseQuery = _context.Companies.AsNoTracking();
+            var activeQuery = baseQuery.Where(c => c.IsDeleted != true);
+
+            var totalCompanies = await baseQuery.CountAsync(ct);
+            var activeCompanies = await activeQuery.CountAsync(ct);
+            var deletedCompanies = totalCompanies - activeCompanies;
+
+            // ✅ fromUtc & toUtc đều là DateTime, so sánh OK
+            var growthRaw = await activeQuery
+                .Where(c => c.CreateAt >= fromUtc && c.CreateAt <= toUtc)
+                .GroupBy(c => new { c.CreateAt.Year, c.CreateAt.Month })
+                .Select(g => new
+                {
+                    g.Key.Year,
+                    g.Key.Month,
+                    NewCompanies = g.Count()
+                })
+                .OrderBy(x => x.Year)
+                .ThenBy(x => x.Month)
+                .ToListAsync(ct);
+
+            var growth = new List<CompanyGrowthPointDto>();
+            var cumulative = 0;
+
+            foreach (var item in growthRaw)
+            {
+                cumulative += item.NewCompanies;
+                growth.Add(new CompanyGrowthPointDto
+                {
+                    Year = item.Year,
+                    Month = item.Month,
+                    NewCompanies = item.NewCompanies,
+                    CumulativeCompanies = cumulative
+                });
+            }
+
+            var thirtyDaysAgo = nowUtc.AddDays(-30);
+
+            var newCompaniesLast30Days = await activeQuery
+                .CountAsync(c => c.CreateAt >= thirtyDaysAgo, ct);
+
+            return new CompanyGrowthAndStatusOverviewDto
+            {
+                TotalCompanies = totalCompanies,
+                ActiveCompanies = activeCompanies,
+                DeletedCompanies = deletedCompanies,
+                NewCompaniesLast30Days = newCompaniesLast30Days,
+                Growth = growth
+            };
+        }
+
+        public async Task<CompanyProjectLoadOverviewDto> GetCompanyProjectLoadOverviewAsync( CancellationToken ct = default)
+        {
+            // Lấy toàn bộ company đang active
+            var activeCompanyIds = await _context.Companies
+                .AsNoTracking()
+                .Where(c => c.IsDeleted != true)
+                .Select(c => c.Id)
+                .ToListAsync(ct);
+
+            var totalCompanies = activeCompanyIds.Count;
+
+            // Đếm số project theo company
+            // TODO: nếu entity của bạn tên khác: Project / CompanyProject... thì chỉnh lại cho đúng
+            var projectCounts = await _context.Projects
+                .AsNoTracking()
+                .GroupBy(p => p.CompanyId)            // nếu FK khác tên thì đổi ở đây
+                .Select(g => new { CompanyId = g.Key, ProjectCount = g.Count() })
+                .ToDictionaryAsync(x => x.CompanyId, x => x.ProjectCount, ct);
+
+            // Helper xác định bucket
+            static string GetBucketKey(int count) =>
+                count switch
+                {
+                    0 => "0",
+                    <= 2 => "1-2",
+                    <= 5 => "3-5",
+                    <= 10 => "6-10",
+                    <= 20 => "11-20",
+                    _ => "21+"
+                };
+
+            static string GetBucketLabel(string key) =>
+                key switch
+                {
+                    "0" => "0 projects",
+                    "1-2" => "1–2 projects",
+                    "3-5" => "3–5 projects",
+                    "6-10" => "6–10 projects",
+                    "11-20" => "11–20 projects",
+                    "21+ " => "21+ projects",
+                    _ => key
+                };
+
+            var bucketOrder = new[] { "0", "1-2", "3-5", "6-10", "11-20", "21+" };
+            var bucketDict = new Dictionary<string, CompanyProjectLoadBucketDto>();
+
+            foreach (var companyId in activeCompanyIds)
+            {
+                projectCounts.TryGetValue(companyId, out var projectCount); // không có thì = 0
+                var key = GetBucketKey(projectCount);
+
+                if (!bucketDict.TryGetValue(key, out var bucket))
+                {
+                    bucket = new CompanyProjectLoadBucketDto
+                    {
+                        BucketKey = key,
+                        Label = GetBucketLabel(key),
+                        CompanyCount = 0,
+                        TotalProjects = 0,
+                    };
+                    bucketDict[key] = bucket;
+                }
+
+                bucket.CompanyCount += 1;
+                bucket.TotalProjects += projectCount;
+            }
+
+            var buckets = bucketDict.Values
+                .OrderBy(b => Array.IndexOf(bucketOrder, b.BucketKey))
+                .ToList();
+
+            var totalProjects = buckets.Sum(b => b.TotalProjects);
+
+            return new CompanyProjectLoadOverviewDto
+            {
+                TotalCompanies = totalCompanies,
+                TotalProjects = totalProjects,
+                Buckets = buckets
+            };
         }
     }
 }
