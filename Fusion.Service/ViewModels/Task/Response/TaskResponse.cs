@@ -17,6 +17,7 @@ namespace Fusion.Service.ViewModels.Task.Response
         public Guid TaskId { get; set; }
         public string? Code { get; set; }
         public string? Title { get; set; }
+        public string? Description { get; set; }
         public string? Img { get; set; }
         public string? Type { get; set; }
         public string? Priority { get; set; }
@@ -27,7 +28,6 @@ namespace Fusion.Service.ViewModels.Task.Response
         public int? RemainingHours { get; set; }
         public int CarryOverCount { get; set; } = 0;
         public int? OrderInSprint { get; set; }
-
         public bool IsBacklog { get; set; }
         public DateTime? CreateAt { get; set; }
         public DateTime? DueDate { get; set; }
@@ -44,6 +44,7 @@ namespace Fusion.Service.ViewModels.Task.Response
 
         public WorkflowStatusResponse? WorkflowStatus { get; set; }
 
+        public List<TaskAttachmentResponse>? TaskAttachments { get; set; }
 
         public List<ProjectMemberSummaryResponse>? Members { get; set; }
 

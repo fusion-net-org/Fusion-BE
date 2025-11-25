@@ -833,9 +833,24 @@ public class TaskService : ITaskService
 
         var paged = await _repo.GetTasksBySprintIdAsync(sprintId, request, ct);
 
+        var responseItems = new List<ProjectTaskResponse>();
+
+        foreach (var t in paged.Items)
+        {
+            var resp = _mapper.Map<ProjectTaskResponse>(t);
+
+            // AssigneeIds
+            resp.AssigneeIds = t.TaskWorkflows?.Select(a => a.AssignUserId.Value).ToList() ?? new List<Guid>();
+
+            // await lấy workflow assignments
+            resp.WorkflowAssignments = await _taskWorkflowService.GetAssignmentsForTaskAsync(resp.Id, ct);
+
+            responseItems.Add(resp);
+        }
+
         return new PagedResult<ProjectTaskResponse>
         {
-            Items = paged.Items.Select(_mapper.Map<ProjectTaskResponse>).ToList(),
+            Items = responseItems,
             TotalCount = paged.TotalCount,
             PageNumber = paged.PageNumber,
             PageSize = paged.PageSize
@@ -847,12 +862,19 @@ public class TaskService : ITaskService
     {
         var taskData = await _repo.GetAllTaskByUserId(userId, request, token);
 
+        if (!taskData.Items.Any())
+        {
+            throw CustomExceptionFactory.CreateNotFoundError(
+                ResponseMessages.NOT_FOUND.FormatMessage("List Task"));
+        }
+
         var mapped = taskData.Items.Select(t => new TaskResponse
         {
             TaskId = t.Id,
             Code = t.Code ?? "",
             Title = t.Title ?? "",
             Img = t.Img,
+            Description = t.Description ?? "",
             Type = t.Type?.ToString() ?? "Unknown",
             Priority = t.Priority?.ToString() ?? "None",
             Severity = t.Severity?.ToString() ?? "None",
@@ -974,6 +996,153 @@ public class TaskService : ITaskService
             PageSize = taskData.PageSize,
         };
     }
+
+    public async Task<TaskResponse> GetTaskDetailByTaskIdAsync(Guid taskId, CancellationToken token = default)
+    {
+        var t = await _repo.GetTaskDetailByTaskIdAsync(taskId, token);
+
+        if (t == null)
+            throw CustomExceptionFactory.CreateNotFoundError(
+                ResponseMessages.NOT_FOUND.FormatMessage("Task"));
+
+        return new TaskResponse
+        {
+            TaskId = t.Id,
+            Code = t.Code ?? "",
+            Title = t.Title ?? "",
+            Img = t.Img,
+            Point = t.Point ?? 0,
+            Description = t.Description ?? "",
+            Type = t.Type?.ToString() ?? "Unknown",
+            Priority = t.Priority?.ToString() ?? "None",
+            Severity = t.Severity?.ToString() ?? "None",
+            Status = t.Status?.ToString() ?? "None",
+            EstimateHours = t.EstimateHours,
+            RemainingHours = t.RemainingHours,
+            CarryOverCount = t.CarryOverCount,
+            OrderInSprint = t.OrderInSprint,
+
+            IsBacklog = t.IsBacklog,
+            CreateAt = t.CreateAt,
+            DueDate = t.DueDate,
+
+            CreateBy = t.CreatedBy ?? Guid.Empty,
+            CreateByName = t.CreatedByNavigation?.UserName ?? "Unknown",
+
+            ParentTaskId = t.ParentTaskId,
+            SourceTaskId = t.SourceTaskId,
+
+            Project = t.Project == null ? null : new ProjectResponse
+            {
+                Id = t.Project.Id,
+                Name = t.Project?.Name ?? "",
+                Code = t.Project?.Code ?? "",
+                CompanyHiredId = t.Project?.CompanyRequestId ?? Guid.Empty,
+                CompanyId = t.Project?.CompanyId ?? Guid.Empty,
+                Description = t.Project?.Description ?? "Unknown",
+                IsHired = t.Project?.IsHired ?? false,
+                Status = t.Project?.Status ?? "None",
+                ProjectRequestId = t.Project?.ProjectRequestId ?? Guid.Empty,
+                StartDate = t.Project?.StartDate,
+                EndDate = t.Project?.EndDate,
+                CreatedBy = t.Project?.CreatedBy ?? Guid.Empty,
+                WorkflowId = t.Project?.WorkflowId ?? Guid.Empty,
+            },
+
+            Sprint = t.Sprint == null ? null : new SprintResponse
+            {
+                Id = t.Sprint.Id,
+                Name = t.Sprint?.Name ?? "",
+                Start = t.Sprint?.StartDate ?? DateTime.MinValue,
+                End = t.Sprint?.EndDate ?? DateTime.MinValue,
+                CapacityHours = t.Sprint?.CapacityHours ?? 0,
+                Color = t.Sprint?.Color ?? "Unknown",
+                Status = t.Sprint.Status,
+                CommittedPoints = t.Sprint?.CommittedPoints ?? 0,
+                CreatedAt = t.Sprint?.CreatedAt ?? DateTime.MinValue,
+                Goal = t.Sprint?.Goal ?? "Unknown",
+                IsDeleted = t.Sprint.IsDeleted,
+            },
+
+            WorkflowStatus = t.CurrentStatus == null ? null : new WorkflowStatusResponse
+            {
+                Id = t.CurrentStatus.Id,
+                Name = t.CurrentStatus.Name ?? "Unknown",
+                Position = t.CurrentStatus.Position,
+                GuardNameKey = t.CurrentStatus.GuardNameKey ?? "Unknown",
+                IsEnd = t.CurrentStatus.IsEnd,
+                IsStart = t.CurrentStatus.IsStart,
+                WorkflowId = t.CurrentStatus.WorkflowId
+            },
+
+            Members = (t.TaskWorkflows ?? new List<TaskWorkflow>())
+                .Where(a => a.AssignUser != null)
+                .Select(a => new ProjectMemberSummaryResponse
+                {
+                    MemberId = a.AssignUser?.Id ?? Guid.Empty,
+                    MemberName = a.AssignUser?.UserName ?? "Unknown",
+                    Avatar = a.AssignUser?.Avatar ?? "Unknown",
+                })
+                .ToList(),
+
+            TaskAttachments = (t.Attachments ?? new List<ProjectTaskAttachment>())
+                .Select(a => new TaskAttachmentResponse
+                {
+                    TaskId = a.TaskId,
+                    Id = a.Id,
+                    ContentType = a.ContentType ?? "Unknown",
+                    Description = a.Description ?? "Unknown",
+                    FileName = a.FileName ?? "Unknown",
+                    IsImage = a.IsImage,
+                    Size = a?.SizeBytes ?? 0L,
+                    UploadedAt = a?.UploadedAt ?? DateTime.MinValue,
+                    Url = a.Url ?? "Unknown",
+                    UploadedBy = a.UploadedBy,
+                })
+                .ToList(),
+
+            Checklist = (t.ChecklistItems ?? new List<ProjectTaskChecklistItem>())
+                .Select(c => new TaskChecklistItemResponse
+                {
+                    Id = c.Id,
+                    Label = c.Label ?? "Unknown",
+                    IsDone = c.IsDone,
+                    OrderIndex = c.OrderIndex,
+                    CreatedAt = c.CreatedAt,
+                    TaskId = c.TaskId,
+                })
+                .ToList(),
+
+            Dependencies = (t.Dependencies ?? new List<ProjectTaskDependency>())
+                .Where(d => d.DependsOnTask != null)
+                .Select(d => new TaskDependencyResponse
+                {
+                    TaskId = d.DependsOnTaskId,
+                    Title = d.DependsOnTask?.Title ?? "",
+                    Code = d.DependsOnTask?.Code ?? "",
+                    Priority = d.DependsOnTask?.Priority?.ToString() ?? "",
+                    Status = d.DependsOnTask?.CurrentStatus?.Name ?? "N/A",
+                    Point = d.DependsOnTask?.Point,
+                    EstimateHours = d.DependsOnTask?.EstimateHours
+                })
+                .ToList(),
+
+            Comments = (t.Comments ?? new List<Comment>())
+                .Select(c => new CommentResponse
+                {
+                    Id = c.Id,
+                    AuthorUserId = c.AuthorUserId ?? Guid.Empty,
+                    Body = c.Body ?? "",
+                    CreateAt = c.CreateAt,
+                    Status = c.Status ?? "",
+                    UpdateAt = c.UpdateAt,
+                    TaskId = c.TaskId
+                })
+                .ToList()
+        };
+    }
+
+
     #endregion
     #region Attachments
 

@@ -17,6 +17,8 @@ namespace Fusion.Service.IServices
         Task<PagedResult<ProjectTaskResponse>> GetTasksBySprintIdAsync(Guid sprintId, TaskBySprintRequest request, CancellationToken ct = default);
         Task<PagedResult<TaskResponse>> GetAllTaskByUserId(Guid userId, TaskFilterRequest request, CancellationToken token = default);
 
+        Task<TaskResponse> GetTaskDetailByTaskIdAsync(Guid taskId, CancellationToken token = default);
+
         //---------------------------------------------------------------------------
         Task<ProjectTaskResponse> ChangeStatus(Guid id, string statusText, Guid userId, CancellationToken ct = default);
         Task<ProjectTaskResponse> ChangeStatusById(Guid id, Guid statusId, Guid userId, CancellationToken ct = default);
