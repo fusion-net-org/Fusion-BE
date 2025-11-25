@@ -1,5 +1,6 @@
 ﻿using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.Task;
+using Fusion.Service.ViewModels.Comment.Response;
 using Fusion.Service.ViewModels.Task.Request;
 using Fusion.Service.ViewModels.Task.Response;
 using Microsoft.AspNetCore.Http;
@@ -42,5 +43,7 @@ namespace Fusion.Service.IServices
             Guid attachmentId,
             Guid userId,
             CancellationToken ct = default);
+        Task<IReadOnlyList<CommentResponse>> GetCommentsByTaskIdAsync(Guid taskId, CancellationToken ct = default);
+        Task<CommentResponse> AddCommentAsync(Guid taskId, string? body, IReadOnlyList<IFormFile>? files, Guid userId, CancellationToken ct = default);
     }
 }

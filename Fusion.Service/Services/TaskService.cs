@@ -21,6 +21,7 @@ using Fusion.Service.ViewModels.WorkflowStatus;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace Fusion.Service.Services;
@@ -726,14 +727,18 @@ public class TaskService : ITaskService
             ?? throw CustomExceptionFactory.CreateNotFoundError(
                 ResponseMessages.NOT_FOUND.FormatMessage("Task"));
 
-        // map task trước
         var vm = _mapper.Map<ProjectTaskResponse>(e);
 
         var wfAssignments = await _taskWorkflowService.GetAssignmentsForTaskAsync(id, ct);
         vm.WorkflowAssignments = wfAssignments;
 
+        // NEW: load comments chuẩn, sort mới nhất lên đầu, có attachments
+        var comments = await GetCommentsByTaskIdAsync(id, ct);
+        vm.Comments = comments.ToList();
+
         return vm;
     }
+
 
     public async Task<PagedResult<ProjectTaskResponse>> GetAllTasksAsync(
         PagedRequest request, CancellationToken ct = default)
@@ -929,7 +934,8 @@ public class TaskService : ITaskService
                 GuardNameKey = t.CurrentStatus.GuardNameKey ?? "Unknown",
                 IsEnd = t.CurrentStatus.IsEnd,
                 IsStart = t.CurrentStatus.IsStart,
-                WorkflowId = t.CurrentStatus.WorkflowId
+                WorkflowId = t.CurrentStatus.WorkflowId,
+                Color = t.CurrentStatus.Color
             },
 
             Members = (t.TaskWorkflows ?? new List<TaskWorkflow>())
@@ -1209,8 +1215,8 @@ public class TaskService : ITaskService
 
 
     public async Task<IReadOnlyList<TaskAttachmentResponse>> GetAttachmentsAsync(
-        Guid taskId,
-        CancellationToken ct = default)
+     Guid taskId,
+     CancellationToken ct = default)
     {
         var taskExists = await _db.ProjectTasks
             .AnyAsync(t => t.Id == taskId && !t.IsDeleted, ct);
@@ -1221,7 +1227,7 @@ public class TaskService : ITaskService
 
         var list = await _db.ProjectTaskAttachments
             .AsNoTracking()
-            .Where(a => a.TaskId == taskId)
+            .Where(a => a.TaskId == taskId && a.CommentId == null) // chỉ file gắn trực tiếp task
             .OrderByDescending(a => a.UploadedAt)
             .ToListAsync(ct);
 
@@ -1240,12 +1246,14 @@ public class TaskService : ITaskService
                 Description = a.Description,
                 UploadedAt = a.UploadedAt,
                 UploadedBy = a.UploadedBy,
-                UploadedByName = await GetUserName(a.UploadedBy)
+                UploadedByName = await GetUserName(a.UploadedBy),
+                IsImage = a.IsImage
             });
         }
 
         return result;
     }
+
 
     public async Task<bool> DeleteAttachmentAsync(
         Guid taskId,
@@ -1274,6 +1282,192 @@ public class TaskService : ITaskService
         await _db.SaveChangesAsync(ct);
 
         return true;
+    }
+
+    #endregion
+    #region Comments
+
+    // Lấy comment của 1 task – sort mới nhất lên đầu, kèm author + attachments
+    public async Task<IReadOnlyList<CommentResponse>> GetCommentsByTaskIdAsync(
+        Guid taskId,
+        CancellationToken ct = default)
+    {
+        var taskExists = await _db.ProjectTasks
+            .AnyAsync(t => t.Id == taskId && !t.IsDeleted, ct);
+
+        if (!taskExists)
+            throw CustomExceptionFactory.CreateNotFoundError(
+                ResponseMessages.NOT_FOUND.FormatMessage("Task"));
+
+        var comments = await _db.Comments
+            .Where(c => c.TaskId == taskId)
+            .OrderByDescending(c => c.CreateAt) // comment mới nhất lên đầu
+            .ToListAsync(ct);
+
+        if (!comments.Any())
+            return Array.Empty<CommentResponse>();
+
+        var authorIds = comments
+            .Where(c => c.AuthorUserId.HasValue)
+            .Select(c => c.AuthorUserId!.Value)
+            .Distinct()
+            .ToList();
+
+        var authors = await _db.Users
+            .Where(u => authorIds.Contains(u.Id))
+            .Select(u => new { u.Id, u.UserName, u.Avatar })
+            .ToListAsync(ct);
+
+        var authorLookup = authors.ToDictionary(a => a.Id, a => a);
+
+        var commentIds = comments.Select(c => c.Id).ToList();
+
+        var attachments = await _db.ProjectTaskAttachments
+            .AsNoTracking()
+            .Where(a => a.CommentId != null && commentIds.Contains(a.CommentId.Value))
+            .ToListAsync(ct);
+
+        var attLookup = attachments
+            .GroupBy(a => a.CommentId!.Value)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        var result = new List<CommentResponse>(comments.Count);
+
+        foreach (var c in comments)
+        {
+            authorLookup.TryGetValue(c.AuthorUserId ?? Guid.Empty, out var author);
+
+            var attForThis = attLookup.TryGetValue(c.Id, out var list)
+                ? list
+                : new List<ProjectTaskAttachment>();
+
+            result.Add(new CommentResponse
+            {
+                Id = c.Id,
+                TaskId = c.TaskId,
+                AuthorUserId = c.AuthorUserId ?? Guid.Empty,
+                AuthorName = author?.UserName ?? "Unknown",
+                AuthorAvatar = author?.Avatar,
+                Body = c.Body ?? "",
+                Status = c.Status ?? "Active",
+                CreateAt = c.CreateAt,
+                UpdateAt = c.UpdateAt,
+                Attachments = attForThis.Select(a => new CommentAttachmentResponse
+                {
+                    Id = a.Id,
+                    CommentId = c.Id,
+                    FileName = a.FileName,
+                    Url = a.Url,
+                    ContentType = a.ContentType,
+                    Size = a.SizeBytes,
+                    IsImage = a.IsImage
+                }).ToList()
+            });
+        }
+
+        return result;
+    }
+
+    // Thêm comment mới + upload file/ảnh/video cho comment
+    public async Task<CommentResponse> AddCommentAsync(
+        Guid taskId,
+        string? body,
+        IReadOnlyList<IFormFile>? files,
+        Guid userId,
+        CancellationToken ct = default)
+    {
+        var task = await _db.ProjectTasks
+            .FirstOrDefaultAsync(t => t.Id == taskId && !t.IsDeleted, ct);
+
+        if (task == null)
+            throw CustomExceptionFactory.CreateNotFoundError(
+                ResponseMessages.NOT_FOUND.FormatMessage("Task"));
+
+        if (string.IsNullOrWhiteSpace(body) &&
+            (files == null || files.Count == 0))
+        {
+            throw CustomExceptionFactory.CreateBadRequestError(
+                "Comment cannot be empty.");
+        }
+
+        var now = DateTime.UtcNow;
+
+        var comment = new Comment
+        { 
+            TaskId = taskId,
+            AuthorUserId = userId,
+            Body = body?.Trim(),
+            Status = "Active",
+            CreateAt = now,
+            UpdateAt = now
+        };
+
+        _db.Comments.Add(comment);
+
+        var attachmentEntities = new List<ProjectTaskAttachment>();
+
+        if (files != null && files.Count > 0)
+        {
+            foreach (var file in files)
+            {
+                if (file == null || file.Length == 0) continue;
+
+                var upload = await _cloudinary.UploadFileAsync(
+                    file,
+                    "task-comments",
+                    ct);
+
+                var entity = new ProjectTaskAttachment
+                {
+                    Id = Guid.NewGuid(),
+                    TaskId = taskId,
+                    CommentId = comment.Id,                 // GẮN VỚI COMMENT
+                    FileName = file.FileName,
+                    Url = upload.Url,
+                    ContentType = file.ContentType,
+                    SizeBytes = file.Length,
+                    Description = null,
+                    UploadedAt = now,
+                    UploadedBy = userId,
+                    PublicId = upload.PublicId,
+                    IsImage = upload.IsImage
+                };
+
+                attachmentEntities.Add(entity);
+                _db.ProjectTaskAttachments.Add(entity);
+            }
+        }
+
+        await _db.SaveChangesAsync(ct);
+
+        var author = await _db.Users
+            .AsNoTracking()
+            .Where(u => u.Id == userId)
+            .Select(u => new { u.UserName, u.Avatar })
+            .FirstOrDefaultAsync(ct);
+
+        return new CommentResponse
+        {
+            Id = comment.Id,
+            TaskId = comment.TaskId,
+            AuthorUserId = userId,
+            AuthorName = author?.UserName ?? "Unknown",
+            AuthorAvatar = author?.Avatar,
+            Body = comment.Body ?? "",
+            Status = comment.Status ?? "Active",
+            CreateAt = comment.CreateAt,
+            UpdateAt = comment.UpdateAt,
+            Attachments = attachmentEntities.Select(a => new CommentAttachmentResponse
+            {
+                Id = a.Id,
+                CommentId = comment.Id,
+                FileName = a.FileName,
+                Url = a.Url,
+                ContentType = a.ContentType,
+                Size = a.SizeBytes,
+                IsImage = a.IsImage
+            }).ToList()
+        };
     }
 
     #endregion

@@ -39,4 +39,6 @@ public partial class Comment
     [ForeignKey("TaskId")]
     [InverseProperty("Comments")]
     public virtual ProjectTask? Task { get; set; }
+    [InverseProperty(nameof(ProjectTaskAttachment.Comment))]
+    public virtual ICollection<ProjectTaskAttachment> Attachments { get; set; } = new List<ProjectTaskAttachment>();
 }

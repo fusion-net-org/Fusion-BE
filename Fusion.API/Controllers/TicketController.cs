@@ -25,11 +25,14 @@ namespace Fusion.API.Controllers
         }
 
         [HttpGet("paged")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PagedResult<TicketResponse>>))]
-        public async Task<IActionResult> GetPaged([FromQuery] TicketPagedSearchRequest request, CancellationToken cancellationToken)
+        [ProducesResponseType(StatusCodes.Status200OK,Type = typeof(ResponseModel<TicketPagedResponse>))]
+        public async Task<IActionResult> GetPaged(
+         [FromQuery] TicketPagedSearchRequest request,
+         CancellationToken cancellationToken)
         {
             var result = await _ticketService.GetPageTicketshAsync(request, cancellationToken);
-            return Ok(ResponseModel<PagedResult<TicketResponse>>.Ok(
+
+            return Ok(ResponseModel<TicketPagedResponse>.Ok(
                 data: result,
                 message: "Get paged tickets successfully"));
         }
@@ -262,6 +265,101 @@ namespace Fusion.API.Controllers
             ));
         }
 
+        [HttpPut("{id:guid}/accept")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<TicketResponse>))]
+        public async Task<IActionResult> AcceptTicket(Guid id, CancellationToken cancellationToken)
+        {
+            var emailClaim = User.Claims.FirstOrDefault(c =>
+                c.Type == JwtRegisteredClaimNames.Email ||
+                c.Type == ClaimTypes.Email ||
+                c.Type == "email");
+
+            var email = emailClaim?.Value;
+            if (email == null)
+            {
+                return Unauthorized(ResponseModel<TicketResponse>.Error(
+                    statusCode: StatusCodes.Status401Unauthorized,
+                    message: "Unauthorized: User identity not found"
+                ));
+            }
+
+            try
+            {
+                var result = await _ticketService.AcceptTicketAsync(id, cancellationToken);
+                return Ok(ResponseModel<TicketResponse>.Ok(
+                    data: result,
+                    message: "Ticket accepted successfully"));
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(
+                    StatusCodes.Status403Forbidden,
+                    ResponseModel<TicketResponse>.Error(
+                        statusCode: StatusCodes.Status403Forbidden,
+                        message: ex.Message
+                    )
+                );
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ResponseModel<TicketResponse>.Error(
+                    statusCode: StatusCodes.Status404NotFound,
+                    message: ex.Message
+                ));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ResponseModel<TicketResponse>.Error(StatusCodes.Status400BadRequest, ex.Message));
+            }
+        }
+
+        [HttpPut("{id:guid}/reject")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<TicketResponse>))]
+        public async Task<IActionResult> RejectTicket(Guid id, [FromQuery] string? reason, CancellationToken cancellationToken)
+        {
+            var emailClaim = User.Claims.FirstOrDefault(c =>
+                c.Type == JwtRegisteredClaimNames.Email ||
+                c.Type == ClaimTypes.Email ||
+                c.Type == "email");
+
+            var email = emailClaim?.Value;
+            if (email == null)
+            {
+                return Unauthorized(ResponseModel<TicketResponse>.Error(
+                    statusCode: StatusCodes.Status401Unauthorized,
+                    message: "Unauthorized: User identity not found"
+                ));
+            }
+
+            try
+            {
+                var result = await _ticketService.RejectTicketAsync(id, reason, cancellationToken);
+                return Ok(ResponseModel<TicketResponse>.Ok(
+                    data: result,
+                    message: "Ticket rejected successfully"));
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(
+                    StatusCodes.Status403Forbidden,
+                    ResponseModel<TicketResponse>.Error(
+                        statusCode: StatusCodes.Status403Forbidden,
+                        message: ex.Message
+                    )
+                );
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ResponseModel<TicketResponse>.Error(
+                    statusCode: StatusCodes.Status404NotFound,
+                    message: ex.Message
+                ));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ResponseModel<TicketResponse>.Error(StatusCodes.Status400BadRequest, ex.Message));
+            }
+        }
 
     }
 }

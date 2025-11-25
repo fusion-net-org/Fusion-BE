@@ -14,6 +14,7 @@ using Fusion.Service.ViewModels.Companies.Requests;
 using Fusion.Service.ViewModels.Companies.Responses;
 using Fusion.Service.ViewModels.Tickets.Requests;
 using Fusion.Service.ViewModels.Tickets.Responses;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Design;
@@ -98,25 +99,38 @@ namespace Fusion.Service.Services
         }
 
 
-        public async Task<PagedResult<TicketResponse>> GetPageTicketshAsync(TicketPagedSearchRequest request, CancellationToken cancellationToken = default)
+        public async Task<TicketPagedResponse> GetPageTicketshAsync(
+            TicketPagedSearchRequest request,
+            CancellationToken cancellationToken = default)
         {
-            if (request == null)
-                throw CustomExceptionFactory.CreateBadRequestError(
-                    ResponseMessages.INVALID_INPUT);
+            var fullQuery = _ticketRepository.BuildTicketQuery(request);
 
-            var result = await _ticketRepository.GetPageTicketshAsync(request, cancellationToken);
+            var fullData = await fullQuery.ToListAsync(cancellationToken);
 
+            var statusCounts = fullData
+                .GroupBy(t => t.status ?? "Unknown")
+                .ToDictionary(g => g.Key, g => g.Count());
 
+            var totalFull = fullData.Count;
 
-            var list = new PagedResult<TicketResponse>
+            var paged = await fullQuery.ToPagedResultAsync(request, cancellationToken);
+
+            return new TicketPagedResponse
             {
-                Items = _mapper.Map<List<TicketResponse>>(result.Items),
-                TotalCount = result.TotalCount,
-                PageNumber = result.PageNumber,
-                PageSize = result.PageSize
+                PageData = new PagedResult<TicketResponse>
+                {
+                    Items = _mapper.Map<List<TicketResponse>>(paged.Items),
+                    TotalCount = paged.TotalCount,
+                    PageNumber = paged.PageNumber,
+                    PageSize = paged.PageSize
+                },
+                StatusCounts = statusCounts,
+                Total = totalFull
             };
-            return list;
         }
+
+
+
 
         public async Task<TicketResponse?> GetTicketByIdAsync(Guid id)
         {
@@ -220,6 +234,33 @@ namespace Fusion.Service.Services
             return result;
         }
 
+        public async Task<TicketResponse?> AcceptTicketAsync(Guid ticketId, CancellationToken cancellationToken = default)
+        {
+            var ticket = await _ticketRepository.GetTicketByIdAsync(ticketId);
+            if (ticket == null)
+                throw new KeyNotFoundException("Ticket not found");
+
+            //var currentUserId = _currentService.GetUserId();
+            //if (ticket.SubmittedBy != currentUserId)
+            //    throw new UnauthorizedAccessException("You are not allowed to accept this ticket");
+
+            var updatedTicket = await _ticketRepository.AcceptTicketAsync(ticketId, cancellationToken);
+            return _mapper.Map<TicketResponse>(updatedTicket);
+        }
+
+        public async Task<TicketResponse?> RejectTicketAsync(Guid ticketId, string? reason = null, CancellationToken cancellationToken = default)
+        {
+            var ticket = await _ticketRepository.GetTicketByIdAsync(ticketId);
+            if (ticket == null)
+                throw new KeyNotFoundException("Ticket not found");
+
+            //var currentUserId = _currentService.GetUserId();
+            //if (ticket.SubmittedBy != currentUserId)
+            //    throw new UnauthorizedAccessException("You are not allowed to reject this ticket");
+
+            var updatedTicket = await _ticketRepository.RejectTicketAsync(ticketId, reason, cancellationToken);
+            return _mapper.Map<TicketResponse>(updatedTicket);
+        }
 
         public async Task<TicketResponse?> UpdateTicketAsync(TicketRequest request, Guid ticketId, CancellationToken cancellationToken = default)
         {
