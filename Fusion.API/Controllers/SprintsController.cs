@@ -46,6 +46,7 @@ namespace Fusion.API.Controllers
                 message: ResponseMessageHelper.FormatMessage(ResponseMessages.CREATE_SUCCESS, "sprint")));
         }
 
+
         /// <summary>
         /// Get sprint by id
         /// </summary>

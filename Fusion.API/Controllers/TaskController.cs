@@ -4,6 +4,7 @@ using Fusion.Repository.Bases.Responses;
 using Fusion.Service.Commons.BaseResponses;     // ResponseModel, ResponseMessages
 using Fusion.Service.IServices;
 using Fusion.Service.Services;
+using Fusion.Service.ViewModels.Comment.Response;
 using Fusion.Service.ViewModels.Task.Request;
 using Fusion.Service.ViewModels.Task.Response;
 using Microsoft.AspNetCore.Authorization;
@@ -366,5 +367,45 @@ public class TaskController : ControllerBase
     }
 
     #endregion
+    #region Comments
+
+    // GET /api/tasks/{taskId}/comments
+    [HttpGet("tasks/{taskId:guid}/comments")]
+    [ProducesResponseType(typeof(ResponseModel<IReadOnlyList<CommentResponse>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetComments(Guid taskId, CancellationToken ct)
+    {
+        var data = await _svc.GetCommentsByTaskIdAsync(taskId, ct);
+
+        return Ok(ResponseModel<IReadOnlyList<CommentResponse>>.Ok(
+            data,
+            ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "comments")));
+    }
+
+    // POST /api/tasks/{taskId}/comments
+    // body + optional files (ảnh/video/tài liệu) – multipart/form-data
+    [HttpPost("tasks/{taskId:guid}/comments")]
+    [Consumes("multipart/form-data")]
+    [ProducesResponseType(typeof(ResponseModel<CommentResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> AddComment(
+        Guid taskId,
+        [FromForm] string? body,
+        [FromForm] List<IFormFile>? files,
+        CancellationToken ct)
+    {
+        var uid = GetUserId();
+        if (uid is null)
+            return Unauthorized(ResponseModel<string>.Error(
+                StatusCodes.Status401Unauthorized,
+                "Missing token"));
+
+        var data = await _svc.AddCommentAsync(taskId, body, files, uid.Value, ct);
+
+        return Ok(ResponseModel<CommentResponse>.Ok(
+            data,
+            ResponseMessageHelper.FormatMessage(ResponseMessages.CREATE_SUCCESS, "comment")));
+    }
+
+    #endregion
+
 
 }

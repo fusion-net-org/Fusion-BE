@@ -33,5 +33,6 @@ namespace Fusion.Service.ViewModels.WorkflowStatus
         [Column("guard_name_key")]
         [StringLength(100)]
         public string? GuardNameKey { get; set; }
+        public string? Color { get; set; }
     }
 }

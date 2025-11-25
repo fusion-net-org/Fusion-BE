@@ -119,35 +119,93 @@ namespace Fusion.Service.Services
         }
         public async Task<SprintVm> CreateAsync(Guid currentUserId, SprintCreateRequest req, CancellationToken ct)
         {
-            if (req.DurationWeeks is not (1 or 2))
+            // 0. Validate project
+            var project = await _unitOfWork.Repository<Project>()
+                .FindAsync(c => c.Id == req.ProjectId);
+            if (project is null)
+                throw CustomExceptionFactory.CreateNotFoundError("Project not found");
+
+            // 1. Chuẩn hoá duration (user không cần gửi, default = 2)
+            var duration = req.DurationWeeks;
+            if (duration == 0)
+                duration = 2;
+
+            if (duration is not (1 or 2))
                 throw CustomExceptionFactory.CreateBadRequestError("DurationWeeks must be 1 or 2");
 
+            // 2. Tự tính StartDate nếu FE không gửi
+            DateTime start;
+            var today = DateTime.UtcNow.Date;   // DateTime (date-only)
 
-            var start = req.StartDate.Date;
-            var end = start.AddDays(req.DurationWeeks * 7); // exclusive end
+            if (req.StartDate == default) // FE không gửi -> default 0001-01-01
+            {
+                // Lấy sprint cuối cùng trong project (nếu có) theo EndDate (ưu tiên) rồi tới StartDate
+                var lastSprint = await _repo.QueryByProject(req.ProjectId)
+                    .OrderByDescending(x => x.EndDate ?? x.StartDate)
+                    .FirstOrDefaultAsync(ct);
 
+                if (lastSprint == null)
+                {
+                    // project.StartDate : DateOnly?
+                    DateTime projectStartDt;
+
+                    if (project.StartDate.HasValue)
+                    {
+                        // convert DateOnly -> DateTime (00:00)
+                        projectStartDt = project.StartDate.Value.ToDateTime(TimeOnly.MinValue);
+                    }
+                    else
+                    {
+                        projectStartDt = today;
+                    }
+
+                    start = projectStartDt.Date;
+                }
+                else
+                {
+                    // lastSprint.StartDate / EndDate: DateTime?
+                    var lastEnd = (lastSprint.EndDate ?? lastSprint.StartDate ?? today).Date;
+                    start = lastEnd.AddDays(1);   // <-- ngày sau ngày cuối cùng của sprint trước
+                }
+            }
+            else
+            {
+                // FE cố tình set StartDate -> tôn trọng
+                start = req.StartDate.Date;
+            }
+
+            // 3. Tính end (exclusive)
+            var end = start.AddDays(duration * 7);
 
             if (await _repo.IsOverlappedAsync(req.ProjectId, start, end, null, ct))
                 throw CustomExceptionFactory.CreateBadRequestError("Time range overlaps other sprint in project");
 
 
+            // 5. Tạo entity
             var sprint = new Sprint
             {
                 Id = Guid.NewGuid(),
                 ProjectId = req.ProjectId,
-                Name = string.IsNullOrWhiteSpace(req.Name) ? $"Sprint {start:yyyy-MM-dd}" : req.Name!.Trim(),
+                Name = string.IsNullOrWhiteSpace(req.Name)
+                    ? $"Sprint {start:yyyy-MM-dd}"
+                    : req.Name!.Trim(),
                 Goal = req.Goal,
                 StartDate = start,
                 EndDate = end,
                 Status = SprintStatus.Planning,
                 CreatedBy = currentUserId,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                IsDeleted = false,
+                // có thể set default color nếu muốn
+                // Color = "#2E8BFF"
             };
 
+            // 6. Giao cho repo tạo + gán task nếu có
             var created = await _repo.CreateAsync(sprint, req.TaskIds, currentUserId, ct);
 
-            var project = await _unitOfWork.Repository<Project>().FindAsync(c => c.Id == sprint.ProjectId);
-            var company = await _unitOfWork.Repository<Company>().FindAsync(c => c.Id == project.CompanyId);
+            // 7. Log activity
+            var company = await _unitOfWork.Repository<Company>()
+                .FindAsync(c => c.Id == project.CompanyId);
 
             var currentUserName = await GetUserName(currentUserId);
             var log = new CompanyActivityLog
@@ -155,21 +213,23 @@ namespace Fusion.Service.Services
                 CompanyId = company.Id,
                 ActorUserId = currentUserId,
                 Title = "Create sprint",
-                Description = $"user:{currentUserName} has created sprint '{sprint.Name}' for project '{project.Name}''",
+                Description = $"user:{currentUserName} has created sprint '{sprint.Name}' for project '{project.Name}'",
             };
             await _logService.CreateLog(log);
 
+            // 8. Trả SprintVm giống CreateTaskAsync trả ProjectTaskResponse
             return new SprintVm
             {
                 Id = created.Id,
                 ProjectId = created.ProjectId,
-                Name = created.Name,
+                Name = created.Name ?? "",
                 StartDate = created.StartDate,
                 EndDate = created.EndDate,
                 Status = (byte)created.Status,
                 TaskCount = created.ProjectTasks?.Count ?? 0
             };
         }
+
         public async Task<SprintVm> GetAsync(Guid sprintId, Guid projectId, CancellationToken ct)
         {
             var data = await _repo.GetVmAsync(sprintId, projectId, ct) ?? throw CustomExceptionFactory.CreateNotFoundError("Sprint not found");
