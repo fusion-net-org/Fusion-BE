@@ -23,6 +23,7 @@ namespace Fusion.Service.ViewModels.Tickets.Responses
 		public decimal? Budget { get; set; }
 		public bool? IsDeleted { get; set; }
 		public string? Status { get; set; }
+		public string? Reason { get; set; }
         public DateTime? ResolvedAt { get; set; }
 		public DateTime? ClosedAt { get; set; }
         public DateTime CreatedAt { get; set; }
