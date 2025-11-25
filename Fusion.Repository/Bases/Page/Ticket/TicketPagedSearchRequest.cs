@@ -15,6 +15,9 @@ namespace Fusion.Repository.Bases.Page.Ticket
         public Guid? CompanyExecutorId { get; set; } 
         public TicketStatusEnum? Status { get; set; }
         public TicketViewMode? ViewMode { get; set; }
+        public DateTime? CreatedFrom { get; set; }
+        public DateTime? CreatedTo { get; set; }
+        public bool? IsDeleted { get; set; }
     }
     public class TicketByProjectPagedRequest : PagedRequest
     {

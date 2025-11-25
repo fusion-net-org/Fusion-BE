@@ -17,13 +17,83 @@ namespace Fusion.Repository.Repositories
             _context = context;
         }
 
+        //public async Task<PagedResult<Ticket>> GetPageTicketshAsync(TicketPagedSearchRequest request, CancellationToken cancellationToken = default)
+        //{
+        //    var query = _dbSet
+        //        .Include(x => x.TicketComments)
+        //        .Include(x => x.Project)
+        //        .AsQueryable();
+
+
+        //    // Keyword
+        //    if (!string.IsNullOrWhiteSpace(request.Keyword))
+        //        query = query.Where(x => x.TicketName.Contains(request.Keyword)
+        //            || x.Budget.Equals(request.Keyword)
+        //            || x.Description.Equals(request.Keyword)
+        //            || x.Priority.Equals(request.Keyword)
+        //            || x.Project.Name.Equals(request.Keyword)
+        //        );
+
+        //    // Status
+        //    if (request.Status.HasValue)
+        //        query = query.Where(x => x.status == request.Status.Value.ToString());
+
+        //    // Filter ProjectId
+        //    if (request.ProjectId.HasValue)
+        //    {
+        //        query = query.Where(x => x.ProjectId == request.ProjectId.Value);
+        //    }
+
+        //    // ViewMode filter
+        //    if (request.ViewMode == TicketViewMode.AsRequester)
+        //    {
+        //        if (!request.CompanyRequestId.HasValue)
+        //        {
+        //            return new PagedResult<Ticket>
+        //            {
+        //                Items = new List<Ticket>(),
+        //                TotalCount = 0,
+        //                PageNumber = request.PageNumber,
+        //                PageSize = request.PageSize
+        //            };
+        //        }
+
+        //        query = query.Where(x =>
+        //            x.Project.CompanyRequestId == request.CompanyRequestId);
+
+        //    }
+        //    else if (request.ViewMode == TicketViewMode.AsExecutor)
+        //    {
+        //        if (!request.CompanyExecutorId.HasValue)
+        //        {
+        //            return new PagedResult<Ticket>
+        //            {
+        //                Items = new List<Ticket>(),
+        //                TotalCount = 0,
+        //                PageNumber = request.PageNumber,
+        //                PageSize = request.PageSize
+        //            };
+        //        }
+
+        //        query = query.Where(x =>
+        //            x.Project.CompanyId == request.CompanyExecutorId);
+        //    }
+
+        //    return await query.ToPagedResultAsync(request, cancellationToken);
+        //}
+
         public async Task<PagedResult<Ticket>> GetPageTicketshAsync(TicketPagedSearchRequest request, CancellationToken cancellationToken = default)
+        {
+            var query = BuildTicketQuery(request);
+            return await query.ToPagedResultAsync(request, cancellationToken);
+        }
+
+        public IQueryable<Ticket> BuildTicketQuery(TicketPagedSearchRequest request)
         {
             var query = _dbSet
                 .Include(x => x.TicketComments)
                 .Include(x => x.Project)
                 .AsQueryable();
-
 
             // Keyword
             if (!string.IsNullOrWhiteSpace(request.Keyword))
@@ -31,57 +101,46 @@ namespace Fusion.Repository.Repositories
                     || x.Budget.Equals(request.Keyword)
                     || x.Description.Equals(request.Keyword)
                     || x.Priority.Equals(request.Keyword)
-                    || x.Project.Name.Equals(request.Keyword)
+                    || x.Project.Name.Contains(request.Keyword)
                 );
 
             // Status
             if (request.Status.HasValue)
                 query = query.Where(x => x.status == request.Status.Value.ToString());
 
-            // Filter ProjectId
+            // ProjectId
             if (request.ProjectId.HasValue)
-            {
                 query = query.Where(x => x.ProjectId == request.ProjectId.Value);
-            }
 
-            // ViewMode filter
+            // ViewMode
             if (request.ViewMode == TicketViewMode.AsRequester)
             {
                 if (!request.CompanyRequestId.HasValue)
-                {
-                    return new PagedResult<Ticket>
-                    {
-                        Items = new List<Ticket>(),
-                        TotalCount = 0,
-                        PageNumber = request.PageNumber,
-                        PageSize = request.PageSize
-                    };
-                }
+                    return Enumerable.Empty<Ticket>().AsQueryable();
 
-                query = query.Where(x =>
-                    x.Project.CompanyRequestId == request.CompanyRequestId);
-
+                query = query.Where(x => x.Project.CompanyRequestId == request.CompanyRequestId);
             }
             else if (request.ViewMode == TicketViewMode.AsExecutor)
             {
                 if (!request.CompanyExecutorId.HasValue)
-                {
-                    return new PagedResult<Ticket>
-                    {
-                        Items = new List<Ticket>(),
-                        TotalCount = 0,
-                        PageNumber = request.PageNumber,
-                        PageSize = request.PageSize
-                    };
-                }
+                    return Enumerable.Empty<Ticket>().AsQueryable();
 
-                query = query.Where(x =>
-                    x.Project.CompanyId == request.CompanyExecutorId);
+                query = query.Where(x => x.Project.CompanyId == request.CompanyExecutorId);
             }
 
-            return await query.ToPagedResultAsync(request, cancellationToken);
-        }
+            //create date
+            if (request.CreatedFrom.HasValue)
+                query = query.Where(x => x.CreatedAt >= request.CreatedFrom.Value);
 
+            if (request.CreatedTo.HasValue)
+                query = query.Where(x => x.CreatedAt <= request.CreatedTo.Value);
+
+            // Deleted
+            if (request.IsDeleted.HasValue)
+                query = query.Where(x => x.IsDeleted == request.IsDeleted.Value);
+
+            return query;
+        }
 
 
         public async Task<Ticket?> GetTicketByIdAsync(Guid Id)

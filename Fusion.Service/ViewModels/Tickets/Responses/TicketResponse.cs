@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Fusion.Repository.Bases.Page;
 
 namespace Fusion.Service.ViewModels.Tickets.Responses
 {
@@ -27,5 +28,15 @@ namespace Fusion.Service.ViewModels.Tickets.Responses
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
 
+        public Dictionary<string, int> StatusCounts { get; set; } = new();
+        public int Total { get; set; }
+
     }
+    public class TicketPagedResponse
+    {
+        public PagedResult<TicketResponse> PageData { get; set; }
+        public Dictionary<string, int> StatusCounts { get; set; }
+        public int Total { get; set; }
+    }
+
 }
