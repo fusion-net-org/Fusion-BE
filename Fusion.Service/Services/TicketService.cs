@@ -234,6 +234,33 @@ namespace Fusion.Service.Services
             return result;
         }
 
+        public async Task<TicketResponse?> AcceptTicketAsync(Guid ticketId, CancellationToken cancellationToken = default)
+        {
+            var ticket = await _ticketRepository.GetTicketByIdAsync(ticketId);
+            if (ticket == null)
+                throw new KeyNotFoundException("Ticket not found");
+
+            //var currentUserId = _currentService.GetUserId();
+            //if (ticket.SubmittedBy != currentUserId)
+            //    throw new UnauthorizedAccessException("You are not allowed to accept this ticket");
+
+            var updatedTicket = await _ticketRepository.AcceptTicketAsync(ticketId, cancellationToken);
+            return _mapper.Map<TicketResponse>(updatedTicket);
+        }
+
+        public async Task<TicketResponse?> RejectTicketAsync(Guid ticketId, string? reason = null, CancellationToken cancellationToken = default)
+        {
+            var ticket = await _ticketRepository.GetTicketByIdAsync(ticketId);
+            if (ticket == null)
+                throw new KeyNotFoundException("Ticket not found");
+
+            //var currentUserId = _currentService.GetUserId();
+            //if (ticket.SubmittedBy != currentUserId)
+            //    throw new UnauthorizedAccessException("You are not allowed to reject this ticket");
+
+            var updatedTicket = await _ticketRepository.RejectTicketAsync(ticketId, reason, cancellationToken);
+            return _mapper.Map<TicketResponse>(updatedTicket);
+        }
 
         public async Task<TicketResponse?> UpdateTicketAsync(TicketRequest request, Guid ticketId, CancellationToken cancellationToken = default)
         {
