@@ -7,7 +7,6 @@ namespace Fusion.Service.ViewModels.Companies.Requests
         public string? Name { get; set; }
         public string? TaxCode { get; set; }
         public string? Detail { get; set; }
-        public Guid UserSubscriptionId { get; set; }
         public string? Email { get; set; }
         public string? PhoneNumber { get; set; }     
         public string? Address { get; set; }         

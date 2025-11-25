@@ -912,7 +912,8 @@ public class TaskService : ITaskService
                 GuardNameKey = t.CurrentStatus.GuardNameKey ?? "Unknown",
                 IsEnd = t.CurrentStatus.IsEnd,
                 IsStart = t.CurrentStatus.IsStart,
-                WorkflowId = t.CurrentStatus.WorkflowId
+                WorkflowId = t.CurrentStatus.WorkflowId,
+                Color = t.CurrentStatus.Color
             },
 
             Members = (t.TaskWorkflows ?? new List<TaskWorkflow>())

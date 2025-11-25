@@ -156,7 +156,7 @@ namespace Fusion.Repository.Repositories
                 .AsNoTracking()
                 .CountAsync(cancellationToken);
         }
-        public async Task<List<UserGrowthPoint>> GetUserGrowthAsync(DateTime? from, DateTime? to, CancellationToken cancellationToken = default)
+        public async Task<List<GetUserGrowth>> GetUserGrowthAsync(DateTime? from, DateTime? to, CancellationToken cancellationToken = default)
         {
             var query = _context.Users.AsNoTracking().AsQueryable();
 
@@ -172,7 +172,7 @@ namespace Fusion.Repository.Repositories
 
             var data = await query
                 .GroupBy(u => new { u.CreateAt.Year, u.CreateAt.Month })
-                .Select(g => new UserGrowthPoint
+                .Select(g => new GetUserGrowth
                 {
                     Year = g.Key.Year,
                     Month = g.Key.Month,
@@ -258,6 +258,21 @@ namespace Fusion.Repository.Repositories
                 .ToList();
 
             return result;
+        }
+
+        public async Task<List<UserMonthlyNewPoint>> GetMonthlyNewUsersInYearAsync(int year, CancellationToken ct = default)
+        {
+            return await _context.Users
+      .AsNoTracking()
+      .Where(u => u.CreateAt.Year == year)
+      .GroupBy(u => new { u.CreateAt.Year, u.CreateAt.Month })
+      .Select(g => new UserMonthlyNewPoint
+      {
+          Year = g.Key.Year,
+          Month = g.Key.Month,
+          NewUsers = g.Count()
+      })
+      .ToListAsync(ct);
         }
     }
 }

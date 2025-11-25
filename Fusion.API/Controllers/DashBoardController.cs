@@ -39,5 +39,15 @@ namespace Fusion.API.Controllers
                     message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "Get plan purchase ratio successfully")));
         }
 
+        [HttpGet("overview/platform-year")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PlatformYearOverviewResponse>))]
+        public async Task<IActionResult> GetPlatformYearOverview([FromQuery] int year = 2025, CancellationToken ct = default)
+        {
+            var data = await _adminService.GetPlatformYearOverviewAsync(year, ct);
+
+            return Ok(ResponseModel<PlatformYearOverviewResponse>.Ok(
+                data: data,
+                message: "Get platform year overview successfully"));
+        }
     }
 }
