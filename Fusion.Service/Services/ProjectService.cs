@@ -802,5 +802,23 @@ namespace Fusion.Service.Services
             return response;
 
         }
+
+        public async Task<List<ProjectResponseVersion3>> GetProjectsByCompanyAsync(
+           Guid companyId,
+           Guid? companyRequestId,
+           Guid? executorCompanyId,
+           CancellationToken cancellationToken = default)
+        {
+            var projects = await _projectRepo.GetProjectsByCompanyAsync(
+                companyId,
+                companyRequestId,
+                executorCompanyId,
+                cancellationToken);
+
+            return _mapper.Map<List<ProjectResponseVersion3>>(projects);
+        }
+
+
+
     }
 }

@@ -4,6 +4,7 @@ using Fusion.Repository.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Fusion.Repository.Migrations
 {
     [DbContext(typeof(FusionDbContext))]
-    partial class FusionDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251124150010_Add_Status_Ticket")]
+    partial class Add_Status_Ticket
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1146,10 +1149,6 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("id");
 
-                    b.Property<long?>("CommentId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("comment_id");
-
                     b.Property<string>("ContentType")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)")
@@ -1199,8 +1198,6 @@ namespace Fusion.Repository.Migrations
                         .HasColumnName("url");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CommentId");
 
                     b.HasIndex("TaskId");
 
@@ -2926,17 +2923,11 @@ namespace Fusion.Repository.Migrations
 
             modelBuilder.Entity("Fusion.Repository.Entities.ProjectTaskAttachment", b =>
                 {
-                    b.HasOne("Fusion.Repository.Entities.Comment", "Comment")
-                        .WithMany("Attachments")
-                        .HasForeignKey("CommentId");
-
                     b.HasOne("Fusion.Repository.Entities.ProjectTask", "Task")
                         .WithMany("Attachments")
                         .HasForeignKey("TaskId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Comment");
 
                     b.Navigation("Task");
                 });
@@ -3311,11 +3302,6 @@ namespace Fusion.Repository.Migrations
                     b.Navigation("ToStatus");
 
                     b.Navigation("Workflow");
-                });
-
-            modelBuilder.Entity("Fusion.Repository.Entities.Comment", b =>
-                {
-                    b.Navigation("Attachments");
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.Company", b =>

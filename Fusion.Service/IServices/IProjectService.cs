@@ -42,6 +42,7 @@ namespace Fusion.Service.IServices
         Task<ProjectExecutionOverviewResponse> GetProjectExecutionOverviewAsync(
             ProjectGrowthOverviewRequest req,
             CancellationToken ct = default);
+        public Task<List<ProjectResponseVersion3>> GetProjectsByCompanyAsync(Guid companyId, Guid? companyRequestId, Guid? executorCompanyId,CancellationToken cancellationToken = default);
     }
 
 }

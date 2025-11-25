@@ -178,5 +178,21 @@ namespace Fusion.API.Controllers
             return Ok(ResponseModel<PagedResult<ProjectSummaryResponseV2>>.Ok(result));
         }
 
+        [HttpGet("companies/projects-by-company")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<List<ProjectResponseVersion3>>))]
+        public async Task<IActionResult> GetProjectsByCompany(
+        [FromQuery] Guid companyId,
+        [FromQuery] Guid? companyRequestId,
+        [FromQuery] Guid? executorCompanyId,
+        CancellationToken ct)
+        {
+            var result = await _service.GetProjectsByCompanyAsync(companyId, companyRequestId, executorCompanyId, ct);
+
+            return Ok(ResponseModel<List<ProjectResponseVersion3>>.Ok(
+                data: result,
+                message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "Project List")
+            ));
+        }
+
     }
 }
