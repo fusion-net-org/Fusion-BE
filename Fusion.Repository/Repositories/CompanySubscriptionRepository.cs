@@ -25,85 +25,96 @@ namespace Fusion.Repository.Repositories
             _userSubscriptionRepository = userSubscriptionRepository;
             _entry = entry;
         }
-        public async Task UseFeatureInCompanyAsync(Guid companySubscriptionId, Guid ActorUserId,Guid companyId, string featureName, CancellationToken ct = default)
+        public async Task UseFeatureInCompanyAutoAsync(
+            Guid ActorUserId,
+            Guid companyId,
+            string featureName,
+            CancellationToken ct = default)
         {
             if (string.IsNullOrWhiteSpace(featureName))
                 throw CustomExceptionFactory.CreateBadRequestError("Feature code is required.");
 
             featureName = featureName.Trim();
+            var now = DateTimeOffset.UtcNow;
 
-            // 1. Load subscription + entitlements + feature để so sánh theo code
-            var sub = await _context.CompanySubscriptions
+            // Lấy tất cả gói active + chưa hết hạn của company, sort từ cũ -> mới
+            var subs = await _context.CompanySubscriptions
                 .Include(cs => cs.Entitlements)
                     .ThenInclude(e => e.Feature)
-                .FirstOrDefaultAsync(cs => cs.Id == companySubscriptionId, ct);
+                .Where(cs =>
+                    cs.CompanyId == companyId &&
+                    cs.Status == SubscriptionStatus.Active &&
+                    (!cs.ExpiredAt.HasValue || cs.ExpiredAt >= now))
+                .OrderBy(cs => cs.SharedOn)
+                .ToListAsync(ct);
 
-            if (sub == null)
-                throw CustomExceptionFactory.CreateNotFoundError(
-                    ResponseMessages.NOT_FOUND.FormatMessage("Company subscription."));
+            if (subs.Count == 0)
+                throw CustomExceptionFactory.CreateBadRequestError("Company has no active subscription.");
 
-            if (sub.Status != SubscriptionStatus.Active)
-                throw CustomExceptionFactory.CreateBadRequestError(
-                    "Company subscription is not active.");
+            // Duyệt theo thứ tự cũ -> mới và kiếm gói đầu tiên có entitlement chứa feature
+            foreach (var sub in subs)
+            {
+                var entitlement = sub.Entitlements
+                    .FirstOrDefault(e =>
+                        e.Enabled &&
+                        e.Feature != null &&
+                        e.Feature.Name != null &&
+                        e.Feature.Name.Equals(featureName, StringComparison.OrdinalIgnoreCase));
 
-            if (sub.ExpiredAt.HasValue && sub.ExpiredAt.Value < DateTimeOffset.UtcNow)
-                throw CustomExceptionFactory.CreateBadRequestError(
-                    "Company subscription has expired.");
+                if (entitlement != null)
+                {
+                    // Có gói thoả feature -> consume / ghi usage entry
+                    await _entry.CreateAsync(sub.Id, ActorUserId, companyId, ct);
+                    return;
+                }
+            }
 
-            // 2. Tìm entitlement theo Feature.Code (thay vì FeatureId)
-            var entitlement = sub.Entitlements
-                .FirstOrDefault(e =>
-                    e.Enabled &&
-                    e.Feature != null &&
-                    e.Feature.Name != null &&
-                    e.Feature.Name.Equals(featureName, StringComparison.OrdinalIgnoreCase));
-
-            if (entitlement == null)
-                throw CustomExceptionFactory.CreateBadRequestError(
-         $"Feature '{featureName}' is not enabled for the selected company subscription.");
-
-            await _entry.CreateAsync(companySubscriptionId, ActorUserId, companyId, ct);
+            // Không có entitlement nào trong toàn bộ các gói active
+            throw CustomExceptionFactory.CreateBadRequestError(
+                $"Feature '{featureName}' is not enabled in any active company subscription.");
         }
 
-        public async Task UseFeatureInUserAsync(Guid userSubscriptionId, Guid userId, string featureName, CancellationToken ct = default)
+        public async Task UseFeatureInUserAutoAsync(Guid userId, string featureName, CancellationToken ct = default)
         {
             if (string.IsNullOrWhiteSpace(featureName))
                 throw CustomExceptionFactory.CreateBadRequestError("Feature is required.");
 
             featureName = featureName.Trim();
+            var now = DateTimeOffset.UtcNow;
 
-            // 1. Load user subscription + entitlements + feature
-            var sub = await _context.UserSubscriptions
+            // Lấy tất cả gói active + chưa hết hạn của user, sort từ cũ -> mới
+            var subs = await _context.UserSubscriptions
                 .Include(us => us.Entitlements)
                     .ThenInclude(e => e.Feature)
-                .FirstOrDefaultAsync(us => us.Id == userSubscriptionId, ct);
+                .Where(us =>
+                    us.UserId == userId &&
+                    us.Status == SubscriptionStatus.Active &&
+                    (!us.TermEnd.HasValue || us.TermEnd >= now))
+                .OrderBy(us => us.CreatedAt)
+                .ToListAsync(ct);
 
-            if (sub == null)
-                throw CustomExceptionFactory.CreateNotFoundError("User subscription.");
+            if (subs.Count == 0)
+                throw CustomExceptionFactory.CreateBadRequestError("User has no active subscription.");
 
-            // Đảm bảo đúng owner
-            if (sub.UserId != userId)
-                throw CustomExceptionFactory.CreateBadRequestError("User does not own the selected subscription.");
+            // Duyệt theo thứ tự cũ -> mới và kiếm gói đầu tiên có entitlement chứa feature
+            foreach (var sub in subs)
+            {
+                var entitlement = sub.Entitlements
+                    .FirstOrDefault(e =>
+                        e.Enabled &&
+                        e.Feature != null &&
+                        e.Feature.Name != null &&
+                        e.Feature.Name.Equals(featureName, StringComparison.OrdinalIgnoreCase));
 
-            if (sub.Status != SubscriptionStatus.Active)
-                throw CustomExceptionFactory.CreateBadRequestError(
-                    "User subscription is not active.");
+                if (entitlement != null)
+                {
+                    return;
+                }
+            }
 
-            if (sub.TermEnd.HasValue && sub.TermEnd.Value < DateTimeOffset.UtcNow)
-                throw CustomExceptionFactory.CreateBadRequestError(
-                    "User subscription has expired.");
-
-            // 2. Tìm entitlement theo Feature.Name (giống Company)
-            var entitlement = sub.Entitlements
-                .FirstOrDefault(e =>
-                    e.Enabled &&
-                    e.Feature != null &&
-                    e.Feature.Name != null &&
-                    e.Feature.Name.Equals(featureName, StringComparison.OrdinalIgnoreCase));
-
-            if (entitlement == null)
-                throw CustomExceptionFactory.CreateBadRequestError(
-                    $"Feature '{featureName}' is not enabled for the selected user subscription.");
+            // Không có entitlement nào trong toàn bộ các gói active
+            throw CustomExceptionFactory.CreateBadRequestError(
+                $"Feature '{featureName}' is not enabled in any active user subscription.");
         }
         public async Task<CompanySubscription> CreateAsync(CompanySubscription companySubscription, CancellationToken cancellationToken = default)
         {

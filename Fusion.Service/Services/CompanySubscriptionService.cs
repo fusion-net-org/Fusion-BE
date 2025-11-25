@@ -105,14 +105,14 @@ namespace Fusion.Service.Services
 
             return _mapper.Map<CompanySubscriptionDetailResponse>(entity);
         }
-        public async Task<bool> UseFeatureInCompanyAsync(UserFeatureRequest request, CancellationToken ct = default)
+        public async Task<bool> UseFeatureInCompanyAutoAsync(UserFeatureRequest request, CancellationToken ct = default)
         {
-            await _companySubscriptionRepository.UseFeatureInCompanyAsync(request.CompanySubscriptionId, request.ActorUserId,request.CompanyId, request.FeatureName, ct);
+            await _companySubscriptionRepository.UseFeatureInCompanyAutoAsync(request.ActorUserId,request.CompanyId, request.FeatureName, ct);
             return true;
         }
-        public async Task<bool> UseFeatureInUserAsync(Guid userSubscriptionId, Guid userId, string featureName, CancellationToken ct = default)
+        public async Task<bool> UseFeatureInUserAutoAsync(Guid userId, string featureName, CancellationToken ct = default)
         {
-            await _companySubscriptionRepository.UseFeatureInUserAsync(userSubscriptionId, userId, featureName, ct);
+            await _companySubscriptionRepository.UseFeatureInUserAutoAsync(userId, featureName, ct);
             return true;
         }
 

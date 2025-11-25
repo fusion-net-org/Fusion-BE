@@ -69,7 +69,6 @@ namespace Fusion.Repository.Repositories
     => _context.Set<UserSubscription>()
                .AsNoTracking()
                .FirstOrDefaultAsync(x => x.UserId == userId && x.Status == Enums.SubscriptionStatus.Active, ct);
-
         public async Task<List<UserSubscription>> GetAllActiveByUserIdAsync(Guid userId, CancellationToken ct = default)
         {
             return await _context.UserSubscriptions
@@ -79,6 +78,7 @@ namespace Fusion.Repository.Repositories
                 .ThenInclude(e => e.Feature)               // để map FeatureName
             .Where(cs => cs.Status == SubscriptionStatus.Active &&
                         cs.UserId == userId)
+            .OrderBy(cs => cs.CreatedAt)
             .ToListAsync(ct);
         }
         public Task<UserSubscription?> GetByTransactionAsync(Guid txId, CancellationToken ct = default)
@@ -174,6 +174,49 @@ namespace Fusion.Repository.Repositories
 
 
             return ents.Count;
+        }
+
+        public async Task UseFeatureInUserAutoAsync(Guid userId, string featureName, CancellationToken ct = default)
+        {
+            if (string.IsNullOrWhiteSpace(featureName))
+                throw CustomExceptionFactory.CreateBadRequestError("Feature is required.");
+
+            featureName = featureName.Trim();
+            var now = DateTimeOffset.UtcNow;
+
+            // Lấy tất cả gói active + chưa hết hạn của user, sort từ cũ -> mới
+            var subs = await _context.UserSubscriptions
+                .Include(us => us.Entitlements)
+                    .ThenInclude(e => e.Feature)
+                .Where(us =>
+                    us.UserId == userId &&
+                    us.Status == SubscriptionStatus.Active &&
+                    (!us.TermEnd.HasValue || us.TermEnd >= now))
+                .OrderBy(us => us.CreatedAt)
+                .ToListAsync(ct);
+
+            if (subs.Count == 0)
+                throw CustomExceptionFactory.CreateBadRequestError("User has no active subscription.");
+
+            // Duyệt theo thứ tự cũ -> mới và kiếm gói đầu tiên có entitlement chứa feature
+            foreach (var sub in subs)
+            {
+                var entitlement = sub.Entitlements
+                    .FirstOrDefault(e =>
+                        e.Enabled &&
+                        e.Feature != null &&
+                        e.Feature.Name != null &&
+                        e.Feature.Name.Equals(featureName, StringComparison.OrdinalIgnoreCase));
+
+                if (entitlement != null)
+                {
+                    return;
+                }
+            }
+
+            // Không có entitlement nào trong toàn bộ các gói active
+            throw CustomExceptionFactory.CreateBadRequestError(
+                $"Feature '{featureName}' is not enabled in any active user subscription.");
         }
     }
 }

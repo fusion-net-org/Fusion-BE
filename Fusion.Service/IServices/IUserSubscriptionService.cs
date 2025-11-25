@@ -10,7 +10,6 @@ public interface IUserSubscriptionService
 {
 
     Task<UserSubscriptionDetailResponse> CreateAsync(UserSubscriptionCreateRequest req, CancellationToken ct = default);
-
     Task<UserSubscriptionDetailResponse?> GetDetailAsync(Guid id, CancellationToken ct = default);
     Task<PagedResult<UserSubscriptionResponse>> GetPagedByUserIdAsync(UserSubscriptionPagedRequest request, CancellationToken ct = default);
 
