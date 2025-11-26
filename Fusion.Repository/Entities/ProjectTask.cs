@@ -89,10 +89,34 @@ public partial class ProjectTask
     [ForeignKey("SprintId")]
     [InverseProperty("ProjectTasks")]
     public virtual Sprint? Sprint { get; set; }
+    //---------------------------------------------------------
+    [Column("code"), StringLength(50)] public string? Code { get; set; }
+    [Column("severity"), StringLength(20)] public string? Severity { get; set; }
+    [Column("estimate_hours")] public int? EstimateHours { get; set; }
+    [Column("remaining_hours")] public int? RemainingHours { get; set; }
+
+    [Column("current_status_id")] public Guid? CurrentStatusId { get; set; }
+    [ForeignKey(nameof(CurrentStatusId))] public WorkflowStatus? CurrentStatus { get; set; }
+
+    [Column("parent_task_id")] public Guid? ParentTaskId { get; set; }
+    [ForeignKey(nameof(ParentTaskId))] public ProjectTask? ParentTask { get; set; }
+
+    [Column("carry_over_count")] public int CarryOverCount { get; set; } = 0;
+
+    [Column("source_task_id")] public Guid? SourceTaskId { get; set; }
+    [ForeignKey(nameof(SourceTaskId))] public ProjectTask? SourceTask { get; set; }
+    public ICollection<TaskWorkflow> Assignees { get; set; } = new List<TaskWorkflow>();
+    public ICollection<ProjectTaskDependency> Dependencies { get; set; } = new List<ProjectTaskDependency>();
+    //---------------------------------------------------------
 
     [InverseProperty("Task")]
     public virtual ICollection<TaskLogEvent> TaskLogEvents { get; set; } = new List<TaskLogEvent>();
 
     [InverseProperty("Task")]
     public virtual ICollection<TaskWorkflow> TaskWorkflows { get; set; } = new List<TaskWorkflow>();
+    [InverseProperty(nameof(ProjectTaskChecklistItem.Task))]
+    public ICollection<ProjectTaskChecklistItem> ChecklistItems { get; set; } = new List<ProjectTaskChecklistItem>();
+    [InverseProperty(nameof(ProjectTaskAttachment.Task))]
+    public ICollection<ProjectTaskAttachment> Attachments { get; set; } = new List<ProjectTaskAttachment>();
+
 }

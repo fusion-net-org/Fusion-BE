@@ -6,6 +6,7 @@ using Fusion.Repository.Bases.Page.Company_Member;
 using Fusion.Repository.Entities;
 using Fusion.Repository.Enums;
 using Fusion.Repository.IRepositories;
+using Fusion.Repository.ViewModels;
 using Fusion.Service.Commons.Helpers;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.Companies.Email;
@@ -109,7 +110,7 @@ namespace Fusion.Service.Services
 
             var userIds = result.Items.Where(m => m.User != null).Select(m => m.User.Id).Distinct().ToList();
             var rolesByUser = await _companyMemberRepository
-                .GetUserRoleMapInCompanyAsync(companyId, userIds, token);
+                .GetUserRolesMapInCompanyAsync(companyId, userIds, token);
 
             var memberResponses = new List<CompanyMemberResponse>(result.Items.Count);
 
@@ -121,9 +122,15 @@ namespace Fusion.Service.Services
                 var dto = _mapper.Map<CompanyMemberResponse>(member);
                 dto.NumberProductJoin = numberProjectJoin;
 
-                if (member.User != null && rolesByUser.TryGetValue(member.User.Id, out var role))
+                //if (member.User != null && rolesByUser.TryGetValue(member.User.Id, out var role))
+                //{
+                //    dto.roleName = role.RoleName;
+                //}
+
+                if (member.User != null && rolesByUser.TryGetValue(member.User.Id, out var roleList))
                 {
-                    dto.roleName = role.RoleName;
+                    // Convert list role -> "A, B, C"
+                    dto.roleName = string.Join(", ", roleList.Select(r => r.RoleName));
                 }
 
                 memberResponses.Add(dto);
@@ -137,8 +144,6 @@ namespace Fusion.Service.Services
                 PageSize = result.PageSize
             };
         }
-
-
         public async Task<PagedResult<CompanyMemberResponse>> GetPagedCompanyMemberAsync(CompanyMemberPagedSearchAdminRequest request, CancellationToken token = default)
         {
 
@@ -304,7 +309,7 @@ namespace Fusion.Service.Services
             var log = new CompanyActivityLog
             {
                 CompanyId = companyId,
-                ActorUserId =_currentService.GetUserId(),
+                ActorUserId = _currentService.GetUserId(),
                 Title = "Remove Member From Company",
                 Description = $"User:'{currentUserName}' deleted member with user '{userResult}' has left the company.",
 
@@ -337,10 +342,10 @@ namespace Fusion.Service.Services
 
         public async Task<AddMemberRoleInCompanyResponse?> AddRoleForMemberInCompany(Guid companyId, List<int> roleIds, Guid memberId, string inviterEmail, CancellationToken token)
         {
-            var addRole = await _companyMemberRepository.AddRoleForMemberInCompany(companyId, roleIds, memberId, inviterEmail, token); 
+            var addRole = await _companyMemberRepository.AddRoleForMemberInCompany(companyId, roleIds, memberId, inviterEmail, token);
 
-            if(!addRole.Any())
-                 throw CustomExceptionFactory.CreateBadRequestError("Add Role in Company Fail");
+            if (!addRole.Any())
+                throw CustomExceptionFactory.CreateBadRequestError("Add Role in Company Fail");
 
             var userWithRoles = await _userRepository.GetUserWithRolesAndPermissionsInCompanyAsync(memberId, companyId);
 
@@ -406,8 +411,106 @@ namespace Fusion.Service.Services
             dto.Teamwork = performance?.Teamwork ?? 0;
             dto.ProblemSolving = performance?.ProblemSolving ?? 0;
 
+            var stats = await _projectMemberRepository.GetMemberStatsAsync(userId, companyId, token);
+            dto.Score = stats?.Score ?? 0;
+            dto.HoursPerWeek = stats?.HoursPerWeek ?? 0;
+
+            dto.Efficiency = stats?.Efficiency ?? new EfficiencyChart
+            {
+                OnTimePercent = 0,
+                LatePercent = 0,
+                PendingPercent = 0,
+            };
+
+            dto.ScoreTrendChart = stats?.ScoreTrendChart ?? new LineChart
+            {
+                Data = new List<ScoreTrend>()
+            };
+
+            dto.PriorityDistribution = stats?.PriorityDistribution ?? new PieChart
+            {
+                Segments = new List<PieChartSegment>()
+            };
+
             return dto;
         }
+        public async Task<PagedResult<CompanyMemberResponseV2>> GetCompanyMemberByUserIdAsync(
+        Guid userId,
+        CompanyMemberPagedRequest request,
+        CancellationToken token = default)
+        {
+            var result = await _companyMemberRepository.GetCompanyMemberByUserIdAsync(userId, request, token);
+
+            var responses = result.Items.Select(cm => _mapper.Map<CompanyMemberResponseV2>(cm)).ToList();
+
+            return new PagedResult<CompanyMemberResponseV2>
+            {
+                Items = responses,
+                TotalCount = result.TotalCount,
+                PageNumber = result.PageNumber,
+                PageSize = result.PageSize
+            };
+        }
+        public async Task<CompanyMemberResponse?> AcceptJoinMemberById(long memberId, CancellationToken token = default)
+        {
+            var member = await _companyMemberRepository.AcceptJoinMemberByIdAsync(memberId, token);
+
+            var userName = await GetUserName(member.User.Id);
+
+            // Ghi log
+            await _logService.CreateLog(new CompanyActivityLog
+            {
+                CompanyId = member.CompanyId.Value,
+                ActorUserId = _currentService.GetUserId(),
+                Title = "Accept Join Member To Company",
+                Description = $"User '{userName}' has been accepted to join the company."
+            }, token);
+
+            // Tạo notification cho owner
+            await _notificationService.CreateNotificationAsync(new SendNotificationRequest
+            {
+                UserId = member.Company.OwnerUserId.Value,
+                Title = $"{userName} has joined your company",
+                Body = $"{userName} is now a member of your company.",
+                LinkKey = "MEMBER_PAGE",
+                IdLink = member.CompanyId.Value,
+                Event = "CompanyMemberAccepted",
+                NotificationType = "COMPANY"
+            }, token);
+
+            return _mapper.Map<CompanyMemberResponse>(member);
+        }
+
+        public async Task<CompanyMemberResponse?> RejectJoinMemberById(long memberId, CancellationToken token = default)
+        {
+            var member = await _companyMemberRepository.RejectJoinMemberByIdAsync(memberId, token);
+
+            var userName = await GetUserName(member.User.Id);
+
+            // Ghi log
+            await _logService.CreateLog(new CompanyActivityLog
+            {
+                CompanyId = member.CompanyId.Value,
+                ActorUserId = _currentService.GetUserId(),
+                Title = "Reject Join Member To Company",
+                Description = $"User '{userName}' has rejected the invitation to join the company."
+            }, token);
+
+            // Tạo notification cho owner
+            await _notificationService.CreateNotificationAsync(new SendNotificationRequest
+            {
+                UserId = member.Company.OwnerUserId.Value,
+                Title = $"{userName} has rejected the invite",
+                Body = $"{userName} refused to join the company.",
+                LinkKey = "HOME_PAGE",
+                IdLink = member.CompanyId.Value,
+                Event = "CompanyMemberRejected",
+                NotificationType = "COMPANY"
+            }, token);
+
+            return _mapper.Map<CompanyMemberResponse>(member);
+        }
+
 
     }
 }

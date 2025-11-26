@@ -24,5 +24,7 @@ namespace Fusion.Repository.Bases.Page.Company
         public string? OwnerUserName { get; set; }
         public ProjectSearchRelationShipEnums? RelationShipEnums { get; set; }
 
+        public DateTime? DayFrom { get; set; }
+        public DateTime? DayTo { get; set; }   
     }
 }

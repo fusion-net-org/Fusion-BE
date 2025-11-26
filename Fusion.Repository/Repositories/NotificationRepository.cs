@@ -165,6 +165,32 @@ namespace Fusion.Repository.Repositories
             await _context.SaveChangesAsync(cancellationToken);
         }
 
+        public async Task DeleteAdminNotificationAsync(Guid userId, CancellationToken cancellationToken = default)
+        {
+            if (userId == Guid.Empty)
+                throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.NOT_FOUND.FormatMessage("UserId"));
+
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null)
+                throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.NOT_FOUND.FormatMessage("UserId or NotificationId"));
+
+            if(!user.IsSystemAdmin)
+                throw CustomExceptionFactory.CreateBadRequestError("User is not Admin");
+
+            var notifications = await _context.Notifications.Where(x => x.NotificationType == NotificationTypeEnum.ADMIN_NOTIFICATE.ToString()).ToListAsync();
+            if (!notifications.Any())
+                throw CustomExceptionFactory.CreateNotFoundError("Admin do not have any notifications");
+
+            foreach (var noti in notifications)
+            {
+                noti.ReadAt = DateTime.UtcNow.AddHours(7);
+                noti.IsDeleted = true;
+                noti.IsRead = true;
+            }
+
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+
         public async Task ToggleNotificationByTypeAsync(Guid userId, NotificationTypeEnum type, bool? isEnable, CancellationToken cancellationToken = default)
         {
             if (userId == Guid.Empty)

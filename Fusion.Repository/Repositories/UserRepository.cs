@@ -6,9 +6,8 @@ using Fusion.Repository.Bases.Responses;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.IRepositories;
+using Fusion.Repository.ViewModels.Users;
 using Microsoft.EntityFrameworkCore;
-
-
 
 namespace Fusion.Repository.Repositories
 {
@@ -126,61 +125,154 @@ namespace Fusion.Repository.Repositories
 
             return (row?.False ?? 0, row?.True ?? 0);
         }
+        public async Task<bool> EmailVerificationAsync(string token, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(token))
+                throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.INVALID_INPUT);
 
-        //public async Task<bool> EmailVerificationAsync(string token, CancellationToken cancellationToken = default)
-        //{
-        //    if (string.IsNullOrWhiteSpace(token))
-        //        throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.INVALID_INPUT);
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.ResetToken == token, cancellationToken);
+            if (user == null)
+                throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Token"));
 
-        //    var user = await _context.Users.FirstOrDefaultAsync(u => u.ResetToken == token, cancellationToken);
-        //    if (user == null)
-        //        throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Token"));
+            var nowUtc = DateTime.UtcNow;
 
-        //    var nowUtc = DateTime.UtcNow;
+            if (!user.Status)
+            {
+                user.Status = true;
+                user.UpdateAt = nowUtc.AddHours(7);
+            }
+            user.ResetToken = null;
+            user.ResetTokenExpiry = null;
 
-        //    if (!user.Status)
-        //    {
-        //        user.Status = true;
-        //        user.UpdateAt = nowUtc.AddHours(7);
-        //    }
-        //    user.ResetToken = null;
-        //    user.ResetTokenExpiry = null;
+            await _context.SaveChangesAsync(cancellationToken);
+            return true;
+        }
 
+        // ================================== OverView  ================================== 
+        public Task<int> GetTotalUsersAsync(CancellationToken cancellationToken = default)
+        {
+            // bạn có thể dùng luôn method này cho các chỗ cần tổng user
+            return _context.Users
+                .AsNoTracking()
+                .CountAsync(cancellationToken);
+        }
+        public async Task<List<GetUserGrowth>> GetUserGrowthAsync(DateTime? from, DateTime? to, CancellationToken cancellationToken = default)
+        {
+            var query = _context.Users.AsNoTracking().AsQueryable();
 
-        //    var subscription = await _context.SubscriptionPackages
-        //                     .AsNoTracking()
-        //                     .FirstOrDefaultAsync(x => x.Price == 0, cancellationToken);
+            if (from.HasValue)
+            {
+                query = query.Where(u => u.CreateAt >= from.Value);
+            }
 
-        //    if (subscription == null)
-        //        throw CustomExceptionFactory.CreateNotFoundError("Subscription package 'NewMember' Not exsit. Let seed before.");
+            if (to.HasValue)
+            {
+                query = query.Where(u => u.CreateAt < to.Value);
+            }
 
-        //    var alreadyGranted = await _context.UserSubscriptions
-        //                         .AsNoTracking()
-        //                         .AnyAsync(x => x.UserId == user.Id && x.PackageId == subscription.Id, cancellationToken);
+            var data = await query
+                .GroupBy(u => new { u.CreateAt.Year, u.CreateAt.Month })
+                .Select(g => new GetUserGrowth
+                {
+                    Year = g.Key.Year,
+                    Month = g.Key.Month,
+                    Count = g.Count()
+                })
+                .OrderBy(x => x.Year)
+                .ThenBy(x => x.Month)
+                .ToListAsync(cancellationToken);
 
+            return data;
+        }
+        public async Task<List<UserCompanyDistributionPoint>> GetTopCompaniesByUserCountAsync(int top, CancellationToken cancellationToken = default)
+        {
+            if (top <= 0) top = 10;
 
-        //    if (!alreadyGranted)
-        //    {
-        //        var grant = new UserSubscription
-        //        {
-        //            Id = Guid.NewGuid(),
-        //            UserId = user.Id,
-        //            PackageId = subscription.Id,
-        //            PurchaseDate = nowUtc,
+            var data = await _context.CompanyMembers
+                .AsNoTracking()
+                .Where(cm => cm.Company != null)
+                .GroupBy(cm => new
+                {
+                    cm.CompanyId,
+                    CompanyName = cm.Company!.Name
+                })
+                .Select(g => new UserCompanyDistributionPoint
+                {
+                    CompanyId = g.Key.CompanyId,
+                    CompanyName = g.Key.CompanyName ?? "Unknown",
+                    UserCount = g
+                        .Select(x => x.UserId)   // distinct user per company
+                        .Distinct()
+                        .Count()
+                })
+                .OrderByDescending(x => x.UserCount)
+                .ThenBy(x => x.CompanyName)
+                .Take(top)
+                .ToListAsync(cancellationToken);
 
-        //            // Lấy quota từ package
-        //            QuotaCompanyAdded = subscription.QuotaCompany,
-        //            QuotaProjectAdded = subscription.QuotaProject,
-        //            QuotaCompanyRemaining = subscription.QuotaCompany,
-        //            QuotaProjectRemaining = subscription.QuotaProject,
+            return data;
+        }
 
-        //            ExpiryDate = null,
-        //            IsActive = true
-        //        };
-        //        _context.UserSubscriptions.Add(grant);
-        //    }
-        //    await _context.SaveChangesAsync(cancellationToken);
-        //    return true;
-        //}
+        public async Task<List<UserPermissionLevelPoint>> GetUserPermissionLevelOverviewAsync(
+            CancellationToken cancellationToken = default)
+        {
+            var query = _context.Users
+                .AsNoTracking()
+                .Select(u => new
+                {
+                    Level =
+                        u.IsSystemAdmin
+                            ? "System admin"
+                            : u.Companies.Any()
+                                ? "Company owner"
+                                : u.CompanyMembers.Any()
+                                    ? "Company member"
+                                    : "Registered only"
+                });
+
+            var grouped = await query
+                .GroupBy(x => x.Level)
+                .Select(g => new UserPermissionLevelPoint
+                {
+                    Level = g.Key,
+                    Count = g.Count()
+                })
+                .ToListAsync(cancellationToken);
+
+            // Bảo đảm đủ 4 bucket, kể cả = 0
+            var orderedLevels = new[]
+            {
+            "System admin",
+            "Company owner",
+            "Company member",
+            "Registered only"
+        };
+
+            var dict = grouped.ToDictionary(x => x.Level, StringComparer.OrdinalIgnoreCase);
+
+            var result = orderedLevels
+                .Select(level =>
+                    dict.TryGetValue(level, out var v)
+                        ? v
+                        : new UserPermissionLevelPoint { Level = level, Count = 0 })
+                .ToList();
+
+            return result;
+        }
+
+        public async Task<List<UserMonthlyNewPoint>> GetMonthlyNewUsersInYearAsync(int year, CancellationToken ct = default)
+        {
+            return await _context.Users
+      .AsNoTracking()
+      .Where(u => u.CreateAt.Year == year)
+      .GroupBy(u => new { u.CreateAt.Year, u.CreateAt.Month })
+      .Select(g => new UserMonthlyNewPoint
+      {
+          Year = g.Key.Year,
+          Month = g.Key.Month,
+          NewUsers = g.Count()
+      })
+      .ToListAsync(ct);
+        }
     }
 }

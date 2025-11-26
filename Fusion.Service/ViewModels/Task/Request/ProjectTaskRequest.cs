@@ -1,33 +1,32 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿// Fusion.Service/ViewModels/Task/Request/ProjectTaskRequest.cs
+using System.ComponentModel.DataAnnotations;
 
-namespace Fusion.Service.ViewModels.Task.Request
+namespace Fusion.Service.ViewModels.Task.Request;
+
+public class ProjectTaskRequest
 {
-    public class ProjectTaskRequest
-    {
-        public Guid Id;
-        public Guid? ProjectId { get; set; }
+    public Guid Id { get; set; }                   // dùng cho update
+    [Required] public Guid ProjectId { get; set; } // vì route /api/tasks, ProjectId nhận từ body
+    public Guid? SprintId { get; set; }            // null => Backlog
 
-        public Guid? SprintId { get; set; }
+    [Required, MaxLength(200)]
+    public string Title { get; set; } = string.Empty;
 
-        public string? Type { get; set; }
+    public string? Description { get; set; }
+    public string? Type { get; set; } = "Feature";           // Feature/Bug/Chore…
+    public string? Priority { get; set; } = "Medium";        // Urgent/High/Medium/Low
+    public string? Severity { get; set; }                    // Critical/High/Medium/Low
 
-        public string? Img { get; set; }
+    public int? Point { get; set; }                          // story points
+    public int? EstimateHours { get; set; }
+    public DateTime? DueDate { get; set; }
 
-        public string? Title { get; set; }
+    public Guid? WorkflowStatusId { get; set; }              // nếu null → pick status đầu (TODO)
+    public string? StatusCode { get; set; }                  // fallback nếu bạn gửi code thay vì Guid
 
-        public string? Description { get; set; }
+    public Guid? ParentTaskId { get; set; }
+    public Guid? SourceTaskId { get; set; }
+    public List<Guid>? AssigneeIds { get; set; }             // nhiều ngườ
+    public List<TaskWorkflowAssignmentItemRequest>? WorkflowAssignments { get; set; }
 
-        public string? Priority { get; set; }
-
-        public bool IsBacklog { get; set; }
-
-        public int? Point { get; set; }
-
-        public string? Source { get; set; }
-
-    }
 }

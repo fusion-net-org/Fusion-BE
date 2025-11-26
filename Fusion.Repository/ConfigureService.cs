@@ -38,9 +38,12 @@ namespace Fusion.Repository
             services.AddScoped<ICompanyRepository,CompanyRepository>();
             services.AddScoped<ICompanyMemberRepository, CompanyMemberRepository>();
             services.AddScoped<IPermissionQuery, PermissionQuery>();
-
+            services.AddScoped<IProjectBoardRepository, ProjectBoardRepository>();
             //task
             services.AddScoped<ITaskRepository, TaskRepository>();
+            //checklist
+            services.AddScoped<ITaskChecklistRepository, TaskChecklistRepository>();
+            services.AddScoped<ITaskWorkflowRepository, TaskWorkflowRepository>();
 
             //comment
             services.AddScoped<ICommentRepository, CommentRepository>();
@@ -51,6 +54,9 @@ namespace Fusion.Repository
             //project member
             services.AddScoped<IProjectMemberRepository, ProjectMemberRepository>();
 
+            //feature catalog
+            services.AddScoped<IFeatureCatalogRepository, FeatureCatalogRepository>();
+
             //subscriptionplan
             services.AddScoped<ISubscriptionPlanRepository, SubscriptionPlanRepository>();
 
@@ -59,6 +65,7 @@ namespace Fusion.Repository
 
             //usersubscrption
             services.AddScoped<IUserSubscriptionRepository, UserSubscriptionRepository>();
+
 
             //refresh token
             services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
@@ -85,10 +92,16 @@ namespace Fusion.Repository
             services.AddScoped<IContractRepository, ContractRepository>();
             services.AddScoped<IContractAppendixRepository, ContractAppendixRepository>();
 
+            //workflow status
+            services.AddScoped<IWorkflowStatusRepository, WorkflowStatusRepository>();
 
             // company subscription
-            services.AddScoped<ICompanySubscriptionRepository , CompanySubscriptionRepository>();
+            services.AddScoped<ICompanySubscriptionRepository, CompanySubscriptionRepository>();
 
+            //TicketCOmment
+            services.AddScoped<ITicketCommentRepository, TicketCommentRepository>();
+            // company entry
+            services.AddScoped<ICompanySubscriptionEntryRepository, CompanySubscriptionEntryRepository>();
             return services;
 
         }

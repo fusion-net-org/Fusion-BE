@@ -35,7 +35,8 @@ public partial class Sprint
     [Column("created_by")]
     public Guid? CreatedBy { get; set; }
 
-
+    [Column("capacity_hours")] public int? CapacityHours { get; set; }
+    [Column("committed_points")] public int? CommittedPoints { get; set; }
     [Column("created_at"), Precision(3)]
     public DateTime? CreatedAt { get; set; }
     [Column("status")]

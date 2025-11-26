@@ -1,10 +1,15 @@
 ﻿
 
 using Fusion.Service.ViewModels.Admin.Responses;
+using Fusion.Service.ViewModels.TransactionPayment.Responses.Overview;
 
 namespace Fusion.Service.IServices;
 
 public interface IAdminService
 {
-    Task<OverviewDashBoardResponse> OverviewDashBoard(CancellationToken cancellationToken = default);
+    Task<OverviewDashBoardResponse> GetTotalsAsync(CancellationToken ct = default);
+
+    Task<IReadOnlyList<PlanPurchaseRatioItemResponse>> GetPlanPurchaseRatioAsync(
+          CancellationToken ct = default);
+    Task<PlatformYearOverviewResponse> GetPlatformYearOverviewAsync( int year,CancellationToken ct = default);
 }

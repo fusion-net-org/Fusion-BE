@@ -24,5 +24,10 @@ namespace Fusion.Repository.IRepositories
 
         Task<MemberPerformanceStats> GetMemberPerformanceAsync(Guid userId, Guid companyId, CancellationToken token = default);
 
+        Task<MemberStats> GetMemberStatsAsync(Guid userId, Guid companyId, CancellationToken token = default);
+        Task RemoveAsync(Guid projectId, Guid userId, CancellationToken ct = default);
+        Task<List<ProjectMember>> GetProjectMembersWithUserAndRoleAsync(
+        Guid projectId,
+        CancellationToken ct = default);
     }
 }

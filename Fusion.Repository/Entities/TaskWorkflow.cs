@@ -21,6 +21,13 @@ public partial class TaskWorkflow
 
     [Column("assign_user_id")]
     public Guid? AssignUserId { get; set; }
+    //------------------------------------------------
+
+    [Column("created_at"), Precision(3)]
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    [Column("updated_at"), Precision(3)]
+    public DateTime UpdateAt { get; set; } = DateTime.UtcNow;
+    //------------------------------------------------
 
     [ForeignKey("AssignUserId")]
     [InverseProperty("TaskWorkflows")]

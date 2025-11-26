@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Design;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -22,7 +23,28 @@ namespace Fusion.Repository.Repositories
         {
             _context = context;
         }
+        public async Task RemoveAsync(Guid projectId, Guid userId, CancellationToken ct = default)
+        {
+            var entity = await _context.ProjectMembers
+                .FirstOrDefaultAsync(pm => pm.ProjectId == projectId && pm.UserId == userId, ct);
 
+            if (entity == null) return;
+
+            _context.ProjectMembers.Remove(entity);
+        }
+        public async Task<List<ProjectMember>> GetProjectMembersWithUserAndRoleAsync(
+       Guid projectId,
+       CancellationToken ct = default)
+        {
+            return await _context.ProjectMembers
+                .AsNoTracking()
+                .Include(pm => pm.User)
+                    .ThenInclude(u => u.UserRoles)
+                        .ThenInclude(ur => ur.Role)
+                .Include(pm => pm.Project)
+                .Where(pm => pm.ProjectId == projectId)
+                .ToListAsync(ct);
+        }
         public async Task<int> GetTotalProjectsForMemberInCompanyAsync(Guid memberId, Guid companyId, CancellationToken cancellationToken = default)
         {
             var totalProjects = await _context.ProjectMembers
@@ -148,7 +170,7 @@ namespace Fusion.Repository.Repositories
         {
             // Lấy toàn bộ project của company
             var projectIds = await _context.Projects
-                .Where(p => p.CompanyId == companyId)
+                .Where(p => p.CompanyId == companyId || p.CompanyRequestId == companyId)
                 .Select(p => p.Id)
                 .ToListAsync(token);
 
@@ -170,10 +192,11 @@ namespace Fusion.Repository.Repositories
                 .CountAsync(c => c.AuthorUserId == userId && projectIds.Contains(c.Task.ProjectId!.Value), token);
 
             // Teamwork = project user làm chung với người khác
-            int teamwork = await _context.ProjectMembers
-                .Where(pm => pm.UserId == userId && projectIds.Contains(pm.ProjectId!.Value))
+            var teamwork = await _context.ProjectMembers
+                .Where(pm => projectIds.Contains(pm.ProjectId!.Value))
                 .GroupBy(pm => pm.ProjectId)
-                .CountAsync(g => g.Count() > 1, token);
+                .Where(g => g.Any(x => x.UserId == userId) && g.Count() > 1)
+                .CountAsync();
 
             return new MemberPerformanceStats
             {
@@ -181,6 +204,124 @@ namespace Fusion.Repository.Repositories
                 Communication = communication,
                 Teamwork = teamwork,
                 ProblemSolving = problemSolving
+            };
+        }
+
+        public async Task<MemberStats> GetMemberStatsAsync(Guid userId, Guid companyId, CancellationToken token = default)
+        {
+            var tasks = await _context.ProjectTasks
+                .Include(x => x.TaskWorkflows)
+                .Include(x => x.Project)
+                    .ThenInclude(x => x.Company)
+                .Include(x => x.Project)
+                    .ThenInclude(x => x.CompanyRequest)
+                .Where(t => !t.IsDeleted &&
+                            t.TaskWorkflows.Any(a => a.AssignUserId == userId) &&
+                            t.Project != null && t.Project.CompanyId == companyId || t.Project.CompanyRequestId == companyId)
+                .ToListAsync(token);
+
+            //---Score---//
+            int score = tasks.Count > 0 ? (int)Math.Round(tasks.Average(t => t.Point ?? 0)) : 0;
+
+            //---Hour of User Work---//
+            int hoursPerWeek = tasks.Sum(t =>
+            {
+                var userAssigned = t.TaskWorkflows.FirstOrDefault(a => a.AssignUserId == userId);
+                if (userAssigned == null) return 0;
+
+                int estimate = t.EstimateHours ?? 0;
+                int remaining = t.RemainingHours ?? 0;
+                int contributors = t.TaskWorkflows.Count;
+
+                return (estimate - remaining) / contributors;
+            });
+
+            //-- % Task Complete, Late, Pending --//
+            var totalTasks = tasks.Count;
+            int onTime = tasks.Count(t => t.UpdateAt.HasValue && t.DueDate.HasValue && t.UpdateAt.Value <= t.DueDate.Value);
+            int late = tasks.Count(t => t.UpdateAt.HasValue && t.DueDate.HasValue && t.UpdateAt.Value > t.DueDate.Value);
+            int pending = tasks.Count(t => !t.UpdateAt.HasValue);
+
+
+            var efficiency = new EfficiencyChart
+            {
+                OnTimePercent = totalTasks > 0 ? (int)Math.Round(onTime * 100.0 / totalTasks) : 0,
+                LatePercent = totalTasks > 0 ? (int)Math.Round(late * 100.0 / totalTasks) : 0,
+                PendingPercent = totalTasks > 0 ? (int)Math.Round(pending * 100.0 / totalTasks) : 0
+            };
+
+            //--- % Priority user Do ---//
+            var taskTypeChart = new PieChart();
+            var groupedByPriority = tasks.GroupBy(t => t.Priority ?? "Unknown");
+            foreach (var g in groupedByPriority)
+            {
+                taskTypeChart.Segments.Add(new PieChartSegment
+                {
+                    Name = g.Key,
+                    Value = g.Count(),
+                    Color = g.Key switch
+                    {
+                        "Urgent" => "#d32f2f",
+                        "High" => "#f44336",
+                        "Medium" => "#ff9800",
+                        "Low" => "#4caf50",
+                        _ => "#9e9e9e"
+                    }
+                });
+            }
+
+            //--- % Work Compare to Team ---//
+            var scoreTrend = new LineChart();
+
+            var taskWithSprint = tasks
+                .Where(t => t.SprintId.HasValue)
+                .Select(t => new
+                {
+                    Task = t,
+                    SprintStart = _context.Sprints
+                        .Where(s => s.Id == t.SprintId.Value)
+                        .Select(s => s.StartDate)
+                        .FirstOrDefault()
+                })
+                .Where(x => x.SprintStart.HasValue)
+                .ToList();
+
+            var tasksBySprint = taskWithSprint.GroupBy(x => x.Task.SprintId.Value);
+
+            foreach (var sprintGroup in tasksBySprint)
+            {
+                var sprintStart = sprintGroup.First().SprintStart.Value;
+
+                var groupedByWeekInSprint = sprintGroup
+                    .GroupBy(x => (x.Task.CreateAt.Value.Date - sprintStart.Date).Days / 7)
+                    .OrderBy(g => g.Key);
+
+                foreach (var g in groupedByWeekInSprint)
+                {
+                    int userScore = g.Sum(x => x.Task.TaskWorkflows.Any(a => a.AssignUserId == userId) ? x.Task.Point ?? 0 : 0);
+
+                    int maxScore = g.GroupBy(x => x.Task.TaskWorkflows.FirstOrDefault()?.AssignUserId)
+                                    .Select(u => u.Sum(t => t.Task.Point ?? 0))
+                                    .DefaultIfEmpty(0)
+                                    .Max();
+
+                    scoreTrend.Data.Add(new ScoreTrend
+                    {
+                        Period = $"Week {g.Key + 1}",
+                        UserScore = userScore,
+                        MaxScore = maxScore
+                    });
+                }
+            }
+
+
+            return new MemberStats
+            {
+                Score = score,
+                HoursPerWeek = hoursPerWeek,
+                Efficiency = efficiency,
+                PriorityDistribution = taskTypeChart,
+                ScoreTrendChart = scoreTrend
             };
         }
 

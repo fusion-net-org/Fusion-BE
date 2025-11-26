@@ -1,7 +1,9 @@
 ﻿using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.CompanySubscriptions;
+using Fusion.Repository.ViewModels.CompanySubscriptionEntry;
 using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.IServices;
+using Fusion.Service.Services;
 using Fusion.Service.ViewModels.CompanySubscription.Requests;
 using Fusion.Service.ViewModels.CompanySubscription.Responses;
 using Microsoft.AspNetCore.Authorization;
@@ -34,20 +36,14 @@ namespace Fusion.API.Controllers
                 message: "Create company subscription successfully"));
         }
 
-        /// <summary>
-        ///  Cập nhật Company Subscription (chỉ status + entitlements)
-        /// </summary>
-        [HttpPut]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<CompanySubscriptionDetailResponse>))]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> Update([FromBody] CompanySubscriptionUpdateRequest request, CancellationToken cancellationToken)
+        [HttpPost("use")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<bool>))]
+        public async Task<IActionResult> UseFeatureInCompany([FromBody] UserFeatureRequest request, CancellationToken cancellationToken)
         {
-
-            var result = await _service.UpdateAsync(request, cancellationToken);
-            return Ok(ResponseModel<CompanySubscriptionDetailResponse>.Ok(
-                data: result,
-                message: "Update company subscription successfully."));
+            var result = await _service.UseFeatureInCompanyAsync(request, cancellationToken);
+            return Ok(ResponseModel<bool>.Ok(
+               data: result,
+               message: "Use success."));
         }
 
         /// <summary>
@@ -58,25 +54,10 @@ namespace Fusion.API.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
         {
-            var result = await _service.GetByIdAsync(id, cancellationToken);
+            var result = await _service.GetDetailAsync(id, cancellationToken);
             return Ok(ResponseModel<CompanySubscriptionDetailResponse>.Ok(
                 data: result,
                 message: "Get company subscription detail successfully."));
-        }
-
-        /// <summary>
-        /// Lấy danh sách tất cả Company Subscription (phân trang)
-        /// </summary>
-        [HttpGet]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PagedResult<CompanySubscriptionListResponse>>))]
-        public async Task<IActionResult> GetAll(
-            [FromQuery] CompanySubscriptionPagedRequest request,
-            CancellationToken cancellationToken)
-        {
-            var result = await _service.GetAllAsync(request, cancellationToken);
-            return Ok(ResponseModel<PagedResult<CompanySubscriptionListResponse>>.Ok(
-                data: result,
-                message: "Get list company subscription successfully."));
         }
 
         /// <summary>
@@ -106,6 +87,17 @@ namespace Fusion.API.Controllers
             return Ok(ResponseModel<List<CompanySubscriptionActiveResponse>>.Ok(
                 data: result,
                 message: "Get active company subscriptions successfully"));
+        }
+
+        [HttpGet("{companySubscriptionId:guid}/user-usage")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<List<CompanySubscriptionUserUsageItem>>))]
+        public async Task<IActionResult> GetUserUsageByCompanySubscription(Guid companySubscriptionId,CancellationToken ct = default)
+        {
+            var data = await _service.GetUserUsageAsync(companySubscriptionId, ct);
+
+            return Ok(ResponseModel<List<CompanySubscriptionUserUsageItem>>.Ok(
+                data: data,
+                message: "Get users usage for company subscription successfully"));
         }
     }
 }

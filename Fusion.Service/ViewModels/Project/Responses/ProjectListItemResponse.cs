@@ -22,5 +22,6 @@ namespace Fusion.Service.ViewModels.Project.Responses
         public DateTime? EndDate { get; set; }
         public string? Status { get; set; }    // Planned | InProgress | OnHold | Completed
         public string Ptype { get; set; } = "Internal"; // Internal | Outsourced
+        public bool IsRequest { get; set; } = false;
     }
 }

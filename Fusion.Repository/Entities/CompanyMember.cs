@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
@@ -29,7 +28,7 @@ public partial class CompanyMember
 
     [Column("joined_at")]
     [Precision(3)]
-    public DateTime JoinedAt { get; set; }
+    public DateTime? JoinedAt { get; set; }
 
     [ForeignKey("CompanyId")]
     [InverseProperty("CompanyMembers")]
@@ -38,5 +37,8 @@ public partial class CompanyMember
     [ForeignKey("UserId")]
     [InverseProperty("CompanyMembers")]
     public virtual User? User { get; set; }
+
+    [InverseProperty(nameof(CompanySubscriptionEntry.CompanyMember))]
+    public virtual ICollection<CompanySubscriptionEntry> CompanySubscriptionEntries { get; set; } = new List<CompanySubscriptionEntry>();
 
 }

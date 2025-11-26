@@ -15,6 +15,7 @@ namespace Fusion.Service.ViewModels.Projects.Requests
         public Guid? RequesterCompanyId { get; set; }
 
         public Guid? ExecutorCompanyId { get; set; }
+        public Guid? ContractId { get; set; }
 
         [Required(ErrorMessage = "Name can not empty")]
         public string? Name { get; set; }
@@ -27,5 +28,7 @@ namespace Fusion.Service.ViewModels.Projects.Requests
         [Required(ErrorMessage = "End Date can not empty")]
 
         public DateOnly? EndDate { get; set; }
+
+
     }
 }

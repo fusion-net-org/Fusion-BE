@@ -4,6 +4,8 @@ using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.User;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
+using Fusion.Repository.ViewModels.Users;
+using Microsoft.EntityFrameworkCore;
 
 namespace Fusion.Repository.IRepositories
 {
@@ -21,8 +23,11 @@ namespace Fusion.Repository.IRepositories
         Task<User?> GetUserWithRolesAndPermissionsInCompanyAsync(Guid userId, Guid companyId);
         Task<int> GetAllUserAsync(CancellationToken cancellationToken = default);
         Task<(int False, int True)> GetCountUserByStatusAsync(CancellationToken cancellationToken = default);
-        //Task<bool> EmailVerificationAsync(string token, CancellationToken cancellationToken = default);
-
-
+        Task<bool> EmailVerificationAsync(string token, CancellationToken cancellationToken = default);
+        public Task<int> GetTotalUsersAsync(CancellationToken cancellationToken = default);
+        Task<List<GetUserGrowth>> GetUserGrowthAsync( DateTime? from,DateTime? to, CancellationToken cancellationToken = default);
+        Task<List<UserCompanyDistributionPoint>> GetTopCompaniesByUserCountAsync(int top, CancellationToken cancellationToken = default);
+        Task<List<UserPermissionLevelPoint>> GetUserPermissionLevelOverviewAsync( CancellationToken cancellationToken = default);
+        Task<List<UserMonthlyNewPoint>> GetMonthlyNewUsersInYearAsync(int year,CancellationToken ct = default);
     }
 }

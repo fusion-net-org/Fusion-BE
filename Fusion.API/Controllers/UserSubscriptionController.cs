@@ -1,19 +1,17 @@
 ﻿
 using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.UserSubscriptions;
-using Fusion.Repository.Enums;
+using Fusion.Repository.Bases.Responses;
 using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.UserSubscription.Requests;
 using Fusion.Service.ViewModels.UserSubscription.Responses;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Fusion.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
     public class UserSubscriptionController : ControllerBase
     {
         private readonly IUserSubscriptionService _userSubscriptionService;
@@ -23,64 +21,89 @@ namespace Fusion.API.Controllers
             _userSubscriptionService = userSubscriptionService;
         }
 
-        [HttpGet]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PagedResult<UserSubscriptionListItem>>))]
-        public async Task<IActionResult> GetAll([FromQuery] UserSubscriptionPagedRequest request, CancellationToken cancellationToken)
+
+        /// <summary>Create a UserSubscription from a successful Transaction.</summary>
+        [HttpPost]
+        public async Task<ActionResult<UserSubscriptionDetailResponse>> Create(
+            [FromBody] UserSubscriptionCreateRequest req,
+            CancellationToken ct)
         {
-            var result = await _userSubscriptionService.GetAllAsync(request, cancellationToken);
-            return Ok(ResponseModel<PagedResult<UserSubscriptionListItem>>.Ok(
-                data: result,
-                message: "Get user subscriptions successfully"));
+            var created = await _userSubscriptionService.CreateAsync(req, ct);
+            return CreatedAtAction(nameof(GetDetail), new { id = created.Id }, created);
         }
 
-        [HttpGet("user")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PagedResult<UserSubscriptionListItem>>))]
-        public async Task<IActionResult> GetAllByUserId([FromQuery] UserSubscriptionPagedRequest request, CancellationToken cancellationToken)
-        {
-            var result = await _userSubscriptionService.GetAllByUserIdAsync(request, cancellationToken);
-            return Ok(ResponseModel<PagedResult<UserSubscriptionListItem>>.Ok(
-                data: result,
-                message: "Get user subscriptions successfully"));
-        }
-        /// <summary>
-        /// Lấy chi tiết 1 UserSubscription theo Id
-        /// </summary>
+        /// <summary>Get subscription detail by Id.</summary>
         [HttpGet("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<UserSubscriptionDetailResponse>))]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
+        public async Task<ActionResult> GetDetail(
+            Guid id, CancellationToken ct)
         {
-            var result = await _userSubscriptionService.GetByIdAsync(id, cancellationToken);
+            var dto = await _userSubscriptionService.GetDetailAsync(id, ct);
+            if (dto == null) return NotFound();
 
-            return Ok(ResponseModel<UserSubscriptionDetailResponse>.Ok(
-                data: result,
-                message: "Get user subscription successfully"));
+            return Ok(ResponseModel< UserSubscriptionDetailResponse>.Ok(
+                   data: dto,
+                   message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "transactions")));
         }
 
-        /// <summary>
-        /// Tạo mới UserSubscription
-        /// </summary>
-        [HttpPost]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<UserSubscriptionDetailResponse>))]
-        public async Task<IActionResult> Create([FromBody] UserSubscriptionCreateRequest request, CancellationToken cancellationToken)
+        [HttpGet("userpage")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PagedResult<UserSubscriptionResponse>>))]
+        public async Task<IActionResult> GetPagedByUserId(
+          [FromQuery] UserSubscriptionPagedRequest request,
+          CancellationToken cancellationToken)
         {
-            var result = await _userSubscriptionService.CreateAsync(request, cancellationToken);
-            return Ok(ResponseModel<UserSubscriptionDetailResponse>.Ok(
+            var result = await _userSubscriptionService.GetPagedByUserIdAsync(request, cancellationToken);
+            return Ok(ResponseModel<PagedResult<UserSubscriptionResponse>>.Ok(
                 data: result,
-                message: "Create user subscription successfully"));
+                message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "transactions")));
         }
 
-        /// <summary>
-        /// Cập nhật trạng thái (Status) cho UserSubscription
-        /// </summary>
-        [HttpPut("{id:guid}/status")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<UserSubscriptionDetailResponse>))]
-        public async Task<IActionResult> UpdateStatus(Guid id, [FromQuery] SubscriptionStatus status, CancellationToken cancellationToken)
+
+        [HttpGet("allActive")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<List<UserSubscriptionActiveResponse>>))]
+        public async Task<IActionResult> GetAllActiveByUserId( CancellationToken cancellationToken)
         {
-            var result = await _userSubscriptionService.UpdateStatusAsync(id, status, cancellationToken);
-            return Ok(ResponseModel<UserSubscriptionDetailResponse>.Ok(
+            var result = await _userSubscriptionService.GetAllActiveByUserIdAsync(cancellationToken);
+            return Ok(ResponseModel<List<UserSubscriptionActiveResponse>>.Ok(
                 data: result,
-                message: $"Update user subscription status to {status} successfully"));
+                message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "transactions")));
         }
+
+        /// <summary>Get active subscription of a user.</summary>
+        [HttpGet("active/{userId:guid}")]
+        public async Task<ActionResult<UserSubscriptionDetailResponse>> GetActiveByUser(
+            Guid userId, CancellationToken ct)
+        {
+            var dto = await _userSubscriptionService.GetActiveByUserAsync(userId, ct);
+            if (dto == null) return NotFound();
+            return Ok(dto);
+        }
+
+        /// <summary>Cancel a subscription (soft-cancel: sets status & timestamp).</summary>
+        [HttpPost("{id:guid}/cancel")]
+        public async Task<IActionResult> Cancel(Guid id, CancellationToken ct)
+        {
+            var ok = await _userSubscriptionService.CancelAsync(id, ct);
+            return ok ? NoContent() : NotFound();
+        }
+
+        /// <summary>Pause an active subscription.</summary>
+        [HttpPost("{id:guid}/pause")]
+        public async Task<IActionResult> Pause(Guid id, CancellationToken ct)
+        {
+            var ok = await _userSubscriptionService.PauseAsync(id, ct);
+            return ok ? NoContent() : NotFound();
+        }
+
+        /// <summary>Resume a paused subscription.</summary>
+        [HttpPost("{id:guid}/resume")]
+        public async Task<IActionResult> Resume(Guid id, CancellationToken ct)
+        {
+            var ok = await _userSubscriptionService.ResumeAsync(id, ct);
+            return ok ? NoContent() : NotFound();
+        }
+
+
+
     }
 }

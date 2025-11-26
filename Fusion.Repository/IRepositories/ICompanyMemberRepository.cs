@@ -38,7 +38,14 @@ namespace Fusion.Repository.IRepositories
         Task<List<UserRole?>> AddRoleForMemberInCompany(Guid companyId, List<int> roleIds, Guid memberId, string inviterEmail, CancellationToken token =  default);
         Task<CompanyMember?> GetCompanyMemberByCompanyIdAndUserIdAsync(Guid companyId, Guid userId, CancellationToken token = default);
 
-        Task<Dictionary<Guid, UserRoleLite>> GetUserRoleMapInCompanyAsync(
-     Guid companyId, IEnumerable<Guid> userIds, CancellationToken token = default);
+        Task<Dictionary<Guid, UserRoleLite>> GetUserRoleMapInCompanyAsync( Guid companyId, IEnumerable<Guid> userIds, CancellationToken token = default);
+
+        Task<Dictionary<Guid, List<UserRoleLite>>> GetUserRolesMapInCompanyAsync(Guid companyId, IEnumerable<Guid> userIds,
+    CancellationToken token = default);
+
+        Task<PagedResult<CompanyMember>> GetCompanyMemberByUserIdAsync(Guid userId, CompanyMemberPagedRequest request,CancellationToken token = default);
+        Task<CompanyMember?> AcceptJoinMemberByIdAsync(long memberId, CancellationToken token = default);
+        Task<CompanyMember?> RejectJoinMemberByIdAsync(long memberId, CancellationToken token = default);
+
     }
 }

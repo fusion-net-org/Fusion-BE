@@ -3,9 +3,11 @@ using Fusion.Repository.Repositories;
 using Fusion.Service.Commons.Helpers;
 using Fusion.Service.IServices;
 using Fusion.Service.Services;
+using Fusion.Service.ViewModels.AITaskGenerate;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Net.payOS;
+using System.Net.Http.Headers;
 
 namespace Fusion.Service
 {
@@ -33,18 +35,25 @@ namespace Fusion.Service
             //company
             services.AddScoped<ICompanyService, CompanyService>();
             services.AddScoped<ICompanyMemberService, CompanyMemberService>();
+            services.AddScoped<IProjectBoardService, ProjectBoardService>();
+            services.AddScoped<ITaskWorkflowService, TaskWorkflowService>();
 
             //task
             services.AddScoped<ITaskService, TaskService>();
+            //checklist
+            services.AddScoped<ITaskChecklistService, TaskChecklistService>();
 
-			//ticket
-			services.AddScoped<ITicketService, TicketService>();
+            //ticket
+            services.AddScoped<ITicketService, TicketService>();
 
             //comment
             services.AddScoped<ICommentService, CommentService>();
 
             //project request
             services.AddScoped<IProjectRequestService , ProjectRequestService>();
+
+            //user feature catalog
+            services.AddScoped<IFeatureCatalogService, FeatureCatalogService>();
 
             //Subscription plan
             services.AddScoped<ISubscriptionPlanService, SubscriptionPlanService>();
@@ -57,6 +66,8 @@ namespace Fusion.Service
 
             //user subscrption
             services.AddScoped<IUserSubscriptionService, UserSubscriptionService>();
+
+
 
             //notification
             services.AddScoped<INotificationService, NotificationService>();
@@ -77,7 +88,7 @@ namespace Fusion.Service
             services.AddScoped<IProjectMemberService, ProjectMemberService>();
 
             // admin
-            //services.AddScoped<IAdminService, AdminService>();
+            services.AddScoped<IAdminService, AdminService>();
 
             //userlog 
             services.AddScoped<IUserLogService, UserLogService>();
@@ -85,8 +96,17 @@ namespace Fusion.Service
             //contract
             services.AddScoped<IContractService, ContractService>();
 
+            //workflow status
+            services.AddScoped<IWorkflowStatusService, WorkflowStatusService>();
+
             // company subscription
+            //company subscription
             services.AddScoped<ICompanySubscriptionService, CompanySubscriptionService>();
+            services.AddScoped<IAiTaskGenerationService, AiTaskGenerationService>();
+
+            // tiocket comment
+            services.AddScoped<ITicketCommentService, TicketCommentService>();
+
             // PayOS
             services.AddSingleton<PayOS>(sp =>
             {
@@ -103,6 +123,22 @@ namespace Fusion.Service
             });
             services.AddScoped<IPayOSService, PayOSService>();
 
+            services.Configure<AiTaskGenerationOptions>(
+                configuration.GetSection("AiTaskGeneration"));
+
+            // Named HttpClient "openai"
+            services.AddHttpClient("openai", client =>
+            {
+                var baseUrl = configuration["OpenAI:BaseUrl"] ?? "https://api.openai.com";
+                client.BaseAddress = new Uri(baseUrl);
+
+                var apiKey = configuration["OpenAI:ApiKey"];
+                if (!string.IsNullOrWhiteSpace(apiKey))
+                {
+                    client.DefaultRequestHeaders.Authorization =
+                        new AuthenticationHeaderValue("Bearer", apiKey);
+                }
+            });
             return services;
         }
      }

@@ -92,7 +92,6 @@ namespace Fusion.Repository.Repositories
                     UserId = member.Id,
                     Status = "Pending",
                     IsDeleted = false,
-                    JoinedAt = DateTime.UtcNow.AddHours(7),
                 };
 
                 await _context.CompanyMembers.AddAsync(companyMember, token);
@@ -133,8 +132,8 @@ namespace Fusion.Repository.Repositories
             {
                 if (!ur.UserId.HasValue || !ur.RoleId.HasValue) continue;
 
-                var uid = ur.UserId.Value;    
-                var rid = ur.RoleId.Value;    
+                var uid = ur.UserId.Value;
+                var rid = ur.RoleId.Value;
 
                 if (!roleMap.TryGetValue(rid, out var roleName)) continue;
 
@@ -152,6 +151,43 @@ namespace Fusion.Repository.Repositories
             return result;
         }
 
+        public async Task<Dictionary<Guid, List<UserRoleLite>>> GetUserRolesMapInCompanyAsync(Guid companyId, IEnumerable<Guid> userIds,
+    CancellationToken token = default)
+        {
+            var result = new Dictionary<Guid, List<UserRoleLite>>();
+            var uidList = (userIds ?? Array.Empty<Guid>()).Distinct().ToList();
+            if (uidList.Count == 0) return result;
+
+            var roles = await _context.Roles
+                .AsNoTracking()
+                .Where(r => r.CompanyId == companyId)
+                .ToListAsync(token);
+
+            var roleMap = roles.ToDictionary(r => r.Id, r => r.RoleName ?? string.Empty);
+
+            var userRoles = await _context.UserRoles
+                .AsNoTracking()
+                .Where(ur => ur.UserId.HasValue && uidList.Contains(ur.UserId.Value) && ur.RoleId.HasValue)
+                .ToListAsync(token);
+
+            foreach (var ur in userRoles)
+            {
+                var uid = ur.UserId.Value;
+                var rid = ur.RoleId.Value;
+
+                if (!roleMap.TryGetValue(rid, out var roleName)) continue;
+
+                if (!result.TryGetValue(uid, out var list))
+                {
+                    list = new List<UserRoleLite>();
+                    result[uid] = list;
+                }
+
+                list.Add(new UserRoleLite { RoleId = rid, RoleName = roleName });
+            }
+
+            return result;
+        }
 
         public async Task<PagedResult<CompanyMember>> GetPagedCompanyMemberByCompanyIdAsync(Guid companyId, string mail, CompanyMemberPagedSearchRequest request, CancellationToken token)
         {
@@ -348,6 +384,7 @@ namespace Fusion.Repository.Repositories
 
             companyMember.Status = "InActive";
             companyMember.IsDeleted = false;
+            companyMember.JoinedAt = null;
 
             _context.CompanyMembers.Update(companyMember);
             await _context.SaveChangesAsync(token);
@@ -361,31 +398,31 @@ namespace Fusion.Repository.Repositories
             var company = await _context.Companies.FindAsync(companyId);
             if (company == null)
                 throw CustomExceptionFactory.
-                     CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Company is not existed"));
+                     CreateNotFoundError("Company is not existed");
 
             var member = await _context.Users.FindAsync(memberId);
             if (member == null)
                 throw CustomExceptionFactory.
-                     CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Member is not existed"));
+                     CreateNotFoundError("Member is not existed");
 
             var company_member = await _context.CompanyMembers.SingleOrDefaultAsync(x => x.CompanyId == companyId && x.UserId == memberId);
             if (company_member == null)
                 throw CustomExceptionFactory.
-                     CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Member company does not existed"));
+                     CreateNotFoundError("Member company does not existed");
 
             var inviter = await _context.Users.FirstOrDefaultAsync(u => u.Email == inviterEmail);
             if (inviter == null)
                 throw CustomExceptionFactory.CreateNotFoundError(
-                    ResponseMessages.NOT_FOUND.FormatMessage("Inviter does not exist"));
+                    "Inviter does not exist");
 
             var company_inviter = await _context.CompanyMembers.SingleOrDefaultAsync(x => x.CompanyId == companyId && x.UserId == inviter.Id);
             if (company_inviter == null)
                 throw CustomExceptionFactory.
-                     CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Inivter company does not existed"));
+                     CreateNotFoundError("Inivter company does not existed");
 
             if (company_inviter.CompanyId != company_member.CompanyId)
                 throw CustomExceptionFactory.
-                     CreateNotFoundError(ResponseMessages.BAD_REQUEST.FormatMessage("Inivter and Member not in the same company"));
+                     CreateNotFoundError("Inivter and Member not in the same company");
 
             var addedRoles = new List<UserRole>();
 
@@ -394,7 +431,7 @@ namespace Fusion.Repository.Repositories
                 var role = await _context.Roles.FirstOrDefaultAsync(r => r.Id == roleId && r.CompanyId == companyId);
                 if (role == null)
                     throw CustomExceptionFactory.CreateNotFoundError(
-                        ResponseMessages.NOT_FOUND.FormatMessage($"Role {roleId} does not belong to this company"));
+                       $"Role {roleId} does not belong to this company");
 
                 // check if this user already has that role
                 var exist = await _context.UserRoles.FirstOrDefaultAsync(x => x.UserId == memberId && x.RoleId == roleId);
@@ -447,6 +484,87 @@ namespace Fusion.Repository.Repositories
                 .SingleOrDefaultAsync(cm => cm.CompanyId == companyId
                                         && cm.UserId == userId
                                         && cm.IsDeleted == false, token);
+        }
+        public async Task<PagedResult<CompanyMember>> GetCompanyMemberByUserIdAsync(Guid userId, CompanyMemberPagedRequest request, CancellationToken token = default)
+        {
+            var query = _context.CompanyMembers
+                .Include(cm => cm.User)
+                .Include(cm => cm.Company)
+                .ThenInclude(c => c.OwnerUser)
+                .AsQueryable();
+
+            query = query.Where(cm => cm.UserId == userId && cm.IsDeleted == false);
+
+            if (!string.IsNullOrEmpty(request.CompanyName))
+                query = query.Where(cm => cm.Company.Name.Contains(request.CompanyName));
+
+            if (!string.IsNullOrEmpty(request.KeyWord))
+            {
+                var kw = request.KeyWord.ToLower();
+                query = query.Where(cm => (cm.User.UserName ?? "").ToLower().Contains(kw) ||
+                                          (cm.User.Email ?? "").ToLower().Contains(kw) ||
+                                          (cm.User.Phone ?? "").ToLower().Contains(kw));
+            }
+
+            if (!string.IsNullOrEmpty(request.Status))
+                query = query.Where(cm => cm.Status == request.Status);
+
+            if (request.CreateAtRange != null)
+            {
+                if (request.CreateAtRange.From.HasValue)
+                    query = query.Where(cm => cm.Company.CreateAt >= request.CreateAtRange.From.Value);
+                if (request.CreateAtRange.To.HasValue)
+                    query = query.Where(cm => cm.Company.CreateAt <= request.CreateAtRange.To.Value);
+            }
+
+            if (request.JoinedAtRange != null)
+            {
+                if (request.JoinedAtRange.From.HasValue)
+                    query = query.Where(cm => cm.JoinedAt >= request.JoinedAtRange.From.Value);
+                if (request.JoinedAtRange.To.HasValue)
+                    query = query.Where(cm => cm.JoinedAt <= request.JoinedAtRange.To.Value);
+            }
+
+            return await query.ToPagedResultAsync(request, token);
+        }
+        public async Task<CompanyMember?> AcceptJoinMemberByIdAsync(long memberId, CancellationToken token = default)
+        {
+            var companyMember = await _context.CompanyMembers
+                .Include(x => x.User)
+                .Include(x => x.Company)
+                .SingleOrDefaultAsync(cm => cm.Id == memberId && cm.Status == "Pending" && cm.IsDeleted == false, token);
+
+            if (companyMember == null)
+                throw CustomExceptionFactory.CreateNotFoundError("Member company does not exist or is not pending");
+
+            companyMember.JoinedAt = DateTime.UtcNow.AddHours(7);
+            companyMember.Status = "Active";
+            companyMember.IsDeleted = false;
+
+            _context.CompanyMembers.Update(companyMember);
+            await _context.SaveChangesAsync(token);
+
+            return companyMember;
+        }
+
+        public async Task<CompanyMember?> RejectJoinMemberByIdAsync(long memberId, CancellationToken token = default)
+        {
+            var companyMember = await _context.CompanyMembers
+                .Include(x => x.User)
+                .Include(x => x.Company)
+                .SingleOrDefaultAsync(cm => cm.Id == memberId && cm.Status == "Pending" && cm.IsDeleted == false, token);
+
+            if (companyMember == null)
+                throw CustomExceptionFactory.CreateNotFoundError("Member company does not exist or is not pending");
+
+            companyMember.Status = "InActive";
+            companyMember.IsDeleted = false;
+            companyMember.JoinedAt = null;
+
+            _context.CompanyMembers.Update(companyMember);
+            await _context.SaveChangesAsync(token);
+
+            return companyMember;
         }
 
     }

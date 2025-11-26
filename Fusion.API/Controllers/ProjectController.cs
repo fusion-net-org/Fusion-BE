@@ -1,14 +1,17 @@
 ﻿
+using Azure;
 using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.Project;
 using Fusion.Repository.Bases.Responses;
 using Fusion.Repository.ViewModels;
+using Fusion.Repository.ViewModels.Project;
 using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.Project.Requests;
+using Fusion.Service.ViewModels.Project.Requests.Overview;
 using Fusion.Service.ViewModels.Project.Responses;
+using Fusion.Service.ViewModels.Project.Responses.Overview;
 using Fusion.Service.ViewModels.ProjectMembers.Responses;
-using Fusion.Service.ViewModels.Users.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -24,6 +27,23 @@ namespace Fusion.API.Controllers
         public ProjectController(IProjectService service)
         {
             _service = service;
+        }
+
+
+        [Authorize(Roles = "Admin")]
+        [HttpGet("growth-and-completion")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<ProjectGrowthOverviewResponse>))]
+
+        public async Task<IActionResult> GetProjectGrowthAndCompletion(
+        [FromQuery] ProjectGrowthOverviewRequest req,
+        CancellationToken ct)
+        {
+            var data = await _service.GetProjectGrowthOverviewAsync(req, ct);
+
+            return Ok(ResponseModel<ProjectGrowthOverviewResponse>.Ok(
+                 data: data,
+                 message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "Growth and completion project")
+            ));
         }
 
         [HttpPost("companies/{companyId:guid}/projects")]
@@ -111,6 +131,17 @@ namespace Fusion.API.Controllers
             ));
         }
 
+        [HttpGet("detail/{projectId:guid}")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<ProjectSummaryResponseV2>))]
+        public async Task<IActionResult> GetProjectsByIdDetailAsync(Guid projectId, CancellationToken cancellationToken = default)
+        {
+            var response = await _service.GetProjectsByIdDetailsAsync(projectId, cancellationToken);
+            return Ok(ResponseModel<ProjectSummaryResponseV2>.Ok(
+                data: response,
+                message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "Project Admin")
+            ));
+        }
+
         [HttpGet("projects/{projectId:guid}")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<ProjectResponseVersion3>))]
         public async Task<IActionResult> GetProjectByID(Guid projectId, CancellationToken ct = default)
@@ -119,6 +150,47 @@ namespace Fusion.API.Controllers
             return Ok(ResponseModel<ProjectResponseVersion3>.Ok(
                 data: response,
                 message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "Project Detail")
+            ));
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpGet("project-execution-overview")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<ProjectExecutionOverviewResponse>))]
+        public async Task<IActionResult> GetProjectExecutionOverview( [FromQuery] ProjectGrowthOverviewRequest req, CancellationToken ct)
+        {
+            var data = await _service.GetProjectExecutionOverviewAsync(req, ct);
+
+            return Ok(ResponseModel<ProjectExecutionOverviewResponse>.Ok(
+                data: data,
+                message: ResponseMessageHelper.FormatMessage( ResponseMessages.GET_SUCCESS, "Project execution overview")
+            ));
+        }
+
+        [HttpGet("projects/user")]
+        [ProducesResponseType(typeof(ResponseModel<PagedResult<ProjectSummaryResponseV2>>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetProjectsByUserId([FromQuery] ProjectSummarySearchRequest request, CancellationToken ct)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+                return Unauthorized(ResponseModel<string>.Error(StatusCodes.Status401Unauthorized, "Don't find token!"));
+
+            var result = await _service.GetProjectsByUserIdAsync(request, userId, ct);
+            return Ok(ResponseModel<PagedResult<ProjectSummaryResponseV2>>.Ok(result));
+        }
+
+        [HttpGet("companies/projects-by-company")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<List<ProjectResponseVersion3>>))]
+        public async Task<IActionResult> GetProjectsByCompany(
+        [FromQuery] Guid companyId,
+        [FromQuery] Guid? companyRequestId,
+        [FromQuery] Guid? executorCompanyId,
+        CancellationToken ct)
+        {
+            var result = await _service.GetProjectsByCompanyAsync(companyId, companyRequestId, executorCompanyId, ct);
+
+            return Ok(ResponseModel<List<ProjectResponseVersion3>>.Ok(
+                data: result,
+                message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "Project List")
             ));
         }
 
