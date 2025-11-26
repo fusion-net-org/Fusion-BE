@@ -75,6 +75,24 @@ namespace Fusion.Repository.Repositories
             return notification;
         }
 
+        public async Task<Notification> CreateTaskCommentNotificationAsync(Notification notification, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(notification.Title))
+                throw CustomExceptionFactory.CreateBadRequestError("Notification Title does not exist");
+
+
+            notification.IsRead = false;
+            notification.IsDeleted = false;
+            notification.NotificationType = NotificationTypeEnum.TASK.ToString();
+            notification.LinkUrlWeb = null;
+            notification.LinkUrlMobile = null;
+
+            _context.Notifications.Add(notification);
+            await _context.SaveChangesAsync();
+
+            return notification;
+        }
+
         public async Task<IEnumerable<Notification>> GetUserNotificationsAsync(Guid userId, CancellationToken cancellationToken = default)
         {
             var exists = await _context.Users.FindAsync(userId, cancellationToken);

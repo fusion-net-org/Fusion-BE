@@ -33,4 +33,8 @@ namespace Fusion.Service.ViewModels.Notifications.Requests
     }
 
     public record SendAllNotificationRequest(string? Title, string? Body, string? Event);
+
+    public record SendTaskCommentNotificationRequest(string? Title, string? Body, string? Event);
+
+
 }

@@ -23,6 +23,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace Fusion.Service.Services;
 
@@ -997,9 +998,9 @@ public class TaskService : ITaskService
         };
     }
 
-    public async Task<TaskResponse> GetTaskDetailByTaskIdAsync(Guid taskId, CancellationToken token = default)
+    public async Task<TaskResponse> GetTaskDetailByTaskIdAsync(Guid userId, Guid taskId, CancellationToken token = default)
     {
-        var t = await _repo.GetTaskDetailByTaskIdAsync(taskId, token);
+        var t = await _repo.GetTaskDetailByTaskIdAsync(userId, taskId, token);
 
         if (t == null)
             throw CustomExceptionFactory.CreateNotFoundError(
@@ -1142,6 +1143,15 @@ public class TaskService : ITaskService
         };
     }
 
+    public async Task<List<ProjectTaskResponse>> GetSubTasksByTaskIdAsync(Guid userId,Guid taskId, CancellationToken token = default)
+    {
+        var subTasks = await _repo.GetSubTasksByTaskIdAsync(userId ,taskId, token);
+
+        if (!subTasks.Any())
+            throw CustomExceptionFactory.CreateNotFoundError($"Task with Id {taskId} do not have any subtasks");
+
+        return _mapper.Map<List<ProjectTaskResponse>>(subTasks);
+    }
 
     #endregion
     #region Attachments

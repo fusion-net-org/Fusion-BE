@@ -19,6 +19,8 @@ namespace Fusion.Repository.IRepositories
 
         Task<Notification> CreateAdminNotificationAsync(Notification notification, CancellationToken cancellationToken = default);
 
+        Task<Notification> CreateTaskCommentNotificationAsync(Notification notification, CancellationToken cancellationToken = default);
+
         Task DeleteNotificationAsync(Guid userId, Guid notificationId, CancellationToken cancellationToken = default);
 
         Task DeleteAllNotificationByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);

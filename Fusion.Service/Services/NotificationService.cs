@@ -23,12 +23,14 @@ namespace Fusion.Service.Services
     {
         private readonly INotificationRepository _notificationRepository;
         private readonly IFcmService _fcmService;
+        private readonly ITaskRepository _taskRepository;
         private readonly IMapper _mapper;
 
-        public NotificationService(INotificationRepository notificationRepository, IFcmService fcmService, IMapper mapper)
+        public NotificationService(INotificationRepository notificationRepository, IFcmService fcmService, ITaskRepository taskRepository, IMapper mapper)
         {
             _notificationRepository = notificationRepository;
             _fcmService = fcmService;
+            _taskRepository = taskRepository;
             _mapper = mapper;
         }
 
@@ -65,6 +67,48 @@ namespace Fusion.Service.Services
 
         }
 
+        public async Task SendNotificationToTaskMembersAsync(Guid taskId, Guid userId, SendTaskCommentNotificationRequest request, CancellationToken cancellationToken = default)
+        {
+            var memberIds = await _taskRepository.GetMemberIdByTaskId(taskId, cancellationToken);
+
+            if (!memberIds.Any())
+                throw CustomExceptionFactory.CreateNotFoundError("Task member is not existed");
+
+            if (!memberIds.Contains(userId))
+                throw CustomExceptionFactory.CreateBadRequestError("User does not belong to this task");
+
+            foreach (var memberId in memberIds)
+            {
+                if (userId == memberId)
+                    continue;
+
+                var notification = new Notification
+                {
+                    Title = request.Title,
+                    Body = request.Body,
+                    UserId = memberId,
+                    IsRead = false,
+                    IsDeleted = false,
+                    CreateAt = DateTime.UtcNow.AddHours(7)
+                };
+
+                var savedNotification = await _notificationRepository.CreateTaskCommentNotificationAsync(notification, cancellationToken);
+
+                if(savedNotification == null)
+                    throw CustomExceptionFactory.CreateBadRequestError("Error when send notification to member");
+
+                await _fcmService.SendToUserAsync(new FCMNotificationRequest
+                {
+                    NotificationId = savedNotification.Id,
+                    Body = request.Body,
+                    Title = request.Title,
+                    LinkUrlMobile = null,
+                    LinkUrlWeb = null,
+                    Type = savedNotification.NotificationType,
+                    UserId = memberId,
+                }, savedNotification.NotificationType, cancellationToken);
+            }
+        }
         public async Task SendAllNotificationAsync(SendAllNotificationRequest request, CancellationToken cancellationToken = default)
         {
 

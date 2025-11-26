@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json.Linq;
 using System.Security.Claims;
+using System.Threading;
 
 namespace Fusion.API.Controllers;
 
@@ -323,16 +324,31 @@ public class TaskController : ControllerBase
         if (uid is null)
             return Unauthorized(ResponseModel<string>.Error(StatusCodes.Status401Unauthorized, "Missing token"));
 
-        var data = await _svc.GetTaskDetailByTaskIdAsync(taskId, cancellationToken);
+        var data = await _svc.GetTaskDetailByTaskIdAsync(uid.Value, taskId, cancellationToken);
 
         return Ok(ResponseModel<TaskResponse>.Ok(
             data, ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "task")));
     }
-    #endregion
 
-    #region Attachments
+    [HttpGet("tasks/{taskId:guid}/subtasks")]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<List<ProjectTaskResponse>>))]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetSubTasksByTaskId(Guid taskId, CancellationToken token)
+    {
+        var uid = GetUserId();
+        if (uid is null)
+            return Unauthorized(ResponseModel<string>.Error(StatusCodes.Status401Unauthorized, "Missing token"));
 
-    [HttpPost("tasks/{taskId:guid}/attachments")]
+        var data = await _svc.GetSubTasksByTaskIdAsync(uid.Value, taskId, token);
+
+        return Ok(ResponseModel<List<ProjectTaskResponse>>.Ok(
+            data, ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "subtasks")));
+    }
+        #endregion
+
+        #region Attachments
+
+        [HttpPost("tasks/{taskId:guid}/attachments")]
     [Consumes("multipart/form-data")]
     [ProducesResponseType(typeof(ResponseModel<IReadOnlyList<TaskAttachmentResponse>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> UploadAttachments(

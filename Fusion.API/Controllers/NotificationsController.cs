@@ -103,6 +103,28 @@ namespace Fusion.API.Controllers
                 ));
         }
 
+        [HttpPost("send/task/{taskId:guid}")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<string>))]
+        public async Task<IActionResult> SendTaskCommentNotification(Guid taskId, [FromBody] SendTaskCommentNotificationRequest request, CancellationToken token = default)
+        {
+
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(ResponseModel<string>.Error(
+                    StatusCodes.Status401Unauthorized,
+                    "Don't find token!"));
+            }
+
+            await _notificationService.SendNotificationToTaskMembersAsync(taskId, userId, request, token);
+
+            return Ok(ResponseModel<string>.Ok(
+                data: null,
+                message: "Send Notification success"
+                ));
+        }
+
         [HttpDelete("{notificationId:guid}")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<string>))]
         public async Task<IActionResult> DeleteNotificationById(Guid notificationId, CancellationToken cancellationToken)
