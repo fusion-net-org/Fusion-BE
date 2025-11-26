@@ -29,8 +29,8 @@ namespace Fusion.Service.ViewModels.Companies.Validators
 
                 RuleFor(x => x.Email)
                    .NotEmpty().WithMessage("Email must not be empty!")
-                   .EmailAddress().WithMessage("Invalid email format!")
-                   .Matches(@"@gmail\.com$").WithMessage("Only ...@gmail.com email addresses are allowed!");
+                   .EmailAddress().WithMessage("Invalid email format!");
+                   //.Matches(@"@gmail\.com$").WithMessage("Only ...@gmail.com email addresses are allowed!");
             });
 
             RuleSet("Update", () =>
@@ -42,8 +42,8 @@ namespace Fusion.Service.ViewModels.Companies.Validators
                     .Matches(@"^\d{10}$").WithMessage("Company tax-code must be exactly 10 digits and contain only numbers!");
 
                 RuleFor(x => x.Email)
-                   .EmailAddress().WithMessage("Invalid email format!")
-                   .Matches(@"@gmail\.com$").WithMessage("Only ...@gmail.com email addresses are allowed!");
+                   .EmailAddress().WithMessage("Invalid email format!");
+                   //.Matches(@"@gmail\.com$").WithMessage("Only ...@gmail.com email addresses are allowed!");
             });
         }
     }
