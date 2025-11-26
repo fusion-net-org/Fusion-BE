@@ -16,8 +16,9 @@ namespace Fusion.Service.IServices
         Task<bool> DeleteTaskAsync(Guid id, Guid userId = default, CancellationToken ct = default);
         Task<PagedResult<ProjectTaskResponse>> GetTasksBySprintIdAsync(Guid sprintId, TaskBySprintRequest request, CancellationToken ct = default);
         Task<PagedResult<TaskResponse>> GetAllTaskByUserId(Guid userId, TaskFilterRequest request, CancellationToken token = default);
+        Task<List<ProjectTaskResponse>> GetSubTasksByTaskIdAsync(Guid userId, Guid taskId, CancellationToken token = default);
 
-        Task<TaskResponse> GetTaskDetailByTaskIdAsync(Guid taskId, CancellationToken token = default);
+        Task<TaskResponse> GetTaskDetailByTaskIdAsync(Guid userId, Guid taskId, CancellationToken token = default);
 
         //---------------------------------------------------------------------------
         Task<ProjectTaskResponse> ChangeStatus(Guid id, string statusText, Guid userId, CancellationToken ct = default);

@@ -1,6 +1,7 @@
 ﻿using FirebaseAdmin.Messaging;
 using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Bases.Responses;
+using Fusion.Repository.Entities;
 using Fusion.Repository.IRepositories;
 using Fusion.Repository.Repositories;
 using Fusion.Service.Commons.Helpers;
@@ -19,17 +20,21 @@ namespace Fusion.Service.Services
     {
         private readonly IUserDeviceRepository _userDeviceRepository;
         private readonly IUserNotificationSettingRepository _userNotificationSettingRepository;
+        private readonly ITaskRepository _taskRepository;
+        private readonly INotificationRepository _notificationRepository;
 
-        public FcmService(IUserDeviceRepository userDeviceRepository, IUserNotificationSettingRepository userNotificationSettingRepository)
+        public FcmService(IUserDeviceRepository userDeviceRepository, IUserNotificationSettingRepository userNotificationSettingRepository, INotificationRepository notificationRepository, ITaskRepository taskRepository)
         {
             _userDeviceRepository = userDeviceRepository;
             _userNotificationSettingRepository = userNotificationSettingRepository;
+            _taskRepository = taskRepository;
+            _notificationRepository = notificationRepository;
         }
 
         public async Task SendToUserAsync(FCMNotificationRequest request, string notificationType, CancellationToken cancellationToken = default)
         {
 
-            if(request.UserId == null)
+            if (request.UserId == null)
                 throw CustomExceptionFactory.CreateNotFoundError("User not found to send notification");
 
             var userNotificationSetting = await _userNotificationSettingRepository.GetUserNotificationByType(request.UserId.Value, notificationType, cancellationToken);

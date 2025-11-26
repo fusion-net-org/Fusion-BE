@@ -1,10 +1,12 @@
-﻿using Fusion.Repository.Bases.Page;
+﻿using Fusion.Repository.Bases.Exceptions;
+using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.Task;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.IRepositories;
 using Microsoft.EntityFrameworkCore;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Fusion.Repository.Repositories
 {
@@ -182,7 +184,7 @@ namespace Fusion.Repository.Repositories
 
         }
 
-        public async Task<ProjectTask> GetTaskDetailByTaskIdAsync(Guid taskId, CancellationToken token = default)
+        public async Task<ProjectTask> GetTaskDetailByTaskIdAsync(Guid userId, Guid taskId, CancellationToken token = default)
         {
 
             var task = await _db.ProjectTasks
@@ -205,8 +207,65 @@ namespace Fusion.Repository.Repositories
                     .ThenInclude(d => d.DependsOnTask)
                 .SingleOrDefaultAsync(t => t.Id == taskId, token);
 
+            if (task == null)
+                throw CustomExceptionFactory.CreateNotFoundError("Task is not existed");
+
+            var projectMember = await _db.ProjectMembers.SingleOrDefaultAsync(pm => pm.UserId == userId && pm.ProjectId == task.ProjectId);
+
+            if (projectMember == null)
+                throw CustomExceptionFactory.CreateNotFoundError("User is not belong to this project.");
+
             return task;
 
         }
+
+        public async Task<List<Guid>> GetMemberIdByTaskId(Guid taskId, CancellationToken token = default)
+        {
+
+            var task = await _db.ProjectTasks
+                .Where(t => !t.IsDeleted)
+                .Include(t => t.TaskWorkflows)
+                .SingleOrDefaultAsync(t => t.Id == taskId, token);
+
+            if (task == null)
+                throw CustomExceptionFactory.CreateNotFoundError("Task Not Found");
+
+            return task.TaskWorkflows
+                .Where(w => w.AssignUserId != null)
+                .Select(w => w.AssignUserId.Value)
+                .Distinct()
+                .ToList();
+
+        }
+
+        public async Task<List<ProjectTask>> GetSubTasksByTaskIdAsync(Guid userId, Guid taskId, CancellationToken token = default)
+        {
+            var parentTask = await _db.ProjectTasks
+                .Include(t => t.TaskWorkflows)
+                .SingleOrDefaultAsync(t => !t.IsDeleted && t.Id == taskId, token);
+
+            if (parentTask == null)
+                throw CustomExceptionFactory.CreateNotFoundError($"Task with Id {taskId} not found.");
+
+            var projectMember = await _db.ProjectMembers.SingleOrDefaultAsync(pm => pm.UserId == userId && pm.ProjectId == parentTask.ProjectId);
+
+            if (projectMember == null)
+                throw CustomExceptionFactory.CreateNotFoundError("User is not belong to this project.");
+
+            var subTasks = await _db.ProjectTasks
+                .Where(t => !t.IsDeleted && t.ParentTaskId == taskId)
+                .Include(t => t.Project)
+                .Include(t => t.Sprint)
+                .Include(t => t.TaskWorkflows)
+                    .ThenInclude(wf => wf.AssignUser)
+                .Include(t => t.ChecklistItems)
+                .Include(t => t.Attachments)
+                .Include(t => t.Dependencies)
+                    .ThenInclude(d => d.DependsOnTask)
+                .ToListAsync(token);
+
+            return subTasks;
+        }
+
     }
 }
