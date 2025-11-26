@@ -165,6 +165,7 @@ namespace Fusion.Repository.Repositories
         {
             newTicket.IsDeleted = false;
             newTicket.CreatedAt = DateTime.UtcNow.AddHours(7);
+            newTicket.status = TicketStatusEnum.Pending.ToString();
 
             var ticket = await _context.Tickets.AddAsync(newTicket);
             await _context.SaveChangesAsync(cancellationToken);
@@ -317,6 +318,40 @@ namespace Fusion.Repository.Repositories
         }
 
 
+        public async Task<Ticket?> AcceptTicketAsync(Guid ticketId, CancellationToken cancellationToken = default)
+        {
+            var ticket = await _context.Tickets.FindAsync(ticketId);
+            if (ticket == null)
+                return null;
+
+            if (ticket.status != TicketStatusEnum.Pending.ToString())
+                throw new InvalidOperationException("Only tickets with status Pending can be accepted.");
+
+            ticket.status = TicketStatusEnum.Accepted.ToString();
+            ticket.UpdatedAt = DateTime.UtcNow.AddHours(7);
+
+            _context.Tickets.Update(ticket);
+            await _context.SaveChangesAsync(cancellationToken);
+            return ticket;
+        }
+
+        public async Task<Ticket?> RejectTicketAsync(Guid ticketId, string? reason = null, CancellationToken cancellationToken = default)
+        {
+            var ticket = await _context.Tickets.FindAsync(ticketId);
+            if (ticket == null)
+                return null;
+
+            if (ticket.status != TicketStatusEnum.Pending.ToString())
+                throw new InvalidOperationException("Only tickets with status Pending can be rejected.");
+
+            ticket.status = TicketStatusEnum.Rejected.ToString();
+            ticket.reason = reason;
+            ticket.UpdatedAt = DateTime.UtcNow.AddHours(7);
+
+            _context.Tickets.Update(ticket);
+            await _context.SaveChangesAsync(cancellationToken);
+            return ticket;
+        }
 
     }
 }

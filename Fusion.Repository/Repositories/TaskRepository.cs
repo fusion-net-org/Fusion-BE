@@ -69,7 +69,7 @@ namespace Fusion.Repository.Repositories
                CancellationToken ct = default)
         {
             var query = _db.ProjectTasks
-                .Include(t => t.Assignees)
+                .Include(t => t.TaskWorkflows)
                 .Include(t => t.Project)
                 .Include(t => t.Sprint)
                 .Where(t => t.SprintId == sprintId && !t.IsDeleted)
@@ -179,6 +179,33 @@ namespace Fusion.Repository.Repositories
                 query = query.Where(x => x.DueDate < DateTime.UtcNow && !x.CurrentStatus.IsEnd);
 
             return await query.ToPagedResultAsync(request, token);
+
+        }
+
+        public async Task<ProjectTask> GetTaskDetailByTaskIdAsync(Guid taskId, CancellationToken token = default)
+        {
+
+            var task = await _db.ProjectTasks
+                .Where(t => !t.IsDeleted)
+                .Include(t => t.Project)
+                    .ThenInclude(t => t.Company)
+                .Include(t => t.Project)
+                    .ThenInclude(p => p.CompanyRequest)
+                .Include(t => t.Project)
+                    .ThenInclude(p => p.ProjectRequest)
+                .Include(t => t.Sprint)
+                .Include(t => t.CurrentStatus)
+                .Include(t => t.CreatedByNavigation)
+                .Include(t => t.TaskWorkflows)
+                    .ThenInclude(a => a.AssignUser)
+                .Include(t => t.Comments)
+                .Include(t => t.ChecklistItems)
+                .Include(t => t.Attachments)
+                .Include(t => t.Dependencies)
+                    .ThenInclude(d => d.DependsOnTask)
+                .SingleOrDefaultAsync(t => t.Id == taskId, token);
+
+            return task;
 
         }
     }

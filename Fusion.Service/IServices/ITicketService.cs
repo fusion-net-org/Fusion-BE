@@ -25,5 +25,7 @@ namespace Fusion.Service.IServices
         Task<TicketDashboardResponse> GetTicketDashboardAsync(Guid projectId, CancellationToken cancellationToken = default);
 		Task<bool?> RestoreTicketAsync(Guid ticketId, CancellationToken cancellationToken = default);
         Task<TicketStatusCountResponse> GetTicketStatusCountAsync(Guid? projectId = null, Guid? companyRequestId = null, Guid? companyExecutorId = null, CancellationToken cancellationToken = default);
+        Task<TicketResponse?> AcceptTicketAsync(Guid ticketId, CancellationToken cancellationToken = default);
+        Task<TicketResponse?> RejectTicketAsync(Guid ticketId, string? reason = null, CancellationToken cancellationToken = default);
     }
 }
