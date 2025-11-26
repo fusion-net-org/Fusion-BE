@@ -78,11 +78,12 @@ namespace Fusion.Repository.Repositories
                 {
                     throw CustomExceptionFactory.CreateBadRequestError("Member already belongs to this company!");
                 }
-                else
+                else if (alreadyInCompany.Status == "Pending")
                 {
-                    alreadyInCompany.Status = "Pending";
-                    companyMember = alreadyInCompany;
+                    throw CustomExceptionFactory.CreateBadRequestError("Member has already been invited to this company!");
                 }
+                alreadyInCompany.Status = "Pending";
+                companyMember = alreadyInCompany;
             }
             else
             {
@@ -502,8 +503,10 @@ namespace Fusion.Repository.Repositories
             {
                 var kw = request.KeyWord.ToLower();
                 query = query.Where(cm => (cm.User.UserName ?? "").ToLower().Contains(kw) ||
-                                          (cm.User.Email ?? "").ToLower().Contains(kw) ||
-                                          (cm.User.Phone ?? "").ToLower().Contains(kw));
+                                          (cm.Company.Email ?? "").ToLower().Contains(kw) ||
+                                          (cm.Company.PhoneNumber ?? "").ToLower().Contains(kw) ||
+                                          (cm.Company.Name ?? "").ToLower().Contains(kw)
+                                          );
             }
 
             if (!string.IsNullOrEmpty(request.Status))
