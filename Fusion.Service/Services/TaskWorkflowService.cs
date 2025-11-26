@@ -34,11 +34,16 @@ namespace Fusion.Service.Services
             TaskWorkflowAssignmentsRequest request,
             Guid actorUserId,
             CancellationToken ct = default);
+
+        /// <summary>
+        /// Helper: upsert ma trận status → user trực tiếp bằng DbContext
+        /// </summary>
         Task UpsertAssignmentsAsync(
-    Guid taskId,
-    IDictionary<Guid, Guid?> assignments,
-    CancellationToken ct = default);
+            Guid taskId,
+            IDictionary<Guid, Guid?> assignments,
+            CancellationToken ct = default);
     }
+
     public class TaskWorkflowService : ITaskWorkflowService
     {
         private readonly FusionDbContext _db;
@@ -69,10 +74,14 @@ namespace Fusion.Service.Services
         private async Task<string?> GetUserName(Guid userId)
             => (await _db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId))
                 ?.UserName;
+
+        /// <summary>
+        /// Upsert ma trận statusId → AssignUserId cho 1 task
+        /// </summary>
         public async Task UpsertAssignmentsAsync(
-    Guid taskId,
-    IDictionary<Guid, Guid?> assignments,
-    CancellationToken ct = default)
+            Guid taskId,
+            IDictionary<Guid, Guid?> assignments,
+            CancellationToken ct = default)
         {
             // chỉ lấy những item có userId thật (không null, không Guid.Empty)
             var validAssignments = assignments
@@ -116,7 +125,8 @@ namespace Fusion.Service.Services
             // 2️⃣ Với những statusId không có trong validAssignments → mark delete (nếu trước đó có)
             foreach (var row in existing)
             {
-                if (!row.WorkflowStatusId.HasValue || !validAssignments.ContainsKey(row.WorkflowStatusId.Value))
+                if (!row.WorkflowStatusId.HasValue ||
+                    !validAssignments.ContainsKey(row.WorkflowStatusId.Value))
                 {
                     row.AssignUserId = null;
                     row.UpdateAt = now;
@@ -286,11 +296,11 @@ namespace Fusion.Service.Services
                     ?? throw CustomExceptionFactory.CreateBadRequestError("Task has no ProjectId.");
 
                 var memberUserIds = await _db.ProjectMembers.AsNoTracking()
-      .Where(pm => pm.ProjectId == projectId
-                && pm.UserId.HasValue             
-                && userIds.Contains(pm.UserId.Value))
-      .Select(pm => pm.UserId!.Value)          
-      .ToListAsync(ct);
+                    .Where(pm => pm.ProjectId == projectId
+                                 && pm.UserId.HasValue
+                                 && userIds.Contains(pm.UserId.Value))
+                    .Select(pm => pm.UserId!.Value)
+                    .ToListAsync(ct);
 
                 var notMembers = userIds.Except(memberUserIds).ToList();
                 if (notMembers.Any())
@@ -307,8 +317,9 @@ namespace Fusion.Service.Services
                     x => x.WorkflowStatusId,
                     x => x.AssignUserId);
 
-            // 6) Upsert xuống DB bằng repository
-            await _taskWorkflowRepo.UpsertAssignmentsAsync(request.TaskId, assignments, ct);
+            // 6) Upsert xuống DB bằng helper trong service
+            //    (đảm bảo mọi status, kể cả start step, đều được lưu)
+            await UpsertAssignmentsAsync(request.TaskId, assignments, ct);
 
             // 7) Log activity cho công ty
             var companyId = await _db.Projects.AsNoTracking()
