@@ -11,4 +11,9 @@ namespace Fusion.Service.ViewModels.UserRole.Requests
         public Guid UserId { get; set; }
         public List<int> RoleIds { get; set; } = new();
     }
+    public class RemoveUserRoleFromCompanyRequest
+    {
+        public Guid UserId { get; set; }
+        public List<int> RoleIds { get; set; } = new();
+    }
 }

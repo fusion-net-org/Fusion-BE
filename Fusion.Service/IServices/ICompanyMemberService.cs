@@ -13,6 +13,7 @@ namespace Fusion.Service.IServices
 {
     public interface ICompanyMemberService
     {
+        Task<AddMemberRoleInCompanyResponse?> RemoveRoleForMemberInCompany(Guid companyId, List<int> roleIds, Guid memberId, string removerEmail, CancellationToken token);
         Task<CompanyMemberResponse?> InviteMemberToCompany(string inviterEmail, string inviteeMemberMail, Guid CompanyId, CancellationToken token = default);
 
         Task<PagedResult<CompanyMemberResponse>> GetPagedCompanyMemberByCompanyIdAsync(Guid companyId, string mail, CompanyMemberPagedSearchRequest request, CancellationToken token = default);

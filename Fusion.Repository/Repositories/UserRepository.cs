@@ -24,6 +24,21 @@ namespace Fusion.Repository.Repositories
         {
             return await _dbSet.FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
         }
+        public async Task<List<RoleDto>> GetRolesByUserAndCompanyAsync(Guid userId, Guid companyId, CancellationToken cancellationToken = default)
+        {
+            return await _context.UserRoles
+                .Where(ur => ur.UserId == userId && ur.Role != null && ur.Role.CompanyId == companyId)
+                .Select(ur => new RoleDto
+                {
+                    Id = ur.Role!.Id,
+                    Name = ur.Role.RoleName!,
+                    Description = ur.Role.Description
+                })
+                .ToListAsync(cancellationToken);
+        }
+
+
+
         public async Task<User?> GetUserByEmailAsync(string email, CancellationToken cancellationToken = default)
         {
             return await _context.Users.FirstOrDefaultAsync(u => u.Email == email, cancellationToken);

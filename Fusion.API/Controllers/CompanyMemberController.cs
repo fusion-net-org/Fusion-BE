@@ -119,30 +119,7 @@ namespace Fusion.API.Controllers
                  message: ResponseMessageHelper.FormatMessage("Fired Member from Company Successfully")));
         }
 
-        [HttpDelete("{removeId:Guid}")]
-        public async Task<IActionResult> RemoveMemberFromCompany(Guid removeId, Guid companyId, CancellationToken token)
-        {
 
-            var emailClaim = User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email || c.Type == ClaimTypes.Email || c.Type == "email");
-            var terminatorEmail = emailClaim?.Value; if (terminatorEmail == null)
-            {
-                return Unauthorized(ResponseModel<string>.Error(
-                    statusCode: StatusCodes.Status401Unauthorized,
-                    message: "Unauthorized: User identity not found"
-                ));
-            }
-
-            var result = await _companyMemberService.RemoveMemberFromCompany(
-               terminatorEmail,
-               removeId,
-               companyId,
-               token
-            );
-
-            return Ok(ResponseModel<CompanyMemberResponse?>.Ok(
-                 data: result,
-                 message: ResponseMessageHelper.FormatMessage("Remove Member from Company Successfully")));
-        }
 
         [HttpGet("accept")]
         public async Task<IActionResult> AcceptJoinFromCompany([FromQuery] string tokenConfirm, CancellationToken tokenCts)
@@ -195,6 +172,37 @@ namespace Fusion.API.Controllers
             ));
         }
 
+        [HttpDelete("{companyId:guid}/users/roles")]
+        public async Task<IActionResult> RemoveUserRolesFromCompany(
+               Guid companyId,
+               [FromBody] RemoveUserRoleFromCompanyRequest request,
+               CancellationToken token)
+        {
+            var emailClaim = User.Claims.FirstOrDefault(
+                c => c.Type == JwtRegisteredClaimNames.Email || c.Type == ClaimTypes.Email || c.Type == "email"
+            );
+            var requesterEmail = emailClaim?.Value;
+
+            if (requesterEmail == null)
+            {
+                return Unauthorized(ResponseModel<string>.Error(
+                    statusCode: StatusCodes.Status401Unauthorized,
+                    message: "Unauthorized: User identity not found"
+                ));
+            }
+
+            var result = await _companyMemberService.RemoveRoleForMemberInCompany(
+                companyId,
+                request.RoleIds,
+                request.UserId,
+                requesterEmail,
+                token
+            );
+
+            return Ok(result);
+        }
+
+
         [HttpPost("{companyId:guid}/users/roles")]
         public async Task<IActionResult> AddUserRolesToCompany(Guid companyId, [FromBody] AddUserRoleToCompanyRequest request, CancellationToken token)
         {
@@ -218,6 +226,37 @@ namespace Fusion.API.Controllers
 
             return Ok(result);
         }
+
+        //[HttpDelete("{companyId:guid}/users/roles")]
+        //public async Task<IActionResult> RemoveUserRolesFromCompany(
+        //    Guid companyId,
+        //    [FromBody] RemoveUserRoleFromCompanyRequest request,
+        //    CancellationToken token)
+        //{
+        //    var emailClaim = User.Claims.FirstOrDefault(
+        //        c => c.Type == JwtRegisteredClaimNames.Email || c.Type == ClaimTypes.Email || c.Type == "email"
+        //    );
+        //    var requesterEmail = emailClaim?.Value;
+
+        //    if (requesterEmail == null)
+        //    {
+        //        return Unauthorized(ResponseModel<string>.Error(
+        //            statusCode: StatusCodes.Status401Unauthorized,
+        //            message: "Unauthorized: User identity not found"
+        //        ));
+        //    }
+
+        //    var result = await _companyMemberService.RemoveRoleForMemberInCompany(
+        //        companyId,
+        //        request.RoleIds,
+        //        request.UserId,
+        //        requesterEmail,
+        //        token
+        //    );
+
+        //    return Ok(result);
+        //}
+
         /// <summary>
         /// Get company member detail by companyId + userId
         /// </summary>

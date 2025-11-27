@@ -11,6 +11,7 @@ namespace Fusion.Service.IServices;
 
 public interface IUserService
 {
+    Task<List<RoleDto>> GetRolesByUserAndCompanyAsync(Guid userId, Guid companyId, CancellationToken cancellationToken = default);
     Task<SelfUserResponse?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<PagedResult<CompanyUserResponse>> GetPagedCompanyUsersAsync(
             CompanyUserPagedRequest request,
