@@ -1,4 +1,5 @@
-﻿using Fusion.Repository.Bases.Responses;
+﻿using Fusion.API.Auth;
+using Fusion.Repository.Bases.Responses;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.Repositories;
