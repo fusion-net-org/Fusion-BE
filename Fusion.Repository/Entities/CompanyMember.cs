@@ -27,8 +27,7 @@ public partial class CompanyMember
     public bool? IsDeleted { get; set; }
 
     [Column("joined_at")]
-    [Precision(3)]
-    public DateTime? JoinedAt { get; set; } = null;
+    public DateTime? JoinedAt { get; set; }
 
     [ForeignKey("CompanyId")]
     [InverseProperty("CompanyMembers")]
