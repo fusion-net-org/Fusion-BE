@@ -7,6 +7,7 @@ using Fusion.Repository.IRepositories;
 using Fusion.Repository.Repositories;
 using Fusion.Service.Commons.Helpers;
 using Fusion.Service.IServices;
+using Fusion.Service.ViewModels.Notifications.Requests;
 using Fusion.Service.ViewModels.Task.Request;
 using Fusion.Service.ViewModels.Task.Response;
 using Microsoft.EntityFrameworkCore;
@@ -14,6 +15,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Fusion.Service.Services
@@ -47,14 +49,15 @@ namespace Fusion.Service.Services
         private readonly ICompanyActivityService _log;
         private readonly ICurrentService _current;
         private readonly IMapper _mapper;
-
+        private readonly INotificationService _notificationService;
         public TaskWorkflowService(
             FusionDbContext db,
             ITaskWorkflowRepository taskWorkflowRepo,
             ITaskRepository taskRepo,
             ICompanyActivityService log,
             ICurrentService current,
-            IMapper mapper)
+            IMapper mapper,
+            INotificationService notificationService)
         {
             _db = db;
             _taskWorkflowRepo = taskWorkflowRepo;
@@ -62,6 +65,7 @@ namespace Fusion.Service.Services
             _log = log;
             _current = current;
             _mapper = mapper;
+            _notificationService = notificationService;
         }
 
         #region Helpers
@@ -241,37 +245,44 @@ namespace Fusion.Service.Services
         #region Commands
 
         public async Task<TaskWorkflowAssignmentsResponse> UpsertAssignmentsForTaskAsync(
-            TaskWorkflowAssignmentsRequest request,
-            Guid actorUserId,
-            CancellationToken ct = default)
+      TaskWorkflowAssignmentsRequest request,
+      Guid actorUserId,
+      CancellationToken ct = default)
         {
-            // 1) Kiểm tra task
+            // 1) Validate task
             var task = await _taskRepo.FindByIdAsync(request.TaskId, ct)
                 ?? throw CustomExceptionFactory.CreateNotFoundError(
                     ResponseMessages.NOT_FOUND.FormatMessage("Task"));
 
-            // 2) Lấy workflowId phù hợp với task
+            // 2) Get workflowId for this task
             var workflowId = await GetWorkflowIdForTaskAsync(task, ct);
 
-            // 3) Validate tất cả statusId trong request đều thuộc workflow này
+            // 3) Validate statuses + get status names
             var statusIds = request.Items
                 .Select(x => x.WorkflowStatusId)
                 .Distinct()
                 .ToList();
 
-            var validStatuses = await _db.WorkflowStatuses.AsNoTracking()
+            var statusList = await _db.WorkflowStatuses.AsNoTracking()
                 .Where(ws => ws.WorkflowId == workflowId && statusIds.Contains(ws.Id))
-                .Select(ws => ws.Id)
+                .Select(ws => new { ws.Id, ws.Name })
                 .ToListAsync(ct);
 
-            var invalidStatusIds = statusIds.Except(validStatuses).ToList();
+            var validStatusIds = statusList.Select(s => s.Id).ToList();
+            var invalidStatusIds = statusIds.Except(validStatusIds).ToList();
             if (invalidStatusIds.Any())
             {
                 throw CustomExceptionFactory.CreateBadRequestError(
                     "Some statuses are not in the workflow of this task.");
             }
 
-            // 4) Validate user: phải là member của project (nếu bạn có ProjectMembers)
+            // dùng list này để map Id -> Name
+            var statusNameById = statusList.ToDictionary(
+                x => x.Id,
+                x => x.Name ?? string.Empty
+            );
+
+            // 4) Validate users: must be project members
             var userIds = request.Items
                 .Select(x => x.AssignUserId)
                 .Where(id => id.HasValue)
@@ -281,16 +292,15 @@ namespace Fusion.Service.Services
 
             if (userIds.Any())
             {
-                // Nếu bạn có bảng ProjectMembers:
                 var projectId = task.ProjectId
                     ?? throw CustomExceptionFactory.CreateBadRequestError("Task has no ProjectId.");
 
                 var memberUserIds = await _db.ProjectMembers.AsNoTracking()
-      .Where(pm => pm.ProjectId == projectId
-                && pm.UserId.HasValue             
-                && userIds.Contains(pm.UserId.Value))
-      .Select(pm => pm.UserId!.Value)          
-      .ToListAsync(ct);
+                    .Where(pm => pm.ProjectId == projectId
+                              && pm.UserId.HasValue
+                              && userIds.Contains(pm.UserId.Value))
+                    .Select(pm => pm.UserId!.Value)
+                    .ToListAsync(ct);
 
                 var notMembers = userIds.Except(memberUserIds).ToList();
                 if (notMembers.Any())
@@ -300,33 +310,75 @@ namespace Fusion.Service.Services
                 }
             }
 
-            // 5) Build dictionary statusId → assignUserId (null = unassign)
+            // 5) Build dictionary: statusId → assignUserId (null = unassign)
             var assignments = request.Items
                 .DistinctBy(x => x.WorkflowStatusId)
                 .ToDictionary(
                     x => x.WorkflowStatusId,
                     x => x.AssignUserId);
 
-            // 6) Upsert xuống DB bằng repository
+            // 6) Upsert to DB
             await _taskWorkflowRepo.UpsertAssignmentsAsync(request.TaskId, assignments, ct);
 
-            // 7) Log activity cho công ty
+            // 7) Company activity log
             var companyId = await _db.Projects.AsNoTracking()
                 .Where(p => p.Id == task.ProjectId)
                 .Select(p => (Guid)p.CompanyId)
                 .FirstAsync(ct);
 
+            var actorUserName = await GetUserName(actorUserId) ?? "Unknown";
+
             await _log.CreateLog(new CompanyActivityLog
             {
                 CompanyId = companyId,
                 ActorUserId = actorUserId,
-                Title = "Update task workflow assignees",
-                Description = $"User '{await GetUserName(actorUserId)}' updated workflow assignees for task '{task.Title}'"
+                Title = "Updated task workflow assignees",
+                Description = $"User '{actorUserName}' updated workflow assignees for task '{task.Title}'."
             });
 
-            // 8) Trả về lại danh sách mới nhất cho FE
+            // 8) Notifications per assignee
+            var assignmentsByUser = request.Items
+                .Where(x => x.AssignUserId.HasValue)
+                .GroupBy(x => x.AssignUserId!.Value)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(x => x.WorkflowStatusId).Distinct().ToList()
+                );
+
+            foreach (var kvp in assignmentsByUser)
+            {
+                var assigneeId = kvp.Key;
+
+                // Optionally skip notifying the actor themself
+                if (assigneeId == actorUserId)
+                    continue;
+
+                var statusNames = kvp.Value
+                    .Select(id => statusNameById.TryGetValue(id, out var n) ? n : null)
+                    .Where(n => !string.IsNullOrWhiteSpace(n))
+                    .Distinct()
+                    .ToList();
+
+                var statusesText = statusNames.Any()
+                    ? string.Join(", ", statusNames)
+                    : "workflow statuses";
+
+                await _notificationService.CreateNotificationAsync(new SendNotificationRequest
+                {
+                    UserId = assigneeId,
+                    Title = $"You have been assigned in the workflow of task \"{task.Title}\"",
+                    Body = $"User {actorUserName} updated the workflow and assigned you to the following statuses: {statusesText} in task \"{task.Title}\".",
+                    LinkKey = "TASK_DETAIL_PAGE",   // đổi nếu FE dùng key khác
+                    IdLink = task.Id,
+                    Event = "TaskWorkflowAssigneeUpdated",
+                    NotificationType = "TASK",
+                }, ct);
+            }
+
+            // 9) Return latest assignments
             return await GetAssignmentsForTaskAsync(request.TaskId, ct);
         }
+
 
         #endregion
     }
