@@ -1,4 +1,5 @@
-﻿using Fusion.Repository.Bases.Page;
+﻿using System.Security.Claims;
+using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.User;
 using Fusion.Repository.Bases.Page.UserLog;
 using Fusion.Repository.Entities;
@@ -10,6 +11,7 @@ using Fusion.Service.ViewModels.Users.Requests;
 using Fusion.Service.ViewModels.Users.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace Fusion.API.Controllers
@@ -192,6 +194,24 @@ namespace Fusion.API.Controllers
                 data: result,
                 message: "Get user permission level overview successfully"));
         }
+
+        [HttpGet("roles/{companyId:guid}/{userId:guid}")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<List<RoleDto>>))]
+        public async Task<IActionResult> GetUserRolesByCompany(Guid companyId, Guid userId, CancellationToken cancellationToken)
+        {
+            if (userId == Guid.Empty)
+            {
+                return BadRequest(ResponseModel<string>.Error(StatusCodes.Status400BadRequest, "UserId is required!"));
+            }
+
+            var roles = await _userService.GetRolesByUserAndCompanyAsync(userId, companyId, cancellationToken);
+
+            return Ok(ResponseModel<List<RoleDto>>.Ok(
+                data: roles,
+                message: "Get user roles by company successfully"));
+        }
+
+
 
         [Authorize]
         [HttpGet("analytics")]

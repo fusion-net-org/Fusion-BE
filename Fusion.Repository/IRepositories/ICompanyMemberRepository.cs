@@ -13,6 +13,7 @@ namespace Fusion.Repository.IRepositories
 {
     public interface ICompanyMemberRepository : IGenericRepository<CompanyMember>
     {
+        Task<List<UserRole?>> RemoveRoleForMemberInCompany(Guid companyId, List<int> roleIds, Guid memberId, string removerEmail, CancellationToken token);
         Task<CompanyMember?> InviteMemberToCompany(string inviterEmail, string inviteeMemberMail, Guid companyId, CancellationToken token = default);
 
         Task<CompanyMember?> GetCompanyMemberByIdAsync(long id, CancellationToken token = default);

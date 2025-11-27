@@ -59,6 +59,20 @@ public class UserService : IUserService
         var response = _mapper.Map<SelfUserResponse>(user);
         return response;
     }
+    public async Task<List<RoleDto>> GetRolesByUserAndCompanyAsync(Guid userId, Guid companyId, CancellationToken cancellationToken = default)
+    {
+        if (userId == Guid.Empty)
+            throw CustomExceptionFactory.CreateBadRequestError("User Id is invalid");
+
+        if (companyId == Guid.Empty)
+            throw CustomExceptionFactory.CreateBadRequestError("Company Id is invalid");
+
+        var roles = await _userRepository.GetRolesByUserAndCompanyAsync(userId, companyId, cancellationToken);
+
+        return roles;
+    }
+
+
     public async Task<User?> GetFullInfoByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         if (id == Guid.Empty)

@@ -393,6 +393,52 @@ namespace Fusion.Repository.Repositories
             return companyMember;
 
         }
+        public async Task<List<UserRole?>> RemoveRoleForMemberInCompany(Guid companyId, List<int> roleIds, Guid memberId, string removerEmail, CancellationToken token)
+        {
+            var company = await _context.Companies.FindAsync(companyId);
+            if (company == null)
+                throw CustomExceptionFactory.CreateNotFoundError("Company is not existed");
+
+            var member = await _context.Users.FindAsync(memberId);
+            if (member == null)
+                throw CustomExceptionFactory.CreateNotFoundError("Member is not existed");
+
+            var company_member = await _context.CompanyMembers
+                .SingleOrDefaultAsync(x => x.CompanyId == companyId && x.UserId == memberId);
+            if (company_member == null)
+                throw CustomExceptionFactory.CreateNotFoundError("Member company does not existed");
+
+            var remover = await _context.Users.FirstOrDefaultAsync(u => u.Email == removerEmail);
+            if (remover == null)
+                throw CustomExceptionFactory.CreateNotFoundError("Remover does not exist");
+
+            var company_remover = await _context.CompanyMembers
+                .SingleOrDefaultAsync(x => x.CompanyId == companyId && x.UserId == remover.Id);
+            if (company_remover == null)
+                throw CustomExceptionFactory.CreateNotFoundError("Remover company does not existed");
+
+            if (company_remover.CompanyId != company_member.CompanyId)
+                throw CustomExceptionFactory.CreateNotFoundError("Remover and Member not in the same company");
+
+            var removedRoles = new List<UserRole>();
+
+            foreach (var roleId in roleIds)
+            {
+                var userRole = await _context.UserRoles
+                    .FirstOrDefaultAsync(x => x.UserId == memberId && x.RoleId == roleId);
+
+                if (userRole == null)
+                    continue; 
+
+                _context.UserRoles.Remove(userRole);
+                removedRoles.Add(userRole);
+            }
+
+            if (removedRoles.Any())
+                await _context.SaveChangesAsync(token);
+
+            return removedRoles;
+        }
 
         public async Task<List<UserRole?>> AddRoleForMemberInCompany(Guid companyId, List<int> roleIds, Guid memberId, string inviterEmail, CancellationToken token)
         {
