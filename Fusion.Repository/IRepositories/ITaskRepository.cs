@@ -17,7 +17,11 @@ namespace Fusion.Repository.IRepositories
 
         Task<PagedResult<ProjectTask>> GetAllTaskByUserId(Guid userId, TaskFilterRequest request, CancellationToken token = default);
 
-        Task<ProjectTask> GetTaskDetailByTaskIdAsync(Guid taskId, CancellationToken token = default);
+        Task<ProjectTask> GetTaskDetailByTaskIdAsync(Guid userId, Guid taskId, CancellationToken token = default);
+
+        Task<List<Guid>> GetMemberIdByTaskId(Guid taskId, CancellationToken token = default);
+
+        Task<List<ProjectTask>> GetSubTasksByTaskIdAsync(Guid userId, Guid taskId, CancellationToken token = default);
 
     }
 }

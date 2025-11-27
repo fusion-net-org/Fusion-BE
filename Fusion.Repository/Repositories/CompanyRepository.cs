@@ -1,4 +1,5 @@
-﻿using Azure.Core;
+﻿using System.ComponentModel.Design;
+using Azure.Core;
 using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.Company;
@@ -11,7 +12,7 @@ using Fusion.Repository.Enums;
 using Fusion.Repository.IRepositories;
 using Fusion.Repository.ViewModels.Companies;
 using Microsoft.EntityFrameworkCore;
-using System.ComponentModel.Design;
+using static System.Runtime.CompilerServices.RuntimeHelpers;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 
@@ -724,6 +725,20 @@ namespace Fusion.Repository.Repositories
                     NewCompanies = g.Count()
                 })
                 .ToListAsync(ct);
+        }
+
+        public async Task<Company?> GetCompanyByPhoneNumber(string phone)
+        {
+            var company = await _context.Companies
+                           .Include(x => x.CompanyMembers)
+                           .Include(x => x.OwnerUser)
+                           .Include(x => x.ProjectCompanies)
+                           .Include(c => c.ProjectCompanyRequests)
+                           .Include(c => c.CompanyFriendshipCompanyAs)
+                           .Include(c => c.CompanyFriendshipCompanyBs)
+                           .SingleOrDefaultAsync(x => x.PhoneNumber == phone);
+
+            return company;
         }
     }
 }

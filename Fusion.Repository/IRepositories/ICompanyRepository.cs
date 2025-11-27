@@ -20,6 +20,8 @@ namespace Fusion.Repository.IRepositories
         Task<PagedResult<Company>> GetPagedCompaniesAdminAsync(string adminEmail, CompanyPagedSearchRequest request, CancellationToken cancellationToken = default);
 
         Task<Company?> GetCompanyByTaxCode(string taxcode);
+        Task<Company?> GetCompanyByPhoneNumber(string phone);
+
         Task<Company?> GetCompanyByEmail(string email);
         Task<Company?> GetCompanyByIdAsync(Guid Id);
         Task<Company?> AddCompanyAsync(User user, string image_company, string avatar_company, Company new_company, CancellationToken cancellationToken = default);
