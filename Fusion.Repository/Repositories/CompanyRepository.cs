@@ -740,5 +740,59 @@ namespace Fusion.Repository.Repositories
 
             return company;
         }
+
+        public async Task<CompanyTaskStatsResponse> GetTaskStatsAsync(Guid partnerCompanyId, Guid myCompanyId, Guid userId, CancellationToken token = default)
+        {
+            var myCompany = await _context.Companies.FindAsync(myCompanyId);
+            if (myCompany == null)
+                throw CustomExceptionFactory.CreateNotFoundError("Company not existed");
+
+            var partnerCompany = await _context.Companies.FindAsync(partnerCompanyId);
+            if (myCompany == null)
+                throw CustomExceptionFactory.CreateNotFoundError("Partner Company not existed");
+
+            var companyFriend = await _context.CompanyFriendships
+                .Where(cf =>
+                    (cf.CompanyAId == myCompanyId && cf.CompanyBId == partnerCompanyId) ||
+                    (cf.CompanyAId == partnerCompanyId && cf.CompanyBId == myCompanyId)
+                )
+                .FirstOrDefaultAsync();
+
+            if (companyFriend == null)
+                throw CustomExceptionFactory.CreateNotFoundError("The two companies are not cooperate");
+
+            var companyMember = await _context.CompanyMembers
+                    .SingleOrDefaultAsync(x => x.CompanyId == myCompanyId && x.UserId == userId, token);
+
+            if (companyMember == null)
+                throw CustomExceptionFactory.CreateBadRequestError("User Do not belong to this company");
+
+            var result = await _context.ProjectTasks
+                .Include(t => t.Project)
+                    .ThenInclude(p => p.Company)
+                .Include(t => t.Project)
+                    .ThenInclude(p => p.CompanyRequest)
+                .Where(t => !t.IsDeleted 
+                    && t.Project.CompanyId == partnerCompanyId
+                    && t.Project.CompanyRequestId == myCompanyId)
+                .GroupBy(t => 1)
+                .Select(g => new CompanyTaskStatsResponse
+                {
+                    OnTime = g.Count(t => t.Status == "DONE"
+                                          && t.DueDate != null
+                                          && t.UpdateAt <= t.DueDate),
+
+                    Violations = g.Count(t => t.Status == "DONE"
+                                              && t.DueDate != null
+                                              && t.UpdateAt > t.DueDate),
+
+                    Completed = g.Count(t => t.Status == "DONE")
+                })
+                .FirstOrDefaultAsync(token);
+
+            return result ?? new CompanyTaskStatsResponse();
+        }
+
+
     }
 }

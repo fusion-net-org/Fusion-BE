@@ -2,15 +2,20 @@
 using AutoMapper;
 using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Bases.Page;
+using Fusion.Repository.Bases.Page.ProjectBoard;
 using Fusion.Repository.Bases.Page.User;
+using Fusion.Repository.Bases.Page.UserLog;
 using Fusion.Repository.Bases.Responses;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.IRepositories;
+using Fusion.Repository.Repositories;
 using Fusion.Repository.ViewModels.Users;
 using Fusion.Service.Commons.Helpers;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.Companies.Responses;
+using Fusion.Service.ViewModels.Task.Response;
+using Fusion.Service.ViewModels.UserLog.Responses;
 using Fusion.Service.ViewModels.Users.Requests;
 using Fusion.Service.ViewModels.Users.Responses;
 using System.Security.Cryptography;
@@ -21,16 +26,18 @@ public class UserService : IUserService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IUserRepository _userRepository;
+    private readonly ITaskRepository _taskRepository;
     private readonly IMapper _mapper;
     private readonly ICloudinaryService _cloudinaryService;
     private readonly ICurrentService _currentService;
     private readonly IUserLogService _userLog;
 
     public UserService(IUnitOfWork unitOfWork, IUserRepository userRepository, IMapper mapper,
-        ICloudinaryService cloudinaryService, ICurrentService currentService, IUserLogService userLog)
+        ICloudinaryService cloudinaryService, ICurrentService currentService, IUserLogService userLog, ITaskRepository taskRepository)
     {
         _unitOfWork = unitOfWork;
         _userRepository = userRepository;
+        _taskRepository = taskRepository;
         _mapper = mapper;
         _cloudinaryService = cloudinaryService;
         _currentService = currentService;
@@ -449,6 +456,56 @@ public class UserService : IUserService
                 Level = p.Level,
                 Count = p.Count
             }).ToList()
+        };
+
+        return response;
+    }
+
+    public async Task<AnalyticsUserResponse> GetAnalyticsUserAsync(Guid userId,
+ CancellationToken token)
+    {
+        // 1. User Performance
+        var rawPerformance = await _userRepository.GetUserPerformanceOverviewAsync(userId, token);
+        var userPerformance = new UserPerformanceOverview
+        {
+            TotalTasksAssigned = rawPerformance.TotalTasksAssigned,
+            TotalCompanies = rawPerformance.TotalCompanies,
+            TotalProjects = rawPerformance.TotalProjects,
+            TotalSubscriptions = rawPerformance.TotalSubscriptions,
+        };
+
+        // 2. Assign To Me
+        var assignTasks = await _taskRepository.GetTasksAssignedToUserAsync(userId, token);
+        var assignToMe = assignTasks.Select(t => new ProjectTaskResponse
+        {
+            Id = t.Id,
+            Type = t.Type,
+            Code = t.Code,
+            Title = t.Title,
+            CreateAt = t.CreateAt,
+            UpdateAt = t.UpdateAt,
+            DueDate = t.DueDate,
+            
+        }).ToList();
+
+        // 3. Dashboard
+        var dashboardData = await _taskRepository.GetUserTaskDashboardAsync(userId, token);
+        var dashboard = new UserTaskDashBoard
+        {
+            BugPercent = dashboardData.BugPercent,
+            FeaturePercent = dashboardData.FeaturePercent,
+            ChorePercent = dashboardData.ChorePercent,
+            OverduePercent = dashboardData.OverduePercent,
+            OnTimePercent = dashboardData.OnTimePercent,
+            EarlyCompletedPercent = dashboardData.EarlyCompletedPercent
+        };
+
+        // Compose response
+        var response = new AnalyticsUserResponse
+        {
+            UserPerformance = userPerformance,
+            AssignToMe = assignToMe,
+            Dashboard = dashboard
         };
 
         return response;

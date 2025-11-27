@@ -29,5 +29,6 @@ namespace Fusion.Repository.IRepositories
         Task<List<UserCompanyDistributionPoint>> GetTopCompaniesByUserCountAsync(int top, CancellationToken cancellationToken = default);
         Task<List<UserPermissionLevelPoint>> GetUserPermissionLevelOverviewAsync( CancellationToken cancellationToken = default);
         Task<List<UserMonthlyNewPoint>> GetMonthlyNewUsersInYearAsync(int year,CancellationToken ct = default);
+        Task<UserPerformanceOverview> GetUserPerformanceOverviewAsync(Guid userId, CancellationToken token = default);
     }
 }

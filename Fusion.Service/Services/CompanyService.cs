@@ -1001,5 +1001,11 @@ namespace Fusion.Service.Services
         {
             return await _companyRepository.GetCompanyProjectLoadOverviewAsync(ct);
         }
+
+        public async Task<CompanyTaskStatsResponse> GetTaskStatsAsync(Guid partnerCompanyId, Guid myCompanyId, Guid userId, CancellationToken token)
+        {
+            return await _companyRepository.GetTaskStatsAsync(partnerCompanyId, myCompanyId, userId, token);
+        }
+
     }
 }
