@@ -41,10 +41,12 @@ namespace Fusion.Repository.IRepositories
 
         // =============== OverView =============================================
         Task<int> GetTotalCompaniesAsync(CancellationToken ct = default);
-        Task<CompanyGrowthAndStatusOverviewDto> GetCompanyGrowthAndStatusOverviewAsync(DateTime fromUtc,DateTime toUtc, CancellationToken ct = default);
+        Task<CompanyGrowthAndStatusOverviewDto> GetCompanyGrowthAndStatusOverviewAsync(DateTime fromUtc, DateTime toUtc, CancellationToken ct = default);
         Task<CompanyProjectLoadOverviewDto> GetCompanyProjectLoadOverviewAsync(CancellationToken ct = default);
         Task<List<CompanyMonthlyNewPoint>> GetMonthlyNewCompaniesInYearAsync(
        int year,
        CancellationToken ct = default);
+
+        Task<CompanyTaskStatsResponse> GetTaskStatsAsync(Guid partnerCompanyId, Guid myCompanyId, Guid userId, CancellationToken token = default);
     }
 }

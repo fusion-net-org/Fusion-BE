@@ -27,6 +27,7 @@ using Fusion.Service.ViewModels.Tickets.Requests;
 using Fusion.Service.ViewModels.Tickets.Responses;
 using Fusion.Service.ViewModels.TransactionPayment.Requests;
 using Fusion.Service.ViewModels.TransactionPayment.Responses;
+using Fusion.Service.ViewModels.UserLog.Responses;
 using Fusion.Service.ViewModels.Users.Requests;
 using Fusion.Service.ViewModels.Users.Responses;
 using Fusion.Service.ViewModels.UserSubscription.Responses;
@@ -563,5 +564,9 @@ public class MappingProfile : Profile
         CreateMap<TicketCommentRequestUpdate, TicketComment>()
             .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
 
-    }    
+        // ===================== UserLog =====================
+        CreateMap<UserLog, UserLogResponse>().ReverseMap();
+
+
+    }
 }

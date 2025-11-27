@@ -1,15 +1,18 @@
 ﻿using System.Security.Claims;
 using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.User;
+using Fusion.Repository.Bases.Page.UserLog;
 using Fusion.Repository.Entities;
 using Fusion.Repository.ViewModels.Users;
 using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.IServices;
+using Fusion.Service.Services;
 using Fusion.Service.ViewModels.Users.Requests;
 using Fusion.Service.ViewModels.Users.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace Fusion.API.Controllers
 {
@@ -19,10 +22,12 @@ namespace Fusion.API.Controllers
     public class UserController : ControllerBase
     {
         private readonly IUserService _userService;
+        private readonly IUserLogService _userLogService;
 
-        public UserController(IUserService userService)
+        public UserController(IUserService userService, IUserLogService userLogService)
         {
             _userService = userService;
+            _userLogService = userLogService;
         }
 
         [HttpGet("{id:guid}")]
@@ -207,5 +212,42 @@ namespace Fusion.API.Controllers
         }
 
 
+
+        [Authorize]
+        [HttpGet("analytics")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<AnalyticsUserResponse>))]
+        public async Task<IActionResult> GetAnalyticsUser(CancellationToken token)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(new { Message = "Invalid or missing token" });
+            }
+
+            var result = await _userService.GetAnalyticsUserAsync(userId, token);
+
+            return Ok(ResponseModel<AnalyticsUserResponse>.Ok(
+                data: result,
+                message: "Get user analytics successfully"));
+        }
+
+        [Authorize]
+        [HttpGet("log")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PagedResult<UserLog>>))]
+        public async Task<IActionResult> GetByUser(
+            [FromQuery] UserLogSearchRequest request, CancellationToken ct)
+        {
+
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(new { Message = "Invalid or missing token" });
+            }
+
+            var data = await _userLogService.GetUserLogByIdAsync(userId, request, ct);
+            return Ok(ResponseModel<PagedResult<UserLog>>.Ok(
+                data: data,
+                message: "Get user logs by user successfully"));
+        }
     }
 }
