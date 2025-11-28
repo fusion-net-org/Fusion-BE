@@ -25,9 +25,11 @@ public class AuthenService : IAuthenService
     private readonly IMailService _mailService;
     private readonly IUserLogService _userLogService;
     private readonly IConfiguration _config;
+    private readonly IUserSubscriptionService _userSubscriptionService;
 
     public AuthenService(IUnitOfWork unitOfWork, IUserRepository userRepository,
-        IMapper mapper, IJwtService jwtService, IMailService mailService, IUserLogService userLogService, IConfiguration configuration)
+        IMapper mapper, IJwtService jwtService, IMailService mailService, IUserLogService userLogService,
+        IConfiguration configuration, IUserSubscriptionService userSubscriptionService)
     {
         _unitOfWork = unitOfWork;
         _userRepository = userRepository;
@@ -36,6 +38,7 @@ public class AuthenService : IAuthenService
         _mailService = mailService;
         _userLogService = userLogService;
         _config = configuration;
+        _userSubscriptionService = userSubscriptionService;
     }
     public async Task<bool> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken = default)
     {
@@ -184,6 +187,7 @@ public class AuthenService : IAuthenService
             Description = $"User {user.UserName} logged into the system."
         };
         await _userLogService.CreateLog(userLog);
+        await _userSubscriptionService.EnsureAutoMonthlyForUserAsync(user.Id, cancellationToken);
         return response;
     }
     public async Task<LoginResponse> GoogleLoginAsync(GoogleLoginRequest request, CancellationToken cancellationToken = default)
@@ -232,8 +236,15 @@ public class AuthenService : IAuthenService
                 };
                 await _userLogService.CreateLog(userLog);
             }
-
-        var tokens = await _jwtService.GenerateTokensAsync(user);
+            try
+            {
+                await _userSubscriptionService.EnsureAutoMonthlyForUserAsync(user.Id, cancellationToken);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+            var tokens = await _jwtService.GenerateTokensAsync(user);
         return new LoginResponse
         {
             UserName = user.UserName,

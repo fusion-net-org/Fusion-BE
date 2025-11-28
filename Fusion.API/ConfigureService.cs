@@ -164,6 +164,7 @@ namespace Fusion.API
                 return Regex.Replace(input, "(?<!^)([A-Z])", "-$1").ToLowerInvariant();
             }
         }
+
     }
 }
 

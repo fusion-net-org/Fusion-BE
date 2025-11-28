@@ -13,4 +13,9 @@ public interface ICompanySubscriptionRepository
     Task<int> UpdateEnabledByFeatureIdAsync(Guid featureId, bool newStatus, CancellationToken ct = default);
     Task UseFeatureInCompanyAutoAsync(Guid ActorUserId, Guid companyId, string featureName, CancellationToken ct = default);
     Task UseFeatureInUserAutoAsync(Guid userId,string featureName, CancellationToken ct = default);
+    Task<List<CompanySubscription>> GetByUserSubscriptionIdsAsync(IEnumerable<Guid> userSubscriptionIds, CancellationToken ct = default);
+    Task<CompanySubscription?> FindByCompanyAndUserSubAsync(Guid companyId,Guid userSubscriptionId,CancellationToken ct = default);
+    Task<List<CompanySubscriptionEntitlement>> GetEntitlementsByCompanySubIdAsync(Guid companySubscriptionId, CancellationToken ct = default);
+    Task BulkAddEntitlementsAsync(IEnumerable<CompanySubscriptionEntitlement> entitlements,CancellationToken ct = default);
+    Task<List<CompanySubscription>> GetAllActiveAutoMonthlyByPlanIdsWithEntitlementsAsync(IEnumerable<Guid> planIds,DateTimeOffset now, CancellationToken ct = default);
 }

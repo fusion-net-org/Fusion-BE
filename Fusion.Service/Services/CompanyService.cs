@@ -42,11 +42,13 @@ namespace Fusion.Service.Services
         private readonly INotificationService _notificationService;
         private readonly IRoleAdminRepository _roleRepository;
         private readonly ICompanySubscriptionService _companySubscriptionService;
+        private readonly IUserSubscriptionService _userSubscriptionService;
 
         public CompanyService(IMapper mapper, ICompanyRepository companyRepository, ICloudinaryService cloudinaryService
             , IUserRepository userRepository, ICompanyMemberRepository companyMemberRepository, IValidator<CompanyRequest> validator, ICompanyFriendshipRepository companyFriendshipRepository,
             IMailService mailService, ICompanyActivityService logService, ICurrentService currentService,
-            INotificationService notificationService, IRoleAdminRepository roleRepository, ICompanySubscriptionService companySubscriptionService)
+            INotificationService notificationService, IRoleAdminRepository roleRepository, 
+            ICompanySubscriptionService companySubscriptionService, IUserSubscriptionService userSubscriptionService)
         {
             _mapper = mapper;
             _companyRepository = companyRepository;
@@ -61,6 +63,7 @@ namespace Fusion.Service.Services
             _notificationService = notificationService;
             _roleRepository = roleRepository;
             _companySubscriptionService = companySubscriptionService;
+            _userSubscriptionService = userSubscriptionService;
         }
 
         public async Task<CompanyResponse> CreateCompanyAsync(CompanyRequest request, string Email, CancellationToken cancellationToken = default)

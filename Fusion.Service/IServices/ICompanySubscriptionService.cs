@@ -19,4 +19,11 @@ public interface ICompanySubscriptionService
     Task<List<CompanySubscriptionUserUsageItem>> GetUserUsageAsync(
      Guid companySubscriptionId,
      CancellationToken ct = default);
+    Task<int> EnsureAutoMonthlyForCompanyAsync(
+    Guid companyId,
+    Guid ownerUserId,
+    CancellationToken ct = default);
+
+    Task<int> ResetCompanyAutoMonthlyEntitlementsAsync(
+        CancellationToken ct = default);
 }

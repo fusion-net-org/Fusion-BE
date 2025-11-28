@@ -161,75 +161,80 @@ public class TransactionPaymentRepository : GenericRepository<TransactionPayment
 
     /* ================== Paged ================== */
     private static IQueryable<TransactionPayment> ApplyFilter(
+    IQueryable<TransactionPayment> query,
+    TransactionPaymentPagedRequest request)
+    {
+        // User name
+        if (!string.IsNullOrWhiteSpace(request.UserName))
+        {
+            var k = request.UserName.Trim();
+            query = query.Where(tp =>
+                tp.User != null &&
+                tp.User.UserName.Contains(k));
+        }
+
+        // Plan name
+        if (!string.IsNullOrWhiteSpace(request.PlanName))
+        {
+            var k = request.PlanName.Trim();
+            query = query.Where(tp =>
+                tp.SubscriptionPlan != null &&
+                tp.SubscriptionPlan.Name.Contains(k));
+        }
+
+        // 🔥 Status: parse string -> enum, không phân biệt hoa thường
+        if (!string.IsNullOrWhiteSpace(request.Status) &&
+            Enum.TryParse<PaymentStatus>(request.Status.Trim(), true, out var parsedStatus))
+        {
+            query = query.Where(tp => tp.Status == parsedStatus);
+        }
+
+        // Keyword (Reference / Description / PaymentLinkId / OrderCode)
+        if (!string.IsNullOrWhiteSpace(request.Keyword))
+        {
+            var k = request.Keyword.Trim();
+            query = query.Where(tp =>
+                (tp.Reference != null && tp.Reference.Contains(k)) ||
+                (tp.Description != null && tp.Description.Contains(k)) ||
+                (tp.PaymentLinkId != null && tp.PaymentLinkId.Contains(k)) ||
+                (tp.OrderCode != null && tp.OrderCode.ToString().Contains(k)));
+        }
+
+        // 🔥 Filter theo khoảng TransactionDateTime
+        if (request.TransactionAt != null)
+        {
+            if (request.TransactionAt.From.HasValue)
+            {
+                var from = request.TransactionAt.From.Value;
+                query = query.Where(tp =>
+                    tp.TransactionDateTime.HasValue &&
+                    tp.TransactionDateTime.Value >= from);
+            }
+
+            if (request.TransactionAt.To.HasValue)
+            {
+                var to = request.TransactionAt.To.Value;
+                query = query.Where(tp =>
+                    tp.TransactionDateTime.HasValue &&
+                    tp.TransactionDateTime.Value <= to);
+            }
+        }
+
+        return query;
+    }
+
+
+    private static IQueryable<TransactionPayment> ApplySort(
      IQueryable<TransactionPayment> q,
      TransactionPaymentPagedRequest request)
     {
-        // --- Filter theo UserName ---
-        if (!string.IsNullOrWhiteSpace(request.UserName))
-        {
-            var pattern = $"%{request.UserName.Trim()}%";
-            q = q.Where(tp =>
-                tp.User.UserName != null &&
-                EF.Functions.Like(tp.User.UserName, pattern));
-        }
-
-        // --- Filter theo PlanName ---
-        if (!string.IsNullOrWhiteSpace(request.PlanName))
-        {
-            var pattern = $"%{request.PlanName.Trim()}%";
-            q = q.Where(tp =>
-                tp.SubscriptionPlan.Name != null &&
-                EF.Functions.Like(tp.SubscriptionPlan.Name, pattern));
-        }
-
-        // --- Filter theo Status ---
-        if (!string.IsNullOrWhiteSpace(request.Status) &&
-            TryParsePaymentStatus(request.Status, out var st))
-        {
-            q = q.Where(tp => tp.Status == st);
-        }
-
-        // --- Filter theo khoảng thời gian ---
-        if (request.TransactionAt.From.HasValue)
-        {
-            var from = request.TransactionAt.From.Value;
-            q = q.Where(tp => tp.TransactionDateTime >= from);
-        }
-
-        if (request.TransactionAt.To.HasValue)
-        {
-            var to = request.TransactionAt.To.Value;
-            q = q.Where(tp => tp.TransactionDateTime <= to);
-        }
-
-        // --- Filter theo Keyword đa trường ---
-        if (!string.IsNullOrWhiteSpace(request.Keyword))
-        {
-            var kw = request.Keyword.Trim();
-            var pattern = $"%{kw}%";
-
-            q = q.Where(tp =>
-                (tp.Reference != null && EF.Functions.Like(tp.Reference, pattern)) ||
-                (tp.Description != null && EF.Functions.Like(tp.Description, pattern)) ||
-                (tp.PaymentLinkId != null && EF.Functions.Like(tp.PaymentLinkId, pattern)) ||
-                (tp.Currency != null && EF.Functions.Like(tp.Currency, pattern)) ||
-                (tp.Provider != null && EF.Functions.Like(tp.Provider, pattern)) ||
-                (tp.PaymentMethod != null && EF.Functions.Like(tp.PaymentMethod, pattern)) ||
-                (tp.User.UserName != null && EF.Functions.Like(tp.User.UserName, pattern)) ||
-                (tp.SubscriptionPlan.Name != null && EF.Functions.Like(tp.SubscriptionPlan.Name, pattern)) ||
-                (tp.OrderCode.HasValue &&
-                    EF.Functions.Like(tp.OrderCode.Value.ToString(), pattern))
-            );
-        }
-        return q;
-    }
-
-    private static IQueryable<TransactionPayment> ApplySort(IQueryable<TransactionPayment> q, TransactionPaymentPagedRequest request)
-    {
         var desc = request.SortDescending;
-        var col = request.SortColumn?.Trim();
+        var col = (request.SortColumn ?? string.Empty).Trim();
 
-        // Default sort: TransactionDateTime desc (fallback CreatedAt)
+        // normalize: TransactionDateTime / transactiondatetime / transaction_date_time -> "transactiondatetime"
+        var key = col.Replace("_", "").Replace(" ", "").ToLowerInvariant();
+
+        // Default: sort theo TransactionDateTime (fallback CreatedAt)
         if (string.IsNullOrWhiteSpace(col))
         {
             return desc
@@ -237,41 +242,48 @@ public class TransactionPaymentRepository : GenericRepository<TransactionPayment
                 : q.OrderBy(x => x.TransactionDateTime ?? x.CreatedAt);
         }
 
-        switch (col)
+        switch (key)
         {
-            case nameof(TransactionPayment.Amount):
-                q = desc ? q.OrderByDescending(x => x.Amount)
-                         : q.OrderBy(x => x.Amount);
+            case "amount":
+                q = desc
+                    ? q.OrderByDescending(x => x.Amount)
+                    : q.OrderBy(x => x.Amount);
                 break;
 
-            case nameof(TransactionPayment.Status):
-                q = desc ? q.OrderByDescending(x => x.Status)
-                         : q.OrderBy(x => x.Status);
+            case "status":
+                q = desc
+                    ? q.OrderByDescending(x => x.Status)
+                    : q.OrderBy(x => x.Status);
                 break;
 
-            case nameof(TransactionPayment.OrderCode):
-                q = desc ? q.OrderByDescending(x => x.OrderCode)
-                         : q.OrderBy(x => x.OrderCode);
+            case "ordercode":
+                q = desc
+                    ? q.OrderByDescending(x => x.OrderCode)
+                    : q.OrderBy(x => x.OrderCode);
                 break;
 
-            case nameof(TransactionPayment.CreatedAt):
-                q = desc ? q.OrderByDescending(x => x.CreatedAt)
-                         : q.OrderBy(x => x.CreatedAt);
+            case "createdat":
+                q = desc
+                    ? q.OrderByDescending(x => x.CreatedAt)
+                    : q.OrderBy(x => x.CreatedAt);
                 break;
 
-            case nameof(TransactionPayment.TransactionDateTime):
-                q = desc ? q.OrderByDescending(x => x.TransactionDateTime)
-                         : q.OrderBy(x => x.TransactionDateTime);
+            case "transactiondatetime":
+                q = desc
+                    ? q.OrderByDescending(x => x.TransactionDateTime ?? x.CreatedAt)
+                    : q.OrderBy(x => x.TransactionDateTime ?? x.CreatedAt);
                 break;
 
-            case "UserName": // sort theo user
-                q = desc ? q.OrderByDescending(x => x.User.UserName)
-                         : q.OrderBy(x => x.User.UserName);
+            case "username":
+                q = desc
+                    ? q.OrderByDescending(x => x.User != null ? x.User.UserName : "")
+                    : q.OrderBy(x => x.User != null ? x.User.UserName : "");
                 break;
 
-            case "PlanName": // sort theo plan
-                q = desc ? q.OrderByDescending(x => x.SubscriptionPlan.Name)
-                         : q.OrderBy(x => x.SubscriptionPlan.Name);
+            case "planname":
+                q = desc
+                    ? q.OrderByDescending(x => x.SubscriptionPlan != null ? x.SubscriptionPlan.Name : "")
+                    : q.OrderBy(x => x.SubscriptionPlan != null ? x.SubscriptionPlan.Name : "");
                 break;
 
             default:
@@ -284,7 +296,9 @@ public class TransactionPaymentRepository : GenericRepository<TransactionPayment
         return q;
     }
 
-    public async Task<TransactionPaymentPagedRepoResult> GetPagedAsync(TransactionPaymentPagedRequest request,CancellationToken ct = default)
+    public async Task<TransactionPaymentPagedRepoResult> GetPagedAsync(
+     TransactionPaymentPagedRequest request,
+     CancellationToken ct = default)
     {
         var baseQuery = _context.TransactionPayments
                                 .AsNoTracking()
@@ -292,17 +306,16 @@ public class TransactionPaymentRepository : GenericRepository<TransactionPayment
                                 .Include(tp => tp.SubscriptionPlan)
                                 .AsQueryable();
 
-        // 1) Apply filter chung
+        // 1) Filter
         baseQuery = ApplyFilter(baseQuery, request);
 
-        // 2) Tính thống kê trên toàn bộ tập sau filter (chưa paging)
+        // 2) Stats sau filter (chưa paging)
         var stats = await baseQuery
             .GroupBy(_ => 1)
             .Select(g => new
             {
                 TotalTransactions = g.Count(),
 
-                // Revenue: chỉ tính các CHARGE thành công
                 TotalRevenue = g.Sum(x =>
                     x.Status == PaymentStatus.Success &&
                     x.Type == TransactionType.Charge
@@ -328,7 +341,7 @@ public class TransactionPaymentRepository : GenericRepository<TransactionPayment
             .Take(pageSize)
             .ToListAsync(ct);
 
-        // 4) Trả về kết quả + stats
+        // 4) Return
         return new TransactionPaymentPagedRepoResult
         {
             Items = items,
@@ -342,7 +355,6 @@ public class TransactionPaymentRepository : GenericRepository<TransactionPayment
             TotalPending = stats?.TotalPending ?? 0,
         };
     }
-
     public async Task<bool> LinkToSubscriptionAsync(Guid transactionId, Guid userSubscriptionId, CancellationToken ct = default)
     {
         var tx = await _context.TransactionPayments.FirstOrDefaultAsync(x => x.Id == transactionId, ct);
@@ -744,7 +756,6 @@ public class TransactionPaymentRepository : GenericRepository<TransactionPayment
 
         return items;
     }
-
     public async Task<List<PlanPurchaseCountRow>> GetPlanPurchaseCountsAsync(CancellationToken ct = default)
     {
         return await _context.TransactionPayments
@@ -765,6 +776,72 @@ public class TransactionPaymentRepository : GenericRepository<TransactionPayment
               .OrderByDescending(x => x.TransactionsCount)
               .ToListAsync(ct);
     }
-    #endregion
+    public async Task<List<SubscriptionPlanPurchaseRow>> GetSubscriptionPlanPurchaseStatsAsync(
+            CancellationToken ct = default)
+    {
+        // Chỉ lấy Charge + Success (đã thanh toán thành công)
+        var query = _context.TransactionPayments
+            .AsNoTracking()
+            .Where(tp =>
+                tp.Type == TransactionType.Charge &&
+                tp.Status == PaymentStatus.Success &&
+                tp.PaidAt.HasValue);
+
+        // Group theo PlanId + tên gói snapshot hiện tại
+        var result = await query
+            .GroupBy(tp => new
+            {
+                tp.PlanId,
+                PlanName = tp.SubscriptionPlan.Name
+            })
+            .Select(g => new SubscriptionPlanPurchaseRow
+            {
+                PlanId = g.Key.PlanId,
+                PlanName = g.Key.PlanName ?? "(Unknown plan)",
+                PurchaseCount = g.Count(),
+                TotalAmount = g.Sum(x => x.Amount)
+            })
+            .OrderByDescending(x => x.PurchaseCount)
+            .ToListAsync(ct);
+
+        return result;
+    }
+    public async Task<List<PlanMonthlyPurchaseCountRow>> GetPlanMonthlyPurchaseCountsAsync(
+    int year,
+    CancellationToken ct = default)
+    {
+        var query = _context.TransactionPayments
+        .AsNoTracking()
+        .Where(tp =>
+            tp.Type == TransactionType.Charge &&
+            tp.Status == PaymentStatus.Success &&
+            tp.PaidAt.HasValue &&
+            tp.PaidAt.Value.Year == year);
+
+        var result = await query
+            .GroupBy(tp => new
+            {
+                tp.PlanId,
+                PlanName = tp.SubscriptionPlan.Name,
+                Year = tp.PaidAt!.Value.Year,
+                Month = tp.PaidAt!.Value.Month
+            })
+            .Select(g => new PlanMonthlyPurchaseCountRow
+            {
+                PlanId = g.Key.PlanId,
+                PlanName = g.Key.PlanName ?? "(Unknown plan)",
+                Year = g.Key.Year,
+                Month = g.Key.Month,
+                PurchaseCount = g.Count(),
+                TotalAmount = g.Sum(x => x.Amount)
+            })
+            .OrderBy(x => x.Year)
+            .ThenBy(x => x.Month)
+            .ThenByDescending(x => x.PurchaseCount)
+            .ToListAsync(ct);
+
+        return result;
+    }
 }
+    #endregion
 

@@ -6,12 +6,11 @@ using Fusion.Repository.Bases.Responses;
 using Fusion.Repository.Entities;
 using Fusion.Repository.Enums;
 using Fusion.Repository.IRepositories;
-using Fusion.Repository.Repositories;
 using Fusion.Repository.ViewModels.SubscriptionPlan;
 using Fusion.Repository.ViewModels.Transactions;
-using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.Commons.Helpers;
 using Fusion.Service.IServices;
+using Fusion.Service.ViewModels.SubscriptionPlan.Responses;
 using Fusion.Service.ViewModels.TransactionPayment.Requests;
 using Fusion.Service.ViewModels.TransactionPayment.Responses;
 using Fusion.Service.ViewModels.TransactionPayment.Responses.Overview;
@@ -219,6 +218,19 @@ public class TransactionPaymentService : ITransactionPaymentService
     {
         if (planId == Guid.Empty)
             throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.INVALID_INPUT);
+
+        var plan = await _planRepo.GetByIdWithNavAsync(planId, ct);
+        if (plan == null)
+        {
+            throw CustomExceptionFactory.CreateNotFoundError(
+                ResponseMessages.NOT_FOUND.FormatMessage("Subscription plan"));
+        }
+
+        if (!plan.IsActive)
+        {
+            throw CustomExceptionFactory.CreateBadRequestError(
+                "This subscription plan is Paused. You cannot continue paying installments for it.");
+        }
 
         var userId = _current.GetUserId();
 
@@ -447,6 +459,126 @@ public class TransactionPaymentService : ITransactionPaymentService
             Year = year,
             Items = items
         };
+    }
+    public async Task<List<SubscriptionPlanPurchaseStatResponse>> GetPlanPurchaseStatsAsync(CancellationToken ct = default)
+    {
+        var rows = await _txRepo.GetSubscriptionPlanPurchaseStatsAsync(ct);
+
+        var totalCount = rows.Sum(x => x.PurchaseCount);
+
+        if (totalCount == 0)
+        {
+            return rows
+                .Select(x => new SubscriptionPlanPurchaseStatResponse
+                {
+                    PlanId = x.PlanId,
+                    PlanName = x.PlanName ?? string.Empty,
+                    PurchaseCount = x.PurchaseCount,
+                    TotalAmount = x.TotalAmount,
+                    Percentage = 0m
+                })
+                .ToList();
+        }
+
+        return rows
+            .Select(x => new SubscriptionPlanPurchaseStatResponse
+            {
+                PlanId = x.PlanId,
+                PlanName = x.PlanName ?? string.Empty,
+                PurchaseCount = x.PurchaseCount,
+                TotalAmount = x.TotalAmount,
+                Percentage = Math.Round(
+                    (decimal)x.PurchaseCount * 100m / totalCount,
+                    2)
+            })
+            .OrderByDescending(x => x.PurchaseCount)
+            .ToList();
+    }
+    public async Task<List<SubscriptionPlanPurchaseStatResponse>> GetTopPlanPurchaseStatsAsync(int top = 3,bool includeOther = true,CancellationToken ct = default)
+    {
+        var all = await GetPlanPurchaseStatsAsync(ct);
+        if (all.Count == 0) return all;
+
+        top = top <= 0 ? 3 : top;
+
+        var ordered = all
+            .OrderByDescending(x => x.PurchaseCount)
+            .ToList();
+
+        var totalCount = ordered.Sum(x => x.PurchaseCount);
+
+        var topPlans = ordered.Take(top).ToList();
+
+        if (!includeOther)
+        {
+            // Recompute percentage based on totalCount (đề phòng top != all)
+            foreach (var p in topPlans)
+            {
+                p.Percentage = totalCount == 0
+                    ? 0m
+                    : Math.Round(
+                        (decimal)p.PurchaseCount * 100m / totalCount,
+                        2);
+            }
+            return topPlans;
+        }
+
+        var others = ordered.Skip(top).ToList();
+        var otherCount = others.Sum(x => x.PurchaseCount);
+        var otherAmount = others.Sum(x => x.TotalAmount);
+
+        // Cập nhật lại % cho top trước, dựa trên tổng (top + other)
+        foreach (var p in topPlans)
+        {
+            p.Percentage = totalCount == 0
+                ? 0m
+                : Math.Round(
+                    (decimal)p.PurchaseCount * 100m / totalCount,
+                    2);
+        }
+
+        if (otherCount > 0)
+        {
+            var otherPercentage = totalCount == 0
+                ? 0m
+                : Math.Round(
+                    (decimal)otherCount * 100m / totalCount,
+                    2);
+
+            topPlans.Add(new SubscriptionPlanPurchaseStatResponse
+            {
+                PlanId = Guid.Empty,
+                PlanName = "Other",
+                PurchaseCount = otherCount,
+                TotalAmount = otherAmount,
+                Percentage = otherPercentage
+            });
+        }
+
+        return topPlans;
+    }
+    public async Task<List<PlanMonthlyPurchaseCountRow>> GetPlanMonthlyPurchaseStatsAsync(
+       int year,
+       CancellationToken ct = default)
+    {
+        var rows = await _txRepo.GetPlanMonthlyPurchaseCountsAsync(year, ct);
+
+        var result = rows
+            .Select(x => new PlanMonthlyPurchaseCountRow
+            {
+                PlanId = x.PlanId,
+                PlanName = x.PlanName ?? string.Empty,
+                Year = x.Year,
+                Month = x.Month,
+                PurchaseCount = x.PurchaseCount,
+                TotalAmount = x.TotalAmount
+            })
+            .OrderBy(r => r.Year)
+            .ThenBy(r => r.Month)
+            .ThenByDescending(r => r.PurchaseCount)
+            .ToList();
+
+        return result;
     }
 
     #endregion

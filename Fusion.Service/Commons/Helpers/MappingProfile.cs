@@ -299,7 +299,8 @@ public class MappingProfile : Profile
                         FeatureId = f.FeatureId,
                         FeatureCode = f.Feature != null ? f.Feature.Code : null,
                         FeatureName = f.Feature != null ? f.Feature.Name : null,
-                        Enabled = f.Enabled
+                        Enabled = f.Enabled,
+                        MonthlyLimit = f.MonthlyLimit
                     })
                     : new List<SubscriptionPlanFeatureResponse>()));
 
@@ -380,7 +381,9 @@ public class MappingProfile : Profile
             .ForMember(d => d.FeatureId, o => o.MapFrom(s => s.FeatureId))
             .ForMember(d => d.Code, o => o.MapFrom(s => s.Feature != null ? s.Feature.Code : null))
             .ForMember(d => d.Name, o => o.MapFrom(s => s.Feature != null ? s.Feature.Name : null))
-            .ForMember(d => d.Enabled, o => o.MapFrom(s => s.Enabled));
+            .ForMember(d => d.Enabled, o => o.MapFrom(s => s.Enabled))
+            .ForMember(d => d.MonthlyLimit, o => o.MapFrom(s => s.MonthlyLimit))
+            .ForMember(d => d.LimitUnit, o => o.MapFrom(s => s.LimitUnit));
 
         // Base: UserSubscription → UserSubscriptionResponse
         CreateMap<UserSubscription, UserSubscriptionResponse>()
@@ -458,7 +461,8 @@ public class MappingProfile : Profile
             .ForMember(d => d.FeatureCode, o => o.MapFrom(s => s.Feature.Code))
             .ForMember(d => d.FeatureName, o => o.MapFrom(s => s.Feature.Name))
             .ForMember(d => d.Category, o => o.MapFrom(s => s.Feature.Category))
-            .ForMember(d => d.Enabled, o => o.MapFrom(s => s.Enabled));
+            .ForMember(d => d.Enabled, o => o.MapFrom(s => s.Enabled))
+            .ForMember(d => d.MonthlyLimit, o => o.MapFrom(s => s.MonthlyLimit));
 
 
         // Dùng cho màn dropdown chọn subscription active

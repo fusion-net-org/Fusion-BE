@@ -7,7 +7,6 @@ using Fusion.Repository.Entities;
 using Fusion.Repository.Enums;
 using Fusion.Repository.IRepositories;
 using Microsoft.EntityFrameworkCore;
-using System.Linq.Dynamic.Core.Tokenizer;
 
 namespace Fusion.Repository.Repositories
 {
@@ -18,7 +17,6 @@ namespace Fusion.Repository.Repositories
         {
             _context = context;
         }
-
         public async Task<PagedResult<UserSubscription>> GetPagedByUserIdAsync(Guid id, UserSubscriptionPagedRequest request, CancellationToken ct = default)
         {
             var q = _context.Set<UserSubscription>()
@@ -50,21 +48,29 @@ namespace Fusion.Repository.Repositories
                 );
             }
 
+            var ordered = q.OrderByDescending(x => x.CreatedByTransactionId == null);
+
+            // Nếu không có sort column -> default: trong từng nhóm sort theo CreatedAt desc
             if (string.IsNullOrWhiteSpace(request.SortColumn))
             {
-                request.SortColumn = nameof(UserSubscription.CreatedAt);
-                request.SortDescending = true;
+                ordered = ordered.ThenByDescending(x => x.CreatedAt);
+
+                // để ToPagedResultAsync không override order nữa
+                request.SortColumn = null;
             }
 
-            return await q.ToPagedResultAsync(request, ct);
+                return await q.ToPagedResultAsync(request, ct);
         }
         public Task<UserSubscription?> GetByIdWithNavAsync(Guid id, CancellationToken ct = default)
       => _context.Set<UserSubscription>()
                  .AsNoTracking()
                  .Include(x => x.User)
-                 .Include(x => x.Plan).ThenInclude(p => p.Price)
-                 .Include(x => x.Entitlements).ThenInclude(e => e.Feature)
-                 .FirstOrDefaultAsync(x => x.Id == id, ct);
+                 .Include(us => us.Plan)
+            .ThenInclude(p => p.Price)
+        .Include(us => us.Entitlements
+            .Where(e => e.Feature.Category == "User")) // chỉ lấy entitlement có Feature.Category = "User"
+            .ThenInclude(e => e.Feature)
+        .FirstOrDefaultAsync(us => us.Id == id, ct);
         public Task<UserSubscription?> GetActiveByUserAsync(Guid userId, CancellationToken ct = default)
     => _context.Set<UserSubscription>()
                .AsNoTracking()
@@ -107,6 +113,78 @@ namespace Fusion.Repository.Repositories
             await _context.SaveChangesAsync(ct);
             return true;
         }
+        //============= Background service======================
+        #region
+        public async Task<List<UserSubscription>> GetByUserAndPlanIdsAsync( Guid userId,IEnumerable<Guid> planIds, CancellationToken ct = default)
+        {
+            var ids = (planIds ?? Enumerable.Empty<Guid>())
+                .Where(id => id != Guid.Empty)
+                .Distinct()
+                .ToList();
+
+            if (ids.Count == 0)
+                return new List<UserSubscription>();
+
+            return await _context.UserSubscriptions
+                .AsNoTracking()
+                .Where(us => us.UserId == userId && ids.Contains(us.PlanId))
+                .ToListAsync(ct);
+        }
+        public async Task<List<UserSubscription>> GetAllActiveByPlanIdsWithEntitlementsAsync(IEnumerable<Guid> planIds,CancellationToken ct = default)
+        {
+            var ids = (planIds ?? Enumerable.Empty<Guid>())
+                .Where(id => id != Guid.Empty)
+                .Distinct()
+                .ToList();
+
+            if (ids.Count == 0)
+                return new List<UserSubscription>();
+
+            return await _context.UserSubscriptions
+                .Include(us => us.Entitlements)
+                    .ThenInclude(e => e.Feature)
+                .Where(us =>
+                    us.Status == SubscriptionStatus.Active &&
+                    ids.Contains(us.PlanId))
+                .ToListAsync(ct);
+        }
+        public async Task<List<UserSubscription>> GetExpiredByTermCandidatesAsync(DateTimeOffset now, CancellationToken ct = default)
+        {
+            return await _context.UserSubscriptions
+                .Where(us =>
+                    us.Status == SubscriptionStatus.Active &&
+                    us.TermEnd.HasValue &&
+                    us.TermEnd < now)
+                .ToListAsync(ct);
+        }
+        public async Task<List<UserSubscription>> GetInstallmentPendingCandidatesAsync(DateTimeOffset now, CancellationToken ct = default)
+        {
+            return await _context.UserSubscriptions
+                .Where(us =>
+                    us.PaymentModeSnapshot == PaymentMode.Installments &&
+                    us.Status == SubscriptionStatus.Active &&
+                    us.NextPaymentDueAt.HasValue &&
+                    us.NextPaymentDueAt < now)
+                .ToListAsync(ct);
+        }
+        public async Task<List<UserSubscription>> GetAutoMonthlyForUserWithEntitlementsAsync(Guid userId, CancellationToken ct = default)
+        {
+            if (userId == Guid.Empty)
+                return new List<UserSubscription>();
+
+            return await _context.UserSubscriptions
+                .Include(us => us.Plan)
+                .Include(us => us.Entitlements)
+                    .ThenInclude(e => e.Feature)
+                .Where(us =>
+                    us.UserId == userId &&
+                    us.Status == SubscriptionStatus.Active &&
+                    us.CreatedByTransactionId == null)   // auto-month (free / system created)
+                .OrderBy(us => us.CreatedAt)
+                .ToListAsync(ct);
+        }
+
+        #endregion
         public async Task BulkAddEntitlementsAsync(IEnumerable<UserSubscriptionEntitlement> ents, CancellationToken ct = default)
         {
             if (ents == null) return;
@@ -175,7 +253,6 @@ namespace Fusion.Repository.Repositories
 
             return ents.Count;
         }
-
         public async Task UseFeatureInUserAutoAsync(Guid userId, string featureName, CancellationToken ct = default)
         {
             if (string.IsNullOrWhiteSpace(featureName))
@@ -217,6 +294,26 @@ namespace Fusion.Repository.Repositories
             // Không có entitlement nào trong toàn bộ các gói active
             throw CustomExceptionFactory.CreateBadRequestError(
                 $"Feature '{featureName}' is not enabled in any active user subscription.");
+        }
+        public async Task<List<UserSubscription>> GetInstallmentReactivateCandidatesAsync(DateTimeOffset now, CancellationToken ct = default)
+        {
+            return await _context.UserSubscriptions
+                .Where(us =>
+                    us.PaymentModeSnapshot == PaymentMode.Installments &&
+                    us.Status == SubscriptionStatus.Pending &&            // đang bị pending
+                    us.NextPaymentDueAt.HasValue &&
+                    us.NextPaymentDueAt >= now &&                         // đã được cập nhật lại kỳ mới (>= hiện tại)
+                    (!us.TermEnd.HasValue || us.TermEnd >= now))          // chưa hết hạn gói
+                .ToListAsync(ct);
+        }
+        public async Task<List<UserSubscription>> GetByPlanIdAsync(Guid planId,CancellationToken ct = default)
+        {
+            if (planId == Guid.Empty)
+                return new List<UserSubscription>();
+
+            return await _context.UserSubscriptions
+                .Where(us => us.PlanId == planId)
+                .ToListAsync(ct);
         }
     }
 }

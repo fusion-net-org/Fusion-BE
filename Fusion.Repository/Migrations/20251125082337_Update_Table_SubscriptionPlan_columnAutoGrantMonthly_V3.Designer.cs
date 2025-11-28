@@ -4,6 +4,7 @@ using Fusion.Repository.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Fusion.Repository.Migrations
 {
     [DbContext(typeof(FusionDbContext))]
-    partial class FusionDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251125082337_Update_Table_SubscriptionPlan_columnAutoGrantMonthly_V3")]
+    partial class Update_Table_SubscriptionPlan_columnAutoGrantMonthly_V3
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -397,14 +400,6 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("feature_id");
 
-                    b.Property<int?>("LimitUnit")
-                        .HasColumnType("int")
-                        .HasColumnName("limit_unit");
-
-                    b.Property<int?>("MonthlyLimit")
-                        .HasColumnType("int")
-                        .HasColumnName("monthly_limit");
-
                     b.HasKey("Id");
 
                     b.HasIndex("FeatureId");
@@ -594,6 +589,10 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("bit")
                         .HasDefaultValue(true)
                         .HasColumnName("is_active");
+
+                    b.Property<int?>("MonthlyLimit")
+                        .HasColumnType("int")
+                        .HasColumnName("monthly_limit");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -1543,10 +1542,6 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("feature_id");
 
-                    b.Property<int?>("MonthlyLimit")
-                        .HasColumnType("int")
-                        .HasColumnName("monthly_limit");
-
                     b.Property<Guid>("PlanId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("plan_id");
@@ -2446,14 +2441,6 @@ namespace Fusion.Repository.Migrations
                     b.Property<Guid>("FeatureId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("feature_id");
-
-                    b.Property<int?>("LimitUnit")
-                        .HasColumnType("int")
-                        .HasColumnName("limit_unit");
-
-                    b.Property<int?>("MonthlyLimit")
-                        .HasColumnType("int")
-                        .HasColumnName("monthly_limit");
 
                     b.Property<Guid>("UserSubscriptionId")
                         .HasColumnType("uniqueidentifier")
