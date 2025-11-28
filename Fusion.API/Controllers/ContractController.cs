@@ -4,7 +4,6 @@ using Fusion.Service.IServices;
 using Fusion.Service.Services;
 using Fusion.Service.ViewModels.Contract.Requests;
 using Fusion.Service.ViewModels.Contract.Responses;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
