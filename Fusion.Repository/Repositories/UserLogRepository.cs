@@ -1,4 +1,5 @@
-﻿using Fusion.Repository.Bases.Page;
+﻿using Fusion.Repository.Bases.Exceptions;
+using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.UserLog;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
@@ -50,6 +51,32 @@ public class UserLogRepository : GenericRepository<UserLog>, IUserLogRepository
             request.SortColumn = nameof(UserLog.CreatedAt);
             request.SortDescending = true;
         }
+
+        var query = _context.UserLogs
+            .AsNoTracking()
+            .Where(x => !x.IsDeleted && x.ActorUserId == actorUserId);
+
+        query = ApplyFilters(query, request);
+
+        return await query.ToPagedResultAsync(request, cancellationToken);
+    }
+
+    public async Task<PagedResult<UserLog>> GetUserLogByUserIdAsync(
+        Guid actorUserId,
+        UserLogSearchRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        request ??= new UserLogSearchRequest();
+
+        if (string.IsNullOrWhiteSpace(request.SortColumn))
+        {
+            request.SortColumn = nameof(UserLog.CreatedAt);
+            request.SortDescending = true;
+        }
+
+        var user = await _context.Users.FindAsync(actorUserId);
+        if(user == null)
+            throw CustomExceptionFactory.CreateNotFoundError("User not existed in the system");
 
         var query = _context.UserLogs
             .AsNoTracking()

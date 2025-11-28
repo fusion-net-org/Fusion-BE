@@ -15,5 +15,10 @@ namespace Fusion.Repository.IRepositories
         Guid actorUserId,
         UserLogSearchRequest request,
         CancellationToken cancellationToken = default);
+
+        Task<PagedResult<UserLog>> GetUserLogByUserIdAsync(
+        Guid actorUserId,
+        UserLogSearchRequest request,
+        CancellationToken cancellationToken = default);
     }
 }
