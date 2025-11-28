@@ -1,6 +1,9 @@
-﻿using Azure.Core;
+﻿using System.ComponentModel.Design;
+using System.Threading;
+using Azure.Core;
 using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Bases.Page;
+using Fusion.Repository.Bases.Page.Company;
 using Fusion.Repository.Bases.Page.Partner;
 using Fusion.Repository.Bases.Responses;
 using Fusion.Repository.Data;
@@ -8,8 +11,6 @@ using Fusion.Repository.Entities;
 using Fusion.Repository.IRepositories;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
-using System.ComponentModel.Design;
-using System.Threading;
 
 namespace Fusion.Repository.Repositories
 {
@@ -86,7 +87,7 @@ namespace Fusion.Repository.Repositories
               (cf.Status.ToLower() == "active" || cf.Status.ToLower() == "pending"));
             return query.ToList();
         }
-        public async Task<PagedResult<CompanyFriendship>> GetCompanyFriendshipByCompanyIDVersion2(Guid userID,Guid companyID,CompanyFriendshipSearchRequest request,CancellationToken cancellationToken = default)
+        public async Task<PagedResult<CompanyFriendship>> GetCompanyFriendshipByCompanyIDVersion2(Guid userID, Guid companyID, CompanyFriendshipSearchRequest request, CancellationToken cancellationToken = default)
         {
             var company = await _context.Companies
                 .FirstOrDefaultAsync(c => c.Id == companyID && c.OwnerUserId == userID);
@@ -119,7 +120,7 @@ namespace Fusion.Repository.Repositories
                     .ThenInclude(c => c.ProjectCompanyRequests)
                 .Where(cf =>
                     (cf.CompanyAId == companyID || cf.CompanyBId == companyID) &&
-                    (cf.Status.ToLower() == "active" || cf.Status.ToLower() == "pending"))
+                    (cf.Status.ToLower() == "active" || cf.Status.ToLower() == "pending" || cf.Status.ToLower() == "inactive"))
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(request.Keyword))
@@ -183,7 +184,7 @@ namespace Fusion.Repository.Repositories
                     || (u.CompanyB.OwnerUser.UserName ?? "").ToLower().Contains(keyword)
                     || (u.CompanyB.TaxCode ?? "").ToLower().Contains(keyword)
 
-                
+
                     );
             }
             // filter following fromdate todate
@@ -260,7 +261,7 @@ namespace Fusion.Repository.Repositories
 
 
 
-        public async Task<CompanyFriendship> InviteCompanyFriendship(Guid companyAId, Guid companyBId, Guid requesterId,string? note)
+        public async Task<CompanyFriendship> InviteCompanyFriendship(Guid companyAId, Guid companyBId, Guid requesterId, string? note)
         {
             var checkCompanyB = await _context.Companies.FirstOrDefaultAsync(x => x.Id == companyBId);
 
@@ -281,7 +282,7 @@ namespace Fusion.Repository.Repositories
             var checkCompanyA = await _context.Companies
                   .FirstOrDefaultAsync(c =>
                       c.Id == companyAId &&
-                      c.OwnerUserId == requesterId); 
+                      c.OwnerUserId == requesterId);
 
             if (checkCompanyA == null)
             {
@@ -313,12 +314,12 @@ namespace Fusion.Repository.Repositories
                         "Friendship partner is pending handle.");
                 }
 
-                if (existingFriendship.Status == "Inactive")
-                {
-                    throw new CustomException(StatusCodes.Status400BadRequest,
-                        "FRIENDSHIP_REJECTED",
-                        "Friendship partner is reject before.");
-                }
+                //if (existingFriendship.Status == "Inactive")
+                //{
+                //    throw new CustomException(StatusCodes.Status400BadRequest,
+                //        "FRIENDSHIP_REJECTED",
+                //        "Friendship partner is reject before.");
+                //}
             }
 
             var friendship = new CompanyFriendship
@@ -494,11 +495,12 @@ namespace Fusion.Repository.Repositories
         }
 
         public async Task<CompanyFriendship?> GetCompanyFriendshipBetweenCompaniesAsync(
-            Guid companyAId,
-            Guid companyBId,
-            CancellationToken token = default)
+             Guid companyAId,
+             Guid companyBId,
+             long? friendshipId = null,
+             CancellationToken token = default)
         {
-            return await _context.CompanyFriendships
+            var query = _context.CompanyFriendships
                 .Include(cf => cf.CompanyA)
                     .ThenInclude(c => c.CompanyMembers)
                 .Include(cf => cf.CompanyB)
@@ -508,10 +510,47 @@ namespace Fusion.Repository.Repositories
                 .Include(cf => cf.CompanyB)
                     .ThenInclude(c => c.ProjectCompanies)
                 .AsNoTracking()
-                .FirstOrDefaultAsync(x =>
-                    (x.CompanyAId == companyAId && x.CompanyBId == companyBId) ||
-                    (x.CompanyAId == companyBId && x.CompanyBId == companyAId),
-                    token);
+                .AsQueryable();
+
+            if (friendshipId.HasValue)
+            {
+                return await query.FirstOrDefaultAsync(cf => cf.Id == friendshipId.Value, token);
+            }
+
+            return await query
+                .Where(x => (x.CompanyAId == companyAId && x.CompanyBId == companyBId) ||
+                            (x.CompanyAId == companyBId && x.CompanyBId == companyAId))
+                .OrderByDescending(x => x.CreatedAt)
+                .FirstOrDefaultAsync(token);
         }
+
+        public async Task<List<Company>> GetAllPartnersOfCompanyAsync(Guid companyId, string? companyName = null, CancellationToken cancellationToken = default)
+        {
+            var friendships = await _context.CompanyFriendships
+                .Include(cf => cf.CompanyA)
+                .Include(cf => cf.CompanyB)
+                .Where(cf => (cf.CompanyAId == companyId || cf.CompanyBId == companyId)
+                             && cf.Status.ToLower() == "active")
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
+
+            var partners = friendships
+                .Select(cf => cf.CompanyAId == companyId ? cf.CompanyB : cf.CompanyA)
+                .Where(c => c != null) 
+                .ToList()!;
+
+            if (!string.IsNullOrWhiteSpace(companyName))
+            {
+                var nameLower = companyName.Trim().ToLower();
+                partners = partners
+                    .Where(c => !string.IsNullOrEmpty(c.Name) && c.Name.ToLower().Contains(nameLower))
+                    .ToList();
+            }
+            return partners!;
+        }
+
+
+
+
     }
 }

@@ -14,6 +14,7 @@ namespace Fusion.Repository.IRepositories
 {
     public interface ICompanyRepository : IGenericRepository<Company>
     {
+
         Task<PagedResult<Company>> GetPagedCompaniesAsync(string userMail, CompanyPagedSearchRequest request, CancellationToken cancellationToken = default);
         Task<PagedResult<Company>> GetAllCompaniesAsync(string userMail, CompanyPagedSearchRequestVersion2 request, Guid? selectedCompanyId, CancellationToken cancellationToken = default);
         Task<PagedResult<Company>> GetAllCompaniesAsyncIncludingAllCompany(string userMail, CompanyPagedSearchRequestVersion2 request, Guid? selectedCompanyId, CancellationToken cancellationToken = default);

@@ -10,16 +10,13 @@ namespace Fusion.Service.ViewModels.Contract.Requests
 {
     public class CreateContractRequest
     {
+        public Guid ExecutorCompanyId { get; set; }
+        public Guid RequesterCompanyId { get; set; }
         public string ContractCode { get; set; } = string.Empty;
         public string ContractName { get; set; } = string.Empty;
-
         public DateOnly EffectiveDate { get; set; }
         public DateOnly ExpiredDate { get; set; }
-
         public decimal Budget { get; set; }
-
         public List<CreateAppendixRequest> Appendices { get; set; } = new();
-
-        //public IFormFile? AttachmentFile { get; set; }
     }
 }

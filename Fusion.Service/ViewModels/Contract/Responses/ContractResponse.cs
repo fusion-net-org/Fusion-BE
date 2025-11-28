@@ -10,6 +10,8 @@ namespace Fusion.Service.ViewModels.Contract.Responses
     {
         public Guid Id { get; set; }
         public Guid ProjectRequestId { get; set; }
+        public Guid ExecutorCompanyId { get; set; }
+        public Guid RequesterCompanyId { get; set; }
         public string ContractCode { get; set; } = string.Empty;
         public string ContractName { get; set; } = string.Empty;
         public decimal Budget { get; set; }

@@ -63,11 +63,24 @@ namespace Fusion.Repository.Entities
         [ForeignKey("UpdatedBy")]
         public virtual User? UpdatedByNavigation { get; set; }
 
+        [Column("requester_company_id")]
+        public Guid? RequesterCompanyId { get; set; }
+
+        [Column("executor_company_id")]
+        public Guid? ExecutorCompanyId { get; set; }
+
         [InverseProperty("Contract")]
         public virtual ProjectRequest? ProjectRequest { get; set; }
 
         [InverseProperty("Contract")]
         public virtual ICollection<ContractAppendix> ContractAppendices { get; set; } = new List<ContractAppendix>();
+
+        [ForeignKey("RequesterCompanyId")]
+        public virtual Company? RequesterCompany { get; set; }
+
+        [ForeignKey("ExecutorCompanyId")]
+        public virtual Company? ExecutorCompany { get; set; }
+
 
     }
 }
