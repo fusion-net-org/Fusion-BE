@@ -252,13 +252,11 @@ namespace Fusion.Repository.Repositories
 
         public async Task<PagedResult<Company>> GetPagedCompaniesAdminAsync(string adminEmail, CompanyPagedSearchRequest request, CancellationToken cancellationToken = default)
         {
-            var isAdmin = _context.Users
-                    .Include(u => u.UserRoles)
-                        .ThenInclude(ur => ur.Role)
-                    .Any(u => u.Email == adminEmail &&
-                            u.UserRoles.Any(ur => ur.Role.RoleName == "Admin"));
-            if (!isAdmin)
-                throw CustomExceptionFactory.CreateNotFoundError("Admin is not existed in company");
+            var adminUser = await _context.Users.SingleOrDefaultAsync(x => x.IsSystemAdmin && x.Email == adminEmail);
+
+            if (adminUser == null)
+                throw CustomExceptionFactory.CreateNotFoundError("Admin does not exist in this system");
+
 
             var query = _dbSet
                 .Include(x => x.CompanyMembers)
