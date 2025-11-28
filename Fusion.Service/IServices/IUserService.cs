@@ -1,6 +1,7 @@
 ﻿
 using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.User;
+using Fusion.Repository.Bases.Page.UserLog;
 using Fusion.Repository.Entities;
 using Fusion.Repository.ViewModels.Users;
 using Fusion.Service.ViewModels.Companies.Responses;
@@ -11,6 +12,7 @@ namespace Fusion.Service.IServices;
 
 public interface IUserService
 {
+    Task<List<RoleDto>> GetRolesByUserAndCompanyAsync(Guid userId, Guid companyId, CancellationToken cancellationToken = default);
     Task<SelfUserResponse?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<PagedResult<CompanyUserResponse>> GetPagedCompanyUsersAsync(
             CompanyUserPagedRequest request,
@@ -33,4 +35,6 @@ public interface IUserService
     Task<UserGrowthAndStatusOverviewResponse> GetUserGrowthAndStatusOverviewAsync(int months = 12, CancellationToken cancellationToken = default);
     Task<List<UserCompanyDistributionPoint>> GetTopCompaniesByUserCountAsync( int top = 10,CancellationToken cancellationToken = default);
     Task<UserPermissionLevelOverviewResponse> GetUserPermissionLevelOverviewAsync(CancellationToken cancellationToken = default);
+    Task<AnalyticsUserResponse> GetAnalyticsUserAsync(Guid userId,
+ CancellationToken token);
 }

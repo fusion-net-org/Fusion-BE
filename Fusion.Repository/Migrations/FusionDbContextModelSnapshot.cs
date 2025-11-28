@@ -284,8 +284,7 @@ namespace Fusion.Repository.Migrations
 
                     b.Property<DateTime?>("JoinedAt")
                         .ValueGeneratedOnAdd()
-                        .HasPrecision(3)
-                        .HasColumnType("datetime2(3)")
+                        .HasColumnType("datetime2")
                         .HasColumnName("joined_at")
                         .HasDefaultValueSql("(sysutcdatetime())");
 
@@ -1154,6 +1153,10 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("id");
 
+                    b.Property<long?>("CommentId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("comment_id");
+
                     b.Property<string>("ContentType")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)")
@@ -1203,6 +1206,8 @@ namespace Fusion.Repository.Migrations
                         .HasColumnName("url");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CommentId");
 
                     b.HasIndex("TaskId");
 
@@ -1847,6 +1852,10 @@ namespace Fusion.Repository.Migrations
                     b.Property<string>("reason")
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("reason");
+
+                    b.Property<string>("status")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("status");
 
                     b.HasKey("Id");
 
@@ -2942,11 +2951,17 @@ namespace Fusion.Repository.Migrations
 
             modelBuilder.Entity("Fusion.Repository.Entities.ProjectTaskAttachment", b =>
                 {
+                    b.HasOne("Fusion.Repository.Entities.Comment", "Comment")
+                        .WithMany("Attachments")
+                        .HasForeignKey("CommentId");
+
                     b.HasOne("Fusion.Repository.Entities.ProjectTask", "Task")
                         .WithMany("Attachments")
                         .HasForeignKey("TaskId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Comment");
 
                     b.Navigation("Task");
                 });
@@ -3321,6 +3336,11 @@ namespace Fusion.Repository.Migrations
                     b.Navigation("ToStatus");
 
                     b.Navigation("Workflow");
+                });
+
+            modelBuilder.Entity("Fusion.Repository.Entities.Comment", b =>
+                {
+                    b.Navigation("Attachments");
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.Company", b =>

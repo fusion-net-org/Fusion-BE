@@ -116,7 +116,8 @@ namespace Fusion.API.Controllers
         public async Task<IActionResult> CreateCompany(CompanyRequest request, CancellationToken cancellationToken)
         {
             var emailClaim = User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email || c.Type == ClaimTypes.Email || c.Type == "email");
-            var email = emailClaim?.Value; if (email == null)
+            var email = emailClaim?.Value;
+            if (email == null)
             {
                 return Unauthorized(ResponseModel<CompanyResponse>.Error(
                     statusCode: StatusCodes.Status401Unauthorized,
@@ -124,12 +125,25 @@ namespace Fusion.API.Controllers
                 ));
             }
 
-            var result = await _companyService.CreateCompanyAsync(request, email, cancellationToken);
+            try
+            {
+                var result = await _companyService.CreateCompanyAsync(request, email, cancellationToken);
 
-            return Ok(ResponseModel<CompanyResponse>.Ok(
-                data: result,
-                message: ResponseMessageHelper.FormatMessage(ResponseMessages.CREATE_SUCCESS, "company")));
+                return Ok(ResponseModel<CompanyResponse>.Ok(
+                    data: result,
+                    message: ResponseMessageHelper.FormatMessage(ResponseMessages.CREATE_SUCCESS, "company")));
+            }
+            catch (FluentValidation.ValidationException ex)
+            {
+                var allErrors = string.Join("; ", ex.Errors.Select(e => e.ErrorMessage));
+                return BadRequest(ResponseModel<CompanyResponse>.Error(
+                    statusCode: StatusCodes.Status400BadRequest,
+                    message: allErrors,
+                    additionalData: ex.Errors.Select(e => new { e.PropertyName, e.ErrorMessage })
+                ));
+            }
         }
+
 
         [HttpGet("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<CompanyResponse>))]

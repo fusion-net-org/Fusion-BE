@@ -24,6 +24,21 @@ namespace Fusion.Repository.Repositories
         {
             return await _dbSet.FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
         }
+        public async Task<List<RoleDto>> GetRolesByUserAndCompanyAsync(Guid userId, Guid companyId, CancellationToken cancellationToken = default)
+        {
+            return await _context.UserRoles
+                .Where(ur => ur.UserId == userId && ur.Role != null && ur.Role.CompanyId == companyId)
+                .Select(ur => new RoleDto
+                {
+                    Id = ur.Role!.Id,
+                    Name = ur.Role.RoleName!,
+                    Description = ur.Role.Description
+                })
+                .ToListAsync(cancellationToken);
+        }
+
+
+
         public async Task<User?> GetUserByEmailAsync(string email, CancellationToken cancellationToken = default)
         {
             return await _context.Users.FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
@@ -273,6 +288,49 @@ namespace Fusion.Repository.Repositories
           NewUsers = g.Count()
       })
       .ToListAsync(ct);
+        }
+
+        public async Task<UserPerformanceOverview> GetUserPerformanceOverviewAsync(Guid userId, CancellationToken token = default)
+        {
+            var user = await _context.Users.FindAsync(userId);
+
+            if (user == null)
+                throw CustomExceptionFactory.CreateNotFoundError("User Not existed");
+
+            var taskIds = await _context.TaskWorkflows
+                .Where(a => a.AssignUserId == userId)
+                .Select(a => a.TaskId)
+                .ToListAsync();
+
+            var totalTasksAssigned = await _context.ProjectTasks
+                .Include(t => t.TaskWorkflows)
+                .Where(t => !t.IsDeleted && taskIds.Contains(t.Id))
+                .CountAsync(token);
+
+            var totalCompanies = await _context.CompanyMembers
+                .Where(cm => cm.UserId == userId)
+                .Select(cm => cm.CompanyId)
+                .Distinct()
+                .CountAsync(token);
+
+            var totalProjects = await _context.ProjectMembers
+                .Where(cm => cm.UserId == userId)
+                .Select(cm => cm.ProjectId)
+                .Distinct()
+                .CountAsync(token);
+
+            var totalSubscriptions = await _context.UserSubscriptions
+            .Where(us => us.UserId == userId && us.Status == Enums.SubscriptionStatus.Active)
+            .CountAsync(token);
+
+            return new UserPerformanceOverview
+            {
+                TotalTasksAssigned = totalTasksAssigned,
+                TotalCompanies = totalCompanies,
+                TotalProjects = totalProjects,
+                TotalSubscriptions = totalSubscriptions
+
+            };
         }
     }
 }

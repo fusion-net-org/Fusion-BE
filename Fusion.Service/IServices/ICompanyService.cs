@@ -34,5 +34,7 @@ namespace Fusion.Service.IServices
         Task<CompanyGrowthAndStatusOverviewDto> GetCompanyGrowthAndStatusOverviewAsync( DateOnly? from = null, DateOnly? to = null, CancellationToken ct = default);
         Task<CompanyProjectLoadOverviewDto> GetCompanyProjectLoadOverviewAsync(CancellationToken ct = default);
 
+        Task<CompanyTaskStatsResponse> GetTaskStatsAsync(Guid partnerCompanyId, Guid myCompanyId, Guid userId, CancellationToken token);
+
     }
 }

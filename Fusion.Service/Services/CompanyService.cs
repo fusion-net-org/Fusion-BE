@@ -146,6 +146,13 @@ namespace Fusion.Service.Services
                 Body = emailBody,
                 ToEmail = user.Email
             });
+
+            await _mailService.SendEmailAsync(new ViewModels.Companies.Email.MailRequest()
+            {
+                Subject = $"Welcome {company.Name} to Fusion Platform - Manage, Collaborate, and Grow",
+                Body = emailBody,
+                ToEmail = company.Email,
+            });
             return _mapper.Map<CompanyResponse>(newCompany);
 
         }
@@ -536,7 +543,14 @@ namespace Fusion.Service.Services
             {
                 var company_taxcode_existed = await _companyRepository.GetCompanyByTaxCode(request.TaxCode);
                 if (company_taxcode_existed != null)
-                    throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.DUPLICATE.FormatMessage("Tax-code"));
+                    throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.EXISTED.FormatMessage("Company with tax-code"));
+            }
+
+            if (!string.IsNullOrEmpty(request.PhoneNumber) && request.PhoneNumber != company.PhoneNumber)
+            {
+                var company_phone_existed = await _companyRepository.GetCompanyByPhoneNumber(request.PhoneNumber);
+                if (company_phone_existed != null)
+                    throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.EXISTED.FormatMessage("Company Phone Number"));
             }
 
             var image_company = "";
@@ -989,5 +1003,11 @@ namespace Fusion.Service.Services
         {
             return await _companyRepository.GetCompanyProjectLoadOverviewAsync(ct);
         }
+
+        public async Task<CompanyTaskStatsResponse> GetTaskStatsAsync(Guid partnerCompanyId, Guid myCompanyId, Guid userId, CancellationToken token)
+        {
+            return await _companyRepository.GetTaskStatsAsync(partnerCompanyId, myCompanyId, userId, token);
+        }
+
     }
 }

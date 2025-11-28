@@ -11,6 +11,7 @@ namespace Fusion.Repository.IRepositories
 {
     public interface IUserRepository : IGenericRepository<User>
     {
+        Task<List<RoleDto>> GetRolesByUserAndCompanyAsync(Guid userId, Guid companyId, CancellationToken cancellationToken = default);
         Task<PagedResult<User>> GetPagedAdminUsersAsync(AdminUserPagedRequest request, CancellationToken cancellationToken = default);
         Task<PagedResult<User>> GetPagedCompanyUsersAsync(CompanyUserPagedRequest request, CancellationToken cancellationToken = default);
         Task<User?> GetUserByIdAsync(Guid id, CancellationToken cancellationToken = default);
@@ -29,5 +30,6 @@ namespace Fusion.Repository.IRepositories
         Task<List<UserCompanyDistributionPoint>> GetTopCompaniesByUserCountAsync(int top, CancellationToken cancellationToken = default);
         Task<List<UserPermissionLevelPoint>> GetUserPermissionLevelOverviewAsync( CancellationToken cancellationToken = default);
         Task<List<UserMonthlyNewPoint>> GetMonthlyNewUsersInYearAsync(int year,CancellationToken ct = default);
+        Task<UserPerformanceOverview> GetUserPerformanceOverviewAsync(Guid userId, CancellationToken token = default);
     }
 }

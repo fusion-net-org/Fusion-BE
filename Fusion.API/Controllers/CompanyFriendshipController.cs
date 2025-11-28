@@ -4,6 +4,7 @@ using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.Partner;
 using Fusion.Repository.Bases.Responses;
+using Fusion.Repository.ViewModels.Companies;
 using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.Companies.Requests;
@@ -308,8 +309,31 @@ namespace Fusion.API.Controllers
                 message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "friendship status summary")));
         }
 
+        [HttpGet("task-stats")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<CompanyTaskStatsRequest>))]
+        public async Task<IActionResult> GetPartnerTaskStats([FromQuery] CompanyTaskStatsRequest request, CancellationToken token)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(ResponseModel<string>.Error(
+                    StatusCodes.Status401Unauthorized,
+                    "Don't find token!"));
+            }
 
+            var result = await _companyService.GetTaskStatsAsync(
+                request.PartnerCompanyId,
+                request.MyCompanyId,
+                userId,
+                token
+            );
+
+            return Ok(ResponseModel<CompanyTaskStatsResponse>.Ok(
+                           data: result,
+                           message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "friendship task status")));
+        }
     }
+
 }
 

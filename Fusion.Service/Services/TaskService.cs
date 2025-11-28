@@ -21,7 +21,9 @@ using Fusion.Service.ViewModels.WorkflowStatus;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace Fusion.Service.Services;
 
@@ -726,14 +728,18 @@ public class TaskService : ITaskService
             ?? throw CustomExceptionFactory.CreateNotFoundError(
                 ResponseMessages.NOT_FOUND.FormatMessage("Task"));
 
-        // map task trước
         var vm = _mapper.Map<ProjectTaskResponse>(e);
 
         var wfAssignments = await _taskWorkflowService.GetAssignmentsForTaskAsync(id, ct);
         vm.WorkflowAssignments = wfAssignments;
 
+        // NEW: load comments chuẩn, sort mới nhất lên đầu, có attachments
+        var comments = await GetCommentsByTaskIdAsync(id, ct);
+        vm.Comments = comments.ToList();
+
         return vm;
     }
+
 
     public async Task<PagedResult<ProjectTaskResponse>> GetAllTasksAsync(
         PagedRequest request, CancellationToken ct = default)
@@ -828,9 +834,24 @@ public class TaskService : ITaskService
 
         var paged = await _repo.GetTasksBySprintIdAsync(sprintId, request, ct);
 
+        var responseItems = new List<ProjectTaskResponse>();
+
+        foreach (var t in paged.Items)
+        {
+            var resp = _mapper.Map<ProjectTaskResponse>(t);
+
+            // AssigneeIds
+            resp.AssigneeIds = t.TaskWorkflows?.Select(a => a.AssignUserId.Value).ToList() ?? new List<Guid>();
+
+            // await lấy workflow assignments
+            resp.WorkflowAssignments = await _taskWorkflowService.GetAssignmentsForTaskAsync(resp.Id, ct);
+
+            responseItems.Add(resp);
+        }
+
         return new PagedResult<ProjectTaskResponse>
         {
-            Items = paged.Items.Select(_mapper.Map<ProjectTaskResponse>).ToList(),
+            Items = responseItems,
             TotalCount = paged.TotalCount,
             PageNumber = paged.PageNumber,
             PageSize = paged.PageSize
@@ -842,12 +863,19 @@ public class TaskService : ITaskService
     {
         var taskData = await _repo.GetAllTaskByUserId(userId, request, token);
 
+        if (!taskData.Items.Any())
+        {
+            throw CustomExceptionFactory.CreateNotFoundError(
+                ResponseMessages.NOT_FOUND.FormatMessage("List Task"));
+        }
+
         var mapped = taskData.Items.Select(t => new TaskResponse
         {
             TaskId = t.Id,
             Code = t.Code ?? "",
             Title = t.Title ?? "",
             Img = t.Img,
+            Description = t.Description ?? "",
             Type = t.Type?.ToString() ?? "Unknown",
             Priority = t.Priority?.ToString() ?? "None",
             Severity = t.Severity?.ToString() ?? "None",
@@ -907,7 +935,8 @@ public class TaskService : ITaskService
                 GuardNameKey = t.CurrentStatus.GuardNameKey ?? "Unknown",
                 IsEnd = t.CurrentStatus.IsEnd,
                 IsStart = t.CurrentStatus.IsStart,
-                WorkflowId = t.CurrentStatus.WorkflowId
+                WorkflowId = t.CurrentStatus.WorkflowId,
+                Color = t.CurrentStatus.Color
             },
 
             Members = (t.TaskWorkflows ?? new List<TaskWorkflow>())
@@ -968,6 +997,162 @@ public class TaskService : ITaskService
             PageSize = taskData.PageSize,
         };
     }
+
+    public async Task<TaskResponse> GetTaskDetailByTaskIdAsync(Guid userId, Guid taskId, CancellationToken token = default)
+    {
+        var t = await _repo.GetTaskDetailByTaskIdAsync(userId, taskId, token);
+
+        if (t == null)
+            throw CustomExceptionFactory.CreateNotFoundError(
+                ResponseMessages.NOT_FOUND.FormatMessage("Task"));
+
+        return new TaskResponse
+        {
+            TaskId = t.Id,
+            Code = t.Code ?? "",
+            Title = t.Title ?? "",
+            Img = t.Img,
+            Point = t.Point ?? 0,
+            Description = t.Description ?? "",
+            Type = t.Type?.ToString() ?? "Unknown",
+            Priority = t.Priority?.ToString() ?? "None",
+            Severity = t.Severity?.ToString() ?? "None",
+            Status = t.Status?.ToString() ?? "None",
+            EstimateHours = t.EstimateHours,
+            RemainingHours = t.RemainingHours,
+            CarryOverCount = t.CarryOverCount,
+            OrderInSprint = t.OrderInSprint,
+
+            IsBacklog = t.IsBacklog,
+            CreateAt = t.CreateAt,
+            DueDate = t.DueDate,
+
+            CreateBy = t.CreatedBy ?? Guid.Empty,
+            CreateByName = t.CreatedByNavigation?.UserName ?? "Unknown",
+
+            ParentTaskId = t.ParentTaskId,
+            SourceTaskId = t.SourceTaskId,
+
+            Project = t.Project == null ? null : new ProjectResponse
+            {
+                Id = t.Project.Id,
+                Name = t.Project?.Name ?? "",
+                Code = t.Project?.Code ?? "",
+                CompanyHiredId = t.Project?.CompanyRequestId ?? Guid.Empty,
+                CompanyId = t.Project?.CompanyId ?? Guid.Empty,
+                Description = t.Project?.Description ?? "Unknown",
+                IsHired = t.Project?.IsHired ?? false,
+                Status = t.Project?.Status ?? "None",
+                ProjectRequestId = t.Project?.ProjectRequestId ?? Guid.Empty,
+                StartDate = t.Project?.StartDate,
+                EndDate = t.Project?.EndDate,
+                CreatedBy = t.Project?.CreatedBy ?? Guid.Empty,
+                WorkflowId = t.Project?.WorkflowId ?? Guid.Empty,
+            },
+
+            Sprint = t.Sprint == null ? null : new SprintResponse
+            {
+                Id = t.Sprint.Id,
+                Name = t.Sprint?.Name ?? "",
+                Start = t.Sprint?.StartDate ?? DateTime.MinValue,
+                End = t.Sprint?.EndDate ?? DateTime.MinValue,
+                CapacityHours = t.Sprint?.CapacityHours ?? 0,
+                Color = t.Sprint?.Color ?? "Unknown",
+                Status = t.Sprint.Status,
+                CommittedPoints = t.Sprint?.CommittedPoints ?? 0,
+                CreatedAt = t.Sprint?.CreatedAt ?? DateTime.MinValue,
+                Goal = t.Sprint?.Goal ?? "Unknown",
+                IsDeleted = t.Sprint.IsDeleted,
+            },
+
+            WorkflowStatus = t.CurrentStatus == null ? null : new WorkflowStatusResponse
+            {
+                Id = t.CurrentStatus.Id,
+                Name = t.CurrentStatus.Name ?? "Unknown",
+                Position = t.CurrentStatus.Position,
+                GuardNameKey = t.CurrentStatus.GuardNameKey ?? "Unknown",
+                IsEnd = t.CurrentStatus.IsEnd,
+                IsStart = t.CurrentStatus.IsStart,
+                WorkflowId = t.CurrentStatus.WorkflowId
+            },
+
+            Members = (t.TaskWorkflows ?? new List<TaskWorkflow>())
+                .Where(a => a.AssignUser != null)
+                .Select(a => new ProjectMemberSummaryResponse
+                {
+                    MemberId = a.AssignUser?.Id ?? Guid.Empty,
+                    MemberName = a.AssignUser?.UserName ?? "Unknown",
+                    Avatar = a.AssignUser?.Avatar ?? "Unknown",
+                })
+                .ToList(),
+
+            TaskAttachments = (t.Attachments ?? new List<ProjectTaskAttachment>())
+                .Select(a => new TaskAttachmentResponse
+                {
+                    TaskId = a.TaskId,
+                    Id = a.Id,
+                    ContentType = a.ContentType ?? "Unknown",
+                    Description = a.Description ?? "Unknown",
+                    FileName = a.FileName ?? "Unknown",
+                    IsImage = a.IsImage,
+                    Size = a?.SizeBytes ?? 0L,
+                    UploadedAt = a?.UploadedAt ?? DateTime.MinValue,
+                    Url = a.Url ?? "Unknown",
+                    UploadedBy = a.UploadedBy,
+                })
+                .ToList(),
+
+            Checklist = (t.ChecklistItems ?? new List<ProjectTaskChecklistItem>())
+                .Select(c => new TaskChecklistItemResponse
+                {
+                    Id = c.Id,
+                    Label = c.Label ?? "Unknown",
+                    IsDone = c.IsDone,
+                    OrderIndex = c.OrderIndex,
+                    CreatedAt = c.CreatedAt,
+                    TaskId = c.TaskId,
+                })
+                .ToList(),
+
+            Dependencies = (t.Dependencies ?? new List<ProjectTaskDependency>())
+                .Where(d => d.DependsOnTask != null)
+                .Select(d => new TaskDependencyResponse
+                {
+                    TaskId = d.DependsOnTaskId,
+                    Title = d.DependsOnTask?.Title ?? "",
+                    Code = d.DependsOnTask?.Code ?? "",
+                    Priority = d.DependsOnTask?.Priority?.ToString() ?? "",
+                    Status = d.DependsOnTask?.CurrentStatus?.Name ?? "N/A",
+                    Point = d.DependsOnTask?.Point,
+                    EstimateHours = d.DependsOnTask?.EstimateHours
+                })
+                .ToList(),
+
+            Comments = (t.Comments ?? new List<Comment>())
+                .Select(c => new CommentResponse
+                {
+                    Id = c.Id,
+                    AuthorUserId = c.AuthorUserId ?? Guid.Empty,
+                    Body = c.Body ?? "",
+                    CreateAt = c.CreateAt,
+                    Status = c.Status ?? "",
+                    UpdateAt = c.UpdateAt,
+                    TaskId = c.TaskId
+                })
+                .ToList()
+        };
+    }
+
+    public async Task<List<ProjectTaskResponse>> GetSubTasksByTaskIdAsync(Guid userId,Guid taskId, CancellationToken token = default)
+    {
+        var subTasks = await _repo.GetSubTasksByTaskIdAsync(userId ,taskId, token);
+
+        if (!subTasks.Any())
+            throw CustomExceptionFactory.CreateNotFoundError($"Task with Id {taskId} do not have any subtasks");
+
+        return _mapper.Map<List<ProjectTaskResponse>>(subTasks);
+    }
+
     #endregion
     #region Attachments
 
@@ -1040,8 +1225,8 @@ public class TaskService : ITaskService
 
 
     public async Task<IReadOnlyList<TaskAttachmentResponse>> GetAttachmentsAsync(
-        Guid taskId,
-        CancellationToken ct = default)
+     Guid taskId,
+     CancellationToken ct = default)
     {
         var taskExists = await _db.ProjectTasks
             .AnyAsync(t => t.Id == taskId && !t.IsDeleted, ct);
@@ -1052,7 +1237,7 @@ public class TaskService : ITaskService
 
         var list = await _db.ProjectTaskAttachments
             .AsNoTracking()
-            .Where(a => a.TaskId == taskId)
+            .Where(a => a.TaskId == taskId && a.CommentId == null) // chỉ file gắn trực tiếp task
             .OrderByDescending(a => a.UploadedAt)
             .ToListAsync(ct);
 
@@ -1071,12 +1256,14 @@ public class TaskService : ITaskService
                 Description = a.Description,
                 UploadedAt = a.UploadedAt,
                 UploadedBy = a.UploadedBy,
-                UploadedByName = await GetUserName(a.UploadedBy)
+                UploadedByName = await GetUserName(a.UploadedBy),
+                IsImage = a.IsImage
             });
         }
 
         return result;
     }
+
 
     public async Task<bool> DeleteAttachmentAsync(
         Guid taskId,
@@ -1105,6 +1292,192 @@ public class TaskService : ITaskService
         await _db.SaveChangesAsync(ct);
 
         return true;
+    }
+
+    #endregion
+    #region Comments
+
+    // Lấy comment của 1 task – sort mới nhất lên đầu, kèm author + attachments
+    public async Task<IReadOnlyList<CommentResponse>> GetCommentsByTaskIdAsync(
+        Guid taskId,
+        CancellationToken ct = default)
+    {
+        var taskExists = await _db.ProjectTasks
+            .AnyAsync(t => t.Id == taskId && !t.IsDeleted, ct);
+
+        if (!taskExists)
+            throw CustomExceptionFactory.CreateNotFoundError(
+                ResponseMessages.NOT_FOUND.FormatMessage("Task"));
+
+        var comments = await _db.Comments
+            .Where(c => c.TaskId == taskId)
+            .OrderByDescending(c => c.CreateAt) // comment mới nhất lên đầu
+            .ToListAsync(ct);
+
+        if (!comments.Any())
+            return Array.Empty<CommentResponse>();
+
+        var authorIds = comments
+            .Where(c => c.AuthorUserId.HasValue)
+            .Select(c => c.AuthorUserId!.Value)
+            .Distinct()
+            .ToList();
+
+        var authors = await _db.Users
+            .Where(u => authorIds.Contains(u.Id))
+            .Select(u => new { u.Id, u.UserName, u.Avatar })
+            .ToListAsync(ct);
+
+        var authorLookup = authors.ToDictionary(a => a.Id, a => a);
+
+        var commentIds = comments.Select(c => c.Id).ToList();
+
+        var attachments = await _db.ProjectTaskAttachments
+            .AsNoTracking()
+            .Where(a => a.CommentId != null && commentIds.Contains(a.CommentId.Value))
+            .ToListAsync(ct);
+
+        var attLookup = attachments
+            .GroupBy(a => a.CommentId!.Value)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        var result = new List<CommentResponse>(comments.Count);
+
+        foreach (var c in comments)
+        {
+            authorLookup.TryGetValue(c.AuthorUserId ?? Guid.Empty, out var author);
+
+            var attForThis = attLookup.TryGetValue(c.Id, out var list)
+                ? list
+                : new List<ProjectTaskAttachment>();
+
+            result.Add(new CommentResponse
+            {
+                Id = c.Id,
+                TaskId = c.TaskId,
+                AuthorUserId = c.AuthorUserId ?? Guid.Empty,
+                AuthorName = author?.UserName ?? "Unknown",
+                AuthorAvatar = author?.Avatar,
+                Body = c.Body ?? "",
+                Status = c.Status ?? "Active",
+                CreateAt = c.CreateAt,
+                UpdateAt = c.UpdateAt,
+                Attachments = attForThis.Select(a => new CommentAttachmentResponse
+                {
+                    Id = a.Id,
+                    CommentId = c.Id,
+                    FileName = a.FileName,
+                    Url = a.Url,
+                    ContentType = a.ContentType,
+                    Size = a.SizeBytes,
+                    IsImage = a.IsImage
+                }).ToList()
+            });
+        }
+
+        return result;
+    }
+
+    // Thêm comment mới + upload file/ảnh/video cho comment
+    public async Task<CommentResponse> AddCommentAsync(
+        Guid taskId,
+        string? body,
+        IReadOnlyList<IFormFile>? files,
+        Guid userId,
+        CancellationToken ct = default)
+    {
+        var task = await _db.ProjectTasks
+            .FirstOrDefaultAsync(t => t.Id == taskId && !t.IsDeleted, ct);
+
+        if (task == null)
+            throw CustomExceptionFactory.CreateNotFoundError(
+                ResponseMessages.NOT_FOUND.FormatMessage("Task"));
+
+        if (string.IsNullOrWhiteSpace(body) &&
+            (files == null || files.Count == 0))
+        {
+            throw CustomExceptionFactory.CreateBadRequestError(
+                "Comment cannot be empty.");
+        }
+
+        var now = DateTime.UtcNow;
+
+        var comment = new Comment
+        { 
+            TaskId = taskId,
+            AuthorUserId = userId,
+            Body = body?.Trim(),
+            Status = "Active",
+            CreateAt = now,
+            UpdateAt = now
+        };
+
+        _db.Comments.Add(comment);
+
+        var attachmentEntities = new List<ProjectTaskAttachment>();
+
+        if (files != null && files.Count > 0)
+        {
+            foreach (var file in files)
+            {
+                if (file == null || file.Length == 0) continue;
+
+                var upload = await _cloudinary.UploadFileAsync(
+                    file,
+                    "task-comments",
+                    ct);
+
+                var entity = new ProjectTaskAttachment
+                {
+                    Id = Guid.NewGuid(),
+                    TaskId = taskId,
+                    CommentId = comment.Id,                 // GẮN VỚI COMMENT
+                    FileName = file.FileName,
+                    Url = upload.Url,
+                    ContentType = file.ContentType,
+                    SizeBytes = file.Length,
+                    Description = null,
+                    UploadedAt = now,
+                    UploadedBy = userId,
+                    PublicId = upload.PublicId,
+                    IsImage = upload.IsImage
+                };
+
+                attachmentEntities.Add(entity);
+                _db.ProjectTaskAttachments.Add(entity);
+            }
+        }
+
+        await _db.SaveChangesAsync(ct);
+
+        var author = await _db.Users
+            .AsNoTracking()
+            .Where(u => u.Id == userId)
+            .Select(u => new { u.UserName, u.Avatar })
+            .FirstOrDefaultAsync(ct);
+
+        return new CommentResponse
+        {
+            Id = comment.Id,
+            TaskId = comment.TaskId,
+            AuthorUserId = userId,
+            AuthorName = author?.UserName ?? "Unknown",
+            AuthorAvatar = author?.Avatar,
+            Body = comment.Body ?? "",
+            Status = comment.Status ?? "Active",
+            CreateAt = comment.CreateAt,
+            UpdateAt = comment.UpdateAt,
+            Attachments = attachmentEntities.Select(a => new CommentAttachmentResponse
+            {
+                Id = a.Id,
+                CommentId = comment.Id,
+                FileName = a.FileName,
+                Url = a.Url,
+                ContentType = a.ContentType,
+                Size = a.SizeBytes,
+                IsImage = a.IsImage
+            }).ToList()
+        };
     }
 
     #endregion

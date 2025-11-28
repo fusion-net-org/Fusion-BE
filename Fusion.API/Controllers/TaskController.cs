@@ -4,12 +4,14 @@ using Fusion.Repository.Bases.Responses;
 using Fusion.Service.Commons.BaseResponses;     // ResponseModel, ResponseMessages
 using Fusion.Service.IServices;
 using Fusion.Service.Services;
+using Fusion.Service.ViewModels.Comment.Response;
 using Fusion.Service.ViewModels.Task.Request;
 using Fusion.Service.ViewModels.Task.Response;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json.Linq;
 using System.Security.Claims;
+using System.Threading;
 
 namespace Fusion.API.Controllers;
 
@@ -310,11 +312,43 @@ public class TaskController : ControllerBase
         return Ok(ResponseModel<PagedResult<TaskResponse>>.Ok(
             data, ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "tasks")));
     }
+
+
+    [HttpGet("tasks/detail/{taskId}")]
+    [ProducesResponseType(typeof(ResponseModel<TaskResponse>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<TaskResponse>> GetTaskDetail(
+    Guid taskId,
+    CancellationToken cancellationToken)
+    {
+        var uid = GetUserId();
+        if (uid is null)
+            return Unauthorized(ResponseModel<string>.Error(StatusCodes.Status401Unauthorized, "Missing token"));
+
+        var data = await _svc.GetTaskDetailByTaskIdAsync(uid.Value, taskId, cancellationToken);
+
+        return Ok(ResponseModel<TaskResponse>.Ok(
+            data, ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "task")));
+    }
+
+    [HttpGet("tasks/{taskId:guid}/subtasks")]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<List<ProjectTaskResponse>>))]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetSubTasksByTaskId(Guid taskId, CancellationToken token)
+    {
+        var uid = GetUserId();
+        if (uid is null)
+            return Unauthorized(ResponseModel<string>.Error(StatusCodes.Status401Unauthorized, "Missing token"));
+
+        var data = await _svc.GetSubTasksByTaskIdAsync(uid.Value, taskId, token);
+
+        return Ok(ResponseModel<List<ProjectTaskResponse>>.Ok(
+            data, ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "subtasks")));
+    }
         #endregion
 
-    #region Attachments
+        #region Attachments
 
-    [HttpPost("tasks/{taskId:guid}/attachments")]
+        [HttpPost("tasks/{taskId:guid}/attachments")]
     [Consumes("multipart/form-data")]
     [ProducesResponseType(typeof(ResponseModel<IReadOnlyList<TaskAttachmentResponse>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> UploadAttachments(
@@ -366,5 +400,45 @@ public class TaskController : ControllerBase
     }
 
     #endregion
+    #region Comments
+
+    // GET /api/tasks/{taskId}/comments
+    [HttpGet("tasks/{taskId:guid}/comments")]
+    [ProducesResponseType(typeof(ResponseModel<IReadOnlyList<CommentResponse>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetComments(Guid taskId, CancellationToken ct)
+    {
+        var data = await _svc.GetCommentsByTaskIdAsync(taskId, ct);
+
+        return Ok(ResponseModel<IReadOnlyList<CommentResponse>>.Ok(
+            data,
+            ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "comments")));
+    }
+
+    // POST /api/tasks/{taskId}/comments
+    // body + optional files (ảnh/video/tài liệu) – multipart/form-data
+    [HttpPost("tasks/{taskId:guid}/comments")]
+    [Consumes("multipart/form-data")]
+    [ProducesResponseType(typeof(ResponseModel<CommentResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> AddComment(
+        Guid taskId,
+        [FromForm] string? body,
+        [FromForm] List<IFormFile>? files,
+        CancellationToken ct)
+    {
+        var uid = GetUserId();
+        if (uid is null)
+            return Unauthorized(ResponseModel<string>.Error(
+                StatusCodes.Status401Unauthorized,
+                "Missing token"));
+
+        var data = await _svc.AddCommentAsync(taskId, body, files, uid.Value, ct);
+
+        return Ok(ResponseModel<CommentResponse>.Ok(
+            data,
+            ResponseMessageHelper.FormatMessage(ResponseMessages.CREATE_SUCCESS, "comment")));
+    }
+
+    #endregion
+
 
 }

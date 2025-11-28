@@ -20,6 +20,8 @@ namespace Fusion.Repository.IRepositories
         Task<PagedResult<Company>> GetPagedCompaniesAdminAsync(string adminEmail, CompanyPagedSearchRequest request, CancellationToken cancellationToken = default);
 
         Task<Company?> GetCompanyByTaxCode(string taxcode);
+        Task<Company?> GetCompanyByPhoneNumber(string phone);
+
         Task<Company?> GetCompanyByEmail(string email);
         Task<Company?> GetCompanyByIdAsync(Guid Id);
         Task<Company?> AddCompanyAsync(User user, string image_company, string avatar_company, Company new_company, CancellationToken cancellationToken = default);
@@ -39,10 +41,12 @@ namespace Fusion.Repository.IRepositories
 
         // =============== OverView =============================================
         Task<int> GetTotalCompaniesAsync(CancellationToken ct = default);
-        Task<CompanyGrowthAndStatusOverviewDto> GetCompanyGrowthAndStatusOverviewAsync(DateTime fromUtc,DateTime toUtc, CancellationToken ct = default);
+        Task<CompanyGrowthAndStatusOverviewDto> GetCompanyGrowthAndStatusOverviewAsync(DateTime fromUtc, DateTime toUtc, CancellationToken ct = default);
         Task<CompanyProjectLoadOverviewDto> GetCompanyProjectLoadOverviewAsync(CancellationToken ct = default);
         Task<List<CompanyMonthlyNewPoint>> GetMonthlyNewCompaniesInYearAsync(
        int year,
        CancellationToken ct = default);
+
+        Task<CompanyTaskStatsResponse> GetTaskStatsAsync(Guid partnerCompanyId, Guid myCompanyId, Guid userId, CancellationToken token = default);
     }
 }

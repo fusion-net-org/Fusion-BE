@@ -397,12 +397,18 @@ namespace Fusion.Repository.Repositories
 
         public async Task<PagedResult<CompanyFriendship>> GetCompanyFriendshipByCompanyID(Guid ownerUserID, Guid companyID, CompanyFriendshipSearchRequest request, CancellationToken token)
         {
-            var company = await _context.Companies
-                .FirstOrDefaultAsync(c => c.Id == companyID && c.OwnerUserId == ownerUserID);
+            var company = await _context.Companies.FirstOrDefaultAsync(c => c.Id == companyID);
 
             if (company == null)
             {
-                throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Company"));
+                throw CustomExceptionFactory.CreateNotFoundError("Company Not found");
+            }
+
+            var isMember = await _context.CompanyMembers.AnyAsync(cm => cm.CompanyId == companyID && cm.UserId == ownerUserID, token);
+
+            if (!isMember)
+            {
+                throw CustomExceptionFactory.CreateBadRequestError("User does not belong to this company");
             }
 
             var query = _context.CompanyFriendships
@@ -415,9 +421,10 @@ namespace Fusion.Repository.Repositories
                 .Include(cf => cf.CompanyB.ProjectCompanies)
                 .Include(cf => cf.CompanyB.ProjectCompanyRequests)
                 .Where(cf =>
+                    cf.Status != null &&
+                    cf.Status.Trim().ToLower() == "active" &&
                     (cf.CompanyAId == companyID || cf.CompanyBId == companyID)
-                    && (cf.CompanyA.OwnerUserId == ownerUserID || cf.CompanyB.OwnerUserId == ownerUserID)
-                    && (cf.Status ?? "").Trim().ToLower() == "active")
+                )
                 .AsQueryable();
 
             // search

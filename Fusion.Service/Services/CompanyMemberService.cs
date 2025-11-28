@@ -339,13 +339,58 @@ namespace Fusion.Service.Services
         {
             return await _companyMemberRepository.GetSummaryStatusByCompanyId(companyId, token);
         }
+        public async Task<AddMemberRoleInCompanyResponse?> RemoveRoleForMemberInCompany(Guid companyId, List<int> roleIds, Guid memberId, string removerEmail, CancellationToken token)
+        {
+            var removedRoles = await _companyMemberRepository.RemoveRoleForMemberInCompany(companyId, roleIds, memberId, removerEmail, token);
+
+            if (!removedRoles.Any())
+                throw CustomExceptionFactory.CreateBadRequestError("Role not found for user in company");
+
+            var userWithRoles = await _userRepository.GetUserWithRolesAndPermissionsInCompanyAsync(memberId, companyId);
+
+            if (userWithRoles == null)
+                throw CustomExceptionFactory.CreateNotFoundError("User not found after removing roles");
+
+            var response = new AddMemberRoleInCompanyResponse
+            {
+                UserId = userWithRoles.Id,
+                UserName = userWithRoles.UserName ?? "",
+                Roles = userWithRoles.UserRoles.Select(ur => new RoleResponse
+                {
+                    RoleId = ur.Role.Id,
+                    RoleName = ur.Role.RoleName ?? "",
+                    Permissions = ur.Role.RolePermissions.Select(rp => new PermissionResponse
+                    {
+                        FunctionCode = rp.Function.FunctionCode ?? "",
+                        FunctionName = rp.Function.FunctionName ?? "",
+                        PageCode = rp.Function.PageCode ?? "",
+                        IsAccess = rp.IsAccess
+                    }).ToList()
+                }).ToList()
+            };
+
+            var currentUserName = await GetUserName(_currentService.GetUserId());
+            var userResult = await GetUserName(memberId);
+
+            var log = new CompanyActivityLog
+            {
+                CompanyId = companyId,
+                ActorUserId = _currentService.GetUserId(),
+                Title = "Remove Role From Member In Company",
+                Description = $"User '{currentUserName}' removed roles [{string.Join(",", removedRoles.Select(r => r.RoleId))}] from user '{userResult}'",
+            };
+
+            await _logService.CreateLog(log);
+
+            return response;
+        }
 
         public async Task<AddMemberRoleInCompanyResponse?> AddRoleForMemberInCompany(Guid companyId, List<int> roleIds, Guid memberId, string inviterEmail, CancellationToken token)
         {
             var addRole = await _companyMemberRepository.AddRoleForMemberInCompany(companyId, roleIds, memberId, inviterEmail, token);
 
             if (!addRole.Any())
-                throw CustomExceptionFactory.CreateBadRequestError("Add Role in Company Fail");
+                throw CustomExceptionFactory.CreateBadRequestError("Role is existed for user in company");
 
             var userWithRoles = await _userRepository.GetUserWithRolesAndPermissionsInCompanyAsync(memberId, companyId);
 

@@ -623,5 +623,36 @@ namespace Fusion.Repository.Repositories
                 SprintVelocity = sprintVelocity
             };
         }
+
+
+
+        public async Task<List<Project>> GetProjectsByCompanyAsync(
+         Guid companyId,
+         Guid? companyRequestId,
+         Guid? executorCompanyId,
+         CancellationToken cancellationToken = default)
+        {
+            var companyExists = await _ctx.Companies
+                .AnyAsync(c => c.Id == companyId && (c.IsDeleted ?? false) == false, cancellationToken);
+
+            if (!companyExists)
+                throw new Exception("Company not found");
+
+            var query = _dbSet
+                .Include(x => x.Company)             // Executor
+                .Include(x => x.CompanyRequest)      // Requester
+                .Include(x => x.Workflow)
+                .AsQueryable();
+
+            if (companyRequestId.HasValue)
+                query = query.Where(x => x.CompanyRequestId == companyRequestId.Value);
+
+            if (executorCompanyId.HasValue)
+                query = query.Where(x => x.CompanyId == executorCompanyId.Value);
+
+            return await query.ToListAsync(cancellationToken);
+        }
+
+
     }
 }

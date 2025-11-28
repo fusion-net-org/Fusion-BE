@@ -1,10 +1,13 @@
-﻿using Fusion.Repository.Bases.Page;
+﻿using Fusion.Repository.Bases.Exceptions;
+using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.Task;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.IRepositories;
+using Fusion.Repository.ViewModels.Users;
 using Microsoft.EntityFrameworkCore;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Fusion.Repository.Repositories
 {
@@ -69,7 +72,7 @@ namespace Fusion.Repository.Repositories
                CancellationToken ct = default)
         {
             var query = _db.ProjectTasks
-                .Include(t => t.Assignees)
+                .Include(t => t.TaskWorkflows)
                 .Include(t => t.Project)
                 .Include(t => t.Sprint)
                 .Where(t => t.SprintId == sprintId && !t.IsDeleted)
@@ -117,6 +120,11 @@ namespace Fusion.Repository.Repositories
 
         public async Task<PagedResult<ProjectTask>> GetAllTaskByUserId(Guid userId, TaskFilterRequest request, CancellationToken token = default)
         {
+            var user = await _db.Users.FindAsync(userId);
+
+            if (user == null)
+                throw CustomExceptionFactory.CreateNotFoundError("User Not existed");
+
             var taskIds = await _db.TaskWorkflows
                 .Where(a => a.AssignUserId == userId)
                 .Select(a => a.TaskId)
@@ -181,5 +189,159 @@ namespace Fusion.Repository.Repositories
             return await query.ToPagedResultAsync(request, token);
 
         }
+
+        public async Task<ProjectTask> GetTaskDetailByTaskIdAsync(Guid userId, Guid taskId, CancellationToken token = default)
+        {
+            var user = await _db.Users.FindAsync(userId);
+
+            if (user == null)
+                throw CustomExceptionFactory.CreateNotFoundError("User Not existed");
+
+            var task = await _db.ProjectTasks
+                .Where(t => !t.IsDeleted)
+                .Include(t => t.Project)
+                    .ThenInclude(t => t.Company)
+                .Include(t => t.Project)
+                    .ThenInclude(p => p.CompanyRequest)
+                .Include(t => t.Project)
+                    .ThenInclude(p => p.ProjectRequest)
+                .Include(t => t.Sprint)
+                .Include(t => t.CurrentStatus)
+                .Include(t => t.CreatedByNavigation)
+                .Include(t => t.TaskWorkflows)
+                    .ThenInclude(a => a.AssignUser)
+                .Include(t => t.Comments)
+                .Include(t => t.ChecklistItems)
+                .Include(t => t.Attachments)
+                .Include(t => t.Dependencies)
+                    .ThenInclude(d => d.DependsOnTask)
+                .SingleOrDefaultAsync(t => t.Id == taskId, token);
+
+            if (task == null)
+                throw CustomExceptionFactory.CreateNotFoundError("Task is not existed");
+
+            var projectMember = await _db.ProjectMembers.SingleOrDefaultAsync(pm => pm.UserId == userId && pm.ProjectId == task.ProjectId);
+
+            if (projectMember == null)
+                throw CustomExceptionFactory.CreateNotFoundError("User is not belong to this project.");
+
+            return task;
+
+        }
+
+        public async Task<List<Guid>> GetMemberIdByTaskId(Guid taskId, CancellationToken token = default)
+        {
+
+            var task = await _db.ProjectTasks
+                .Where(t => !t.IsDeleted)
+                .Include(t => t.TaskWorkflows)
+                .SingleOrDefaultAsync(t => t.Id == taskId, token);
+
+            if (task == null)
+                throw CustomExceptionFactory.CreateNotFoundError("Task Not Found");
+
+            return task.TaskWorkflows
+                .Where(w => w.AssignUserId != null)
+                .Select(w => w.AssignUserId.Value)
+                .Distinct()
+                .ToList();
+
+        }
+
+        public async Task<List<ProjectTask>> GetSubTasksByTaskIdAsync(Guid userId, Guid taskId, CancellationToken token = default)
+        {
+            var user = await _db.Users.FindAsync(userId);
+
+            if (user == null)
+                throw CustomExceptionFactory.CreateNotFoundError("User Not existed");
+
+            var parentTask = await _db.ProjectTasks
+                .Include(t => t.TaskWorkflows)
+                .SingleOrDefaultAsync(t => !t.IsDeleted && t.Id == taskId, token);
+
+            if (parentTask == null)
+                throw CustomExceptionFactory.CreateNotFoundError($"Task with Id {taskId} not found.");
+
+            var projectMember = await _db.ProjectMembers.SingleOrDefaultAsync(pm => pm.UserId == userId && pm.ProjectId == parentTask.ProjectId);
+
+            if (projectMember == null)
+                throw CustomExceptionFactory.CreateNotFoundError("User is not belong to this project.");
+
+            var subTasks = await _db.ProjectTasks
+                .Where(t => !t.IsDeleted && t.ParentTaskId == taskId)
+                .Include(t => t.Project)
+                .Include(t => t.Sprint)
+                .Include(t => t.TaskWorkflows)
+                    .ThenInclude(wf => wf.AssignUser)
+                .Include(t => t.ChecklistItems)
+                .Include(t => t.Attachments)
+                .Include(t => t.Dependencies)
+                    .ThenInclude(d => d.DependsOnTask)
+                .ToListAsync(token);
+
+            return subTasks;
+        }
+
+        public async Task<List<ProjectTask>> GetTasksAssignedToUserAsync(Guid userId, CancellationToken token = default)
+        {
+            var user = await _db.Users.FindAsync(userId);
+
+            if (user == null)
+                throw CustomExceptionFactory.CreateNotFoundError("User Not existed");
+
+
+            var taskIds = await _db.TaskWorkflows
+                .Where(a => a.AssignUserId == userId)
+                .Select(a => a.TaskId)
+                .ToListAsync();
+
+            return await _db.ProjectTasks
+                .Include(t => t.TaskWorkflows)
+                .Where(t => !t.IsDeleted && taskIds.Contains(t.Id))
+                .OrderByDescending(t => t.CreateAt)
+                .ToListAsync(token);
+        }
+
+        public async Task<UserTaskDashBoard> GetUserTaskDashboardAsync(Guid userId, CancellationToken token = default)
+        {
+            var user = await _db.Users.FindAsync(userId);
+
+            if (user == null)
+                throw CustomExceptionFactory.CreateNotFoundError("User Not existed");
+
+            var taskIds = await _db.TaskWorkflows
+                .Where(a => a.AssignUserId == userId)
+                .Select(a => a.TaskId)
+                .ToListAsync();
+
+            var tasks = await _db.ProjectTasks
+                .Include(t => t.TaskWorkflows)
+                .Where(t => !t.IsDeleted && taskIds.Contains(t.Id))
+                .ToListAsync(token);
+
+            var total = tasks.Count;
+            var totalTasks = total > 0 ? total : 1;
+
+            // % Task type
+            var bugPercent = tasks.Count(t => t.Type == "Bug") * 100.0 / totalTasks;
+            var featurePercent = tasks.Count(t => t.Type == "Feature") * 100.0 / totalTasks;
+            var chorePercent = tasks.Count(t => t.Type == "Chore") * 100.0 / totalTasks;
+
+            // % Task trạng thái
+            var overduePercent = tasks.Count(t => t.Status != "Done" && t.DueDate < DateTime.UtcNow.AddHours(7)) * 100.0 / totalTasks;
+            var onTimePercent = tasks.Count(t => t.Status != "Done" && t.DueDate >= DateTime.UtcNow.AddHours(7)) * 100.0 / totalTasks;
+            var earlyCompletedPercent = tasks.Count(t => t.Status == "Done" && t.UpdateAt <= t.DueDate)* 100.0 / totalTasks;
+
+            return new UserTaskDashBoard
+            {
+                BugPercent = bugPercent,
+                FeaturePercent = featurePercent,
+                ChorePercent = chorePercent,
+                OverduePercent = overduePercent,
+                OnTimePercent = onTimePercent,
+                EarlyCompletedPercent = earlyCompletedPercent
+            };
+        }
+
     }
 }
