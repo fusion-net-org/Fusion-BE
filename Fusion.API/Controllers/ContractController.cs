@@ -6,7 +6,6 @@ using Fusion.Service.ViewModels.Companies.Responses;
 using Fusion.Service.ViewModels.Contract.Requests;
 using Fusion.Service.ViewModels.Contract.Responses;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
