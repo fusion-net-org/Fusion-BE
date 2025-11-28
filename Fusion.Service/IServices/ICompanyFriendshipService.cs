@@ -1,4 +1,5 @@
 ﻿using Fusion.Repository.Bases.Page;
+using Fusion.Repository.Bases.Page.Company;
 using Fusion.Repository.Bases.Page.Partner;
 using Fusion.Repository.Entities;
 using Fusion.Service.ViewModels.Companies.Responses;
@@ -8,6 +9,7 @@ namespace Fusion.Service.IServices
 {
     public interface ICompanyFriendshipService
     {
+        Task<List<CompanyResponseVersion2>> GetAllPartnersOfCompanyAsync(Guid companyId, string? companyName = null, CancellationToken cancellationToken = default);
         Task<CompanyFriendshipResponse> InviteCompanyFriendship(Guid companyAId, Guid companyBId, Guid requesterId, string? note);
         Task<CompanyFriendshipResponse> CancelCompanyFriendship(long id, Guid currentUserId);
         Task<CompanyFriendshipResponse> AcceptCompanyFriendship(long id, Guid currentUserId);
@@ -17,7 +19,7 @@ namespace Fusion.Service.IServices
 
         Task<List<CompanyFriendshipResponse>> GetCompanyFriendshipByCompanyID(Guid userID, Guid companyID);
         Task<PagedResult<CompanyFriendshipResponse>> GetCompanyFriendshipByCompanyIDVersion2(Guid userID, Guid companyID, CompanyFriendshipSearchRequest request, CancellationToken cancellationToken = default);
-        Task<CompanyFriendshipResponse?> GetCompanyFriendshipBetweenCompaniesAsync(Guid companyAId, Guid companyBId, CancellationToken token = default);
+        Task<CompanyFriendshipResponse?> GetCompanyFriendshipBetweenCompaniesAsync(Guid companyAId, Guid companyBId, long? friendshipId = null, CancellationToken token = default);
 
         Task<CompanyFriendshipResponse> DeleteCompanyFriendship(long id, Guid currentUserId);
 

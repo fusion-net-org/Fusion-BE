@@ -2,6 +2,7 @@
 using System.Security.Claims;
 using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Bases.Page;
+using Fusion.Repository.Bases.Page.Company;
 using Fusion.Repository.Bases.Page.Partner;
 using Fusion.Repository.Bases.Responses;
 using Fusion.Repository.ViewModels.Companies;
@@ -218,7 +219,11 @@ namespace Fusion.API.Controllers
         /// </summary>
         [HttpGet("between/{companyAId:guid}/{companyBId:guid}")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<CompanyFriendshipResponse>))]
-        public async Task<IActionResult> GetFriendshipBetweenCompanies(Guid companyAId, Guid companyBId, CancellationToken token = default)
+        public async Task<IActionResult> GetFriendshipBetweenCompanies(
+            Guid companyAId,
+            Guid companyBId,
+            [FromQuery] long? friendshipId = null, 
+            CancellationToken token = default)
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
@@ -229,8 +234,8 @@ namespace Fusion.API.Controllers
                     "Don't find token!"));
             }
 
-
-            var result = await _companyFriendshipService.GetCompanyFriendshipBetweenCompaniesAsync(companyAId, companyBId, token);
+            var result = await _companyFriendshipService
+                .GetCompanyFriendshipBetweenCompaniesAsync(companyAId, companyBId, friendshipId, token); 
 
             if (result == null)
             {
@@ -243,6 +248,7 @@ namespace Fusion.API.Controllers
                 data: result,
                 message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "company friendship between companies")));
         }
+
 
         /// <summary>
         /// Delete (Unfriend) company partnership
@@ -333,6 +339,34 @@ namespace Fusion.API.Controllers
                            data: result,
                            message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "friendship task status")));
         }
+
+        [HttpGet("all-partners/{companyId:guid}")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<List<CompanyResponseVersion2>>))]
+        public async Task<IActionResult> GetAllPartnersOfCompany(
+              Guid companyId,
+              [FromQuery] string? companyName,
+              CancellationToken cancellationToken)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(ResponseModel<string>.Error(
+                    StatusCodes.Status401Unauthorized,
+                    "Don't find token!"));
+            }
+
+            var partners = await _companyFriendshipService.GetAllPartnersOfCompanyAsync(companyId, companyName, cancellationToken);
+
+            return Ok(ResponseModel<List<CompanyResponseVersion2>>.Ok(
+                data: partners,
+                message: partners.Count > 0
+                    ? $"Found {partners.Count} partners for the company."
+                    : "No partners found for this company."));
+        }
+
+
+
     }
 
 }

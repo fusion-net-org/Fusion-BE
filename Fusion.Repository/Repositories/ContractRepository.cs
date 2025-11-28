@@ -28,7 +28,7 @@ namespace Fusion.Repository.Repositories
         public async Task<Contract> CreateContractAsync(Guid userId,  Contract contract, CancellationToken ct = default)
         {
             contract.CreatedBy = userId;
-            contract.CreateAt = DateTime.UtcNow;
+            contract.CreateAt = DateTime.UtcNow.AddHours(7);
 
             await _context.Contracts.AddAsync(contract);
             await _context.SaveChangesAsync(ct);
@@ -71,7 +71,7 @@ namespace Fusion.Repository.Repositories
             contract.ExpiredDate = contractToUpdate.ExpiredDate;
             contract.Budget = contractToUpdate.Budget;
             contract.UpdatedBy = userId;
-            contract.UpdateAt = DateTime.UtcNow;
+            contract.UpdateAt = DateTime.UtcNow.AddHours(7);
 
             if (appendices != null && appendices.Any())
             {
@@ -106,7 +106,7 @@ namespace Fusion.Repository.Repositories
                             Title = item.Title,
                             Description = item.Description,
                             AppendixCode = $"PL-{index:00}",
-                            CreatedAt = DateTime.UtcNow
+                            CreatedAt = DateTime.UtcNow.AddHours(7)
                         };
                         _context.ContractAppendices.Add(appendix);
                     }
@@ -143,7 +143,7 @@ namespace Fusion.Repository.Repositories
 
             contract.Status = status;
             contract.UpdatedBy = userId;
-            contract.UpdateAt = DateTime.UtcNow;
+            contract.UpdateAt = DateTime.UtcNow.AddHours(7);
 
             await _context.SaveChangesAsync(ct);
 
@@ -157,7 +157,7 @@ namespace Fusion.Repository.Repositories
 
             contract.Attachment = attachmentUrl;
             contract.UpdatedBy = userId;
-            contract.UpdateAt = DateTime.UtcNow;
+            contract.UpdateAt = DateTime.UtcNow.AddHours(7);
 
             await _context.SaveChangesAsync(ct);
             return contract;

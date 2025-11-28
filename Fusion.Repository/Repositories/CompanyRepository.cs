@@ -26,6 +26,8 @@ namespace Fusion.Repository.Repositories
         {
             _context = context;
         }
+
+
         public async Task<PagedResult<Company>> GetAllCompaniesAsync(string userMail, CompanyPagedSearchRequestVersion2 request, Guid? selectedCompanyId, CancellationToken cancellationToken = default)
         {
 

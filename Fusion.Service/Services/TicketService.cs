@@ -35,8 +35,9 @@ namespace Fusion.Service.Services
         private readonly ICompanyActivityService _logService;
         private readonly ICurrentService _currentService;
         private readonly IProjectService _projectService;
+        private readonly IWorkflowStatusRepository _workflowStatusRepository;
         public TicketService(IMapper mapper, ITicketRepository ticketRepository, IUserRepository userRepository, IValidator<TicketRequest> validator,
-            IUnitOfWork unitOfWork, ICompanyActivityService logService, ICurrentService currentService, IProjectService projectService)
+            IUnitOfWork unitOfWork, ICompanyActivityService logService, ICurrentService currentService, IProjectService projectService, IWorkflowStatusRepository workflowStatusRepository)
         {
             _mapper = mapper;
             _ticketRepository = ticketRepository;
@@ -46,6 +47,7 @@ namespace Fusion.Service.Services
             _logService = logService;
             _currentService = currentService;
             _projectService = projectService;
+            _workflowStatusRepository = workflowStatusRepository;
         }
 
         public async Task<TicketResponse?> CreateTicketAsync(TicketRequest request, CancellationToken cancellationToken = default)
@@ -60,7 +62,12 @@ namespace Fusion.Service.Services
                cancellationToken
                );
 
+            if (!request.StatusId.HasValue)
+                throw CustomExceptionFactory.CreateBadRequestError("Workflow status is required.");
 
+            var statusExists = await _workflowStatusRepository.ExistsAsync(request.StatusId.Value);
+            if (!statusExists)
+                throw CustomExceptionFactory.CreateBadRequestError("Workflow status is invalid or does not exist.");
 
             var ticket = _mapper.Map<Ticket>(request);
 
@@ -147,8 +154,8 @@ namespace Fusion.Service.Services
             var dashboard = new TicketDashboardResponse();
 
             // Ticket Status
-            var statusInProgress = tickets.Count(t => t.Status != null && t.Status.IsStart);
-            var statusResolved = tickets.Count(t => t.Status != null && t.Status.IsEnd);
+            var statusInProgress = tickets.Count(t => t.WorkflowStatus != null && t.WorkflowStatus.IsStart);
+            var statusResolved = tickets.Count(t => t.WorkflowStatus != null && t.WorkflowStatus.IsEnd);
             dashboard.TicketStatusData.Add(new TicketStatusChartItem { Name = "In Progress", Value = statusInProgress });
             dashboard.TicketStatusData.Add(new TicketStatusChartItem { Name = "Resolved", Value = statusResolved });
 

@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Bases.Page;
+using Fusion.Repository.Bases.Page.Company;
 using Fusion.Repository.Bases.Page.Partner;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
@@ -324,9 +325,10 @@ namespace Fusion.Service.Services
         public async Task<CompanyFriendshipResponse?> GetCompanyFriendshipBetweenCompaniesAsync(
             Guid companyAId,
             Guid companyBId,
+            long? friendshipId = null,
             CancellationToken token = default)
         {
-            var entity = await _companyFriendshipRepository.GetCompanyFriendshipBetweenCompaniesAsync(companyAId, companyBId, token);
+            var entity = await _companyFriendshipRepository.GetCompanyFriendshipBetweenCompaniesAsync(companyAId, companyBId, friendshipId, token);
 
             if (entity == null)
                 return null;
@@ -447,6 +449,14 @@ namespace Fusion.Service.Services
         {
             return await _companyFriendshipRepository.GetCompanyFriendshipStatusSummary(ownerUserId, companyId);
         }
-      
+        public async Task<List<CompanyResponseVersion2>> GetAllPartnersOfCompanyAsync(Guid companyId, string? companyName = null, CancellationToken cancellationToken = default)
+        {
+            var pagedPartners = await _companyFriendshipRepository.GetAllPartnersOfCompanyAsync(companyId, companyName, cancellationToken);
+
+            var result = _mapper.Map<List<CompanyResponseVersion2>>(pagedPartners);
+
+            return result;
+        }
+
     }
 }

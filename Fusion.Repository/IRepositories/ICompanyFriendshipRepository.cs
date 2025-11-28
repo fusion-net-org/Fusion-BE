@@ -1,4 +1,5 @@
 ﻿using Fusion.Repository.Bases.Page;
+using Fusion.Repository.Bases.Page.Company;
 using Fusion.Repository.Bases.Page.Partner;
 using Fusion.Repository.Entities;
 
@@ -6,6 +7,8 @@ namespace Fusion.Repository.IRepositories
 {
     public interface ICompanyFriendshipRepository
     {
+
+        Task<List<Company>> GetAllPartnersOfCompanyAsync(Guid companyId, string? companyName = null, CancellationToken cancellationToken = default);
         Task<CompanyFriendship> InviteCompanyFriendship(Guid companyAId, Guid companyBId, Guid requesterId, string? note);
         Task<CompanyFriendship> CancelCompanyFriendship(long id, Guid currentUserId);
         Task<CompanyFriendship> AcceptCompanyFriendship(long id, Guid currentUserId);
@@ -21,7 +24,7 @@ namespace Fusion.Repository.IRepositories
         Task<PagedResult<CompanyFriendship>> GetCompanyFriendshipByCompanyID(Guid ownerUserID, Guid companyID, CompanyFriendshipSearchRequest request, CancellationToken token);
 
         Task<object> GetCompanyFriendshipStatusSummary(Guid ownerUserId, Guid companyId);
-        Task<CompanyFriendship?> GetCompanyFriendshipBetweenCompaniesAsync(Guid companyAId, Guid companyBId, CancellationToken token = default);
+        Task<CompanyFriendship?> GetCompanyFriendshipBetweenCompaniesAsync(Guid companyAId, Guid companyBId, long? friendshipId = null, CancellationToken token = default);
 
     }
 }
