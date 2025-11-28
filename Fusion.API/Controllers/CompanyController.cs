@@ -26,7 +26,7 @@ namespace Fusion.API.Controllers
 
         [HttpGet("paged")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PagedResult<CompanyResponse>>))]
-        public async Task<IActionResult> GetPaged([FromQuery] CompanyPagedSearchRequest request, CancellationToken cancellationToken)
+        public async Task<IActionResult> GetCompanyPaged([FromQuery] CompanyPagedSearchRequest request, CancellationToken cancellationToken)
         {
             var emailClaim = User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email || c.Type == ClaimTypes.Email || c.Type == "email");
             var email = emailClaim?.Value; if (email == null)
@@ -147,7 +147,7 @@ namespace Fusion.API.Controllers
 
         [HttpGet("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<CompanyResponse>))]
-        public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
+        public async Task<IActionResult> GetCompanyById(Guid id, CancellationToken cancellationToken)
         {
             var result = await _companyService.GetCompanyByIdAsync(id, cancellationToken);
             return Ok(ResponseModel<CompanyResponse>.Ok(
@@ -157,7 +157,7 @@ namespace Fusion.API.Controllers
 
         [HttpPut("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<CompanyResponse>))]
-        public async Task<IActionResult> Update(Guid id, CompanyRequest request, CancellationToken cancellationToken)
+        public async Task<IActionResult> UpdateCompany(Guid id, CompanyRequest request, CancellationToken cancellationToken)
         {
             var emailClaim = User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email || c.Type == ClaimTypes.Email || c.Type == "email");
             var email = emailClaim?.Value; if (email == null)
@@ -176,7 +176,7 @@ namespace Fusion.API.Controllers
 
         [HttpDelete("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
-        public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
+        public async Task<IActionResult> DeleteCompany(Guid id, CancellationToken cancellationToken)
         {
             var emailClaim = User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email || c.Type == ClaimTypes.Email || c.Type == "email");
             var email = emailClaim?.Value; if (email == null)

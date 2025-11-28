@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using Fusion.Service.ViewModels.UserLog.Responses;
 
 namespace Fusion.API.Controllers
 {
@@ -233,8 +234,8 @@ namespace Fusion.API.Controllers
 
         [Authorize]
         [HttpGet("log")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PagedResult<UserLog>>))]
-        public async Task<IActionResult> GetByUser(
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PagedResult<UserLogResponse>>))]
+        public async Task<IActionResult> GetLogByUser(
             [FromQuery] UserLogSearchRequest request, CancellationToken ct)
         {
 
@@ -244,8 +245,8 @@ namespace Fusion.API.Controllers
                 return Unauthorized(new { Message = "Invalid or missing token" });
             }
 
-            var data = await _userLogService.GetUserLogByIdAsync(userId, request, ct);
-            return Ok(ResponseModel<PagedResult<UserLog>>.Ok(
+            var data = await _userLogService.GetUserLogByUserIdAsync(userId, request, ct);
+            return Ok(ResponseModel<PagedResult<UserLogResponse>>.Ok(
                 data: data,
                 message: "Get user logs by user successfully"));
         }
