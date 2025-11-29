@@ -87,7 +87,8 @@ namespace Fusion.Repository.Repositories
               (cf.Status.ToLower() == "active" || cf.Status.ToLower() == "pending"));
             return query.ToList();
         }
-        public async Task<PagedResult<CompanyFriendship>> GetCompanyFriendshipByCompanyIDVersion2(Guid userID, Guid companyID, CompanyFriendshipSearchRequest request, CancellationToken cancellationToken = default)
+        public async Task<PagedResult<CompanyFriendshipResponseRepo>> GetCompanyFriendshipByCompanyIDVersion2(
+          Guid userID, Guid companyID, CompanyFriendshipSearchRequest request, CancellationToken cancellationToken = default)
         {
             var company = await _context.Companies
                 .FirstOrDefaultAsync(c => c.Id == companyID && c.OwnerUserId == userID);
@@ -97,52 +98,35 @@ namespace Fusion.Repository.Repositories
                 throw new CustomException(
                     statusCode: StatusCodes.Status404NotFound,
                     errorCode: "COMPANY_NOT_FOUND",
-                    errorMessage: $"Company with ID {companyID} does not exist or does not belong to this user."
-                );
+                    errorMessage: $"Company with ID {companyID} does not exist or does not belong to this user.");
             }
 
             var query = _context.CompanyFriendships
-                .Include(cf => cf.CompanyA)
-                    .ThenInclude(c => c.OwnerUser)
-                .Include(cf => cf.CompanyB)
-                    .ThenInclude(c => c.OwnerUser)
-                .Include(cf => cf.CompanyA)
-                    .ThenInclude(c => c.CompanyMembers)
-                .Include(cf => cf.CompanyB)
-                    .ThenInclude(c => c.CompanyMembers)
-                .Include(cf => cf.CompanyA)
-                    .ThenInclude(c => c.ProjectCompanies)
-                .Include(cf => cf.CompanyB)
-                    .ThenInclude(c => c.ProjectCompanies)
-                .Include(cf => cf.CompanyA)
-                    .ThenInclude(c => c.ProjectCompanyRequests)
-                .Include(cf => cf.CompanyB)
-                    .ThenInclude(c => c.ProjectCompanyRequests)
-                .Where(cf =>
-                    (cf.CompanyAId == companyID || cf.CompanyBId == companyID) &&
-                    (cf.Status.ToLower() == "active" || cf.Status.ToLower() == "pending" || cf.Status.ToLower() == "inactive"))
-                .AsQueryable();
+             .Where(cf =>
+                 (cf.CompanyAId == companyID || cf.CompanyBId == companyID) &&
+                 (cf.Status.ToLower() == "active" ||
+                  cf.Status.ToLower() == "pending" ||
+                  cf.Status.ToLower() == "inactive"))
+             .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(request.Keyword))
             {
                 var keyword = request.Keyword.Trim().ToLower();
 
-                query = query.Where(u =>
-                    (u.Status ?? "").ToLower().Contains(keyword)
-                    || (u.CompanyA.Name ?? "").ToLower().Contains(keyword)
-                    || (u.CompanyB.Name ?? "").ToLower().Contains(keyword)
-                    || (u.CompanyA.OwnerUser.UserName ?? "").ToLower().Contains(keyword)
-                    || (u.CompanyB.OwnerUser.UserName ?? "").ToLower().Contains(keyword)
-                    || (u.CompanyA.TaxCode ?? "").ToLower().Contains(keyword)
-                    || (u.CompanyB.TaxCode ?? "").ToLower().Contains(keyword)
+                query = query.Where(cf =>
+                    (cf.Status ?? "").ToLower().Contains(keyword)
+                    || (cf.CompanyA.Name ?? "").ToLower().Contains(keyword)
+                    || (cf.CompanyB.Name ?? "").ToLower().Contains(keyword)
+                    || (cf.CompanyA.OwnerUser.UserName ?? "").ToLower().Contains(keyword)
+                    || (cf.CompanyB.OwnerUser.UserName ?? "").ToLower().Contains(keyword)
                 );
             }
+
 
             if (request.FromDate.HasValue && request.ToDate.HasValue)
             {
                 var from = request.FromDate.Value.Date;
                 var to = request.ToDate.Value.Date.AddDays(1).AddTicks(-1);
-
                 query = query.Where(x => x.CreatedAt >= from && x.CreatedAt <= to);
             }
             else if (request.FromDate.HasValue)
@@ -156,7 +140,41 @@ namespace Fusion.Repository.Repositories
                 query = query.Where(x => x.CreatedAt <= to);
             }
 
-            return await query.ToPagedResultAsync(request, cancellationToken);
+            // Filter by RespondedAt
+            if (request.RespondFromDate.HasValue && request.RespondToDate.HasValue)
+            {
+                var from = request.RespondFromDate.Value.Date;
+                var to = request.RespondToDate.Value.Date.AddDays(1).AddTicks(-1);
+                query = query.Where(x => x.RespondedAt.HasValue && x.RespondedAt.Value >= from && x.RespondedAt.Value <= to);
+            }
+            else if (request.RespondFromDate.HasValue)
+            {
+                var from = request.RespondFromDate.Value.Date;
+                query = query.Where(x => x.RespondedAt.HasValue && x.RespondedAt.Value >= from);
+            }
+            else if (request.RespondToDate.HasValue)
+            {
+                var to = request.RespondToDate.Value.Date.AddDays(1).AddTicks(-1);
+                query = query.Where(x => x.RespondedAt.HasValue && x.RespondedAt.Value <= to);
+            }
+
+            var projectedQuery = query.Select(cf => new CompanyFriendshipResponseRepo
+            {
+                Id = cf.Id,
+                CompanyAId = cf.CompanyAId,
+                CompanyBId = cf.CompanyBId,
+                RequesterId = cf.RequesterId,
+                Status = cf.Status,
+                Note = cf.Note,
+                RespondedAt = cf.RespondedAt,
+                LastActionBy = cf.LastActionBy,
+                CreatedAt = cf.CreatedAt,
+                UpdatedAt = cf.UpdatedAt,
+                TotalProject = cf.CompanyB.ProjectCompanies.Count +
+                               cf.CompanyB.ProjectCompanyRequests.Count,
+                TotalMember = cf.CompanyB.CompanyMembers.Count
+            });
+            return await projectedQuery.ToPagedResultAsync(request, cancellationToken);
         }
 
         public async Task<PagedResult<CompanyFriendship>> GetCompanyFriendshipByOwnerUserID(Guid ownerUserID, CompanyFriendshipSearchRequest request, CancellationToken cancellationToken = default)
