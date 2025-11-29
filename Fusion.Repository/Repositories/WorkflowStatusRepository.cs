@@ -42,5 +42,10 @@ namespace Fusion.Repository.Repositories
 
             return await query.OrderBy(ws => ws.Position).ToPagedResultAsync(request);
         }
+        public async Task<bool> ExistsAsync(Guid statusId)
+        {
+            return await _context.WorkflowStatuses.AnyAsync(ws => ws.Id == statusId);
+        }
+
     }
 }

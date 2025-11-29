@@ -12,5 +12,7 @@ namespace Fusion.Repository.IRepositories
     public interface IWorkflowStatusRepository
     {
         Task<PagedResult<WorkflowStatus>> GetWorkflowStatusesByProjectAsync(WorkflowStatusPagedRequest request);
+        Task<bool> ExistsAsync(Guid statusId);
+
     }
 }

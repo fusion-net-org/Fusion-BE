@@ -149,7 +149,7 @@ namespace Fusion.Repository.Repositories
                 .Include(x => x.TicketComments)
                 .Include(x => x.SubmittedByNavigation)
                 .Include(x => x.Project)
-                .Include(x => x.Status)
+                .Include(x => x.WorkflowStatus)
                 .SingleOrDefaultAsync(x => x.Id == Id);
         }
 
@@ -270,7 +270,7 @@ namespace Fusion.Repository.Repositories
             return await _context.Tickets
                 .Include(t => t.Project)
                 .Include(t => t.SubmittedByNavigation)
-                .Include(t => t.Status)
+                .Include(t => t.WorkflowStatus)
                 .Where(t => t.ProjectId == projectId)
                 .ToListAsync(cancellationToken);
         }

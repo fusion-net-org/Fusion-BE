@@ -16,7 +16,6 @@ public partial class ProjectRequest
     [Column("contract_id")]
     public Guid? ContractId { get; set; }
 
-
     [Column("requester_company_id")]
     public Guid? RequesterCompanyId { get; set; }
 
