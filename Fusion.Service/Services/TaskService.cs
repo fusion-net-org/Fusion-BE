@@ -21,6 +21,7 @@ using Fusion.Service.ViewModels.WorkflowStatus;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -1478,6 +1479,405 @@ public class TaskService : ITaskService
                 IsImage = a.IsImage
             }).ToList()
         };
+    }
+
+    #endregion
+    #region Draft tasks (IsBacklog == true, SprintId == null)
+
+    public async Task<ProjectTaskResponse> CreateDraftTaskAsync(
+        ProjectTaskRequest req,
+        Guid userId,
+        CancellationToken ct = default)
+    {
+        if (req.ProjectId == null || req.ProjectId == Guid.Empty)
+            throw CustomExceptionFactory.CreateBadRequestError("ProjectId is required for draft task.");
+
+        // 1) Validate project
+        var project = await _db.Projects.AsNoTracking()
+            .FirstOrDefaultAsync(p => p.Id == req.ProjectId, ct)
+            ?? throw CustomExceptionFactory.CreateNotFoundError(
+                ResponseMessages.NOT_FOUND.FormatMessage("Project"));
+
+        // 2) Draft: luôn backlog, không thuộc sprint
+        req.SprintId = null;
+
+        // 3) Chọn Status: ưu tiên WorkflowStatusId → StatusCode → default (TODO/first)
+        WorkflowStatus? status = null;
+
+        if (req.WorkflowStatusId != null)
+        {
+            status = await _db.WorkflowStatuses.AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == req.WorkflowStatusId, ct);
+        }
+
+        if (status == null && !string.IsNullOrWhiteSpace(req.StatusCode))
+        {
+            var key = req.StatusCode.Trim().ToLower();
+            status = await _db.WorkflowStatuses.AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Code != null && x.Code.ToLower() == key, ct);
+        }
+
+        if (status == null)
+        {
+            status = await _db.WorkflowStatuses.AsNoTracking()
+                .OrderBy(x => x.Position)
+                .FirstOrDefaultAsync(x => x.Category == "TODO", ct)
+                ?? await _db.WorkflowStatuses.AsNoTracking()
+                    .OrderBy(x => x.Position)
+                    .FirstOrDefaultAsync(ct)
+                ?? throw CustomExceptionFactory.CreateBadRequestError("No workflow status available.");
+        }
+
+        // 4) Sinh Code PRJ-T-###
+        var seq = await _db.ProjectTasks.AsNoTracking()
+            .LongCountAsync(t => t.ProjectId == req.ProjectId, ct) + 1;
+        var prefix = string.IsNullOrWhiteSpace(project.Code) ? "PRJ" : project.Code!;
+        var code = $"{prefix}-T-{seq:000}";
+
+        // 5) Map + defaults cho draft
+        var now = DateTime.UtcNow;
+        var entity = _mapper.Map<ProjectTask>(req);
+        entity.Id = Guid.NewGuid();
+        entity.ProjectId = req.ProjectId;
+        entity.SprintId = null;             // draft: không sprint
+        entity.IsBacklog = true;           // draft = backlog
+        entity.Code = code;
+        entity.CurrentStatusId = status.Id;
+        entity.Status = !string.IsNullOrWhiteSpace(status.Code) ? status.Code : status.Name;
+        entity.OrderInSprint = null;       // không nằm trong sprint => không order
+        entity.RemainingHours = req.EstimateHours;
+        entity.CreateAt = now;
+        entity.UpdateAt = now;
+        entity.CreatedBy = userId;
+        entity.IsDeleted = false;
+
+        // Assignees
+        entity.Assignees = new List<TaskWorkflow>();
+        if (req.AssigneeIds?.Count > 0)
+        {
+            foreach (var assignUserId in req.AssigneeIds.Distinct())
+                entity.Assignees.Add(new TaskWorkflow
+                {
+                    TaskId = entity.Id,
+                    AssignUserId = assignUserId
+                });
+        }
+
+        // 6) Persist
+        await _repo.AddAsync(entity, ct);
+
+        // 7) Workflow assignments (nếu FE gửi)
+        if (req.WorkflowAssignments != null)
+        {
+            var validItems = req.WorkflowAssignments
+                .Where(x => x.AssignUserId.HasValue && x.AssignUserId.Value != Guid.Empty)
+                .Select(x => new TaskWorkflowAssignmentItemRequest
+                {
+                    WorkflowStatusId = x.WorkflowStatusId,
+                    AssignUserId = x.AssignUserId
+                })
+                .ToList();
+
+            if (validItems.Count > 0)
+            {
+                var wfReq = new TaskWorkflowAssignmentsRequest
+                {
+                    TaskId = entity.Id,
+                    Items = validItems
+                };
+
+                await _taskWorkflowService.UpsertAssignmentsForTaskAsync(
+                    wfReq,
+                    userId,
+                    ct);
+            }
+        }
+
+        var companyId = await _db.Projects
+            .Where(p => p.Id == entity.ProjectId)
+            .Select(p => (Guid)p.CompanyId)
+            .FirstAsync(ct);
+
+        // 8) Log
+        await _log.CreateLog(new CompanyActivityLog
+        {
+            CompanyId = companyId,
+            ActorUserId = _current.GetUserId(),
+            Title = "Create draft task",
+            Description = $"User '{await GetUserName(_current.GetUserId())}' created draft task '{entity.Title}'"
+        });
+
+        return _mapper.Map<ProjectTaskResponse>(entity);
+    }
+
+    public async Task<ProjectTaskResponse> UpdateDraftTaskAsync(
+        ProjectTaskRequest req,
+        Guid userId,
+        CancellationToken ct = default)
+    {
+        var e = await _repo.FindByIdAsync(req.Id, ct)
+            ?? throw CustomExceptionFactory.CreateNotFoundError(
+                ResponseMessages.NOT_FOUND.FormatMessage("Draft task"));
+
+        // Chỉ cho sửa draft
+        if (!e.IsBacklog || e.SprintId != null)
+            throw CustomExceptionFactory.CreateBadRequestError("Task is not a draft task.");
+
+        // Update các trường cơ bản
+        e.Title = string.IsNullOrWhiteSpace(req.Title) ? e.Title : req.Title.Trim();
+        e.Description = req.Description ?? e.Description;
+        e.Type = req.Type ?? e.Type;
+        e.Priority = req.Priority ?? e.Priority;
+        e.Severity = req.Severity ?? e.Severity;
+        e.Point = req.Point;
+        e.EstimateHours = req.EstimateHours;
+        e.DueDate = req.DueDate;
+        e.ParentTaskId = req.ParentTaskId;
+        e.SourceTaskId = req.SourceTaskId;
+
+        // Draft: luôn backlog, không thuộc sprint
+        e.SprintId = null;
+        e.IsBacklog = true;
+        e.OrderInSprint = null;
+
+        // Đổi status nếu FE gửi (được phép)
+        if (req.WorkflowStatusId != null || !string.IsNullOrWhiteSpace(req.StatusCode))
+        {
+            WorkflowStatus? st = null;
+            if (req.WorkflowStatusId != null)
+            {
+                st = await _db.WorkflowStatuses.AsNoTracking()
+                    .FirstOrDefaultAsync(x => x.Id == req.WorkflowStatusId, ct);
+            }
+
+            if (st == null && !string.IsNullOrWhiteSpace(req.StatusCode))
+            {
+                var key = req.StatusCode.Trim().ToLower();
+                st = await _db.WorkflowStatuses.AsNoTracking()
+                    .FirstOrDefaultAsync(x => x.Code != null && x.Code.ToLower() == key, ct);
+            }
+
+            if (st != null)
+            {
+                e.CurrentStatusId = st.Id;
+                e.Status = !string.IsNullOrWhiteSpace(st.Code) ? st.Code : st.Name;
+            }
+        }
+
+        // Assignees (replace-all) nếu FE gửi
+        if (req.AssigneeIds != null)
+        {
+            e.Assignees.Clear();
+            foreach (var assignUserId in req.AssigneeIds.Distinct())
+                e.Assignees.Add(new TaskWorkflow
+                {
+                    TaskId = e.Id,
+                    AssignUserId = assignUserId
+                });
+        }
+
+        e.UpdateAt = DateTime.UtcNow;
+        await _repo.UpdateAsync(e, ct);
+
+        var companyId = await _db.Projects
+            .Where(p => p.Id == e.ProjectId)
+            .Select(p => (Guid)p.CompanyId)
+            .FirstAsync(ct);
+
+        // Workflow assignments (nếu FE gửi)
+        if (req.WorkflowAssignments != null)
+        {
+            var wfReq = new TaskWorkflowAssignmentsRequest
+            {
+                TaskId = e.Id,
+                Items = req.WorkflowAssignments
+                    .Select(x => new TaskWorkflowAssignmentItemRequest
+                    {
+                        WorkflowStatusId = x.WorkflowStatusId,
+                        AssignUserId = x.AssignUserId
+                    })
+                    .ToList()
+            };
+
+            await _taskWorkflowService.UpsertAssignmentsForTaskAsync(
+                wfReq,
+                userId,
+                ct);
+        }
+
+        await _log.CreateLog(new CompanyActivityLog
+        {
+            CompanyId = companyId,
+            ActorUserId = _current.GetUserId(),
+            Title = "Update draft task",
+            Description = $"User '{await GetUserName(_current.GetUserId())}' updated draft task '{e.Title}'"
+        });
+
+        return _mapper.Map<ProjectTaskResponse>(e);
+    }
+
+    public async Task<ProjectTaskResponse> GetDraftTaskByIdAsync(
+        Guid id,
+        CancellationToken ct = default)
+    {
+        var e = await _repo.FindByIdAsync(id, ct)
+            ?? throw CustomExceptionFactory.CreateNotFoundError(
+                ResponseMessages.NOT_FOUND.FormatMessage("Draft task"));
+
+        if (!e.IsBacklog || e.SprintId != null)
+            throw CustomExceptionFactory.CreateNotFoundError(
+                ResponseMessages.NOT_FOUND.FormatMessage("Draft task"));
+
+        var vm = _mapper.Map<ProjectTaskResponse>(e);
+
+        vm.WorkflowAssignments = await _taskWorkflowService.GetAssignmentsForTaskAsync(id, ct);
+        var comments = await GetCommentsByTaskIdAsync(id, ct);
+        vm.Comments = comments.ToList();
+
+        return vm;
+    }
+
+    public async Task<PagedResult<ProjectTaskResponse>> GetDraftTasksByProjectIdAsync(
+        Guid projectId,
+        PagedRequest request,
+        CancellationToken ct = default)
+    {
+        // Validate project tồn tại
+        var projectExists = await _db.Projects.AsNoTracking()
+            .AnyAsync(p => p.Id == projectId, ct);
+
+        if (!projectExists)
+            throw CustomExceptionFactory.CreateNotFoundError(
+                ResponseMessages.NOT_FOUND.FormatMessage("Project"));
+
+        var query = _db.ProjectTasks
+            .AsNoTracking()
+            .Include(t => t.TaskWorkflows)
+            .Where(t =>
+                t.ProjectId == projectId &&
+                t.IsBacklog &&               // draft
+                t.SprintId == null &&        // chưa vào sprint nào
+                !t.IsDeleted);
+
+        // Optional: search theo Title/Code nếu PagedRequest có SearchTerm
+      
+
+        // Sort: mặc định mới nhất trước
+        query = query.OrderByDescending(t => t.CreateAt);
+
+        var pageNumber = request.PageNumber <= 0 ? 1 : request.PageNumber;
+        var pageSize = request.PageSize <= 0 ? 20 : request.PageSize;
+
+        var totalCount = await query.CountAsync(ct);
+
+        var items = await query
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(ct);
+
+        var responseItems = new List<ProjectTaskResponse>();
+
+        foreach (var t in items)
+        {
+            var resp = _mapper.Map<ProjectTaskResponse>(t);
+            resp.AssigneeIds = t.TaskWorkflows?
+                .Where(a => a.AssignUserId.HasValue)
+                .Select(a => a.AssignUserId!.Value)
+                .ToList() ?? new List<Guid>();
+
+            resp.WorkflowAssignments = await _taskWorkflowService.GetAssignmentsForTaskAsync(resp.Id, ct);
+
+            responseItems.Add(resp);
+        }
+
+        return new PagedResult<ProjectTaskResponse>
+        {
+            Items = responseItems,
+            TotalCount = totalCount,
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        };
+    }
+
+    public async Task<bool> DeleteDraftTaskAsync(
+        Guid id,
+        Guid userId,
+        CancellationToken ct = default)
+    {
+        var e = await _repo.FindByIdAsync(id, ct)
+            ?? throw CustomExceptionFactory.CreateNotFoundError(
+                ResponseMessages.NOT_FOUND.FormatMessage("Draft task"));
+
+        if (!e.IsBacklog || e.SprintId != null)
+            throw CustomExceptionFactory.CreateBadRequestError("Task is not a draft task.");
+
+        // Tận dụng logic DeleteTaskAsync để log + soft delete
+        return await DeleteTaskAsync(id, userId, ct);
+    }
+    public async Task<ProjectTaskResponse> MaterializeDraftTaskAsync(
+    Guid draftTaskId,
+    Guid sprintId,
+    Guid? workflowStatusId,
+    string? statusCode,
+    Guid userId,
+    CancellationToken ct = default)
+    {
+        // 1) Lấy draft task
+        var e = await _repo.FindByIdAsync(draftTaskId, ct)
+            ?? throw CustomExceptionFactory.CreateNotFoundError(
+                ResponseMessages.NOT_FOUND.FormatMessage("Draft task"));
+
+        if (!e.IsBacklog || e.SprintId != null)
+            throw CustomExceptionFactory.CreateBadRequestError("Task is not a draft task.");
+
+        // 2) Lấy sprint & verify cùng project
+        var sprint = await _db.Sprints.FirstOrDefaultAsync(s => s.Id == sprintId, ct)
+            ?? throw CustomExceptionFactory.CreateNotFoundError(
+                ResponseMessages.NOT_FOUND.FormatMessage("Sprint"));
+
+        if (sprint.ProjectId != e.ProjectId)
+            throw CustomExceptionFactory.CreateBadRequestError("Sprint must be in the same project as the draft task.");
+
+        // 3) Xác định workflowId đang dùng
+        var wfId = await GetWorkflowIdForMove(e.ProjectId, e.CurrentStatusId, ct);
+
+        // 4) Resolve status target:
+        // - ưu tiên WorkflowStatusId FE gửi
+        // - tiếp theo StatusCode FE gửi
+        // - fallback: status hiện tại của draft / default TODO trong workflow
+        Guid? currentStatusForResolve = workflowStatusId ?? e.CurrentStatusId;
+        var statusTextForResolve = !string.IsNullOrWhiteSpace(statusCode)
+            ? statusCode
+            : e.Status;
+
+        var resolved = await ResolveStatusForWorkflow(
+            currentStatusForResolve,
+            statusTextForResolve,
+            wfId,
+            ct);
+
+        // 5) Cập nhật draft thành task trong sprint
+        e.SprintId = sprint.Id;
+        e.IsBacklog = false;
+        e.CurrentStatusId = resolved.Id;
+        e.Status = !string.IsNullOrWhiteSpace(resolved.Code) ? resolved.Code : resolved.Name;
+        e.OrderInSprint = await GetNextOrderInSprint(sprint.Id, resolved.Id, ct);
+        // Lần đầu vào sprint => KHÔNG tăng CarryOverCount
+        e.UpdateAt = DateTime.UtcNow;
+
+        await _repo.UpdateAsync(e, ct);
+
+        // 6) Log activity
+        var companyId = await GetCompanyIdOfProject(e.ProjectId, ct);
+        await _log.CreateLog(new CompanyActivityLog
+        {
+            CompanyId = companyId,
+            ActorUserId = _current.GetUserId(),
+            Title = "Materialize draft task",
+            Description = $"User '{await GetUserName(_current.GetUserId())}' materialized draft task '{e.Title}' to sprint '{sprint.Name}'"
+        });
+
+        return _mapper.Map<ProjectTaskResponse>(e);
     }
 
     #endregion

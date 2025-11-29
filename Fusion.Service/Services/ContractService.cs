@@ -62,6 +62,8 @@ namespace Fusion.Service.Services
                 EffectiveDate = request.EffectiveDate,
                 ExpiredDate = request.ExpiredDate,
                 Status = "DRAFT",
+                ExecutorCompanyId = request.ExecutorCompanyId,   
+                RequesterCompanyId = request.RequesterCompanyId 
                 //Attachment = attachmentUrl,
             }, ct);
 
@@ -81,6 +83,9 @@ namespace Fusion.Service.Services
                 EffectiveDate = contract.EffectiveDate.Value,
                 ExpiredDate = contract.ExpiredDate.Value,
                 Status = contract.Status,
+                ExecutorCompanyId = (Guid)contract.ExecutorCompanyId,
+                RequesterCompanyId = (Guid)contract.RequesterCompanyId,
+
                 Appendices = appendices.Select(a => new ContractAppendixResponse
                 {
                     Id = a.Id,

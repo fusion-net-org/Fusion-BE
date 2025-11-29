@@ -75,7 +75,8 @@ public partial class Ticket
 
     [ForeignKey("StatusId")]
     [InverseProperty("Tickets")]
-    public virtual WorkflowStatus? Status { get; set; }
+    public virtual WorkflowStatus? WorkflowStatus { get; set; }
+
 
     [ForeignKey("SubmittedBy")]
     [InverseProperty("Tickets")]

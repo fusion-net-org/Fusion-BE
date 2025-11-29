@@ -236,7 +236,7 @@ public partial class FusionDbContext : DbContext
 
             entity.HasOne(d => d.Project).WithMany(p => p.Tickets).HasConstraintName("FK_Tickets_Project");
 
-            entity.HasOne(d => d.Status).WithMany(p => p.Tickets).HasConstraintName("FK_Tickets_Status");
+            entity.HasOne(d => d.WorkflowStatus).WithMany(p => p.Tickets).HasConstraintName("FK_Tickets_Status");
 
             entity.HasOne(d => d.SubmittedByNavigation).WithMany(p => p.Tickets).HasConstraintName("FK_Tickets_Submitter");
         });

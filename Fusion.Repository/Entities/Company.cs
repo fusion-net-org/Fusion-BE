@@ -89,6 +89,13 @@ public partial class Company
     [InverseProperty("RequesterCompany")]
     public virtual ICollection<ProjectRequest> ProjectRequestRequesterCompanies { get; set; } = new List<ProjectRequest>();
 
+    [InverseProperty("RequesterCompany")]
+    public virtual ICollection<Contract> ContractRequesterCompanies { get; set; } = new List<Contract>();
+
+    [InverseProperty("ExecutorCompany")]
+    public virtual ICollection<Contract> ContractExecutorCompanies { get; set; } = new List<Contract>();
+
+
     [InverseProperty("Company")]
     public virtual ICollection<RolePermission> RolePermissions { get; set; } = new List<RolePermission>();
 

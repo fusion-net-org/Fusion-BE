@@ -36,7 +36,7 @@ public partial class WorkflowStatus
     [InverseProperty("WorkflowStatus")]
     public virtual ICollection<TaskWorkflow> TaskWorkflows { get; set; } = new List<TaskWorkflow>();
 
-    [InverseProperty("Status")]
+    [InverseProperty("WorkflowStatus")]
     public virtual ICollection<Ticket> Tickets { get; set; } = new List<Ticket>();
 
     [ForeignKey("WorkflowId")]
