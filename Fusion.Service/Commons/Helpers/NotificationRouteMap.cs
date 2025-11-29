@@ -17,6 +17,7 @@ namespace Fusion.Service.Commons.Helpers
             ["PARTNER_PAGE"] = ("/company/{id}/partners", null),
             ["MEMBER_PAGE"] = ("/company/{id}/members", null),
             ["PROJECT_REQUEST_PAGE"] = ("/company/{id}/project-request", null),
+            ["TASK_DETAIL_PAGE"] = ("/companies/:companyId/project/:projectId/task/:taskId", null),
         };
 
         /// <summary>

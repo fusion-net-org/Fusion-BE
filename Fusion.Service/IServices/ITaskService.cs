@@ -46,5 +46,36 @@ namespace Fusion.Service.IServices
             CancellationToken ct = default);
         Task<IReadOnlyList<CommentResponse>> GetCommentsByTaskIdAsync(Guid taskId, CancellationToken ct = default);
         Task<CommentResponse> AddCommentAsync(Guid taskId, string? body, IReadOnlyList<IFormFile>? files, Guid userId, CancellationToken ct = default);
+        Task<ProjectTaskResponse> CreateDraftTaskAsync(
+       ProjectTaskRequest req,
+       Guid userId,
+       CancellationToken ct = default);
+
+        Task<ProjectTaskResponse> UpdateDraftTaskAsync(
+            ProjectTaskRequest req,
+            Guid userId,
+            CancellationToken ct = default);
+
+        Task<ProjectTaskResponse> GetDraftTaskByIdAsync(
+            Guid id,
+            CancellationToken ct = default);
+
+        Task<PagedResult<ProjectTaskResponse>> GetDraftTasksByProjectIdAsync(
+            Guid projectId,
+            PagedRequest request,
+            CancellationToken ct = default);
+
+        Task<bool> DeleteDraftTaskAsync(
+            Guid id,
+            Guid userId,
+            CancellationToken ct = default);
+        Task<ProjectTaskResponse> MaterializeDraftTaskAsync(
+    Guid draftTaskId,
+    Guid sprintId,
+    Guid? workflowStatusId,
+    string? statusCode,
+    Guid userId,
+    CancellationToken ct = default);
+
     }
 }

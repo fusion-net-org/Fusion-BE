@@ -349,9 +349,9 @@ namespace Fusion.Service.Services
             {
                 var assigneeId = kvp.Key;
 
-                // Optionally skip notifying the actor themself
+              /*  // Optionally skip notifying the actor themself
                 if (assigneeId == actorUserId)
-                    continue;
+                    continue;*/
 
                 var statusNames = kvp.Value
                     .Select(id => statusNameById.TryGetValue(id, out var n) ? n : null)
@@ -368,7 +368,7 @@ namespace Fusion.Service.Services
                     UserId = assigneeId,
                     Title = $"You have been assigned in the workflow of task \"{task.Title}\"",
                     Body = $"User {actorUserName} updated the workflow and assigned you to the following statuses: {statusesText} in task \"{task.Title}\".",
-                    LinkKey = "TASK_DETAIL_PAGE",   // đổi nếu FE dùng key khác
+                    LinkKey = "TASK_DETAIL_PAGE",  
                     IdLink = task.Id,
                     Event = "TaskWorkflowAssigneeUpdated",
                     NotificationType = "TASK",
