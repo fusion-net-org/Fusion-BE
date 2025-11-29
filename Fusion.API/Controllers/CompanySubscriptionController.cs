@@ -66,18 +66,18 @@ namespace Fusion.API.Controllers
                  message: "Get list company subscription by companyId successfully."));
         }
 
-        /// <summary>
-        /// Lấy tất cả Company Subscriptions đang active của 1 công ty (dùng cho dropdown)
-        /// </summary>
-        [HttpGet("company/{companyId}/active")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<List<CompanySubscriptionActiveResponse>>))]
-        public async Task<IActionResult> GetActiveByCompanyId([FromRoute] Guid companyId, CancellationToken cancellationToken)
-        {
-            var result = await _service.GetAllActiveByCompanyIdAsync(companyId, cancellationToken);
-            return Ok(ResponseModel<List<CompanySubscriptionActiveResponse>>.Ok(
-                data: result,
-                message: "Get active company subscriptions successfully"));
-        }
+        ///// <summary>
+        ///// Lấy tất cả Company Subscriptions đang active của 1 công ty (dùng cho dropdown)
+        ///// </summary>
+        //[HttpGet("company/{companyId}/active")]
+        //[ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<List<CompanySubscriptionActiveResponse>>))]
+        //public async Task<IActionResult> GetActiveByCompanyId([FromRoute] Guid companyId, CancellationToken cancellationToken)
+        //{
+        //    var result = await _service.GetAllActiveByCompanyIdAsync(companyId, cancellationToken);
+        //    return Ok(ResponseModel<List<CompanySubscriptionActiveResponse>>.Ok(
+        //        data: result,
+        //        message: "Get active company subscriptions successfully"));
+        //}
 
         [HttpGet("{companySubscriptionId:guid}/user-usage")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<List<CompanySubscriptionUserUsageItem>>))]

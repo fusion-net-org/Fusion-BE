@@ -85,33 +85,33 @@ namespace Fusion.API.Controllers
         }
 
 
-        [HttpPatch("{id:guid}/attach-link")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<bool>))]
-        public async Task<IActionResult> AttachPaymentLink(
-            Guid id,
-            [FromBody] AttachPaymentLinkRequest request,
-            CancellationToken cancellationToken)
-        {
-            var ok = await _service.AttachPaymentLinkAsync(id, request.OrderCode, request.PaymentLinkId, request.Provider, cancellationToken);
-            return Ok(ResponseModel<bool>.Ok(
-                data: ok,
-                message: ResponseMessageHelper.FormatMessage(ResponseMessages.UPDATE_SUCCESS, "payment link")));
-        }
+        //[HttpPatch("{id:guid}/attach-link")]
+        //[ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<bool>))]
+        //public async Task<IActionResult> AttachPaymentLink(
+        //    Guid id,
+        //    [FromBody] AttachPaymentLinkRequest request,
+        //    CancellationToken cancellationToken)
+        //{
+        //    var ok = await _service.AttachPaymentLinkAsync(id, request.OrderCode, request.PaymentLinkId, request.Provider, cancellationToken);
+        //    return Ok(ResponseModel<bool>.Ok(
+        //        data: ok,
+        //        message: ResponseMessageHelper.FormatMessage(ResponseMessages.UPDATE_SUCCESS, "payment link")));
+        //}
 
       
-        [HttpGet("due")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<List<TransactionPaymentResponse>>))]
-        public async Task<IActionResult> GetDue(
-           [FromQuery] DateTimeOffset? asOf,
-           [FromQuery] int take = 100,
-           CancellationToken cancellationToken = default)
-        {
-            var cutoff = asOf ?? DateTimeOffset.UtcNow;
-            var result = await _service.GetDueAsync(cutoff, take, cancellationToken);
-            return Ok(ResponseModel<List<TransactionPaymentResponse>>.Ok(
-                data: result,
-                message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "due transactions")));
-        }
+        //[HttpGet("due")]
+        //[ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<List<TransactionPaymentResponse>>))]
+        //public async Task<IActionResult> GetDue(
+        //   [FromQuery] DateTimeOffset? asOf,
+        //   [FromQuery] int take = 100,
+        //   CancellationToken cancellationToken = default)
+        //{
+        //    var cutoff = asOf ?? DateTimeOffset.UtcNow;
+        //    var result = await _service.GetDueAsync(cutoff, take, cancellationToken);
+        //    return Ok(ResponseModel<List<TransactionPaymentResponse>>.Ok(
+        //        data: result,
+        //        message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "due transactions")));
+        //}
 
 
 
