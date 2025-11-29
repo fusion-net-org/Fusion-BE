@@ -36,8 +36,9 @@ namespace Fusion.Service.Services
         private readonly ICurrentService _currentService;
         private readonly IProjectService _projectService;
         private readonly IWorkflowStatusRepository _workflowStatusRepository;
+        private readonly ITaskRepository _taskRepository;
         public TicketService(IMapper mapper, ITicketRepository ticketRepository, IUserRepository userRepository, IValidator<TicketRequest> validator,
-            IUnitOfWork unitOfWork, ICompanyActivityService logService, ICurrentService currentService, IProjectService projectService, IWorkflowStatusRepository workflowStatusRepository)
+            IUnitOfWork unitOfWork, ICompanyActivityService logService, ICurrentService currentService, IProjectService projectService, IWorkflowStatusRepository workflowStatusRepository, ITaskRepository taskRepository)
         {
             _mapper = mapper;
             _ticketRepository = ticketRepository;
@@ -48,6 +49,7 @@ namespace Fusion.Service.Services
             _currentService = currentService;
             _projectService = projectService;
             _workflowStatusRepository = workflowStatusRepository;
+            _taskRepository = taskRepository;
         }
 
         public async Task<TicketResponse?> CreateTicketAsync(TicketRequest request, CancellationToken cancellationToken = default)
@@ -138,15 +140,134 @@ namespace Fusion.Service.Services
 
 
 
+        private async Task<TicketProcessSummaryResponse?> BuildTicketProcessAsync(
+     Guid ticketId,
+     CancellationToken ct)
+        {
+            // 1. Lấy tất cả task non-backlog gắn với ticket
+            var tasks = await _taskRepository.GetNonBacklogTasksByTicketIdAsync(ticketId, ct);
 
-        public async Task<TicketResponse?> GetTicketByIdAsync(Guid id)
+            // Không có task non-backlog => chưa có execution
+            if (tasks == null || tasks.Count == 0)
+                return null;
+
+            var items = new List<TicketProcessItemResponse>();
+
+            var totalNonBacklog = tasks.Count;
+
+            int doneCount = 0;
+            int startedCount = 0;              // số task đã "bắt đầu xử lý"
+            DateTimeOffset? firstStartedAt = null;
+            DateTimeOffset? lastDoneAt = null;
+
+            foreach (var task in tasks)
+            {
+                var status = task.CurrentStatus;   // trạng thái workflow hiện tại
+
+                var statusName = status?.Name ?? "Not started";
+                var statusCategory = status?.Category ?? string.Empty;
+
+                // task được coi là "Done" nếu CurrentStatus.IsEnd = true
+                var isDone = status?.IsEnd == true;
+
+                // task được coi là "đã bắt đầu xử lý" nếu có CurrentStatus (khác null)
+                // tuỳ nghiệp vụ của bạn, có thể tighten điều kiện (ví dụ chỉ tính những status Category = "InProgress")
+                var isStarted = status != null;
+
+                DateTimeOffset? startedAt = null;
+                DateTimeOffset? doneAt = null;
+
+                // thời điểm bắt đầu: tạm lấy theo CreateAt (hoặc UpdateAt nếu CreateAt null)
+                if (isStarted)
+                {
+                    startedCount++;
+
+                    startedAt = ToUtcOffset(task.CreateAt ?? task.UpdateAt ?? DateTime.UtcNow);
+
+                    if (firstStartedAt == null || startedAt < firstStartedAt)
+                        firstStartedAt = startedAt;
+                }
+
+                // thời điểm hoàn thành: tạm lấy theo UpdateAt nếu đang ở trạng thái End
+                if (isDone)
+                {
+                    doneCount++;
+
+                    doneAt = ToUtcOffset(task.UpdateAt ?? task.CreateAt ?? DateTime.UtcNow);
+
+                    if (lastDoneAt == null || doneAt > lastDoneAt)
+                        lastDoneAt = doneAt;
+                }
+
+                // lần cuối cùng "động" tới task: dùng UpdateAt (fallback CreateAt)
+                var lastMovedAt = ToUtcOffset(task.UpdateAt ?? task.CreateAt ?? DateTime.UtcNow);
+
+                items.Add(new TicketProcessItemResponse
+                {
+                    TaskId = task.Id,
+                    TaskCode = task.Code ?? string.Empty,
+                    Title = task.Title ?? string.Empty,
+                    StatusName = statusName,
+                    StatusCategory = statusCategory,
+                    IsDone = isDone,
+                    StartedAt = startedAt,
+                    LastMovedAt = lastMovedAt,
+                    DoneAt = doneAt
+                });
+            }
+
+            if (items.Count == 0)
+                return null;
+
+            // % tiến độ = số task Done / tổng task non-backlog
+            var progress = totalNonBacklog == 0
+                ? 0m
+                : Math.Round((decimal)doneCount * 100m / totalNonBacklog, 2);
+
+            return new TicketProcessSummaryResponse
+            {
+                HasExecution = true,
+                TotalNonBacklogTasks = totalNonBacklog,
+                StartedCount = startedCount,
+                DoneCount = doneCount,
+                ProgressPercent = progress,
+                FirstStartedAt = firstStartedAt,
+                LastDoneAt = lastDoneAt,
+                Items = items
+            };
+        }
+
+        // Giữ helper này dạng nullable cho tiện xài với CreateAt/UpdateAt
+        private static DateTimeOffset ToUtcOffset(DateTime? dt)
+        {
+            var value = dt ?? DateTime.UtcNow;
+
+            if (value.Kind == DateTimeKind.Unspecified)
+                return new DateTimeOffset(DateTime.SpecifyKind(value, DateTimeKind.Utc));
+
+            return new DateTimeOffset(value.ToUniversalTime());
+        }
+
+
+
+
+        public async Task<TicketResponse?> GetTicketByIdAsync(
+      Guid id,
+      CancellationToken cancellationToken = default)
         {
             var ticket = await _ticketRepository.GetTicketByIdAsync(id);
             if (ticket == null)
-                throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Ticket"));
+                throw CustomExceptionFactory.CreateNotFoundError(
+                    ResponseMessages.NOT_FOUND.FormatMessage("Ticket"));
 
-            return _mapper.Map<TicketResponse>(ticket);
+            var dto = _mapper.Map<TicketResponse>(ticket);
+
+            // 👇 build thêm Process từ các task non-backlog
+            dto.Process = await BuildTicketProcessAsync(ticket.Id, cancellationToken);
+
+            return dto;
         }
+
 
         public async Task<TicketDashboardResponse> GetTicketDashboardAsync(Guid projectId, CancellationToken cancellationToken = default)
         {

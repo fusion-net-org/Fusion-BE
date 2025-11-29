@@ -62,7 +62,8 @@ public record TaskVmDto
     public DateTime OpenedAt { get; init; }
     public DateTime UpdatedAt { get; init; }
     public DateTime CreatedAt { get; init; }
-
+    public Guid? TicketId { get; set; }
+    public string? TicketName { get; set; }
     public Guid? SourceTicketId { get; init; }
     public string? SourceTicketCode { get; init; }
 }
