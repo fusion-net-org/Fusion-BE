@@ -439,6 +439,120 @@ public class TaskController : ControllerBase
     }
 
     #endregion
+    #region Draft Tasks (IsBacklog == true, SprintId == null)
 
+    // POST /api/projects/{projectId}/draft-tasks
+    [HttpPost("projects/{projectId:guid}/draft-tasks")]
+    [ProducesResponseType(typeof(ResponseModel<ProjectTaskResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> CreateDraftUnderProject(
+        Guid projectId,
+        [FromBody] ProjectTaskRequest req,
+        CancellationToken ct)
+    {
+        var uid = GetUserId();
+        if (uid is null)
+            return Unauthorized(ResponseModel<string>.Error(StatusCodes.Status401Unauthorized, "Missing token"));
+
+        req.ProjectId = projectId;     // đảm bảo đúng project
+        var data = await _svc.CreateDraftTaskAsync(req, uid.Value, ct);
+
+        return Ok(ResponseModel<ProjectTaskResponse>.Ok(
+            data,
+            ResponseMessageHelper.FormatMessage(ResponseMessages.CREATE_SUCCESS, "draft task")));
+    }
+
+    // GET /api/projects/{projectId}/draft-tasks
+    [HttpGet("projects/{projectId:guid}/draft-tasks")]
+    [ProducesResponseType(typeof(ResponseModel<PagedResult<ProjectTaskResponse>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetDraftsByProject(
+        Guid projectId,
+        [FromQuery] PagedRequest paging,
+        CancellationToken ct)
+    {
+        var data = await _svc.GetDraftTasksByProjectIdAsync(projectId, paging, ct);
+
+        return Ok(ResponseModel<PagedResult<ProjectTaskResponse>>.Ok(
+            data,
+            ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "draft tasks")));
+    }
+
+    // GET /api/draft-tasks/{id}
+    [HttpGet("draft-tasks/{id:guid}")]
+    [ProducesResponseType(typeof(ResponseModel<ProjectTaskResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetDraftById(
+        Guid id,
+        CancellationToken ct)
+    {
+        var data = await _svc.GetDraftTaskByIdAsync(id, ct);
+
+        return Ok(ResponseModel<ProjectTaskResponse>.Ok(
+            data,
+            ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "draft task")));
+    }
+
+    // PUT /api/draft-tasks/{id}
+    [HttpPut("draft-tasks/{id:guid}")]
+    [ProducesResponseType(typeof(ResponseModel<ProjectTaskResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> UpdateDraft(
+        Guid id,
+        [FromBody] ProjectTaskRequest req,
+        CancellationToken ct)
+    {
+        var uid = GetUserId();
+        if (uid is null)
+            return Unauthorized(ResponseModel<string>.Error(StatusCodes.Status401Unauthorized, "Missing token"));
+
+        req.Id = id;
+        var data = await _svc.UpdateDraftTaskAsync(req, uid.Value, ct);
+
+        return Ok(ResponseModel<ProjectTaskResponse>.Ok(
+            data,
+            ResponseMessageHelper.FormatMessage(ResponseMessages.UPDATE_SUCCESS, "draft task")));
+    }
+
+    // DELETE /api/draft-tasks/{id}
+    [HttpDelete("draft-tasks/{id:guid}")]
+    [ProducesResponseType(typeof(ResponseModel<bool>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> DeleteDraft(
+        Guid id,
+        CancellationToken ct)
+    {
+        var uid = GetUserId();
+        if (uid is null)
+            return Unauthorized(ResponseModel<string>.Error(StatusCodes.Status401Unauthorized, "Missing token"));
+
+        var ok = await _svc.DeleteDraftTaskAsync(id, uid.Value, ct);
+
+        return Ok(ResponseModel<bool>.Ok(
+            ok,
+            ResponseMessageHelper.FormatMessage(ResponseMessages.DELETE_SUCCESS, "draft task")));
+    }
+    [HttpPost("draft-tasks/{id:guid}/materialize")]
+    [ProducesResponseType(typeof(ResponseModel<ProjectTaskResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> MaterializeDraft(
+    Guid id,
+    [FromBody] DraftMaterializeRequest req,
+    CancellationToken ct)
+    {
+        var uid = GetUserId();
+        if (uid is null)
+            return Unauthorized(ResponseModel<string>.Error(StatusCodes.Status401Unauthorized, "Missing token"));
+
+        if (req == null || req.SprintId == Guid.Empty)
+            return BadRequest(ResponseModel<string>.Error(StatusCodes.Status400BadRequest, "sprintId is required"));
+
+        var data = await _svc.MaterializeDraftTaskAsync(
+            id,
+            req.SprintId,
+            req.WorkflowStatusId,
+            req.StatusCode,
+            uid.Value,
+            ct);
+
+        return Ok(ResponseModel<ProjectTaskResponse>.Ok(
+            data,
+            ResponseMessageHelper.FormatMessage(ResponseMessages.UPDATE_SUCCESS, "draft task materialized")));
+    }
+    #endregion
 
 }
