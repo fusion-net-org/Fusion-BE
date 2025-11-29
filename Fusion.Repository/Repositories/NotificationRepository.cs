@@ -170,7 +170,7 @@ namespace Fusion.Repository.Repositories
                 throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.NOT_FOUND.FormatMessage("UserId or NotificationId"));
 
             var notifications = await _context.Notifications.Where(x => x.UserId == userId).ToListAsync();
-            if (notifications.Any())
+            if (!notifications.Any())
                 throw CustomExceptionFactory.CreateNotFoundError("User do not receive any notifications");
 
             foreach (var noti in notifications)

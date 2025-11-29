@@ -53,6 +53,12 @@ namespace Fusion.Service.Services
             //        ct
             //    );
             //}
+            if (request.Budget < 0)
+                throw CustomExceptionFactory.CreateBadRequestError("Budget cannot be negative.");
+
+            if (request.EffectiveDate >= request.ExpiredDate)
+                throw CustomExceptionFactory.CreateBadRequestError("EffectiveDate must be earlier than ExpiredDate.");
+
 
             var contract = await _contractRepository.CreateContractAsync(userId, new Contract
             {

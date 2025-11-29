@@ -96,7 +96,7 @@ namespace Fusion.API.Controllers
 
             //var CompanyAID = await _companyService.GetCompanyIdByUserId(userId);
 
-            var result = await _companyFriendshipService.InviteCompanyFriendship(inviteCompanyRequest.CompanyAID, inviteCompanyRequest.CompanyBID, userId,inviteCompanyRequest.Note);
+            var result = await _companyFriendshipService.InviteCompanyFriendship(inviteCompanyRequest.CompanyAID, inviteCompanyRequest.CompanyBID, userId, inviteCompanyRequest.Note);
 
             return Ok(ResponseModel<CompanyFriendshipResponse>.Ok(
                 data: result,
@@ -205,9 +205,14 @@ namespace Fusion.API.Controllers
                     StatusCodes.Status401Unauthorized,
                     "Don't find token!"));
             }
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
             var result = await _companyFriendshipService
                 .GetCompanyFriendshipByCompanyIDVersion2(userId, companyId, request, cancellationToken);
+
+            stopwatch.Stop();
+            var elapsedMs = stopwatch.ElapsedMilliseconds;
+            Console.WriteLine($"[DEBUG] GetCompanyFriendshipByCompanyIDVersion2 took {elapsedMs} ms");
 
             return Ok(ResponseModel<PagedResult<CompanyFriendshipResponse>>.Ok(
                 data: result,
@@ -222,7 +227,7 @@ namespace Fusion.API.Controllers
         public async Task<IActionResult> GetFriendshipBetweenCompanies(
             Guid companyAId,
             Guid companyBId,
-            [FromQuery] long? friendshipId = null, 
+            [FromQuery] long? friendshipId = null,
             CancellationToken token = default)
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -235,7 +240,7 @@ namespace Fusion.API.Controllers
             }
 
             var result = await _companyFriendshipService
-                .GetCompanyFriendshipBetweenCompaniesAsync(companyAId, companyBId, friendshipId, token); 
+                .GetCompanyFriendshipBetweenCompaniesAsync(companyAId, companyBId, friendshipId, token);
 
             if (result == null)
             {
