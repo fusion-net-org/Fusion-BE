@@ -554,5 +554,44 @@ public class TaskController : ControllerBase
             ResponseMessageHelper.FormatMessage(ResponseMessages.UPDATE_SUCCESS, "draft task materialized")));
     }
     #endregion
+    #region Ticket Tasks
+
+    // POST /api/tickets/{ticketId}/tasks
+    // Tạo task backlog từ ticket
+    [HttpPost("tickets/{ticketId:guid}/tasks")]
+    [ProducesResponseType(typeof(ResponseModel<ProjectTaskResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> CreateTaskForTicket(
+        Guid ticketId,
+        [FromBody] ProjectTaskRequest req,
+        CancellationToken ct)
+    {
+        var uid = GetUserId();
+        if (uid is null)
+            return Unauthorized(ResponseModel<string>.Error(StatusCodes.Status401Unauthorized, "Missing token"));
+
+        var data = await _svc.CreateTaskForTicketAsync(ticketId, req, uid.Value, ct);
+
+        return Ok(ResponseModel<ProjectTaskResponse>.Ok(
+            data,
+            ResponseMessageHelper.FormatMessage(ResponseMessages.CREATE_SUCCESS, "ticket task")));
+    }
+
+    // GET /api/tickets/{ticketId}/tasks
+    // Lấy danh sách task của 1 ticket (paged)
+    [HttpGet("tickets/{ticketId:guid}/tasks")]
+    [ProducesResponseType(typeof(ResponseModel<PagedResult<ProjectTaskResponse>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetTasksByTicketId(
+        Guid ticketId,
+        [FromQuery] PagedRequest paging,
+        CancellationToken ct)
+    {
+        var data = await _svc.GetTasksByTicketIdAsync(ticketId, paging, ct);
+
+        return Ok(ResponseModel<PagedResult<ProjectTaskResponse>>.Ok(
+            data,
+            ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "ticket tasks")));
+    }
+
+    #endregion
 
 }

@@ -23,6 +23,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -75,7 +76,7 @@ public class TaskService : ITaskService
         => (await _db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId))?.UserName;
     private async Task<int> GetNextOrderInSprint(Guid sprintId, Guid statusId, CancellationToken ct)
     {
-        var max = await _db.ProjectTasks.AsNoTracking()
+        var max = await _db.ProjectTasks.AsNoTracking().Include(t => t.Ticket)
             .Where(t => t.SprintId == sprintId && t.CurrentStatusId == statusId && !t.IsDeleted)
             .MaxAsync(t => (int?)t.OrderInSprint, ct);
         return (max ?? 0) + 1;
@@ -166,7 +167,7 @@ public class TaskService : ITaskService
         // 3) Fallback: từ bất kỳ task nào của project
         if (projectId.HasValue)
         {
-            Guid? wfAny = await _db.ProjectTasks.AsNoTracking()
+            Guid? wfAny = await _db.ProjectTasks.AsNoTracking().Include(t => t.Ticket)
                 .Where(t => t.ProjectId == projectId.Value && t.CurrentStatusId != null)
                 .Join(_db.WorkflowStatuses.AsNoTracking(),
                       t => t.CurrentStatusId,
@@ -895,7 +896,8 @@ public class TaskService : ITaskService
 
             ParentTaskId = t.ParentTaskId,
             SourceTaskId = t.SourceTaskId,
-
+            TicketId = t.TicketId,
+          
             Project = t.Project == null ? null : new ProjectResponse
             {
                 Id = t.Project.Id,
@@ -1878,6 +1880,248 @@ public class TaskService : ITaskService
         });
 
         return _mapper.Map<ProjectTaskResponse>(e);
+    }
+
+    #endregion
+    #region Ticket backlog tasks (Tasks created from Ticket)
+
+    public async Task<ProjectTaskResponse> CreateTaskForTicketAsync(
+        Guid ticketId,
+        ProjectTaskRequest req,
+        Guid userId,
+        CancellationToken ct = default)
+    {
+        // 0) Load ticket + validate
+        var ticket = await _db.Tickets
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t =>
+                t.Id == ticketId &&
+                (!t.IsDeleted.HasValue || !t.IsDeleted.Value),
+                ct);
+
+        if (ticket == null)
+            throw CustomExceptionFactory.CreateNotFoundError(
+                ResponseMessages.NOT_FOUND.FormatMessage("Ticket"));
+
+        if (!ticket.ProjectId.HasValue || ticket.ProjectId == Guid.Empty)
+            throw CustomExceptionFactory.CreateBadRequestError(
+                "Ticket is not associated with any project, cannot create tasks.");
+
+        // Ép ProjectId của task = ProjectId của ticket
+        req.ProjectId = ticket.ProjectId.Value;
+
+        // Task được tạo từ Ticket luôn là backlog, chưa nằm trong sprint
+        req.SprintId = null;
+
+        // ---------- Giống logic CreateDraftTaskAsync ----------
+
+        // 1) Validate project
+        var project = await _db.Projects.AsNoTracking()
+            .FirstOrDefaultAsync(p => p.Id == req.ProjectId, ct)
+            ?? throw CustomExceptionFactory.CreateNotFoundError(
+                ResponseMessages.NOT_FOUND.FormatMessage("Project"));
+
+        // 2) Chọn status: ưu tiên WorkflowStatusId → StatusCode → default (TODO/first)
+        WorkflowStatus? status = null;
+
+        if (req.WorkflowStatusId != null)
+        {
+            status = await _db.WorkflowStatuses.AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == req.WorkflowStatusId, ct);
+        }
+
+        if (status == null && !string.IsNullOrWhiteSpace(req.StatusCode))
+        {
+            var key = req.StatusCode.Trim().ToLower();
+            status = await _db.WorkflowStatuses.AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Code != null && x.Code.ToLower() == key, ct);
+        }
+
+        if (status == null)
+        {
+            status = await _db.WorkflowStatuses.AsNoTracking()
+                .OrderBy(x => x.Position)
+                .FirstOrDefaultAsync(x => x.Category == "TODO", ct)
+                ?? await _db.WorkflowStatuses.AsNoTracking()
+                    .OrderBy(x => x.Position)
+                    .FirstOrDefaultAsync(ct)
+                ?? throw CustomExceptionFactory.CreateBadRequestError("No workflow status available.");
+        }
+
+        // 3) Sinh Code PRJ-T-###
+        var seq = await _db.ProjectTasks.Include(t => t.Ticket).AsNoTracking()
+            .LongCountAsync(t => t.ProjectId == req.ProjectId, ct) + 1;
+
+        var prefix = string.IsNullOrWhiteSpace(project.Code) ? "PRJ" : project.Code!;
+        var code = $"{prefix}-T-{seq:000}";
+
+        // 4) Map + defaults: luôn backlog, có TicketId
+        var now = DateTime.UtcNow;
+        var entity = _mapper.Map<ProjectTask>(req);
+
+        entity.Id = Guid.NewGuid();
+        entity.ProjectId = req.ProjectId;
+        entity.SprintId = null;          // từ ticket: luôn backlog
+        entity.IsBacklog = true;
+        entity.TicketId = ticket.Id;     // liên kết ticket
+        entity.Code = code;
+
+        entity.CurrentStatusId = status.Id;
+        entity.Status = !string.IsNullOrWhiteSpace(status.Code) ? status.Code : status.Name;
+        entity.OrderInSprint = null;     // chưa nằm trong sprint => không order
+
+        entity.RemainingHours = req.EstimateHours;
+        entity.CreateAt = now;
+        entity.UpdateAt = now;
+        entity.CreatedBy = userId;
+        entity.IsDeleted = false;
+
+        // Assignees
+        entity.Assignees = new List<TaskWorkflow>();
+        if (req.AssigneeIds?.Count > 0)
+        {
+            foreach (var assignUserId in req.AssigneeIds.Distinct())
+            {
+                entity.Assignees.Add(new TaskWorkflow
+                {
+                    TaskId = entity.Id,
+                    AssignUserId = assignUserId
+                });
+            }
+        }
+
+        // 5) Persist
+        await _repo.AddAsync(entity, ct);
+
+        // 6) Workflow assignments (nếu FE gửi)
+        if (req.WorkflowAssignments != null)
+        {
+            var validItems = req.WorkflowAssignments
+                .Where(x => x.AssignUserId.HasValue && x.AssignUserId.Value != Guid.Empty)
+                .Select(x => new TaskWorkflowAssignmentItemRequest
+                {
+                    WorkflowStatusId = x.WorkflowStatusId,
+                    AssignUserId = x.AssignUserId
+                })
+                .ToList();
+
+            if (validItems.Count > 0)
+            {
+                var wfReq = new TaskWorkflowAssignmentsRequest
+                {
+                    TaskId = entity.Id,
+                    Items = validItems
+                };
+
+                await _taskWorkflowService.UpsertAssignmentsForTaskAsync(
+                    wfReq,
+                    userId,
+                    ct);
+            }
+        }
+
+        var companyId = await _db.Projects
+            .Where(p => p.Id == entity.ProjectId)
+            .Select(p => (Guid)p.CompanyId)
+            .FirstAsync(ct);
+
+        // 7) Log
+        var actorId = _current.GetUserId();
+        await _log.CreateLog(new CompanyActivityLog
+        {
+            CompanyId = companyId,
+            ActorUserId = actorId,
+            Title = "Create ticket task",
+            Description =
+                $"User '{await GetUserName(actorId)}' created backlog task '{entity.Title}' from ticket '{ticket.TicketName ?? ticket.Id.ToString()}'"
+        });
+
+        return _mapper.Map<ProjectTaskResponse>(entity);
+    }
+
+    public async Task<PagedResult<ProjectTaskResponse>> GetTasksByTicketIdAsync(
+      Guid ticketId,
+      PagedRequest request,
+      CancellationToken ct = default)
+    {
+        // 1) Kiểm tra ticket tồn tại
+        var ticketExists = await _db.Tickets
+            .AsNoTracking()
+            .AnyAsync(t =>
+                t.Id == ticketId &&
+                (!t.IsDeleted.HasValue || !t.IsDeleted.Value),
+                ct);
+
+        if (!ticketExists)
+        {
+            throw CustomExceptionFactory.CreateNotFoundError(
+                ResponseMessages.NOT_FOUND.FormatMessage("Ticket"));
+        }
+
+        // 2) Query tasks theo ticket
+        var query = _db.ProjectTasks
+            .AsNoTracking()
+            .Include(t => t.TaskWorkflows).Include(t => t.Ticket)
+            .Where(t => t.TicketId == ticketId && !t.IsDeleted);
+
+        // 3) Chuẩn hoá SortColumn cho ToPagedResultAsync
+        if (string.IsNullOrWhiteSpace(request.SortColumn))
+        {
+            request.SortColumn = nameof(ProjectTask.CreateAt);
+            request.SortDescending = true;
+        }
+        else
+        {
+            // Tìm property thật trên ProjectTask theo tên (ignore case)
+            var prop = typeof(ProjectTask).GetProperty(
+                request.SortColumn,
+                BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+
+            if (prop == null)
+            {
+                // Không tìm thấy cột sort → fallback an toàn
+                request.SortColumn = nameof(ProjectTask.CreateAt);
+                request.SortDescending = true;
+            }
+            else
+            {
+                // Chuẩn lại tên property đúng casing để Dynamic LINQ không lỗi
+                request.SortColumn = prop.Name;
+            }
+        }
+
+        // 4) Áp dụng phân trang + sort qua helper chung
+        var paged = await query.ToPagedResultAsync(request, ct);
+
+        // 5) Map sang response + load WorkflowAssignments
+        var items = new List<ProjectTaskResponse>(paged.Items.Count);
+
+        foreach (var t in paged.Items)
+        {
+            var resp = _mapper.Map<ProjectTaskResponse>(t);
+
+            // AssigneeIds từ TaskWorkflows
+            resp.AssigneeIds = t.TaskWorkflows?
+                    .Where(a => a.AssignUserId.HasValue)
+                    .Select(a => a.AssignUserId!.Value)
+                    .ToList()
+                ?? new List<Guid>();
+
+            // Workflow assignments
+            resp.WorkflowAssignments = await _taskWorkflowService
+                .GetAssignmentsForTaskAsync(resp.Id, ct);
+
+            items.Add(resp);
+        }
+
+        // 6) Trả PagedResult<ProjectTaskResponse>
+        return new PagedResult<ProjectTaskResponse>
+        {
+            Items = items,
+            TotalCount = paged.TotalCount,
+            PageNumber = paged.PageNumber,
+            PageSize = paged.PageSize
+        };
     }
 
     #endregion

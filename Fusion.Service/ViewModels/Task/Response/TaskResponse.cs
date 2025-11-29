@@ -53,6 +53,7 @@ namespace Fusion.Service.ViewModels.Task.Response
         public List<TaskDependencyResponse>? Dependencies { get; set; }
 
         public List<CommentResponse>? Comments { get; set; }
+        public Guid? TicketId { get; set; }
 
 
     }

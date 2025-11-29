@@ -60,9 +60,15 @@ namespace Fusion.Repository.Repositories
             var set = sprintIds.Distinct().ToList();
             if (set.Count == 0) return Task.FromResult(new List<ProjectTask>());
 
-            return _db.ProjectTasks.AsNoTracking()
-                .Where(t => !t.IsDeleted && t.ProjectId == projectId && t.SprintId != null && set.Contains(t.SprintId.Value))
-                .ToListAsync(ct);
+            return _db.ProjectTasks
+        .AsNoTracking()
+        .Include(t => t.Ticket) 
+        .Where(t =>
+            !t.IsDeleted &&
+            t.ProjectId == projectId &&
+            t.SprintId != null &&
+            set.Contains(t.SprintId.Value))
+        .ToListAsync(ct);
         }
 
         public Task<List<TaskWorkflow>> GetAssigneesForTasksAsync(
@@ -83,7 +89,7 @@ namespace Fusion.Repository.Repositories
 
         // write ops giữ nguyên
         public Task<ProjectTask?> GetTaskForMoveAsync(Guid taskId, CancellationToken ct = default)
-            => _db.ProjectTasks.SingleOrDefaultAsync(t => t.Id == taskId && !t.IsDeleted, ct);
+            => _db.ProjectTasks.Include(t => t.Ticket).SingleOrDefaultAsync(t => t.Id == taskId && !t.IsDeleted, ct);
 
         public Task<bool> HasTransitionAsync(Guid workflowId, Guid fromStatusId, Guid toStatusId, CancellationToken ct = default)
             => _db.WorkflowTransitions.AsNoTracking()

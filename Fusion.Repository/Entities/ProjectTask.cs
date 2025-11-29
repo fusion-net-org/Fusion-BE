@@ -104,6 +104,12 @@ public partial class ProjectTask
     [Column("carry_over_count")] public int CarryOverCount { get; set; } = 0;
 
     [Column("source_task_id")] public Guid? SourceTaskId { get; set; }
+    [Column("ticket_id")]
+    public Guid? TicketId { get; set; }
+
+    [ForeignKey(nameof(TicketId))]
+    [InverseProperty(nameof(Ticket.Tasks))]
+    public virtual Ticket? Ticket { get; set; }
     [ForeignKey(nameof(SourceTaskId))] public ProjectTask? SourceTask { get; set; }
     public ICollection<TaskWorkflow> Assignees { get; set; } = new List<TaskWorkflow>();
     public ICollection<ProjectTaskDependency> Dependencies { get; set; } = new List<ProjectTaskDependency>();
