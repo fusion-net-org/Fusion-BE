@@ -27,6 +27,8 @@ namespace Fusion.Repository.IRepositories
         Task<List<ProjectTask>> GetTasksAssignedToUserAsync(Guid userId, CancellationToken token = default);
 
         Task<UserTaskDashBoard> GetUserTaskDashboardAsync(Guid userId, CancellationToken token = default);
-
+        Task<List<ProjectTask>> GetNonBacklogTasksByTicketIdAsync(
+        Guid ticketId,
+        CancellationToken ct = default);
     }
 }
