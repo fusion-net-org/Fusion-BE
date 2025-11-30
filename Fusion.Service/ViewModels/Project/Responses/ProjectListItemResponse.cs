@@ -16,7 +16,8 @@ namespace Fusion.Service.ViewModels.Project.Responses
         public Guid? CompanyId { get; set; }
         public string? OwnerCompany { get; set; }
         public string? HiredCompany { get; set; }
-
+        public Guid? RequestCompany { get; set; }
+        public string? RequestName { get; set; }
         public string? Workflow { get; set; } // "Company — WorkflowName" (nếu có)
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
