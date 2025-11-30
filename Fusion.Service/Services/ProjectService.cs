@@ -504,6 +504,9 @@ namespace Fusion.Service.Services
                     CompanyRequestId = p.CompanyRequest?.Id,
                     CompanyRequestName = p.CompanyRequest?.Name ?? "N/A",
 
+                    StartDate = p.StartDate ?? DateOnly.MinValue,
+                    EndDate = p.EndDate ?? DateOnly.MinValue,
+
                     WorkflowId = p.Workflow?.Id ?? Guid.Empty,
                     WorkflowName = p.Workflow?.Name ?? "N/A",
 

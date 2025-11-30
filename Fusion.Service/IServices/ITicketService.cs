@@ -17,6 +17,11 @@ namespace Fusion.Service.IServices
 	{
 		Task<TicketPagedResponse> GetPageTicketshAsync(TicketPagedSearchRequest request, CancellationToken cancellationToken = default);
 
+        Task<TicketPagedResponse> GetPageTicketAdminAsync(
+            TicketPagedSearchRequest request,
+            Guid AdminId,
+            CancellationToken cancellationToken = default);
+
         Task<TicketResponse?> GetTicketByIdAsync(Guid id, CancellationToken cancellationToken = default);
         Task<TicketResponse?> CreateTicketAsync(TicketRequest request, CancellationToken cancellationToken = default);
 		Task<TicketResponse?> UpdateTicketAsync(TicketRequest request, Guid ticketId, CancellationToken cancellationToken = default);
