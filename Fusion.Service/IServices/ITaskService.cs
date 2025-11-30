@@ -76,6 +76,15 @@ namespace Fusion.Service.IServices
     string? statusCode,
     Guid userId,
     CancellationToken ct = default);
+        Task<ProjectTaskResponse> CreateTaskForTicketAsync(
+      Guid ticketId,
+      ProjectTaskRequest req,
+      Guid userId,
+      CancellationToken ct = default);
 
+        Task<PagedResult<ProjectTaskResponse>> GetTasksByTicketIdAsync(
+            Guid ticketId,
+            PagedRequest request,
+            CancellationToken ct = default);
     }
 }

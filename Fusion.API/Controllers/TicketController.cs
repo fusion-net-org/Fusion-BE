@@ -75,7 +75,7 @@ namespace Fusion.API.Controllers
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<TicketResponse>))]
         public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
         {
-            var result = await _ticketService.GetTicketByIdAsync(id);
+            var result = await _ticketService.GetTicketByIdAsync(id, cancellationToken);
             return Ok(ResponseModel<TicketResponse>.Ok(
                 data: result,
                 message: "Get ticket by id successfully"));

@@ -84,4 +84,6 @@ public partial class Ticket
 
     [InverseProperty("Ticket")]
     public virtual ICollection<TicketComment> TicketComments { get; set; } = new List<TicketComment>();
+    [InverseProperty(nameof(ProjectTask.Ticket))]
+    public virtual ICollection<ProjectTask> Tasks { get; set; } = new List<ProjectTask>();
 }

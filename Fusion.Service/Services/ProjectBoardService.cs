@@ -117,7 +117,7 @@ namespace Fusion.Service.Services
                     WorkflowStatusId = curStatusId,
                     StatusCode = meta.Code,
                     StatusCategory = meta.Category,
-
+                    
                     Assignees = assignees,
                     DependsOn = new List<Guid>(),
                     ParentTaskId = t.ParentTaskId,
@@ -127,6 +127,8 @@ namespace Fusion.Service.Services
                     UpdatedAt = t.UpdateAt ?? t.CreateAt ?? DateTime.UtcNow,
                     CreatedAt = t.CreateAt ?? DateTime.UtcNow,
 
+                    TicketId = t.TicketId,
+                    TicketName = t.Ticket?.TicketName,
                     SourceTicketId = t.SourceTaskId,
                     SourceTicketCode = null
                 });
@@ -239,6 +241,8 @@ namespace Fusion.Service.Services
                 UpdatedAt = task.UpdateAt ?? task.CreateAt ?? DateTime.UtcNow,
                 CreatedAt = task.CreateAt ?? DateTime.UtcNow,
 
+                TicketId = task.TicketId,
+                TicketName = task.Ticket?.TicketName,
                 SourceTicketId = task.SourceTaskId,
                 SourceTicketCode = null
             };

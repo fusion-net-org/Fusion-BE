@@ -11,5 +11,7 @@ namespace Fusion.Repository.Bases.Page.Partner
         public string? Keyword { get; set; }
         public DateTime? FromDate { get; set; }
         public DateTime? ToDate { get; set; }
+        public DateTime? RespondFromDate { get; set; }
+        public DateTime? RespondToDate { get; set; }
     }
 }

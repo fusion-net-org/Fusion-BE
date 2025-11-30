@@ -342,6 +342,19 @@ namespace Fusion.Repository.Repositories
                 EarlyCompletedPercent = earlyCompletedPercent
             };
         }
+        public async Task<List<ProjectTask>> GetNonBacklogTasksByTicketIdAsync(
+     Guid ticketId,
+     CancellationToken ct = default)
+        {
+            return await _db.ProjectTasks
+                .AsNoTracking()
+                .Where(t =>
+                    t.TicketId == ticketId &&
+                    !t.IsBacklog &&
+                    !t.IsDeleted)
+                .Include(t => t.CurrentStatus)           
+                .ToListAsync(ct);
+        }
 
     }
 }
