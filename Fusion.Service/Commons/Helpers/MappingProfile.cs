@@ -1,5 +1,6 @@
 ﻿
 using AutoMapper;
+using Fusion.Repository.Bases.Page.Partner;
 using Fusion.Repository.Entities;
 using Fusion.Repository.ViewModels.CompanySubscriptionEntry;
 using Fusion.Service.ViewModels.Comment.Request;
@@ -55,6 +56,7 @@ public class MappingProfile : Profile
              .ForMember(dest => dest.TotalMember, opt => opt.MapFrom(
                        src => (src.CompanyB != null ? src.CompanyB.CompanyMembers.Count : 0)))
              .ReverseMap();
+        CreateMap<CompanyFriendshipResponseRepo, CompanyFriendshipResponse>().ReverseMap();
 
 
         CreateMap<UpdateSelfUserRequest, User>()

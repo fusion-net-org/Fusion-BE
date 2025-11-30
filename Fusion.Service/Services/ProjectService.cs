@@ -284,13 +284,13 @@ namespace Fusion.Service.Services
                 StartDate = p.StartDate.HasValue
     ? p.StartDate.Value.ToDateTime(TimeOnly.MinValue)
     : (DateTime?)null,
-
+                RequestCompany = p.CompanyRequestId,
                 EndDate = p.EndDate.HasValue
     ? p.EndDate.Value.ToDateTime(TimeOnly.MinValue)
     : (DateTime?)null,
 
                 Status = p.Status ?? "Planned",
-                Ptype = p.CompanyRequestId == companyId ? "Outsourced" : "Internal",
+                Ptype = p.CompanyRequestId != null? "Outsourced" : "Internal",
                 IsRequest = (p.CompanyRequestId == companyId)
             }).ToList();
 

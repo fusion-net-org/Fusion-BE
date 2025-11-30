@@ -28,5 +28,6 @@ public class ProjectTaskRequest
     public Guid? SourceTaskId { get; set; }
     public List<Guid>? AssigneeIds { get; set; }             // nhiều ngườ
     public List<TaskWorkflowAssignmentItemRequest>? WorkflowAssignments { get; set; }
+    public Guid? TicketId { get; set; }
 
 }

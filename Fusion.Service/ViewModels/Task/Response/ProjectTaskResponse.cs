@@ -44,5 +44,6 @@ public class ProjectTaskResponse
 
     public List<CommentResponse> Comments { get; set; } = new();
     public List<TaskAttachmentResponse> Attachments { get; set; } = new();
-
+    public Guid? TicketId { get; set; }
+    public string? TicketName { get; set; }
 }

@@ -145,6 +145,25 @@ namespace Fusion.Service.Services
 
         public async Task<ProjectRequestResponse> AddProjectRequestAsync(CreateProjectRequestRequest request, string vendorEmail, CancellationToken cancellationToken)
         {
+            if (string.IsNullOrWhiteSpace(request.Name))
+                throw CustomExceptionFactory.CreateBadRequestError("Project Name can not be empty");
+
+            if (!request.StartDate.HasValue)
+                throw CustomExceptionFactory.CreateBadRequestError("StartDate can not be empty");
+
+            if (!request.EndDate.HasValue)
+                throw CustomExceptionFactory.CreateBadRequestError("EndDate can not be empty");
+
+            if (!request.RequesterCompanyId.HasValue)
+                throw CustomExceptionFactory.CreateBadRequestError("RequesterCompanyId is required");
+
+            if (!request.ExecutorCompanyId.HasValue)
+                throw CustomExceptionFactory.CreateBadRequestError("ExecutorCompanyId is required");
+
+            if (!request.ContractId.HasValue)
+                throw CustomExceptionFactory.CreateBadRequestError("ContractId is required");
+
+
             var projectRequest = _mapper.Map<ProjectRequest>(request);
             var code = ProjectCodeUtil.GenerateProjectRequestCode();
             var response = await _projectRequestRepository.AddProjectRequestAsync(projectRequest, vendorEmail, code, cancellationToken);
