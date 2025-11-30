@@ -77,6 +77,24 @@ namespace Fusion.API.Controllers
                 message: "Get paged project request successfully"));
         }
 
+        [HttpGet("paged/admin")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PagedResult<ProjectRequestResponse>>))]
+        public async Task<IActionResult> GetProjectRequestAdminPaged(Guid companyId, [FromQuery] ProjectRequestSearchRequest request, CancellationToken cancellationToken)
+        {
+
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(new { Message = "Invalid or missing token" });
+            }
+
+
+            var result = await _projectRequestService.SearchProjectRequestAdminAsync(request, userId, cancellationToken);
+            return Ok(ResponseModel<PagedResult<ProjectRequestResponse>>.Ok(
+                data: result,
+                message: "Get paged project request successfully"));
+        }
+
 
         [HttpDelete("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]

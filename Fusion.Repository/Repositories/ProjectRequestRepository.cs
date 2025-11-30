@@ -427,7 +427,102 @@ namespace Fusion.Repository.Repositories
             return await query.ToPagedResultAsync(filter, cancellationToken);
 
         }
-            
+
+        public async Task<PagedResult<ProjectRequest>> SearchProjectRequestAdminAsync(ProjectRequestSearchRequest filter, Guid adminId, CancellationToken cancellationToken = default)
+        {
+            var adminUser = await _context.Users.SingleOrDefaultAsync(x => x.IsSystemAdmin && x.Id == adminId);
+
+            if (adminUser == null)
+                throw CustomExceptionFactory.CreateNotFoundError("Admin does not exist in this system");
+
+
+            var query = _context.ProjectRequests
+                .Include(x => x.RequesterCompany)
+                .Include(x => x.ExecutorCompany)
+                .Include(x => x.CreatedByNavigation)
+                .Include(x => x.Project)
+                .AsQueryable();
+
+            // Keyword
+            if (!string.IsNullOrWhiteSpace(filter.Keyword))
+                query = query.Where(x => x.Name.Contains(filter.Keyword) || x.Code.Contains(filter.Keyword));
+
+            // Deleted filter 
+            if (filter.Deleted.HasValue)
+                query = query.Where(x => x.IsDeleted == filter.Deleted.Value);
+
+            // isHaveProject filter
+            if (filter.IsHaveProject.HasValue)
+            {
+                if (filter.IsHaveProject.Value)
+                    query = query.Where(x => x.Project != null && x.Project.Id != Guid.Empty);
+                else
+                    query = query.Where(x => x.Project == null || x.Project.Id == Guid.Empty);
+            }
+
+            // Status
+            if (filter.Status.HasValue)
+                query = query.Where(x => x.Status == filter.Status.Value.ToString());
+
+            if (filter.DateFilterType.HasValue)
+            {
+                if (filter.DateRange?.From != null && filter.DateRange?.To != null)
+                {
+                    var from = filter.DateRange.From.Value.ToDateTime(TimeOnly.MinValue);
+                    var to = filter.DateRange.To.Value.ToDateTime(TimeOnly.MaxValue);
+
+                    query = filter.DateFilterType switch
+                    {
+                        DateFilterType.CreatedDate =>
+                            query.Where(x =>
+                                x.CreateAt >= from &&
+                                x.CreateAt <= to
+                            ),
+
+                        DateFilterType.StartEndDate =>
+                            query.Where(x =>
+                                x.StartDate >= filter.DateRange.From &&
+                                x.EndDate <= filter.DateRange.To),
+
+                        DateFilterType.ApprovedDate =>
+                            query.Where(x =>
+                                x.UpdateAt != null &&
+                                x.UpdateAt >= from &&
+                                x.UpdateAt <= to &&
+                                x.Status == ProjectRequestStatusEnum.Accepted.ToString()
+                            ),
+
+                        DateFilterType.RejectedDate =>
+                            query.Where(x =>
+                                x.UpdateAt != null &&
+                                x.UpdateAt >= from &&
+                                x.UpdateAt <= to &&
+                                x.Status == ProjectRequestStatusEnum.Rejected.ToString()
+                            ),
+                        DateFilterType.PendingDate =>
+                            query.Where(x =>
+                                x.CreateAt != null &&
+                                x.CreateAt >= from &&
+                                x.CreateAt <= to &&
+                                x.Status == ProjectRequestStatusEnum.Pending.ToString()
+                            ),
+
+                        _ => query
+                    };
+                }
+            }
+            else
+            {
+                if (filter.DateRange?.From != null || filter.DateRange?.To != null)
+                    throw CustomExceptionFactory.CreateBadRequestError("Must choose DateFilterType when using date range filter.");
+            }
+
+            return await query.ToPagedResultAsync(
+                    filter,
+                    cancellationToken
+                    );
+        }
+
 
         public async Task<ProjectRequest?> GetProjectRequestByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {

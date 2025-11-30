@@ -21,6 +21,8 @@ namespace Fusion.Repository.IRepositories
 
         Task<PagedResult<ProjectRequest>> SearchProjectRequestAsync(ProjectRequestSearchRequest filter, Guid userCompanyId, Guid partnerId, CancellationToken cancellationToken = default);
 
+        Task<PagedResult<ProjectRequest>> SearchProjectRequestAdminAsync(ProjectRequestSearchRequest filter, Guid adminId, CancellationToken cancellationToken = default);
+
 
         Task<ProjectRequest?> GetProjectRequestByIdAsync(Guid id, CancellationToken cancellationToken = default);
 

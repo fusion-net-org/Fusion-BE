@@ -138,6 +138,42 @@ namespace Fusion.Service.Services
             };
         }
 
+        public async Task<TicketPagedResponse> GetPageTicketAdminAsync(
+            TicketPagedSearchRequest request,
+            Guid AdminId,
+            CancellationToken cancellationToken = default)
+        {
+            var admin = await _userRepository.GetUserByIdAsync(AdminId);
+
+            if (admin?.IsSystemAdmin != true)
+                throw CustomExceptionFactory.CreateNotFoundError("Admin does not exist in this system");
+
+            var fullQuery = _ticketRepository.BuildTicketQuery(request);
+
+            var fullData = await fullQuery.ToListAsync(cancellationToken);
+
+            var statusCounts = fullData
+                .GroupBy(t => t.status ?? "Unknown")
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            var totalFull = fullData.Count;
+
+            var paged = await fullQuery.ToPagedResultAsync(request, cancellationToken);
+
+            return new TicketPagedResponse
+            {
+                PageData = new PagedResult<TicketResponse>
+                {
+                    Items = _mapper.Map<List<TicketResponse>>(paged.Items),
+                    TotalCount = paged.TotalCount,
+                    PageNumber = paged.PageNumber,
+                    PageSize = paged.PageSize
+                },
+                StatusCounts = statusCounts,
+                Total = totalFull
+            };
+        }
+
 
 
         private async Task<TicketProcessSummaryResponse?> BuildTicketProcessAsync(
