@@ -14,6 +14,7 @@ namespace Fusion.Service.IServices
 {
     public interface IProjectService
     {
+        Task<List<ProjectResponseVersion3>> GetProjectsByCompanyRequestAsync(Guid companyId, CancellationToken cancellationToken = default);
         Task<PagedResult<ProjectListResponse>> GetAllProjectAsync(ProjectSearchRequest req, CancellationToken ct = default);
         Task<ProjectDetailResponse> GetProjectDetailAsync(Guid id, CancellationToken ct = default); 
         Task<PagedResult<AllProjectOfMememberResponse>> GetProjectByMemberIdAsync(Guid userId, ProjectSearchRequest req, CancellationToken ct = default);

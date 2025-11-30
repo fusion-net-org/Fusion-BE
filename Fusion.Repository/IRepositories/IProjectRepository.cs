@@ -9,6 +9,7 @@ namespace Fusion.Repository.IRepositories
 {
     public interface IProjectRepository : IGenericRepository<Project>
     {
+        Task<List<Project>> GetProjectsByCompanyRequestAsync(Guid companyId, CancellationToken cancellationToken = default);
         Task<PagedResult<Project>> GetAllProjectAsync(ProjectSearchRequest req, CancellationToken ct = default);
         Task<Project?> GetProjectDetailAsync(Guid id, CancellationToken ct = default);
         Task<PagedResult<Project>> GetProjectByMemberIdAsync(Guid userId, ProjectSearchRequest req, CancellationToken ct = default);

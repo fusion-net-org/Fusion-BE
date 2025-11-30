@@ -64,12 +64,12 @@ namespace Fusion.Service.Services
                cancellationToken
                );
 
-            if (!request.StatusId.HasValue)
-                throw CustomExceptionFactory.CreateBadRequestError("Workflow status is required.");
+            //if (!request.StatusId.HasValue)
+            //    throw CustomExceptionFactory.CreateBadRequestError("Workflow status is required.");
 
-            var statusExists = await _workflowStatusRepository.ExistsAsync(request.StatusId.Value);
-            if (!statusExists)
-                throw CustomExceptionFactory.CreateBadRequestError("Workflow status is invalid or does not exist.");
+            //var statusExists = await _workflowStatusRepository.ExistsAsync(request.StatusId.Value);
+            //if (!statusExists)
+            //    throw CustomExceptionFactory.CreateBadRequestError("Workflow status is invalid or does not exist.");
 
             var ticket = _mapper.Map<Ticket>(request);
 
@@ -78,17 +78,6 @@ namespace Fusion.Service.Services
 
             var newTicket = await _ticketRepository.AddTicketAsync(ticket, cancellationToken);
 
-            //var companyId = await GetCompanyIdAsync(newTicket.Id);
-
-            //         var currentUserName = await GetUserName(_currentService.GetUserId());
-            //         var log = new CompanyActivityLog
-            //{
-            //             CompanyId = companyId,
-            //             ActorUserId = _currentService.GetUserId(),
-            //             Title = "Create ticket",
-            //             Description = $"User:{currentUserName} has created ticket '{newTicket.TicketName}' for project '{newTicket.Project.Name}'",
-            //         };
-            //await _logService.CreateLog(log);
             return _mapper.Map<TicketResponse>(newTicket);
         }
 
@@ -259,6 +248,30 @@ namespace Fusion.Service.Services
             var progress = totalNonBacklog == 0
                 ? 0m
                 : Math.Round((decimal)doneCount * 100m / totalNonBacklog, 2);
+
+
+            var ticket = await _ticketRepository.GetTicketByIdAsync(ticketId);
+            if (ticket != null)
+            {
+                if (startedCount > 0 && progress < 100)
+                {
+                    ticket.ResolvedAt = firstStartedAt?.UtcDateTime;
+                }
+
+                if (progress == 100)
+                {
+                    ticket.ClosedAt = lastDoneAt?.UtcDateTime;
+                }
+                else if (progress < 100)
+                {
+                    ticket.ClosedAt = null;
+
+                }
+
+                ticket.UpdatedAt = DateTime.UtcNow;
+
+                await _ticketRepository.UpdateTicketAsync(ticket.Id, ticket, ct);
+            }
 
             return new TicketProcessSummaryResponse
             {
@@ -454,7 +467,7 @@ namespace Fusion.Service.Services
             var user = await _unitOfWork.Repository<User>().FindAsync(c => c.Id == userId);
             return user.UserName;
         }
-   
+
 
     }
 }

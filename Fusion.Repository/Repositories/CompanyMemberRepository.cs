@@ -536,8 +536,10 @@ namespace Fusion.Repository.Repositories
         {
             var query = _context.CompanyMembers
                 .Include(cm => cm.User)
+                    .ThenInclude(u => u.UserRoles)
+                        .ThenInclude(ur => ur.Role)
                 .Include(cm => cm.Company)
-                .ThenInclude(c => c.OwnerUser)
+                    .ThenInclude(c => c.OwnerUser)
                 .AsQueryable();
 
             query = query.Where(cm => cm.UserId == userId && cm.IsDeleted == false);
