@@ -23,14 +23,14 @@ namespace Fusion.API.Controllers
 
 
         /// <summary>Create a UserSubscription from a successful Transaction.</summary>
-        [HttpPost]
-        public async Task<ActionResult<UserSubscriptionDetailResponse>> Create(
-            [FromBody] UserSubscriptionCreateRequest req,
-            CancellationToken ct)
-        {
-            var created = await _userSubscriptionService.CreateAsync(req, ct);
-            return CreatedAtAction(nameof(GetDetail), new { id = created.Id }, created);
-        }
+        //[HttpPost]
+        //public async Task<ActionResult<UserSubscriptionDetailResponse>> Create(
+        //    [FromBody] UserSubscriptionCreateRequest req,
+        //    CancellationToken ct)
+        //{
+        //    var created = await _userSubscriptionService.CreateAsync(req, ct);
+        //    return CreatedAtAction(nameof(GetDetail), new { id = created.Id }, created);
+        //}
 
         /// <summary>Get subscription detail by Id.</summary>
         [HttpGet("{id:guid}")]
@@ -80,28 +80,28 @@ namespace Fusion.API.Controllers
         }
 
         /// <summary>Cancel a subscription (soft-cancel: sets status & timestamp).</summary>
-        [HttpPost("{id:guid}/cancel")]
-        public async Task<IActionResult> Cancel(Guid id, CancellationToken ct)
-        {
-            var ok = await _userSubscriptionService.CancelAsync(id, ct);
-            return ok ? NoContent() : NotFound();
-        }
+        //[HttpPost("{id:guid}/cancel")]
+        //public async Task<IActionResult> Cancel(Guid id, CancellationToken ct)
+        //{
+        //    var ok = await _userSubscriptionService.CancelAsync(id, ct);
+        //    return ok ? NoContent() : NotFound();
+        //}
 
-        /// <summary>Pause an active subscription.</summary>
-        [HttpPost("{id:guid}/pause")]
-        public async Task<IActionResult> Pause(Guid id, CancellationToken ct)
-        {
-            var ok = await _userSubscriptionService.PauseAsync(id, ct);
-            return ok ? NoContent() : NotFound();
-        }
+        ///// <summary>Pause an active subscription.</summary>
+        //[HttpPost("{id:guid}/pause")]
+        //public async Task<IActionResult> Pause(Guid id, CancellationToken ct)
+        //{
+        //    var ok = await _userSubscriptionService.PauseAsync(id, ct);
+        //    return ok ? NoContent() : NotFound();
+        //}
 
         /// <summary>Resume a paused subscription.</summary>
-        [HttpPost("{id:guid}/resume")]
-        public async Task<IActionResult> Resume(Guid id, CancellationToken ct)
-        {
-            var ok = await _userSubscriptionService.ResumeAsync(id, ct);
-            return ok ? NoContent() : NotFound();
-        }
+        //[HttpPost("{id:guid}/resume")]
+        //public async Task<IActionResult> Resume(Guid id, CancellationToken ct)
+        //{
+        //    var ok = await _userSubscriptionService.ResumeAsync(id, ct);
+        //    return ok ? NoContent() : NotFound();
+        //}
 
 
 

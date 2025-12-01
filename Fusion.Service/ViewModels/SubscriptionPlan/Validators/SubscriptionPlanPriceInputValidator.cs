@@ -47,10 +47,6 @@ public class SubscriptionPlanPriceInputValidator : AbstractValidator<Subscriptio
                 .Null().WithMessage("Prepaid must not have InstallmentCount.");
             RuleFor(x => x.InstallmentInterval)
                 .Null().WithMessage("Prepaid must not have InstallmentInterval.");
-            // Tuỳ nghiệp vụ: có thể bắt Discounts phải null luôn nếu Prepaid
-            RuleFor(x => x.Discounts)
-                .Must(d => d == null || d.Count == 0)
-                .WithMessage("Prepaid must not have Discounts.");
         });
     }
 }

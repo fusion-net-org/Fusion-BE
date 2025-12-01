@@ -10,6 +10,7 @@ public class SubscriptionPlanListItemResponse
     public bool IsActive { get; set; }
     public LicenseScope LicenseScope { get; set; }
     public bool IsFullPackage { get; set; }
+    public bool AutoGrantMonthly { get; set; }
     public int? CompanyShareLimit { get; set; }
     public int? SeatsPerCompanyLimit { get; set; }
 

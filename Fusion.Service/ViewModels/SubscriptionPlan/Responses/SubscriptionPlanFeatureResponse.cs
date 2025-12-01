@@ -7,4 +7,5 @@ public class SubscriptionPlanFeatureResponse
     public string? FeatureCode { get; set; }
     public string? FeatureName { get; set; }
     public bool Enabled { get; set; }
+    public int? MonthlyLimit { get; set; }
 }
