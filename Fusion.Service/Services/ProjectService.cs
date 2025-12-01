@@ -504,6 +504,9 @@ namespace Fusion.Service.Services
                     CompanyRequestId = p.CompanyRequest?.Id,
                     CompanyRequestName = p.CompanyRequest?.Name ?? "N/A",
 
+                    StartDate = p.StartDate ?? DateOnly.MinValue,
+                    EndDate = p.EndDate ?? DateOnly.MinValue,
+
                     WorkflowId = p.Workflow?.Id ?? Guid.Empty,
                     WorkflowName = p.Workflow?.Name ?? "N/A",
 
@@ -818,6 +821,14 @@ namespace Fusion.Service.Services
             return _mapper.Map<List<ProjectResponseVersion3>>(projects);
         }
 
+        public async Task<List<ProjectResponseVersion3>> GetProjectsByCompanyRequestAsync(
+        Guid companyId,
+        CancellationToken cancellationToken = default)
+        {
+            var projects = await _projectRepo.GetProjectsByCompanyRequestAsync(companyId, cancellationToken);
+
+            return _mapper.Map<List<ProjectResponseVersion3>>(projects);
+        }
 
 
     }

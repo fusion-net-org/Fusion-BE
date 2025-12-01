@@ -1,4 +1,5 @@
-﻿using Fusion.Repository.Bases.Page;
+﻿using Azure.Core;
+using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.Ticket;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
