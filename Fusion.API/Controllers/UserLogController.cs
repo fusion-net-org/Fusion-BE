@@ -17,15 +17,15 @@ namespace Fusion.API.Controllers
 
         public UserLogController(IUserLogService service) => _service = service;
 
-        //[HttpGet]
-        //[ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PagedResult<UserLog>>))]
-        //public async Task<IActionResult> GetAll([FromQuery] UserLogSearchRequest request, CancellationToken ct)
-        //{
-        //    var data = await _service.GetAllUserLogAsync(request, ct);
-        //    return Ok(ResponseModel<PagedResult<UserLog>>.Ok(
-        //        data: data,
-        //        message: "Get user logs successfully"));
-        //}
+        [HttpGet]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PagedResult<UserLog>>))]
+        public async Task<IActionResult> GetAll([FromQuery] UserLogSearchRequest request, CancellationToken ct)
+        {
+            var data = await _service.GetAllUserLogAsync(request, ct);
+            return Ok(ResponseModel<PagedResult<UserLog>>.Ok(
+                data: data,
+                message: "Get user logs successfully"));
+        }
         [HttpGet("by-user/{actorUserId:guid}")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PagedResult<UserLog>>))]
         public async Task<IActionResult> GetByUser([FromRoute] Guid actorUserId, [FromQuery] UserLogSearchRequest request, CancellationToken ct)

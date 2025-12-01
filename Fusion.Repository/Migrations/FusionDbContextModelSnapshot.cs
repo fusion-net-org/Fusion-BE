@@ -396,14 +396,6 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("feature_id");
 
-                    b.Property<int?>("LimitUnit")
-                        .HasColumnType("int")
-                        .HasColumnName("limit_unit");
-
-                    b.Property<int?>("MonthlyLimit")
-                        .HasColumnType("int")
-                        .HasColumnName("monthly_limit");
-
                     b.HasKey("Id");
 
                     b.HasIndex("FeatureId");
@@ -1489,12 +1481,6 @@ namespace Fusion.Repository.Migrations
                         .HasColumnName("id")
                         .HasDefaultValueSql("(newid())");
 
-                    b.Property<bool>("AutoGrantMonthly")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false)
-                        .HasColumnName("auto_grant_monthly");
-
                     b.Property<int?>("CompanyShareLimit")
                         .HasColumnType("int")
                         .HasColumnName("company_share_limit");
@@ -1566,10 +1552,6 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("feature_id");
 
-                    b.Property<int?>("MonthlyLimit")
-                        .HasColumnType("int")
-                        .HasColumnName("monthly_limit");
-
                     b.Property<Guid>("PlanId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("plan_id");
@@ -1617,10 +1599,6 @@ namespace Fusion.Repository.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)")
                         .HasColumnName("installment_interval");
-
-                    b.Property<decimal>("NewPrice")
-                        .HasColumnType("decimal(18,2)")
-                        .HasColumnName("new_price");
 
                     b.Property<string>("PaymentMode")
                         .IsRequired()
@@ -2477,14 +2455,6 @@ namespace Fusion.Repository.Migrations
                     b.Property<Guid>("FeatureId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("feature_id");
-
-                    b.Property<int?>("LimitUnit")
-                        .HasColumnType("int")
-                        .HasColumnName("limit_unit");
-
-                    b.Property<int?>("MonthlyLimit")
-                        .HasColumnType("int")
-                        .HasColumnName("monthly_limit");
 
                     b.Property<Guid>("UserSubscriptionId")
                         .HasColumnType("uniqueidentifier")

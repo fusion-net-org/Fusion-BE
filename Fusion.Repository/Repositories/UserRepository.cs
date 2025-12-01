@@ -22,7 +22,7 @@ namespace Fusion.Repository.Repositories
 
         public async Task<User?> GetUserByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            return await _context.Users.FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+            return await _dbSet.FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
         }
         public async Task<List<RoleDto>> GetRolesByUserAndCompanyAsync(Guid userId, Guid companyId, CancellationToken cancellationToken = default)
         {

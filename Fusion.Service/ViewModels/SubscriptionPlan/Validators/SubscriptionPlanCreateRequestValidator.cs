@@ -25,14 +25,15 @@ public class SubscriptionPlanCreateRequestValidator : AbstractValidator<Subscrip
                 .WithMessage("SeatsPerCompanyLimit must be null for EntireCompany plans.");
         });
 
-        // Limits >= 0 nếu có
+        // Limits > 0 nếu có
         RuleFor(x => x.CompanyShareLimit)
-           .Must(v => v == null || v >= 0)
-           .WithMessage("CompanyShareLimit must be null or >= 0.");
+            .Cascade(CascadeMode.Stop)
+            .GreaterThan(0).When(x => x.CompanyShareLimit.HasValue)
+            .WithMessage("CompanyShareLimit must be > 0 or null.");
 
         RuleFor(x => x.SeatsPerCompanyLimit)
-              .Must(v => v == null || v >= 0)
-              .WithMessage("SeatsPerCompanyLimit must be null or >= 0.");
+            .GreaterThan(0).When(x => x.SeatsPerCompanyLimit.HasValue)
+            .WithMessage("SeatsPerCompanyLimit must be > 0 or null.");
 
         // Price bắt buộc
         RuleFor(x => x.Price)

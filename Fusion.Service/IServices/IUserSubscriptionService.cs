@@ -10,6 +10,7 @@ public interface IUserSubscriptionService
 {
 
     Task<UserSubscriptionDetailResponse> CreateAsync(UserSubscriptionCreateRequest req, CancellationToken ct = default);
+
     Task<UserSubscriptionDetailResponse?> GetDetailAsync(Guid id, CancellationToken ct = default);
     Task<PagedResult<UserSubscriptionResponse>> GetPagedByUserIdAsync(UserSubscriptionPagedRequest request, CancellationToken ct = default);
 
@@ -25,7 +26,4 @@ public interface IUserSubscriptionService
     Task UpdateNextDueAsync(Guid subId, DateTimeOffset? nextDueAt, CancellationToken ct = default);
     Task DecreaseCompanyShareLimitAsync(Guid userSubscriptionId, int amount = 1, CancellationToken ct = default);
     Task<List<UserSubscriptionActiveResponse>> GetAllActiveByUserIdAsync(CancellationToken ct = default);
-    Task<int> EnsureAutoMonthlyForUserAsync(Guid userId, CancellationToken ct = default);
-    Task<int> ResetAutoMonthlyEntitlementsAsync(CancellationToken ct = default);
-    Task<int> SyncSubscriptionStatusesByTimeAsync(CancellationToken ct = default);
 }

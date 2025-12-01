@@ -2,7 +2,6 @@
 using AutoMapper;
 using Fusion.Repository.Bases.Page.Partner;
 using Fusion.Repository.Entities;
-using Fusion.Repository.Enums;
 using Fusion.Repository.ViewModels.CompanySubscriptionEntry;
 using Fusion.Service.ViewModels.Comment.Request;
 using Fusion.Service.ViewModels.Comment.Response;
@@ -282,7 +281,6 @@ public class MappingProfile : Profile
             .ForMember(d => d.Id, o => o.Ignore())
             .ForMember(d => d.PlanId, o => o.Ignore());
 
-
         CreateMap<SubscriptionPlanPriceDiscountInput, SubscriptionPlanPriceDiscount>()
             .ForMember(d => d.Id, o => o.Ignore())
             .ForMember(d => d.PriceId, o => o.Ignore())
@@ -293,16 +291,7 @@ public class MappingProfile : Profile
         CreateMap<SubscriptionPlanPriceDiscount, SubscriptionPlanPriceDiscountResponse>();
 
         CreateMap<SubscriptionPlanPrice, SubscriptionPlanPriceResponse>()
-                .ForMember(d => d.Discounts, o => o.MapFrom(s => s.Discounts))
-                .ForMember(d => d.NewPrice, o => o.MapFrom(s =>
-                    s.NewPrice == 0m ? (decimal?)null : s.NewPrice))            
-            .ForMember(d => d.DiscountPercent, o => o.MapFrom(s =>          
-        s.PaymentMode == PaymentMode.Prepaid
-            ? s.Discounts
-                .Where(d => d.InstallmentIndex == 1)
-                .Select(d => (decimal?)d.DiscountValue)
-                .FirstOrDefault()
-            : null));
+            .ForMember(d => d.Discounts, o => o.MapFrom(s => s.Discounts));
 
         CreateMap<SubscriptionPlan, SubscriptionPlanListItemResponse>();
 
@@ -315,8 +304,7 @@ public class MappingProfile : Profile
                         FeatureId = f.FeatureId,
                         FeatureCode = f.Feature != null ? f.Feature.Code : null,
                         FeatureName = f.Feature != null ? f.Feature.Name : null,
-                        Enabled = f.Enabled,
-                        MonthlyLimit = f.MonthlyLimit
+                        Enabled = f.Enabled
                     })
                     : new List<SubscriptionPlanFeatureResponse>()));
 
@@ -324,16 +312,7 @@ public class MappingProfile : Profile
         // for customer 
         // Price -> PlanPricePreviewResponse
         CreateMap<SubscriptionPlanPrice, PlanPricePreviewResponse>()
-            .ForMember(d => d.Amount, o => o.MapFrom(s => s.Price))
-             .ForMember(d => d.NewAmount, o => o.MapFrom(s =>
-        s.NewPrice == 0m ? (decimal?)null : s.NewPrice))
-             .ForMember(d => d.DiscountPercent, o => o.MapFrom(s =>
-        s.PaymentMode == PaymentMode.Prepaid
-            ? s.Discounts
-                .Where(d => d.InstallmentIndex == 1)
-                .Select(d => (decimal?)d.DiscountValue)
-                .FirstOrDefault()
-            : null));
+            .ForMember(d => d.Amount, o => o.MapFrom(s => s.Price));
 
         // Plan -> SubscriptionPlanCustomerResponse
         CreateMap<SubscriptionPlan, SubscriptionPlanCustomerResponse>()
@@ -406,9 +385,7 @@ public class MappingProfile : Profile
             .ForMember(d => d.FeatureId, o => o.MapFrom(s => s.FeatureId))
             .ForMember(d => d.Code, o => o.MapFrom(s => s.Feature != null ? s.Feature.Code : null))
             .ForMember(d => d.Name, o => o.MapFrom(s => s.Feature != null ? s.Feature.Name : null))
-            .ForMember(d => d.Enabled, o => o.MapFrom(s => s.Enabled))
-            .ForMember(d => d.MonthlyLimit, o => o.MapFrom(s => s.MonthlyLimit))
-            .ForMember(d => d.LimitUnit, o => o.MapFrom(s => s.LimitUnit));
+            .ForMember(d => d.Enabled, o => o.MapFrom(s => s.Enabled));
 
         // Base: UserSubscription → UserSubscriptionResponse
         CreateMap<UserSubscription, UserSubscriptionResponse>()
@@ -486,8 +463,7 @@ public class MappingProfile : Profile
             .ForMember(d => d.FeatureCode, o => o.MapFrom(s => s.Feature.Code))
             .ForMember(d => d.FeatureName, o => o.MapFrom(s => s.Feature.Name))
             .ForMember(d => d.Category, o => o.MapFrom(s => s.Feature.Category))
-            .ForMember(d => d.Enabled, o => o.MapFrom(s => s.Enabled))
-            .ForMember(d => d.MonthlyLimit, o => o.MapFrom(s => s.MonthlyLimit));
+            .ForMember(d => d.Enabled, o => o.MapFrom(s => s.Enabled));
 
 
         // Dùng cho màn dropdown chọn subscription active

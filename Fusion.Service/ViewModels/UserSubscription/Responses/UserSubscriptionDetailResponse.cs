@@ -22,12 +22,8 @@ public class UserSubscriptionDetailResponse : UserSubscriptionResponse
 }
 public class EntitlementVm
 {
-    public Guid Id { get; set; }              // Id của entitlement
     public Guid FeatureId { get; set; }
     public string? Code { get; set; }
     public string? Name { get; set; }
     public bool Enabled { get; set; }
-
-    public int? MonthlyLimit { get; set; }    // limit snapshot theo UserSubscriptionEntitlement
-    public int? LimitUnit { get; set; }       
 }

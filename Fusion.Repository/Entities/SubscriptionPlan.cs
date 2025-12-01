@@ -30,9 +30,6 @@ public class SubscriptionPlan
     [Column("is_full_package")]
     public bool IsFullPackage { get; set; } = false;
 
-    /// <summary> true: đây là gói được hệ thống tự cấp hàng tháng</summary>
-    [Column("auto_grant_monthly")]
-    public bool AutoGrantMonthly { get; set; } = false;
 
     /// <summary>Số công ty tối đa có thể share; NULL = không giới hạn</summary>
 

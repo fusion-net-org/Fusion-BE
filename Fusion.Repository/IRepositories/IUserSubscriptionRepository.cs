@@ -12,26 +12,17 @@ public interface IUserSubscriptionRepository : IGenericRepository<UserSubscripti
     Task<UserSubscription?> GetByIdWithNavAsync(Guid id, CancellationToken ct = default);
     Task<UserSubscription?> GetActiveByUserAsync(Guid userId, CancellationToken ct = default);
     Task<UserSubscription?> GetByTransactionAsync(Guid txId, CancellationToken ct = default);
+
     Task<UserSubscription> CreateAsync(UserSubscription entity, CancellationToken ct = default);
     Task<bool> UpdateAsync(UserSubscription entity, CancellationToken ct = default);
+
     Task BulkAddEntitlementsAsync(IEnumerable<UserSubscriptionEntitlement> ents, CancellationToken ct = default);
+
     Task<PagedResult<UserSubscription>> GetPagedByUserIdAsync(Guid id, UserSubscriptionPagedRequest request, CancellationToken ct = default);
     Task<List<UserSubscription>> GetExpiringAsync(DateTimeOffset until, int take = 100, CancellationToken ct = default);
     Task UpdateNextDueAsync(Guid subId, DateTimeOffset? nextDueAt, CancellationToken ct = default);
     Task DecreaseCompanyShareLimitAsync(Guid userSubscriptionId, int amount = 1, CancellationToken ct = default);
+
     Task<int> UpdateEnabledByFeatureIdAsync(Guid featureId, bool newStatus, CancellationToken ct = default);
     Task<List<UserSubscription>> GetAllActiveByUserIdAsync(Guid userId, CancellationToken ct = default);
-    Task<List<UserSubscription>> GetByUserAndPlanIdsAsync(
-       Guid userId,
-       IEnumerable<Guid> planIds,
-       CancellationToken ct = default);
-    Task<List<UserSubscription>> GetAllActiveByPlanIdsWithEntitlementsAsync(
-        IEnumerable<Guid> planIds,
-        CancellationToken ct = default);
-
-    Task<List<UserSubscription>> GetByPlanIdAsync( Guid planId,CancellationToken ct = default);
-    Task<List<UserSubscription>> GetExpiredByTermCandidatesAsync(DateTimeOffset now,CancellationToken ct = default);
-    Task<List<UserSubscription>> GetInstallmentPendingCandidatesAsync(DateTimeOffset now,CancellationToken ct = default);
-    Task<List<UserSubscription>> GetInstallmentReactivateCandidatesAsync(DateTimeOffset now,CancellationToken ct = default);
-    Task<List<UserSubscription>> GetAutoMonthlyForUserWithEntitlementsAsync(Guid userId,CancellationToken ct = default);
 }
