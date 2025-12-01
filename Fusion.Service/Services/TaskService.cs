@@ -878,6 +878,7 @@ public class TaskService : ITaskService
             Title = t.Title ?? "",
             Img = t.Img,
             Description = t.Description ?? "",
+            Point = t.Point ?? 0,
             Type = t.Type?.ToString() ?? "Unknown",
             Priority = t.Priority?.ToString() ?? "None",
             Severity = t.Severity?.ToString() ?? "None",

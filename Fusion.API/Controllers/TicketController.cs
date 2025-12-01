@@ -25,12 +25,32 @@ namespace Fusion.API.Controllers
         }
 
         [HttpGet("paged")]
-        [ProducesResponseType(StatusCodes.Status200OK,Type = typeof(ResponseModel<TicketPagedResponse>))]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<TicketPagedResponse>))]
         public async Task<IActionResult> GetPaged(
          [FromQuery] TicketPagedSearchRequest request,
          CancellationToken cancellationToken)
         {
             var result = await _ticketService.GetPageTicketshAsync(request, cancellationToken);
+
+            return Ok(ResponseModel<TicketPagedResponse>.Ok(
+                data: result,
+                message: "Get paged tickets successfully"));
+        }
+
+        [HttpGet("paged/admin")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<TicketPagedResponse>))]
+        public async Task<IActionResult> GetPagedTicketByAdmin(
+         [FromQuery] TicketPagedSearchRequest request,
+         CancellationToken cancellationToken)
+        {
+
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(new { Message = "Invalid or missing token" });
+            }
+
+            var result = await _ticketService.GetPageTicketAdminAsync(request, userId, cancellationToken);
 
             return Ok(ResponseModel<TicketPagedResponse>.Ok(
                 data: result,

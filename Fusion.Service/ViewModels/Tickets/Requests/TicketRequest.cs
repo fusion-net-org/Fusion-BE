@@ -13,7 +13,7 @@ namespace Fusion.Service.ViewModels.Tickets.Requests
 		public bool? IsHighestUrgen { get; set; }
 		public string? TicketName { get; set; }
 		public string? Description { get; set; }
-		public Guid? StatusId { get; set; }
+		//public Guid? StatusId { get; set; }
 		public Guid? SubmittedBy;
 		public decimal? Budget { get; set; }
 	}

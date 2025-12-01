@@ -486,7 +486,18 @@ namespace Fusion.Service.Services
         {
             var result = await _companyMemberRepository.GetCompanyMemberByUserIdAsync(userId, request, token);
 
-            var responses = result.Items.Select(cm => _mapper.Map<CompanyMemberResponseV2>(cm)).ToList();
+            var responses = result.Items.Select(cm =>
+            {
+                var response = _mapper.Map<CompanyMemberResponseV2>(cm);
+
+                response.Roles = cm.User?.UserRoles?
+                    .Where(ur => ur.Role != null && ur.Role.CompanyId == cm.CompanyId)
+                    .Select(ur => ur.Role.RoleName)
+                    .ToList() ?? new List<string>();
+
+                return response;
+            }).ToList();
+
 
             return new PagedResult<CompanyMemberResponseV2>
             {

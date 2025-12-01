@@ -79,5 +79,7 @@ namespace Fusion.Service.ViewModels.Companies.Responses
         public string? UserEmail { get; set; }
         public string? UserPhone { get; set; }
         public string? UserAvatar { get; set; }
+
+        public List<string> Roles { get; set; } = new();
     }
 }
