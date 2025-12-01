@@ -8,8 +8,8 @@
 ## Get latest from https://github.com/github/gitignore/blob/main/VisualStudio.gitignore
 
 # Ignore appsettings files which may contain sensitive data
-Fusion.Api/appsettings.json
-Fusion.Api/appsettings.*.json
+Fusion.API/appsettings.json
+Fusion.API/appsettings.*.json
 secrets.json
 
 # Ignore Entity Framework Core Migrations folder which contains
