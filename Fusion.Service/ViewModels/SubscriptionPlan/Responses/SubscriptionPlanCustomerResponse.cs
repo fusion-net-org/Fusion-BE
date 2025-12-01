@@ -11,6 +11,8 @@ public class PlanFeatureChipResponse
 public class PlanPricePreviewResponse
 {
     public decimal Amount { get; set; }
+    public decimal? NewAmount { get; set; }
+    public decimal? DiscountPercent { get; set; }
     public string Currency { get; set; } = "VND";
     public BillingPeriod BillingPeriod { get; set; }  // Month/Year...
     public int PeriodCount { get; set; }              // 1/3/12...

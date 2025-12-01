@@ -66,18 +66,11 @@ namespace Fusion.Service.Services
         }
         private static void ValidateDiscounts(SubscriptionPlanPriceInput pr)
         {
-            // Prepaid thì không được có discount
-            if (pr.PaymentMode == PaymentMode.Prepaid)
-            {
-                if (pr.Discounts != null && pr.Discounts.Count > 0)
-                    throw CustomExceptionFactory.CreateBadRequestError("Prepaid price must not have discounts.");
-                return;
-            }
-
-            // Installments
             var discounts = pr.Discounts;
+
+            // Không gửi discount thì thôi, mode nào cũng OK
             if (discounts == null || discounts.Count == 0)
-                return; // không cấu hình discount cũng ok
+                return;
 
             var seenIndexes = new HashSet<int>();
 
@@ -86,9 +79,9 @@ namespace Fusion.Service.Services
                 if (d.InstallmentIndex <= 0)
                     throw CustomExceptionFactory.CreateBadRequestError("Discount.InstallmentIndex must be > 0.");
 
-                if (pr.InstallmentCount.HasValue && d.InstallmentIndex > pr.InstallmentCount.Value)
+                if (d.DiscountValue < 0 || d.DiscountValue > 100)
                     throw CustomExceptionFactory.CreateBadRequestError(
-                        $"Discount.InstallmentIndex {d.InstallmentIndex} cannot be greater than InstallmentCount {pr.InstallmentCount}."
+                        "DiscountValue must be between 0 and 100 (percent)."
                     );
 
                 if (!seenIndexes.Add(d.InstallmentIndex))
@@ -96,16 +89,80 @@ namespace Fusion.Service.Services
                         $"Duplicate discount for installment index {d.InstallmentIndex}."
                     );
 
-                if (d.DiscountValue < 0 || d.DiscountValue > 100)
-                    throw CustomExceptionFactory.CreateBadRequestError(
-                        "DiscountValue must be between 0 and 100 (percent)."
-                    );
-
                 if (!string.IsNullOrWhiteSpace(d.Note) && d.Note.Length > 250)
                     throw CustomExceptionFactory.CreateBadRequestError("Discount.Note max length is 250 characters.");
             }
-        }
 
+            if (pr.PaymentMode == PaymentMode.Installments)
+            {
+                // Vẫn tận dụng InstallmentCount như cũ
+                if (!pr.InstallmentCount.HasValue)
+                {
+                    throw CustomExceptionFactory.CreateBadRequestError(
+                        "InstallmentCount is required when using discounts for installment mode."
+                    );
+                }
+
+                var maxIndex = discounts.Max(d => d.InstallmentIndex);
+                if (maxIndex > pr.InstallmentCount.Value)
+                {
+                    throw CustomExceptionFactory.CreateBadRequestError(
+                        $"Discount.InstallmentIndex {maxIndex} cannot be greater than InstallmentCount {pr.InstallmentCount}."
+                    );
+                }
+            }
+            else if (pr.PaymentMode == PaymentMode.Prepaid)
+            {
+                // 👉 RULE: Prepaid chỉ cho 1 discount, index = 1
+                if (discounts.Count > 1)
+                {
+                    throw CustomExceptionFactory.CreateBadRequestError(
+                        "Prepaid price only supports a single discount."
+                    );
+                }
+
+                var d = discounts[0];
+                if (d.InstallmentIndex != 1)
+                {
+                    throw CustomExceptionFactory.CreateBadRequestError(
+                        "For prepaid price, Discount.InstallmentIndex must be 1."
+                    );
+                }
+            }
+        }
+        private static decimal CalcNewPrice(SubscriptionPlanPriceInput src)
+        {
+            // Giá gốc
+            var basePrice = src.Price;
+            if (basePrice < 0) basePrice = 0m; // safeguard
+
+            var discounts = src.Discounts;
+
+            if (src.PaymentMode == PaymentMode.Prepaid)
+            {
+                // Prepaid: nếu không có discount thì dùng giá gốc
+                if (discounts == null || discounts.Count == 0)
+                    return basePrice;
+
+                // ValidateDiscounts đã đảm bảo:
+                // - chỉ 1 discount
+                // - InstallmentIndex = 1
+                var d = discounts[0];
+                var percent = d.DiscountValue;
+
+                if (percent <= 0)
+                    return basePrice;
+
+                if (percent >= 100m)
+                    return 0m; // nếu cho phép giảm 100% => free
+
+                var newPrice = basePrice * (100m - percent) / 100m;
+                return Math.Round(newPrice, 2, MidpointRounding.AwayFromZero);
+            }
+
+            // Installments: hiện tại giữ nguyên, NewPrice = Price
+            return basePrice;
+        }
         private async Task<List<SubscriptionPlanFeature>> BuildFeatureTogglesAsync(bool isFullPackage, List<Guid>? featureIds,
          List<SubscriptionPlanFeatureLimitInput>? featureLimits,CancellationToken ct)
         {
@@ -247,6 +304,7 @@ namespace Fusion.Service.Services
             ValidatePrice(entity.Price);
             ValidateDiscounts(req.Price);
 
+            entity.Price.NewPrice = CalcNewPrice(req.Price);
 
             var created = await _subscriptionPlanRepository.CreatePlanAsync(entity, cancellationToken);
             var withNav = await _subscriptionPlanRepository.GetByIdWithNavAsync(created.Id, cancellationToken);
@@ -301,6 +359,8 @@ namespace Fusion.Service.Services
 
             ValidatePlan(entity);
             ValidatePrice(entity.Price);
+
+            entity.Price.NewPrice = CalcNewPrice(req.Price);
 
             var updated = await _subscriptionPlanRepository.UpdatePlanAsync(entity, cancellationToken);
             await CascadePlanStatusToSubscriptionsAsync(updated, cancellationToken);

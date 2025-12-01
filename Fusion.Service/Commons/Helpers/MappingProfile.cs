@@ -2,6 +2,7 @@
 using AutoMapper;
 using Fusion.Repository.Bases.Page.Partner;
 using Fusion.Repository.Entities;
+using Fusion.Repository.Enums;
 using Fusion.Repository.ViewModels.CompanySubscriptionEntry;
 using Fusion.Service.ViewModels.Comment.Request;
 using Fusion.Service.ViewModels.Comment.Response;
@@ -281,6 +282,7 @@ public class MappingProfile : Profile
             .ForMember(d => d.Id, o => o.Ignore())
             .ForMember(d => d.PlanId, o => o.Ignore());
 
+
         CreateMap<SubscriptionPlanPriceDiscountInput, SubscriptionPlanPriceDiscount>()
             .ForMember(d => d.Id, o => o.Ignore())
             .ForMember(d => d.PriceId, o => o.Ignore())
@@ -291,7 +293,16 @@ public class MappingProfile : Profile
         CreateMap<SubscriptionPlanPriceDiscount, SubscriptionPlanPriceDiscountResponse>();
 
         CreateMap<SubscriptionPlanPrice, SubscriptionPlanPriceResponse>()
-            .ForMember(d => d.Discounts, o => o.MapFrom(s => s.Discounts));
+                .ForMember(d => d.Discounts, o => o.MapFrom(s => s.Discounts))
+                .ForMember(d => d.NewPrice, o => o.MapFrom(s =>
+                    s.NewPrice == 0m ? (decimal?)null : s.NewPrice))            
+            .ForMember(d => d.DiscountPercent, o => o.MapFrom(s =>          
+        s.PaymentMode == PaymentMode.Prepaid
+            ? s.Discounts
+                .Where(d => d.InstallmentIndex == 1)
+                .Select(d => (decimal?)d.DiscountValue)
+                .FirstOrDefault()
+            : null));
 
         CreateMap<SubscriptionPlan, SubscriptionPlanListItemResponse>();
 
@@ -313,7 +324,16 @@ public class MappingProfile : Profile
         // for customer 
         // Price -> PlanPricePreviewResponse
         CreateMap<SubscriptionPlanPrice, PlanPricePreviewResponse>()
-            .ForMember(d => d.Amount, o => o.MapFrom(s => s.Price));
+            .ForMember(d => d.Amount, o => o.MapFrom(s => s.Price))
+             .ForMember(d => d.NewAmount, o => o.MapFrom(s =>
+        s.NewPrice == 0m ? (decimal?)null : s.NewPrice))
+             .ForMember(d => d.DiscountPercent, o => o.MapFrom(s =>
+        s.PaymentMode == PaymentMode.Prepaid
+            ? s.Discounts
+                .Where(d => d.InstallmentIndex == 1)
+                .Select(d => (decimal?)d.DiscountValue)
+                .FirstOrDefault()
+            : null));
 
         // Plan -> SubscriptionPlanCustomerResponse
         CreateMap<SubscriptionPlan, SubscriptionPlanCustomerResponse>()

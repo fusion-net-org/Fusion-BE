@@ -53,6 +53,15 @@ public class TransactionPaymentService : ITransactionPaymentService
 
         if (price.PaymentMode == PaymentMode.Prepaid)
         {
+            decimal contractAmount = price.NewPrice;
+            if (contractAmount <= 0m
+           && price.Price > 0m
+           && (price.Discounts == null || !price.Discounts.Any(d => d.DiscountValue > 0m)))
+            {
+                contractAmount = price.Price;
+            }
+
+
             var draft = new TransactionPayment
             {
                 Id = Guid.NewGuid(),
@@ -68,7 +77,7 @@ public class TransactionPaymentService : ITransactionPaymentService
                 PeriodCountSnapshot = price.PeriodCount,
                 PaymentModeSnapshot = price.PaymentMode,
 
-                Amount = price.Price,
+                Amount = contractAmount,
                 Currency = price.Currency
             };
 

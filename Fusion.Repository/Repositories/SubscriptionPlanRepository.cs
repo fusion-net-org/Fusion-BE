@@ -130,6 +130,7 @@ namespace Fusion.Repository.Repositories
                     plan.Price.InstallmentCount = payload.Price.InstallmentCount;
                     plan.Price.InstallmentInterval = payload.Price.InstallmentInterval;
                     plan.Price.PlanId = plan.Id;
+                    plan.Price.NewPrice = payload.Price.NewPrice;
                 }
 
                 // Features: nếu payload.Features được gửi → replace toàn bộ
@@ -205,6 +206,7 @@ namespace Fusion.Repository.Repositories
             return await _context.SubscriptionPlans
         .AsNoTracking()
         .Include(p => p.Price)
+           .ThenInclude(pr => pr.Discounts)
         .Include(p => p.Features)
             .ThenInclude(pf => pf.Feature)
         .Where(p => p.IsActive && !p.AutoGrantMonthly) 
