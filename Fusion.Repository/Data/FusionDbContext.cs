@@ -365,7 +365,7 @@ public partial class FusionDbContext : DbContext
 
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.IsFullPackage).HasDefaultValue(false);
-            entity.Property(e => e.AutoGrantMonthly).HasDefaultValue(false);
+
             // Quan hệ: 1 plan -> n prices
             entity.HasOne(p => p.Price)
                   .WithOne(p => p.SubscriptionPlan)

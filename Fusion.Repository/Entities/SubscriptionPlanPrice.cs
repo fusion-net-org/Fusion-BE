@@ -32,9 +32,6 @@ public class SubscriptionPlanPrice
     [Column("price", TypeName = "decimal(18,2)")]
     public decimal Price { get; set; }
 
-    [Column("new_price", TypeName = "decimal(18,2)")]
-    public decimal NewPrice { get; set; }
-
     // Mã tiền tệ (VND, USD...)
     [Required, MaxLength(10)]
     [Column("currency")]

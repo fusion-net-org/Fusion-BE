@@ -14,7 +14,7 @@ public class Feature
 
     [Required, MaxLength(64)]
     [Column("code")]
-    public string Code { get; set; } = ""; 
+    public string Code { get; set; } = ""; // ví dụ: "project", "workflow_designer"
 
     [Required, MaxLength(200)]
     [Column("name")]

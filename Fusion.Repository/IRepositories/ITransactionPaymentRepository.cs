@@ -53,8 +53,6 @@ public interface ITransactionPaymentRepository : IGenericRepository<TransactionP
     Task<List<TransactionPaymentModeInsightItemDto>> GetPaymentModeInsightAsync(int year,CancellationToken ct = default);
     Task<List<TransactionPlanRevenueInsightItem>> GetPlanRevenueInsightAsync(int year,CancellationToken ct);
     Task<List<PlanPurchaseCountRow>> GetPlanPurchaseCountsAsync(CancellationToken ct = default);
-    Task<List<SubscriptionPlanPurchaseRow>> GetSubscriptionPlanPurchaseStatsAsync(CancellationToken ct = default);
-    Task<List<PlanMonthlyPurchaseCountRow>> GetPlanMonthlyPurchaseCountsAsync(int year,CancellationToken ct = default);
     #endregion
 
 }

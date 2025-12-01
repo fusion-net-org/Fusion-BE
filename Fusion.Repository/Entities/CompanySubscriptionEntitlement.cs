@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Fusion.Repository.Enums;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Fusion.Repository.Entities;
@@ -18,12 +19,6 @@ public class CompanySubscriptionEntitlement
     [Required]
     [Column("feature_id")]
     public Guid FeatureId { get; set; }
-
-    [Column("monthly_limit")]
-    public int? MonthlyLimit { get; set; }
-
-    [Column("limit_unit")]
-    public int? LimitUnit { get; set; }
 
     [Column("enabled")]
     public bool Enabled { get; set; } = true;

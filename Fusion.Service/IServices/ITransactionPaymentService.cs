@@ -5,7 +5,6 @@ using Fusion.Repository.Bases.Page.TransactionPayment;
 using Fusion.Repository.ViewModels.SubscriptionPlan;
 using Fusion.Repository.ViewModels.Transactions;
 using Fusion.Service.Commons.BaseResponses;
-using Fusion.Service.ViewModels.SubscriptionPlan.Responses;
 using Fusion.Service.ViewModels.TransactionPayment.Requests;
 using Fusion.Service.ViewModels.TransactionPayment.Responses;
 using Fusion.Service.ViewModels.TransactionPayment.Responses.Overview;
@@ -46,8 +45,5 @@ public interface ITransactionPaymentService
     #region SubsciptionPlan
     Task<TransactionPaymentModeInsightResponse> GetPaymentModeInsightAsync(int year,CancellationToken ct = default);
     Task<TransactionPlanRevenueInsightResponse> GetPlanRevenueInsightAsync(int year, CancellationToken ct = default);
-    Task<List<SubscriptionPlanPurchaseStatResponse>> GetPlanPurchaseStatsAsync(CancellationToken ct = default);
-    Task<List<SubscriptionPlanPurchaseStatResponse>> GetTopPlanPurchaseStatsAsync( int top = 3, bool includeOther = true,CancellationToken ct = default);
-    Task<List<PlanMonthlyPurchaseCountRow>> GetPlanMonthlyPurchaseStatsAsync( int year,CancellationToken ct = default);
     #endregion
 }

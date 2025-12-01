@@ -11,8 +11,6 @@ namespace Fusion.Service.ViewModels.SubscriptionPlan.Responses
         public int PeriodCount { get; set; }
         public ChargeUnit ChargeUnit { get; set; }
         public decimal Price { get; set; }
-        public decimal? NewPrice { get; set; }
-        public decimal? DiscountPercent { get; set; }
         public string Currency { get; set; } = "VND";
         public PaymentMode PaymentMode { get; set; }
         public int? InstallmentCount { get; set; }

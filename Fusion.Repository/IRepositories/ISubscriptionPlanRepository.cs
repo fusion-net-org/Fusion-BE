@@ -16,5 +16,4 @@ public interface ISubscriptionPlanRepository : IGenericRepository<SubscriptionPl
     Task<bool> DeleteAsync(Guid id, CancellationToken ct = default);
     Task<List<SubscriptionPlan>> GetAllForCusromerAsync(CancellationToken ct = default);
     Task<int> UpdateEnabledByFeatureIdAsync(Guid featureId, bool newStatus, CancellationToken ct = default);
-    Task<List<SubscriptionPlan>> GetAllAutoGrantMonthlyAsync(CancellationToken ct = default);
 }
