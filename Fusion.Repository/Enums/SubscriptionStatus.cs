@@ -23,9 +23,9 @@ public enum LicenseScope
 public enum BillingPeriod
 {
     [EnumMember(Value = "week")]
-     Week = 1,
+    Week = 1,
 
-   [EnumMember(Value = "month")]
+    [EnumMember(Value = "month")]
     Month = 2,
 
     [EnumMember(Value = "year")]
@@ -77,7 +77,7 @@ public enum SubscriptionStatus
 
     [EnumMember(Value = "expired")]
     Expired = 4           // quá hạn
-                        
+
 }
 
 /// <summary>
@@ -113,6 +113,6 @@ public enum TransactionType
 
     /// <summary>Điều chỉnh sổ sách (giảm trừ/khuyến mãi/bù trừ thủ công…)</summary>
     [EnumMember(Value = "adjustment")]
-    Adjustment = 3 
+    Adjustment = 3
 }
 

@@ -20,9 +20,11 @@ public class SubscriptionPlanFeature
     [Column("feature_id")]
     public Guid FeatureId { get; set; }
 
+    [Column("monthly_limit")]
+    public int? MonthlyLimit { get; set; }
+
     [Column("enabled")]
     public bool Enabled { get; set; } = true;
-
 
     [ForeignKey(nameof(PlanId))]
     public virtual SubscriptionPlan SubscriptionPlan { get; set; } = null!;

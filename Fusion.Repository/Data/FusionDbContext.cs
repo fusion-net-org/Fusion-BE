@@ -365,12 +365,12 @@ public partial class FusionDbContext : DbContext
 
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.IsFullPackage).HasDefaultValue(false);
-
+            entity.Property(e => e.AutoGrantMonthly).HasDefaultValue(false);
             // Quan hệ: 1 plan -> n prices
             entity.HasOne(p => p.Price)
                   .WithOne(p => p.SubscriptionPlan)
                   .HasForeignKey<SubscriptionPlanPrice>(p => p.PlanId)
-                  .OnDelete(DeleteBehavior.Cascade) 
+                  .OnDelete(DeleteBehavior.Cascade)
                   .HasConstraintName("FK_SubscriptionPlanPrices_Plan");
 
             // Quan hệ: 1 plan -> n features
@@ -386,6 +386,7 @@ public partial class FusionDbContext : DbContext
                   .OnDelete(DeleteBehavior.Restrict);
 
         });
+
 
         // ---- SubscriptionPlanPrice ----
         modelBuilder.Entity<SubscriptionPlanPrice>(entity =>
@@ -438,6 +439,7 @@ public partial class FusionDbContext : DbContext
                   .HasConstraintName("FK_SubscriptionPlanPriceDiscounts_Price")
                   .OnDelete(DeleteBehavior.Cascade);
         });
+
 
         // ---- SubscriptionPlanFeature ----
         modelBuilder.Entity<SubscriptionPlanFeature>(entity =>
@@ -720,6 +722,7 @@ public partial class FusionDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("FK_ProjectTaskChecklistItems_Task");
         });
+
 
 
         OnModelCreatingPartial(modelBuilder);

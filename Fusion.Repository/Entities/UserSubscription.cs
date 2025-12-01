@@ -99,5 +99,5 @@ public class UserSubscription
     public virtual ICollection<UserSubscriptionEntitlement> Entitlements { get; set; } = new List<UserSubscriptionEntitlement>();
 
     [InverseProperty(nameof(CompanySubscription.UserSubscription))]
-    public virtual ICollection<CompanySubscription> CompanySubscriptions { get; set; }= new List<CompanySubscription>();
+    public virtual ICollection<CompanySubscription> CompanySubscriptions { get; set; } = new List<CompanySubscription>();
 }

@@ -98,6 +98,7 @@ namespace Fusion.Repository.Repositories
             plan.IsActive = payload.IsActive;
             plan.LicenseScope = payload.LicenseScope;
             plan.IsFullPackage = payload.IsFullPackage;
+            plan.AutoGrantMonthly = payload.AutoGrantMonthly;
             plan.CompanyShareLimit = payload.CompanyShareLimit;
             plan.SeatsPerCompanyLimit = payload.SeatsPerCompanyLimit;
             plan.UpdatedAt = DateTime.UtcNow;
@@ -129,6 +130,7 @@ namespace Fusion.Repository.Repositories
                     plan.Price.InstallmentCount = payload.Price.InstallmentCount;
                     plan.Price.InstallmentInterval = payload.Price.InstallmentInterval;
                     plan.Price.PlanId = plan.Id;
+                    plan.Price.NewPrice = payload.Price.NewPrice;
                 }
 
                 // Features: nếu payload.Features được gửi → replace toàn bộ
@@ -202,13 +204,14 @@ namespace Fusion.Repository.Repositories
         public async Task<List<SubscriptionPlan>> GetAllForCusromerAsync(CancellationToken ct = default)
         {
             return await _context.SubscriptionPlans
-              .AsNoTracking()
-              .Include(p => p.Price)
-              .Include(p => p.Features)
-                 .ThenInclude(pf => pf.Feature)
-              .Where(p => p.IsActive)
-              .OrderBy(p => p.Name)
-              .ToListAsync(ct);
+        .AsNoTracking()
+        .Include(p => p.Price)
+           .ThenInclude(pr => pr.Discounts)
+        .Include(p => p.Features)
+            .ThenInclude(pf => pf.Feature)
+        .Where(p => p.IsActive && !p.AutoGrantMonthly) 
+        .OrderBy(p => p.Name)
+        .ToListAsync(ct);
         }
 
         public Task<SubscriptionPlan?> GetByIdWithNavAsync(Guid id, CancellationToken ct = default)
@@ -272,6 +275,17 @@ namespace Fusion.Repository.Repositories
 
 
             return ents.Count;
+        }
+        public async Task<List<SubscriptionPlan>> GetAllAutoGrantMonthlyAsync(CancellationToken ct = default)
+        {
+            return await _context.SubscriptionPlans
+                        .AsNoTracking()
+                        .Include(p => p.Price)                     
+                        .Include(p => p.Features)
+                          .ThenInclude(pf => pf.Feature)
+                       .Where(p => p.IsActive && p.AutoGrantMonthly)
+                       .OrderBy(p => p.Name)
+                       .ToListAsync(ct);
         }
     }
 }
