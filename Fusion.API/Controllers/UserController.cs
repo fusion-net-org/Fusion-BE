@@ -12,7 +12,6 @@ using Fusion.Service.ViewModels.Users.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
 using Fusion.Service.ViewModels.UserLog.Responses;
 
 namespace Fusion.API.Controllers
