@@ -224,7 +224,6 @@ namespace Fusion.Service.Services
                         case SubscriptionStatus.Pending:
                             us.Status = SubscriptionStatus.Paused;
                             us.UpdatedAt = now;
-                            // Nếu muốn cắt hạn luôn:
                             // if (!us.TermEnd.HasValue || us.TermEnd > now) us.TermEnd = now;
                             break;
 
