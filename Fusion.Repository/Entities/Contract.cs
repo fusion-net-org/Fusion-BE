@@ -21,7 +21,7 @@ namespace Fusion.Repository.Entities
         public string ContractCode { get; set; } = string.Empty;
 
         [Column("contract_name")]
-        [StringLength(50)]
+        [StringLength(999)]
         public string ContractName { get; set; } = string.Empty;
 
         [Column("attachment")]
