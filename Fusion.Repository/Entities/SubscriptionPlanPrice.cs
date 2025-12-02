@@ -32,6 +32,9 @@ public class SubscriptionPlanPrice
     [Column("price", TypeName = "decimal(18,2)")]
     public decimal Price { get; set; }
 
+    [Column("new_price", TypeName = "decimal(18,2)")]
+    public decimal NewPrice { get; set; }
+
     // Mã tiền tệ (VND, USD...)
     [Required, MaxLength(10)]
     [Column("currency")]
@@ -42,7 +45,7 @@ public class SubscriptionPlanPrice
     public PaymentMode PaymentMode { get; set; } = PaymentMode.Prepaid;
 
     [Column("installment_count")]
-    public int? InstallmentCount { get; set; } 
+    public int? InstallmentCount { get; set; }
 
     [Column("installment_interval")]
     public BillingPeriod? InstallmentInterval { get; set; }
