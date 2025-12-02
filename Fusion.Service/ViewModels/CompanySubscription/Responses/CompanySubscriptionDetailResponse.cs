@@ -15,5 +15,7 @@ public class CompanySubscriptionEntitlementDetailResponse
     public string? FeatureName { get; set; }
     public string? Category { get; set; }
     public bool Enabled { get; set; }
+    public int? MonthlyLimit { get; set; }
+
 }
 

@@ -14,7 +14,7 @@ public class Feature
 
     [Required, MaxLength(64)]
     [Column("code")]
-    public string Code { get; set; } = ""; // ví dụ: "project", "workflow_designer"
+    public string Code { get; set; } = "";
 
     [Required, MaxLength(200)]
     [Column("name")]
@@ -38,5 +38,5 @@ public class Feature
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     public ICollection<SubscriptionPlanFeature> PlanFeatures { get; set; } = new List<SubscriptionPlanFeature>();
-   
+
 }

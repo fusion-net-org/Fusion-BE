@@ -14,6 +14,8 @@ namespace Fusion.Service.ViewModels.UserSubscription.Responses
     public class UserSubscriptionEntitlementDropdownResponse
     {
         public Guid Id { get; set; }
+        public Guid FeatureId { get; set; }
         public string FeatureName { get; set; } = string.Empty;
+        public int? MonthlyLimit { get; set; }
     }
 }

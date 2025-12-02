@@ -1,15 +1,14 @@
-﻿
-using AutoMapper;
+﻿using AutoMapper;
 using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.SubscriptionPlans;
+using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.Enums;
 using Fusion.Repository.IRepositories;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.SubscriptionPlan.Requests;
 using Fusion.Service.ViewModels.SubscriptionPlan.Responses;
-
 
 namespace Fusion.Service.Services
 {
@@ -18,11 +17,19 @@ namespace Fusion.Service.Services
         private readonly ISubscriptionPlanRepository _subscriptionPlanRepository;
         private readonly IMapper _mapper;
         private readonly IFeatureCatalogService _featureCatalogService;
-        public SubscriptionPlanService(ISubscriptionPlanRepository subscriptionPlanRepository, IMapper mapper, IFeatureCatalogService featureCatalogService)
+        private readonly IUserSubscriptionRepository _userSubscriptionRepository;
+        private readonly ICompanySubscriptionRepository _companySubscriptionRepository;
+        private readonly IUnitOfWork _unitOfWork;
+        public SubscriptionPlanService(ISubscriptionPlanRepository subscriptionPlanRepository, IMapper mapper,
+            IFeatureCatalogService featureCatalogService, IUserSubscriptionRepository userSubscriptionRepository,
+            ICompanySubscriptionRepository companySubscriptionRepository, IUnitOfWork unitOfWork)
         {
             _subscriptionPlanRepository = subscriptionPlanRepository;
             _mapper = mapper;
             _featureCatalogService = featureCatalogService;
+            _userSubscriptionRepository = userSubscriptionRepository;
+            _companySubscriptionRepository = companySubscriptionRepository;
+            _unitOfWork = unitOfWork;
         }
 
         private static void ValidatePlan(SubscriptionPlan p)
@@ -30,11 +37,11 @@ namespace Fusion.Service.Services
             if (p.LicenseScope == LicenseScope.EntireCompany && p.SeatsPerCompanyLimit != null)
                 throw CustomExceptionFactory.CreateBadRequestError("SeatsPerCompanyLimit must be null for EntireCompany plans.");
 
-            if (p.CompanyShareLimit.HasValue && p.CompanyShareLimit <= 0)
-                throw CustomExceptionFactory.CreateBadRequestError("CompanyShareLimit must be > 0 or null.");
+            if (p.CompanyShareLimit.HasValue && p.CompanyShareLimit < 0)
+                throw CustomExceptionFactory.CreateBadRequestError("CompanyShareLimit must be >= 0 or null.");
 
-            if (p.SeatsPerCompanyLimit.HasValue && p.SeatsPerCompanyLimit <= 0)
-                throw CustomExceptionFactory.CreateBadRequestError("SeatsPerCompanyLimit must be > 0 or null.");
+            if (p.SeatsPerCompanyLimit.HasValue && p.SeatsPerCompanyLimit < 0)
+                throw CustomExceptionFactory.CreateBadRequestError("SeatsPerCompanyLimit must be >= 0 or null.");
         }
         private static void ValidatePrice(SubscriptionPlanPrice pr)
         {
@@ -59,18 +66,11 @@ namespace Fusion.Service.Services
         }
         private static void ValidateDiscounts(SubscriptionPlanPriceInput pr)
         {
-            // Prepaid thì không được có discount
-            if (pr.PaymentMode == PaymentMode.Prepaid)
-            {
-                if (pr.Discounts != null && pr.Discounts.Count > 0)
-                    throw CustomExceptionFactory.CreateBadRequestError("Prepaid price must not have discounts.");
-                return;
-            }
-
-            // Installments
             var discounts = pr.Discounts;
+
+            // Không gửi discount thì thôi, mode nào cũng OK
             if (discounts == null || discounts.Count == 0)
-                return; // không cấu hình discount cũng ok
+                return;
 
             var seenIndexes = new HashSet<int>();
 
@@ -79,9 +79,9 @@ namespace Fusion.Service.Services
                 if (d.InstallmentIndex <= 0)
                     throw CustomExceptionFactory.CreateBadRequestError("Discount.InstallmentIndex must be > 0.");
 
-                if (pr.InstallmentCount.HasValue && d.InstallmentIndex > pr.InstallmentCount.Value)
+                if (d.DiscountValue < 0 || d.DiscountValue > 100)
                     throw CustomExceptionFactory.CreateBadRequestError(
-                        $"Discount.InstallmentIndex {d.InstallmentIndex} cannot be greater than InstallmentCount {pr.InstallmentCount}."
+                        "DiscountValue must be between 0 and 100 (percent)."
                     );
 
                 if (!seenIndexes.Add(d.InstallmentIndex))
@@ -89,19 +89,89 @@ namespace Fusion.Service.Services
                         $"Duplicate discount for installment index {d.InstallmentIndex}."
                     );
 
-                if (d.DiscountValue < 0 || d.DiscountValue > 100)
-                    throw CustomExceptionFactory.CreateBadRequestError(
-                        "DiscountValue must be between 0 and 100 (percent)."
-                    );
-
                 if (!string.IsNullOrWhiteSpace(d.Note) && d.Note.Length > 250)
                     throw CustomExceptionFactory.CreateBadRequestError("Discount.Note max length is 250 characters.");
             }
-        }
 
-        private async Task<List<SubscriptionPlanFeature>> BuildFeatureTogglesAsync(
-       bool isFullPackage, List<Guid>? featureIds, CancellationToken ct)
+            if (pr.PaymentMode == PaymentMode.Installments)
+            {
+                // Vẫn tận dụng InstallmentCount như cũ
+                if (!pr.InstallmentCount.HasValue)
+                {
+                    throw CustomExceptionFactory.CreateBadRequestError(
+                        "InstallmentCount is required when using discounts for installment mode."
+                    );
+                }
+
+                var maxIndex = discounts.Max(d => d.InstallmentIndex);
+                if (maxIndex > pr.InstallmentCount.Value)
+                {
+                    throw CustomExceptionFactory.CreateBadRequestError(
+                        $"Discount.InstallmentIndex {maxIndex} cannot be greater than InstallmentCount {pr.InstallmentCount}."
+                    );
+                }
+            }
+            else if (pr.PaymentMode == PaymentMode.Prepaid)
+            {
+                // 👉 RULE: Prepaid chỉ cho 1 discount, index = 1
+                if (discounts.Count > 1)
+                {
+                    throw CustomExceptionFactory.CreateBadRequestError(
+                        "Prepaid price only supports a single discount."
+                    );
+                }
+
+                var d = discounts[0];
+                if (d.InstallmentIndex != 1)
+                {
+                    throw CustomExceptionFactory.CreateBadRequestError(
+                        "For prepaid price, Discount.InstallmentIndex must be 1."
+                    );
+                }
+            }
+        }
+        private static decimal CalcNewPrice(SubscriptionPlanPriceInput src)
         {
+            // Giá gốc
+            var basePrice = src.Price;
+            if (basePrice < 0) basePrice = 0m; // safeguard
+
+            var discounts = src.Discounts;
+
+            if (src.PaymentMode == PaymentMode.Prepaid)
+            {
+                // Prepaid: nếu không có discount thì dùng giá gốc
+                if (discounts == null || discounts.Count == 0)
+                    return basePrice;
+
+                // ValidateDiscounts đã đảm bảo:
+                // - chỉ 1 discount
+                // - InstallmentIndex = 1
+                var d = discounts[0];
+                var percent = d.DiscountValue;
+
+                if (percent <= 0)
+                    return basePrice;
+
+                if (percent >= 100m)
+                    return 0m; // nếu cho phép giảm 100% => free
+
+                var newPrice = basePrice * (100m - percent) / 100m;
+                return Math.Round(newPrice, 2, MidpointRounding.AwayFromZero);
+            }
+
+            // Installments: hiện tại giữ nguyên, NewPrice = Price
+            return basePrice;
+        }
+        private async Task<List<SubscriptionPlanFeature>> BuildFeatureTogglesAsync(bool isFullPackage, List<Guid>? featureIds,
+         List<SubscriptionPlanFeatureLimitInput>? featureLimits,CancellationToken ct)
+        {
+            // map featureId -> limit từ request.FE
+            var limitMap = (featureLimits ?? new List<SubscriptionPlanFeatureLimitInput>())
+                .Where(x => x.FeatureId != Guid.Empty)
+                .GroupBy(x => x.FeatureId)
+                .ToDictionary(g => g.Key, g => g.Last().MonthlyLimit);
+
             if (isFullPackage)
             {
                 var actives = await _featureCatalogService.GetAllActiveAsync(ct);
@@ -109,7 +179,8 @@ namespace Fusion.Service.Services
                 return actives.Select(f => new SubscriptionPlanFeature
                 {
                     FeatureId = f.Id,
-                    Enabled = true
+                    Enabled = true,
+                    MonthlyLimit = limitMap.TryGetValue(f.Id, out var ml) ? ml : (int?)null
                 }).ToList();
             }
 
@@ -120,10 +191,102 @@ namespace Fusion.Service.Services
             return distinct.Select(fid => new SubscriptionPlanFeature
             {
                 FeatureId = fid,
-                Enabled = true
+                Enabled = true,
+                MonthlyLimit = limitMap.TryGetValue(fid, out var ml) ? ml : (int?)null
             }).ToList();
         }
+        private async Task CascadePlanStatusToSubscriptionsAsync(SubscriptionPlan plan,CancellationToken ct)
+        {
+            if (plan == null) return;
 
+            var now = DateTimeOffset.UtcNow;
+
+            // 1) Lấy tất cả user-sub của plan này
+            var userSubs = await _userSubscriptionRepository
+                .GetByPlanIdAsync(plan.Id, ct);
+
+            if (userSubs.Count == 0)
+                return;
+
+            var userSubIds = userSubs.Select(us => us.Id).ToList();
+
+            // 2) Lấy tất cả company-sub tương ứng
+            var companySubs = await _companySubscriptionRepository.GetByUserSubscriptionIdsAsync(userSubIds, ct);
+
+            if (!plan.IsActive)
+            {
+                // ===== Plan -> INACTIVE =====
+                foreach (var us in userSubs)
+                {
+                    switch (us.Status)
+                    {
+                        case SubscriptionStatus.Active:
+                        case SubscriptionStatus.Pending:
+                            us.Status = SubscriptionStatus.Paused;
+                            us.UpdatedAt = now;
+                            // Nếu muốn cắt hạn luôn:
+                            // if (!us.TermEnd.HasValue || us.TermEnd > now) us.TermEnd = now;
+                            break;
+
+                            // Paused / Canceled / Expired -> giữ nguyên
+                    }
+                }
+
+                foreach (var cs in companySubs)
+                {
+                    switch (cs.Status)
+                    {
+                        case SubscriptionStatus.Active:
+                        case SubscriptionStatus.Pending:
+                            cs.Status = SubscriptionStatus.Paused;
+                            cs.UpdatedAt = now;
+                            // Nếu muốn cắt share luôn:
+                            // if (!cs.ExpiredAt.HasValue || cs.ExpiredAt > now) cs.ExpiredAt = now;
+                            break;
+
+                            // Paused / Canceled / Expired -> giữ nguyên
+                    }
+                }
+            }
+            else
+            {
+                // ===== Plan -> ACTIVE =====
+                foreach (var us in userSubs)
+                {
+                    switch (us.Status)
+                    {
+                        case SubscriptionStatus.Paused:
+                            // Chỉ revive nếu chưa hết hạn
+                            if (!us.TermEnd.HasValue || us.TermEnd >= now)
+                            {
+                                us.Status = SubscriptionStatus.Active;
+                                us.UpdatedAt = now;
+                            }
+                            break;
+
+                            // Pending / Active / Canceled / Expired -> giữ nguyên
+                    }
+                }
+
+                foreach (var cs in companySubs)
+                {
+                    switch (cs.Status)
+                    {
+                        case SubscriptionStatus.Paused:
+                            if (!cs.ExpiredAt.HasValue || cs.ExpiredAt >= now)
+                            {
+                                cs.Status = SubscriptionStatus.Active;
+                                cs.UpdatedAt = now;
+                            }
+                            break;
+
+                            // Pending / Active / Canceled / Expired -> giữ nguyên
+                    }
+                }
+            }
+
+            await _unitOfWork.SaveChangesAsync(ct);
+        }
         public async Task<SubscriptionPlanDetailResponse> CreatePlanAsync(SubscriptionPlanCreateRequest req, CancellationToken cancellationToken = default)
         {
             var entity = _mapper.Map<SubscriptionPlan>(req);
@@ -132,12 +295,16 @@ namespace Fusion.Service.Services
             //   Quyết định features: full-package => lấy tất cả active;
             //    ngược lại => dùng FeatureIds (distinct, bỏ Guid.Empty, đồng thời có thể validate active).
             entity.Features = await BuildFeatureTogglesAsync(
-                req.IsFullPackage, req.FeatureIds, cancellationToken);
+              req.IsFullPackage,
+              req.FeatureIds,
+              req.FeatureMonthlyLimits,   
+              cancellationToken);
 
             ValidatePlan(entity);
             ValidatePrice(entity.Price);
             ValidateDiscounts(req.Price);
 
+            entity.Price.NewPrice = CalcNewPrice(req.Price);
 
             var created = await _subscriptionPlanRepository.CreatePlanAsync(entity, cancellationToken);
             var withNav = await _subscriptionPlanRepository.GetByIdWithNavAsync(created.Id, cancellationToken);
@@ -146,12 +313,10 @@ namespace Fusion.Service.Services
             return res;
 
         }
-
         public async Task<bool> DeletePlanAsync(Guid planId, CancellationToken cancellationToken = default)
         {
             return await _subscriptionPlanRepository.DeleteAsync(planId, cancellationToken);
         }
-
         public async Task<PagedResult<SubscriptionPlanListItemResponse>> GetAllAsync(SubscriptionPlanPagedRequest request, CancellationToken cancellationToken = default)
         {
             var entities = await _subscriptionPlanRepository.GetAllAsync(request, cancellationToken);
@@ -164,13 +329,11 @@ namespace Fusion.Service.Services
                 PageSize = entities.PageSize
             };
         }
-
         public async Task<List<SubscriptionPlanCustomerResponse>> GetAllForCusromerAsync(CancellationToken cancellationToken = default)
         {
             var entities = await _subscriptionPlanRepository.GetAllForCusromerAsync(cancellationToken);
             return _mapper.Map<List<SubscriptionPlanCustomerResponse>>(entities);
         }
-
         public async Task<SubscriptionPlanDetailResponse?> GetPlanByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
             var plan = await _subscriptionPlanRepository.GetByIdWithNavAsync(id, cancellationToken);
@@ -180,7 +343,6 @@ namespace Fusion.Service.Services
 
             return res;
         }
-
         public async Task<SubscriptionPlanDetailResponse> UpdatePlanAsync(SubscriptionPlanUpdateRequest req, CancellationToken cancellationToken = default)
         {
             var entity = _mapper.Map<SubscriptionPlan>(req);
@@ -189,15 +351,20 @@ namespace Fusion.Service.Services
             if (req.IsFullPackage || req.FeatureIds != null)
             {
                 entity.Features = await BuildFeatureTogglesAsync(
-                    req.IsFullPackage,
-                    req.FeatureIds,
-                    cancellationToken);
+                     req.IsFullPackage,
+                     req.FeatureIds,
+                     req.FeatureMonthlyLimits,
+                     cancellationToken);
             }
 
             ValidatePlan(entity);
             ValidatePrice(entity.Price);
 
+            entity.Price.NewPrice = CalcNewPrice(req.Price);
+
             var updated = await _subscriptionPlanRepository.UpdatePlanAsync(entity, cancellationToken);
+            await CascadePlanStatusToSubscriptionsAsync(updated, cancellationToken);
+
             var withNav = await _subscriptionPlanRepository.GetByIdWithNavAsync(updated.Id, cancellationToken);
 
             var res = _mapper.Map<SubscriptionPlanDetailResponse>(withNav);

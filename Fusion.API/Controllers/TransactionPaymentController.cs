@@ -5,6 +5,7 @@ using Fusion.Repository.ViewModels.SubscriptionPlan;
 using Fusion.Repository.ViewModels.Transactions;
 using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.IServices;
+using Fusion.Service.ViewModels.SubscriptionPlan.Responses;
 using Fusion.Service.ViewModels.TransactionPayment.Requests;
 using Fusion.Service.ViewModels.TransactionPayment.Responses;
 using Fusion.Service.ViewModels.TransactionPayment.Responses.Overview;
@@ -223,6 +224,7 @@ namespace Fusion.API.Controllers
             return Ok(result);
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpGet("admin/plan-revenue-insight")]
         [ProducesResponseType(StatusCodes.Status200OK,Type = typeof(ResponseModel<TransactionPlanRevenueInsightResponse>))]
         public async Task<IActionResult> GetPlanRevenueInsight([FromQuery] int year,CancellationToken ct)
@@ -231,6 +233,46 @@ namespace Fusion.API.Controllers
 
             var result = await _service.GetPlanRevenueInsightAsync(year, ct);
             return Ok(result);
+        }
+        [Authorize(Roles = "Admin")]
+        [HttpGet("admin/plans/table")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<IEnumerable<SubscriptionPlanPurchaseStatResponse>>))]
+        public async Task<IActionResult> GetPlanPurchaseTable(CancellationToken ct)
+        {
+            var data = await _service.GetPlanPurchaseStatsAsync(ct);
+
+            // Tuỳ bạn có wrapper BaseResponse hay ApiResponse gì thì bung ra ở đây
+            return Ok(ResponseModel<IEnumerable<SubscriptionPlanPurchaseStatResponse>>.Ok(
+               data: data,
+               message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "Get subscription plan purchase stats successfully")));
+        }
+
+
+        [Authorize(Roles = "Admin")]
+        [HttpGet("admin/plans/ratio")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<IEnumerable<SubscriptionPlanPurchaseStatResponse>>))]
+        public async Task<IActionResult> GetPlanPurchaseRatio([FromQuery] int top = 3, CancellationToken ct = default)
+        {
+            var data = await _service.GetTopPlanPurchaseStatsAsync(top, includeOther: true, ct);
+
+            // Tuỳ bạn có wrapper BaseResponse hay ApiResponse gì thì bung ra ở đây
+            return Ok(ResponseModel<IEnumerable<SubscriptionPlanPurchaseStatResponse>>.Ok(
+               data: data,
+               message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "Get subscription plan purchase ratio successfully.")));
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpGet("admin/monthly-purchases")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<List<PlanMonthlyPurchaseCountRow>>))]
+        public async Task<ActionResult> GetPlanMonthlyPurchases(
+          [FromQuery] int year = 2025, CancellationToken ct = default)
+        {
+
+            var data = await _service.GetPlanMonthlyPurchaseStatsAsync(year, ct);
+            return Ok(ResponseModel<List<PlanMonthlyPurchaseCountRow>>.Ok(
+             data: data,
+             message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "Retrieved plan monthly purchases successfully.")));
+
         }
     }
 }

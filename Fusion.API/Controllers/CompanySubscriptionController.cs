@@ -36,16 +36,6 @@ namespace Fusion.API.Controllers
                 message: "Create company subscription successfully"));
         }
 
-        [HttpPost("use")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<bool>))]
-        public async Task<IActionResult> UseFeatureInCompany([FromBody] UserFeatureRequest request, CancellationToken cancellationToken)
-        {
-            var result = await _service.UseFeatureInCompanyAsync(request, cancellationToken);
-            return Ok(ResponseModel<bool>.Ok(
-               data: result,
-               message: "Use success."));
-        }
-
         /// <summary>
         /// Lấy chi tiết một Company Subscription theo ID
         /// </summary>
