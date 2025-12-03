@@ -271,12 +271,24 @@ namespace Fusion.Repository.Repositories
                 .Include(p => p.Sprints).ThenInclude(s => s.ProjectTasks)
                 .AsQueryable();
 
+            if (request.CompanyId.HasValue)
+            {
+                query = query.Where(p =>
+                        (p.Company != null && p.Company.Id == request.CompanyId) ||
+                        (p.CompanyRequest != null && p.CompanyRequest.Id == request.CompanyId));
+            }
+
             // FILTER: companyName
             if (!string.IsNullOrEmpty(request.CompanyName))
             {
                 query = query.Where(p =>
                         (p.Company != null && p.Company.Name.Contains(request.CompanyName)) ||
                         (p.CompanyRequest != null && p.CompanyRequest.Name.Contains(request.CompanyName)));
+            }
+
+            if (!string.IsNullOrEmpty(request.ProjectName))
+            {
+                query = query.Where(p => (p.Name ?? "").Contains(request.ProjectName));
             }
 
             return await query.ToPagedResultAsync(request, cancellationToken);

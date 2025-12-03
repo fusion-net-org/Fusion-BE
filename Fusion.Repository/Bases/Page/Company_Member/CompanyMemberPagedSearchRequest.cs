@@ -17,6 +17,8 @@ namespace Fusion.Repository.Bases.Page.Company_Member
 
     public class CompanyMemberPagedSearchAdminRequest : PagedRequest
     {
+        public Guid? CompanyId { get; set; }
+
         public string? MemberName { get; set; }
 
         public string? CompanyName { get; set; }

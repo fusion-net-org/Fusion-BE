@@ -22,7 +22,7 @@ namespace Fusion.Repository.IRepositories
 
         Task<PagedResult<CompanyMember>> GetPagedCompanyMemberByCompanyIdAsync(Guid companyId, string mail, CompanyMemberPagedSearchRequest request, CancellationToken token = default);
 
-        Task<PagedResult<CompanyMember>> GetPagedCompanyMemberAsync(CompanyMemberPagedSearchAdminRequest request, CancellationToken token);
+        Task<PagedResult<CompanyMember>> GetPagedCompanyMemberAdminAsync(CompanyMemberPagedSearchAdminRequest request, CancellationToken token);
 
         Task<CompanyMember?> FiredMemberFromCompany(string terminatorEmail, string firedMemberMail, string reason, Guid companyId, CancellationToken token = default);
 

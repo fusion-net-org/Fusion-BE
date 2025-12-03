@@ -144,10 +144,21 @@ namespace Fusion.Service.Services
                 PageSize = result.PageSize
             };
         }
-        public async Task<PagedResult<CompanyMemberResponse>> GetPagedCompanyMemberAsync(CompanyMemberPagedSearchAdminRequest request, CancellationToken token = default)
+        public async Task<PagedResult<CompanyMemberResponse>> GetPagedCompanyMemberAdminAsync(CompanyMemberPagedSearchAdminRequest request, string email, CancellationToken token = default)
         {
+            var user = await _userRepository.GetUserByEmailAsync(email, token);
 
-            var result = await _companyMemberRepository.GetPagedCompanyMemberAsync(request, token);
+            if (user == null)
+            {
+                throw CustomExceptionFactory.CreateNotFoundError("User not found.");
+            }
+
+            if (user.IsSystemAdmin == false)
+            {
+                throw CustomExceptionFactory.CreateBadRequestError("User is not an admin.");
+            }
+
+            var result = await _companyMemberRepository.GetPagedCompanyMemberAdminAsync(request, token);
 
             var memberResponses = new List<CompanyMemberResponse>();
             foreach (var member in result.Items)
