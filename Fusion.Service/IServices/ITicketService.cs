@@ -23,6 +23,7 @@ namespace Fusion.Service.IServices
             CancellationToken cancellationToken = default);
 
         Task<TicketResponse?> GetTicketByIdAsync(Guid id, CancellationToken cancellationToken = default);
+        Task<TicketResponseV2?> GetTicketByIdAsyncV2(Guid id, CancellationToken cancellationToken = default);
         Task<TicketResponse?> CreateTicketAsync(TicketRequest request, CancellationToken cancellationToken = default);
 		Task<TicketResponse?> UpdateTicketAsync(TicketRequest request, Guid ticketId, CancellationToken cancellationToken = default);
 		Task<bool?> DeleteTicketAsync(Guid ticketId,string reason, CancellationToken cancellationToken = default);
@@ -32,6 +33,8 @@ namespace Fusion.Service.IServices
         Task<TicketStatusCountResponse> GetTicketStatusCountAsync(Guid? projectId = null, Guid? companyRequestId = null, Guid? companyExecutorId = null, CancellationToken cancellationToken = default);
         Task<TicketResponse?> AcceptTicketAsync(Guid ticketId, CancellationToken cancellationToken = default);
         Task<TicketResponse?> RejectTicketAsync(Guid ticketId, string? reason = null, CancellationToken cancellationToken = default);
+
+        Task<TicketProcessSummaryResponse?> BuildTicketProcessAsync(Guid ticketId, CancellationToken ct);
 
     }
 }

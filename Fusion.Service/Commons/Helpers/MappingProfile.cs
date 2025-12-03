@@ -171,7 +171,15 @@ public class MappingProfile : Profile
                              opt => opt.MapFrom(src => src.SubmittedByNavigation != null ? src.SubmittedByNavigation.UserName : null))
                   .ForMember(dest => dest.ProjectName,
                              opt => opt.MapFrom(src => src.Project != null ? src.Project.Name : null))
-                  .ReverseMap(); 
+                  .ReverseMap();
+
+        CreateMap<Ticket, TicketResponseV2>()
+                  .ForMember(dest => dest.SubmittedByName,
+                             opt => opt.MapFrom(src => src.SubmittedByNavigation != null ? src.SubmittedByNavigation.UserName : null))
+                  .ForMember(dest => dest.ProjectName,
+                             opt => opt.MapFrom(src => src.Project != null ? src.Project.Name : null))
+                  .ReverseMap();
+
         CreateMap<TicketRequest, Ticket>().ReverseMap();
 
 
@@ -204,6 +212,27 @@ public class MappingProfile : Profile
                     opt => opt.MapFrom(src => src.CreatedByNavigation != null ? src.CreatedByNavigation.UserName : null))
             .ForMember(dest => dest.ProjectName,
                     opt => opt.MapFrom(src => src.Name)) // Name trong ProjectRequest map sang ProjectName
+            .ForMember(dest => dest.ConvertedProjectId,
+                    opt => opt.MapFrom(src => src.Project != null ? src.Project.Id : (Guid?)null))
+            .ForMember(dest => dest.RequesterCompanyLogoUrl,
+                    opt => opt.MapFrom(src =>
+                    src.RequesterCompany != null ? src.RequesterCompany.AvatarCompany : null))
+            .ForMember(dest => dest.ExecutorCompanyLogoUrl,
+                    opt => opt.MapFrom(src =>
+                    src.ExecutorCompany != null ? src.ExecutorCompany.AvatarCompany : null))
+            .ForMember(dest => dest.isHaveProject,
+                    opt => opt.MapFrom(src => src.Project != null && src.Project.Id != Guid.Empty))
+            .ReverseMap();
+
+        CreateMap<ProjectRequest, ProjectRequestResponseV2>()
+            .ForMember(dest => dest.RequesterCompanyName,
+                    opt => opt.MapFrom(src => src.RequesterCompany != null ? src.RequesterCompany.Name : null))
+            .ForMember(dest => dest.ExecutorCompanyName,
+                    opt => opt.MapFrom(src => src.ExecutorCompany != null ? src.ExecutorCompany.Name : null))
+            .ForMember(dest => dest.CreatedName,
+                    opt => opt.MapFrom(src => src.CreatedByNavigation != null ? src.CreatedByNavigation.UserName : null))
+            .ForMember(dest => dest.ProjectName,
+                    opt => opt.MapFrom(src => src.Name))
             .ForMember(dest => dest.ConvertedProjectId,
                     opt => opt.MapFrom(src => src.Project != null ? src.Project.Id : (Guid?)null))
             .ForMember(dest => dest.RequesterCompanyLogoUrl,

@@ -251,7 +251,7 @@ namespace Fusion.Repository.Repositories
             return await query.ToPagedResultAsync(request, token);
         }
 
-        public async Task<PagedResult<CompanyMember>> GetPagedCompanyMemberAsync(CompanyMemberPagedSearchAdminRequest request, CancellationToken token)
+        public async Task<PagedResult<CompanyMember>> GetPagedCompanyMemberAdminAsync(CompanyMemberPagedSearchAdminRequest request, CancellationToken token)
         {
 
             var query = _context.CompanyMembers
@@ -259,6 +259,11 @@ namespace Fusion.Repository.Repositories
                 .Include(x => x.Company)
                     .ThenInclude(c => c.OwnerUser)
                 .AsQueryable();
+
+            if (request.CompanyId.HasValue)
+            {
+                query = query.Where(x => x.CompanyId == request.CompanyId.Value);
+            }
 
             if (!string.IsNullOrEmpty(request.CompanyName))
             {

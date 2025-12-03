@@ -78,8 +78,8 @@ namespace Fusion.API.Controllers
         }
 
         [HttpGet("paged/admin")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PagedResult<ProjectRequestResponse>>))]
-        public async Task<IActionResult> GetProjectRequestAdminPaged(Guid companyId, [FromQuery] ProjectRequestSearchRequest request, CancellationToken cancellationToken)
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PagedResult<ProjectRequestResponseV2>>))]
+        public async Task<IActionResult> GetProjectRequestAdminPaged([FromQuery] ProjectRequestSearchAdminRequest request, CancellationToken cancellationToken)
         {
 
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -90,7 +90,7 @@ namespace Fusion.API.Controllers
 
 
             var result = await _projectRequestService.SearchProjectRequestAdminAsync(request, userId, cancellationToken);
-            return Ok(ResponseModel<PagedResult<ProjectRequestResponse>>.Ok(
+            return Ok(ResponseModel<PagedResult<ProjectRequestResponseV2>>.Ok(
                 data: result,
                 message: "Get paged project request successfully"));
         }

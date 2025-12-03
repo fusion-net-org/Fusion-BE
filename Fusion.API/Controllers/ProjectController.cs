@@ -109,7 +109,7 @@ namespace Fusion.API.Controllers
         }
 
         //[Authorize(Roles = "Admin")]
-        [HttpGet("admin")]
+        [HttpGet("admin/projects")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PagedResult<ProjectSummaryResponseV2>>))]
         public async Task<IActionResult> GetProjectsForAdminAsync( [FromQuery] ProjectSummarySearchRequest request, CancellationToken cancellationToken = default)
         {

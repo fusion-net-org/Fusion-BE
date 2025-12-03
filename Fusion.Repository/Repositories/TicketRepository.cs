@@ -148,6 +148,7 @@ namespace Fusion.Repository.Repositories
         {
             return await _context.Tickets
                 .Include(x => x.TicketComments)
+                    .ThenInclude(x => x.AuthorUser)
                 .Include(x => x.SubmittedByNavigation)
                 .Include(x => x.Project)
                 .Include(x => x.WorkflowStatus)

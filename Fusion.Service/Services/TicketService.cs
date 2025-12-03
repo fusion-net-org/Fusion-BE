@@ -165,7 +165,7 @@ namespace Fusion.Service.Services
 
 
 
-        private async Task<TicketProcessSummaryResponse?> BuildTicketProcessAsync(
+        public async Task<TicketProcessSummaryResponse?> BuildTicketProcessAsync(
      Guid ticketId,
      CancellationToken ct)
         {
@@ -312,6 +312,20 @@ namespace Fusion.Service.Services
             var dto = _mapper.Map<TicketResponse>(ticket);
 
             // 👇 build thêm Process từ các task non-backlog
+            dto.Process = await BuildTicketProcessAsync(ticket.Id, cancellationToken);
+
+            return dto;
+        }
+
+        public async Task<TicketResponseV2?> GetTicketByIdAsyncV2(Guid id, CancellationToken cancellationToken = default)
+        {
+            var ticket = await _ticketRepository.GetTicketByIdAsync(id);
+            if (ticket == null)
+                throw CustomExceptionFactory.CreateNotFoundError(
+                    ResponseMessages.NOT_FOUND.FormatMessage("Ticket"));
+
+            var dto = _mapper.Map<TicketResponseV2>(ticket);
+
             dto.Process = await BuildTicketProcessAsync(ticket.Id, cancellationToken);
 
             return dto;

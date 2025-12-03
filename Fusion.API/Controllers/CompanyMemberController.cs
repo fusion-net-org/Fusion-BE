@@ -73,20 +73,20 @@ namespace Fusion.API.Controllers
                 message: "Get paged companies member successfully"));
         }
 
-        [HttpGet("paged")]
+        [HttpGet("admin/paged")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PagedResult<CompanyMemberResponse>>))]
         public async Task<IActionResult> GetPaged([FromQuery] CompanyMemberPagedSearchAdminRequest request, CancellationToken token)
         {
-            //var emailClaim = User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email || c.Type == ClaimTypes.Email || c.Type == "email");
-            //var email = emailClaim?.Value; if (email == null)
-            //{
-            //    return Unauthorized(ResponseModel<string>.Error(
-            //        statusCode: StatusCodes.Status401Unauthorized,
-            //        message: "Unauthorized: User identity not found"
-            //    ));
-            //}
+            var emailClaim = User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email || c.Type == ClaimTypes.Email || c.Type == "email");
+            var email = emailClaim?.Value; if (email == null)
+            {
+                return Unauthorized(ResponseModel<string>.Error(
+                    statusCode: StatusCodes.Status401Unauthorized,
+                    message: "Unauthorized: User identity not found"
+                ));
+            }
 
-            var result = await _companyMemberService.GetPagedCompanyMemberAsync(request, token);
+            var result = await _companyMemberService.GetPagedCompanyMemberAdminAsync(request, email, token);
             return Ok(ResponseModel<PagedResult<CompanyMemberResponse>>.Ok(
                 data: result,
                 message: "Get paged companies member successfully"));
