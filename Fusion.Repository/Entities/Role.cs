@@ -22,6 +22,21 @@ public partial class Role
     [Column("description")]
     public string? Description { get; set; }
 
+    [Column("status")]
+    [StringLength(50)]
+    public string Status { get; set; }
+
+    [Column("created_at")]
+    public DateTime CreatedAt { get; set; }
+
+    [Column("updated_at")]
+    public DateTime? UpdatedAt { get; set; }
+
+
+    [Column("reason")]
+    public string? Reason { get; set; }
+
+
     [ForeignKey("CompanyId")]
     [InverseProperty("Roles")]
     public virtual Company? Company { get; set; }
