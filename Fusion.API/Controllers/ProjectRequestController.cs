@@ -161,6 +161,22 @@ namespace Fusion.API.Controllers
                 message: "Get project request by id successfully"));
         }
 
+        [HttpGet("{id:guid}/admin")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<ProjectRequestResponseV2>))]
+        public async Task<IActionResult> GetProjectRequestAdminById(Guid id, CancellationToken cancellationToken)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(new { Message = "Invalid or missing token" });
+            }
+
+            var result = await _projectRequestService.GetProjectRequestAdminByIdAsync(id, userId, cancellationToken);
+            return Ok(ResponseModel<ProjectRequestResponseV2>.Ok(
+                data: result,
+                message: "Get project request by id successfully"));
+        }
+
         [HttpPost("{id:guid}/accept")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<ProjectRequestResponse>))]
         public async Task<IActionResult> AcceptProjectRequest(Guid id, CancellationToken cancellationToken)

@@ -38,8 +38,9 @@ namespace Fusion.Service.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IContractService _contractService;
         private readonly ITicketService _ticketService;
+        private readonly IUserRepository _userRepository;
 
-        public ProjectRequestService(IProjectRequestRepository projectRequestRepository, INotificationService notificationService, IMapper mapper, ICurrentService currentService, ICompanyActivityService logService, IMailService mailService, IUnitOfWork unitOfWork,IContractService contractService, ITicketService ticketService)
+        public ProjectRequestService(IProjectRequestRepository projectRequestRepository, INotificationService notificationService, IMapper mapper, ICurrentService currentService, ICompanyActivityService logService, IMailService mailService, IUnitOfWork unitOfWork,IContractService contractService, ITicketService ticketService, IUserRepository userRepository)
         {
             _projectRequestRepository = projectRequestRepository;
             _notificationService = notificationService;
@@ -50,6 +51,7 @@ namespace Fusion.Service.Services
             _unitOfWork = unitOfWork;
             _contractService = contractService;
             _ticketService = ticketService;
+            _userRepository = userRepository;
         }
         public async Task<ProjectRequestResponse?> GetProjectRequestByContractIdAsync(Guid contractId, CancellationToken cancellationToken = default)
         {
@@ -353,7 +355,78 @@ namespace Fusion.Service.Services
             var result = await _projectRequestRepository.GetProjectRequestByIdAsync(id, cancellationToken);
             return _mapper?.Map<ProjectRequestResponse?>(result);
         }
-        
+
+        public async Task<ProjectRequestResponseV2?> GetProjectRequestAdminByIdAsync(Guid id, Guid adminId, CancellationToken cancellationToken = default)
+        {
+
+            var user = await _userRepository.GetUserByIdAsync(adminId, cancellationToken);
+
+            if (user == null)
+                throw CustomExceptionFactory.CreateNotFoundError("User is not existed");
+
+            if(user.IsSystemAdmin == false)
+                throw CustomExceptionFactory.CreateBadRequestError("User is not a system admin");
+
+            var raw = await _projectRequestRepository.GetProjectRequestByIdAsync(id, cancellationToken);
+            var result = _mapper?.Map<ProjectRequestResponseV2?>(raw);
+
+            result.Tickets = new List<TicketResponseV2>();
+
+            if (raw.Project?.Tickets == null || !raw.Project.Tickets.Any())
+                return result;
+
+            foreach (var entityTicket in raw.Project.Tickets)
+            {
+                if (entityTicket == null) continue;
+
+                var ticketDto = new TicketResponseV2
+                {
+                    Id = entityTicket.Id,
+                    ProjectId = entityTicket.ProjectId,
+                    ProjectName = entityTicket.Project?.Name,
+                    Priority = entityTicket.Priority,
+                    IsHighestUrgen = entityTicket.IsHighestUrgen,
+                    TicketName = entityTicket.TicketName,
+                    Description = entityTicket.Description,
+                    StatusId = entityTicket.StatusId,
+                    SubmittedBy = entityTicket.SubmittedBy,
+                    SubmittedByName = entityTicket.SubmittedByNavigation?.UserName,
+                    IsBillable = entityTicket.IsBillable,
+                    Budget = entityTicket.Budget,
+                    IsDeleted = entityTicket.IsDeleted,
+                    Status = entityTicket.status,
+                    Reason = entityTicket.reason,
+                    ResolvedAt = entityTicket.ResolvedAt,
+                    ClosedAt = entityTicket.ClosedAt,
+                    CreatedAt = entityTicket.CreatedAt,
+                    UpdatedAt = entityTicket.UpdatedAt,
+                    TicketComments = new List<TicketCommentResponse>()
+                };
+
+                // Comments
+                if (entityTicket.TicketComments != null && entityTicket.TicketComments.Any())
+                {
+                    ticketDto.TicketComments = entityTicket.TicketComments
+                        .Select(tc => new TicketCommentResponse
+                        {
+                            Id = tc.Id,
+                            TicketId = tc.TicketId,
+                            AuthorUserId = tc.AuthorUserId,
+                            AuthorUserName = tc.AuthorUser?.UserName,
+                            AuthorUserAvatar = tc.AuthorUser?.Avatar,
+                            Body = tc.Body,
+                            CreateAt = tc.CreateAt,
+                            UpdateAt = tc.UpdateAt,
+                            IsDeleted = tc.IsDeleted,
+                        })
+                        .ToList();
+                }
+
+                result.Tickets.Add(ticketDto);
+            }
+            return result;
+        }
+
         public async Task<ProjectRequestRejectResponse> RejectProjectRequestAsync(Guid requestId, string executorEmail, string reason, CancellationToken cancellationToken = default)
         {
             var result = await _projectRequestRepository.RejectProjectRequestAsync(requestId, executorEmail, reason, cancellationToken);
