@@ -159,7 +159,73 @@ public class CloudinaryService : ICloudinaryService
 
         return (secureUrl, uploadResult.PublicId, isImage);
     }
+    public async Task<(string Url, string PublicId)> UploadDocumentAsync(
+       IFormFile file,
+       string folder,
+       CancellationToken cancellationToken = default)
+    {
+        if (file == null || file.Length == 0)
+            throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.INVALID_INPUT);
 
+        var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+        var allowedExts = new[] { ".pdf", ".doc", ".docx" };
+
+        if (!allowedExts.Contains(ext))
+            throw CustomExceptionFactory.CreateBadRequestError(
+                ResponseMessages.INVALID_INPUT.FormatMessage("Only PDF, DOC, DOCX are allowed."));
+
+        long maxSize = 20 * 1024 * 1024; // 20MB
+        if (file.Length > maxSize)
+            throw CustomExceptionFactory.CreateBadRequestError(
+                ResponseMessages.INVALID_INPUT.FormatMessage("File size exceeds 20MB"));
+
+        var uploadParams = new RawUploadParams
+        {
+            File = new FileDescription(file.FileName, file.OpenReadStream()),
+            Folder = folder
+        };
+
+        var result = await _cloudinary.UploadAsync(uploadParams, "raw", cancellationToken);
+        if (result == null)
+            throw CustomExceptionFactory.CreateInternalServerError(
+                ResponseMessages.INTERNAL_SERVER_ERROR.FormatMessage("No response from Cloudinary"));
+
+        if (result.Error != null)
+            throw CustomExceptionFactory.CreateInternalServerError(
+                ResponseMessages.INTERNAL_SERVER_ERROR.FormatMessage(result.Error.Message));
+
+        if (result.StatusCode != HttpStatusCode.OK &&
+            result.StatusCode != HttpStatusCode.Created)
+            throw CustomExceptionFactory.CreateInternalServerError(
+                ResponseMessages.INTERNAL_SERVER_ERROR.FormatMessage("Upload failed"));
+
+        var url = result.SecureUrl?.ToString()
+                  ?? result.Url?.ToString()
+                  ?? throw CustomExceptionFactory.CreateInternalServerError(
+                      ResponseMessages.INTERNAL_SERVER_ERROR.FormatMessage("Upload succeeded but URL is empty"));
+
+        return (url, result.PublicId);
+    }
+
+    public async Task<(string Url, string PublicId)> UpdateDocumentAsync(
+    string oldFileUrl,
+    IFormFile newFile,
+    string folder,
+    CancellationToken cancellationToken = default)
+    {
+        if (newFile == null || newFile.Length == 0)
+            throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.INVALID_INPUT);
+
+        var oldPublicId = ExtractPublicIdFromUrl(oldFileUrl);
+
+        if (!string.IsNullOrWhiteSpace(oldPublicId))
+        {
+            await DeleteImageAsync(oldPublicId, cancellationToken);
+        }
+        var (url, newPublicId) = await UploadDocumentAsync(newFile, folder, cancellationToken);
+
+        return (url, newPublicId);
+    }
 }
 
 

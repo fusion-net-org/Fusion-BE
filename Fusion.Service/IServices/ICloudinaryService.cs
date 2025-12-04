@@ -15,4 +15,6 @@ public interface ICloudinaryService
            string folder,
            CancellationToken cancellationToken = default);
 
+    Task<(string Url, string PublicId)> UploadDocumentAsync( IFormFile file, string folder,CancellationToken cancellationToken = default);
+    Task<(string Url, string PublicId)> UpdateDocumentAsync(string oldFileUrl,IFormFile newFile,string folder,CancellationToken cancellationToken = default);
 }
