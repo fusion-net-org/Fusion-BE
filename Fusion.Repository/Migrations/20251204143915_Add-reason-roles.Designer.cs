@@ -4,6 +4,7 @@ using Fusion.Repository.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Fusion.Repository.Migrations
 {
     [DbContext(typeof(FusionDbContext))]
-    partial class FusionDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251204143915_Add-reason-roles")]
+    partial class Addreasonroles
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1383,7 +1386,7 @@ namespace Fusion.Repository.Migrations
 
                     b.HasIndex(new[] { "CompanyId", "RoleName" }, "UX_Roles_Company_RoleName")
                         .IsUnique()
-                        .HasFilter("([company_id] IS NOT NULL AND [role_name] IS NOT NULL AND [status] = 'Active')");
+                        .HasFilter("([company_id] IS NOT NULL AND [role_name] IS NOT NULL)");
 
                     b.ToTable("Roles");
                 });

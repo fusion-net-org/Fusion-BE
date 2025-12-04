@@ -1,4 +1,5 @@
-﻿using Fusion.Repository.Bases.Exceptions;
+﻿using Azure.Core;
+using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.ProjectRequest;
 using Fusion.Repository.Bases.Responses;
@@ -428,7 +429,7 @@ namespace Fusion.Repository.Repositories
 
         }
 
-        public async Task<PagedResult<ProjectRequest>> SearchProjectRequestAdminAsync(ProjectRequestSearchRequest filter, Guid adminId, CancellationToken cancellationToken = default)
+        public async Task<PagedResult<ProjectRequest>> SearchProjectRequestAdminAsync(ProjectRequestSearchAdminRequest filter, Guid adminId, CancellationToken cancellationToken = default)
         {
             var adminUser = await _context.Users.SingleOrDefaultAsync(x => x.IsSystemAdmin && x.Id == adminId);
 
@@ -441,7 +442,17 @@ namespace Fusion.Repository.Repositories
                 .Include(x => x.ExecutorCompany)
                 .Include(x => x.CreatedByNavigation)
                 .Include(x => x.Project)
+                    .ThenInclude(x => x.Tickets)
+                        .ThenInclude(x => x.TicketComments)
+                            .ThenInclude(x => x.AuthorUser)
                 .AsQueryable();
+
+            if (filter.CompanyId.HasValue)
+            {
+                query = query.Where(p =>
+                        (p.RequesterCompany != null && p.RequesterCompany.Id == filter.CompanyId) ||
+                        (p.ExecutorCompany != null && p.ExecutorCompany.Id == filter.CompanyId));
+            }
 
             // Keyword
             if (!string.IsNullOrWhiteSpace(filter.Keyword))
@@ -533,6 +544,14 @@ namespace Fusion.Repository.Repositories
                     .ThenInclude(ec => ec.OwnerUser)
                 .Include(x => x.CreatedByNavigation)
                 .Include(x => x.Project)
+                    .ThenInclude(p => p.Tickets)
+                        .ThenInclude(t => t.TicketComments)
+                .Include(x => x.Project)
+                    .ThenInclude(p => p.Tickets)
+                        .ThenInclude(t => t.SubmittedByNavigation)
+                .Include(x => x.Project)
+                    .ThenInclude(p => p.Tickets)
+                        .ThenInclude(t => t.WorkflowStatus)
                 .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
             if (projectRequest == null)

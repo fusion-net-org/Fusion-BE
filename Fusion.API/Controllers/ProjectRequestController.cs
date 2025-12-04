@@ -78,8 +78,8 @@ namespace Fusion.API.Controllers
         }
 
         [HttpGet("paged/admin")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PagedResult<ProjectRequestResponse>>))]
-        public async Task<IActionResult> GetProjectRequestAdminPaged(Guid companyId, [FromQuery] ProjectRequestSearchRequest request, CancellationToken cancellationToken)
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PagedResult<ProjectRequestResponseV2>>))]
+        public async Task<IActionResult> GetProjectRequestAdminPaged([FromQuery] ProjectRequestSearchAdminRequest request, CancellationToken cancellationToken)
         {
 
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -90,7 +90,7 @@ namespace Fusion.API.Controllers
 
 
             var result = await _projectRequestService.SearchProjectRequestAdminAsync(request, userId, cancellationToken);
-            return Ok(ResponseModel<PagedResult<ProjectRequestResponse>>.Ok(
+            return Ok(ResponseModel<PagedResult<ProjectRequestResponseV2>>.Ok(
                 data: result,
                 message: "Get paged project request successfully"));
         }
@@ -157,6 +157,22 @@ namespace Fusion.API.Controllers
         {
             var result = await _projectRequestService.GetProjectRequestByIdAsync(id, cancellationToken);
             return Ok(ResponseModel<ProjectRequestResponse>.Ok(
+                data: result,
+                message: "Get project request by id successfully"));
+        }
+
+        [HttpGet("{id:guid}/admin")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<ProjectRequestResponseV2>))]
+        public async Task<IActionResult> GetProjectRequestAdminById(Guid id, CancellationToken cancellationToken)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(new { Message = "Invalid or missing token" });
+            }
+
+            var result = await _projectRequestService.GetProjectRequestAdminByIdAsync(id, userId, cancellationToken);
+            return Ok(ResponseModel<ProjectRequestResponseV2>.Ok(
                 data: result,
                 message: "Get project request by id successfully"));
         }

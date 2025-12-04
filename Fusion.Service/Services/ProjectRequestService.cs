@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using AutoMapper;
+﻿using AutoMapper;
 using Azure;
 using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Bases.Page;
@@ -20,6 +15,13 @@ using Fusion.Service.ViewModels.Companies.Responses;
 using Fusion.Service.ViewModels.Notifications.Requests;
 using Fusion.Service.ViewModels.Projects.Requests;
 using Fusion.Service.ViewModels.Projects.Responses;
+using Fusion.Service.ViewModels.TicketComment;
+using Fusion.Service.ViewModels.Tickets.Responses;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using static Google.Apis.Requests.BatchRequest;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
@@ -35,7 +37,10 @@ namespace Fusion.Service.Services
         private readonly IMailService _mailService;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IContractService _contractService;
-        public ProjectRequestService(IProjectRequestRepository projectRequestRepository, INotificationService notificationService, IMapper mapper, ICurrentService currentService, ICompanyActivityService logService, IMailService mailService, IUnitOfWork unitOfWork,IContractService contractService)
+        private readonly ITicketService _ticketService;
+        private readonly IUserRepository _userRepository;
+
+        public ProjectRequestService(IProjectRequestRepository projectRequestRepository, INotificationService notificationService, IMapper mapper, ICurrentService currentService, ICompanyActivityService logService, IMailService mailService, IUnitOfWork unitOfWork,IContractService contractService, ITicketService ticketService, IUserRepository userRepository)
         {
             _projectRequestRepository = projectRequestRepository;
             _notificationService = notificationService;
@@ -45,6 +50,8 @@ namespace Fusion.Service.Services
             _mailService = mailService;
             _unitOfWork = unitOfWork;
             _contractService = contractService;
+            _ticketService = ticketService;
+            _userRepository = userRepository;
         }
         public async Task<ProjectRequestResponse?> GetProjectRequestByContractIdAsync(Guid contractId, CancellationToken cancellationToken = default)
         {
@@ -349,6 +356,77 @@ namespace Fusion.Service.Services
             return _mapper?.Map<ProjectRequestResponse?>(result);
         }
 
+        public async Task<ProjectRequestResponseV2?> GetProjectRequestAdminByIdAsync(Guid id, Guid adminId, CancellationToken cancellationToken = default)
+        {
+
+            var user = await _userRepository.GetUserByIdAsync(adminId, cancellationToken);
+
+            if (user == null)
+                throw CustomExceptionFactory.CreateNotFoundError("User is not existed");
+
+            if(user.IsSystemAdmin == false)
+                throw CustomExceptionFactory.CreateBadRequestError("User is not a system admin");
+
+            var raw = await _projectRequestRepository.GetProjectRequestByIdAsync(id, cancellationToken);
+            var result = _mapper?.Map<ProjectRequestResponseV2?>(raw);
+
+            result.Tickets = new List<TicketResponseV2>();
+
+            if (raw.Project?.Tickets == null || !raw.Project.Tickets.Any())
+                return result;
+
+            foreach (var entityTicket in raw.Project.Tickets)
+            {
+                if (entityTicket == null) continue;
+
+                var ticketDto = new TicketResponseV2
+                {
+                    Id = entityTicket.Id,
+                    ProjectId = entityTicket.ProjectId,
+                    ProjectName = entityTicket.Project?.Name,
+                    Priority = entityTicket.Priority,
+                    IsHighestUrgen = entityTicket.IsHighestUrgen,
+                    TicketName = entityTicket.TicketName,
+                    Description = entityTicket.Description,
+                    StatusId = entityTicket.StatusId,
+                    SubmittedBy = entityTicket.SubmittedBy,
+                    SubmittedByName = entityTicket.SubmittedByNavigation?.UserName,
+                    IsBillable = entityTicket.IsBillable,
+                    Budget = entityTicket.Budget,
+                    IsDeleted = entityTicket.IsDeleted,
+                    Status = entityTicket.status,
+                    Reason = entityTicket.reason,
+                    ResolvedAt = entityTicket.ResolvedAt,
+                    ClosedAt = entityTicket.ClosedAt,
+                    CreatedAt = entityTicket.CreatedAt,
+                    UpdatedAt = entityTicket.UpdatedAt,
+                    TicketComments = new List<TicketCommentResponse>()
+                };
+
+                // Comments
+                if (entityTicket.TicketComments != null && entityTicket.TicketComments.Any())
+                {
+                    ticketDto.TicketComments = entityTicket.TicketComments
+                        .Select(tc => new TicketCommentResponse
+                        {
+                            Id = tc.Id,
+                            TicketId = tc.TicketId,
+                            AuthorUserId = tc.AuthorUserId,
+                            AuthorUserName = tc.AuthorUser?.UserName,
+                            AuthorUserAvatar = tc.AuthorUser?.Avatar,
+                            Body = tc.Body,
+                            CreateAt = tc.CreateAt,
+                            UpdateAt = tc.UpdateAt,
+                            IsDeleted = tc.IsDeleted,
+                        })
+                        .ToList();
+                }
+
+                result.Tickets.Add(ticketDto);
+            }
+            return result;
+        }
+
         public async Task<ProjectRequestRejectResponse> RejectProjectRequestAsync(Guid requestId, string executorEmail, string reason, CancellationToken cancellationToken = default)
         {
             var result = await _projectRequestRepository.RejectProjectRequestAsync(requestId, executorEmail, reason, cancellationToken);
@@ -456,7 +534,7 @@ namespace Fusion.Service.Services
             return list;
         }
 
-        public async Task<PagedResult<ProjectRequestResponse>> SearchProjectRequestAdminAsync(ProjectRequestSearchRequest filter, Guid adminId,
+        public async Task<PagedResult<ProjectRequestResponseV2>> SearchProjectRequestAdminAsync(ProjectRequestSearchAdminRequest filter, Guid adminId,
             CancellationToken cancellationToken = default)
         {
             if (filter == null)
@@ -469,15 +547,82 @@ namespace Fusion.Service.Services
             //    throw CustomExceptionFactory.CreateNotFoundError(
             //        ResponseMessages.NOT_FOUND.FormatMessage("Project Request"));
 
-            var list = new PagedResult<ProjectRequestResponse>
+            var list = new PagedResult<ProjectRequestResponseV2>
             {
-                Items = _mapper.Map<List<ProjectRequestResponse>>(result.Items),
+                Items = _mapper.Map<List<ProjectRequestResponseV2>>(result.Items),
                 TotalCount = result.TotalCount,
                 PageNumber = result.PageNumber,
                 PageSize = result.PageSize
             };
+
+            foreach (var entityPr in result.Items)
+            {
+
+                var prDto = _mapper.Map<ProjectRequestResponseV2>(entityPr);
+
+                prDto.Tickets = new List<TicketResponseV2>();
+
+                if (entityPr.Project?.Tickets != null && entityPr.Project.Tickets.Any())
+                {
+                    foreach (var entityTicket in entityPr.Project.Tickets)
+                    {
+                        if (entityTicket == null) continue;
+
+                        var ticketDto = new TicketResponseV2
+                        {
+                            Id = entityTicket.Id,
+                            ProjectId = entityTicket.ProjectId,
+                            ProjectName = entityTicket.Project?.Name,
+                            Priority = entityTicket.Priority,
+                            IsHighestUrgen = entityTicket.IsHighestUrgen,
+                            TicketName = entityTicket.TicketName,
+                            Description = entityTicket.Description,
+                            StatusId = entityTicket.StatusId,
+                            SubmittedBy = entityTicket.SubmittedBy,
+                            SubmittedByName = entityTicket.SubmittedByNavigation?.UserName,
+                            IsBillable = entityTicket.IsBillable,
+                            Budget = entityTicket.Budget,
+                            IsDeleted = entityTicket.IsDeleted,
+                            Status = entityTicket.status,
+                            Reason = entityTicket.reason,
+                            ResolvedAt = entityTicket.ResolvedAt,
+                            ClosedAt = entityTicket.ClosedAt,
+                            CreatedAt = entityTicket.CreatedAt,
+                            UpdatedAt = entityTicket.UpdatedAt,
+                            TicketComments = new List<TicketCommentResponse>()
+                        };
+
+                        // Map TicketComments từ entity
+                        if (entityTicket.TicketComments != null && entityTicket.TicketComments.Any())
+                        {
+                            ticketDto.TicketComments = entityTicket.TicketComments
+                                .Select(tc => new TicketCommentResponse
+                                {
+                                    Id = tc.Id,
+                                    TicketId = tc.TicketId,
+                                    AuthorUserId = tc.AuthorUserId,
+                                    AuthorUserName = tc.AuthorUser.UserName,
+                                    AuthorUserAvatar = tc.AuthorUser.Avatar,   
+                                    Body = tc.Body,
+                                    CreateAt = tc.CreateAt,
+                                    UpdateAt = tc.UpdateAt,
+                                    IsDeleted = tc.IsDeleted,
+                                })
+                                .ToList();
+                        }
+
+                        prDto.Tickets.Add(ticketDto);
+                    }
+                }
+
+                list.Items.Add(prDto);
+            }
+
+
+
             return list;
         }
+
 
         public async Task<PagedResult<ProjectRequestResponse>> SearchProjectRequestAsync(ProjectRequestSearchRequest filter, Guid userCompanyId, Guid partnerId, CancellationToken cancellationToken = default)
         {

@@ -22,9 +22,11 @@ namespace Fusion.Service.IServices
 
         Task<PagedResult<ProjectRequestResponse>> SearchProjectRequestAsync(ProjectRequestSearchRequest filter, Guid userCompanyId, Guid partnerId, CancellationToken cancellationToken = default);
 
-        Task<PagedResult<ProjectRequestResponse>> SearchProjectRequestAdminAsync(ProjectRequestSearchRequest filter, Guid adminId, CancellationToken cancellationToken = default);
+        Task<PagedResult<ProjectRequestResponseV2>> SearchProjectRequestAdminAsync(ProjectRequestSearchAdminRequest filter, Guid adminId, CancellationToken cancellationToken = default);
 
         Task<ProjectRequestResponse?> GetProjectRequestByIdAsync(Guid id, CancellationToken cancellationToken = default);
+
+        Task<ProjectRequestResponseV2?> GetProjectRequestAdminByIdAsync(Guid id, Guid adminId, CancellationToken cancellationToken = default);
 
         Task<bool> DeleteProjectRequestAsync(Guid id,string reason, CancellationToken cancellationToken = default);
         Task<bool> RestoreProjectRequestAsync(Guid id, CancellationToken cancellationToken = default);

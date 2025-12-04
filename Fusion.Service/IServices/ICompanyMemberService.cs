@@ -18,7 +18,7 @@ namespace Fusion.Service.IServices
 
         Task<PagedResult<CompanyMemberResponse>> GetPagedCompanyMemberByCompanyIdAsync(Guid companyId, string mail, CompanyMemberPagedSearchRequest request, CancellationToken token = default);
 
-        Task<PagedResult<CompanyMemberResponse>> GetPagedCompanyMemberAsync(CompanyMemberPagedSearchAdminRequest request, CancellationToken token);
+        Task<PagedResult<CompanyMemberResponse>> GetPagedCompanyMemberAdminAsync(CompanyMemberPagedSearchAdminRequest request, string email, CancellationToken token);
 
         Task<CompanyMemberResponse?> FiredMemberFromCompany(string terminatorEmail, string firedMemberMail, string reason, Guid companyId, CancellationToken token = default);
 
