@@ -24,7 +24,15 @@ public class ProjectBoardController : ControllerBase
         var data = await _svc.GetSprintBoardAsync(projectId, sprintId, includeClosed, from, to, ct);
         return Ok(new { succeeded = true, statusCode = 200, message = "", data });
     }
-
+    [HttpGet("tasks")]
+    public async Task<IActionResult> GetTaskList(
+     Guid projectId,
+     [FromQuery] ProjectTaskListQuery query,
+     CancellationToken ct = default)
+    {
+        var data = await _svc.GetTaskListAsync(projectId, query, ct);
+        return Ok(new { succeeded = true, statusCode = 200, message = "", data });
+    }
     // ====== 2) Move task (đổi cột/đổi sprint + optional order) ======
     public sealed class MoveTaskRequest
     {

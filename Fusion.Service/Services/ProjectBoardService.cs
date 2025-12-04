@@ -2,7 +2,10 @@
 using Fusion.Repository.Bases.Page.ProjectBoard;
 using Fusion.Repository.Entities;
 using Fusion.Repository.Repositories;
+using Fusion.Service.ViewModels.Common;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 using System.Text.Json;
 
 namespace Fusion.Service.Services
@@ -22,6 +25,12 @@ namespace Fusion.Service.Services
         Task ReorderColumnAsync(
             Guid projectId, Guid sprintId, Guid statusId,
             IEnumerable<(Guid taskId, int order)> orders, CancellationToken ct = default);
+        Task<PagedResult<TaskVmDto>> GetTaskListAsync(
+          Guid projectId,
+          ProjectTaskListQuery query,
+          CancellationToken ct = default);
+
+
     }
 
     public class ProjectBoardService : IProjectBoardService
@@ -140,7 +149,307 @@ namespace Fusion.Service.Services
                 Tasks = taskDtos
             };
         }
+        public async Task<PagedResult<TaskVmDto>> GetTaskListAsync(
+     Guid projectId,
+     ProjectTaskListQuery query,
+     CancellationToken ct = default)
+        {
+            query ??= new ProjectTaskListQuery();
 
+            var project = await _repo.GetProjectWithWorkflowAsync(projectId, ct)
+                         ?? throw new KeyNotFoundException("Project not found");
+
+            if (project.WorkflowId == null)
+                throw new InvalidOperationException("Project has no workflow assigned.");
+
+            // Build workflow metadata
+            var statuses = await _repo.GetStatusesAsync(project.WorkflowId.Value, ct);
+            if (statuses.Count == 0)
+                throw new InvalidOperationException("Workflow has no statuses.");
+
+            var statusOrder = statuses
+                .OrderBy(x => x.Position)
+                .Select(x => x.Id)
+                .ToList();
+
+            var statusMeta = statuses
+                .OrderBy(x => x.Position)
+                .ToDictionary(
+                    x => x.Id,
+                    x => new StatusMetaDto
+                    {
+                        Id = x.Id,
+                        Code = !string.IsNullOrWhiteSpace(x.Code) ? x.Code! : Slug(x.Name),
+                        Name = x.Name ?? string.Empty,
+                        Category = NormalizeCategory(x.Category, x.IsStart, x.IsEnd),
+                        Order = x.Position,
+                        WipLimit = null,
+                        Color = x.Color,
+                        IsFinal = x.IsEnd,
+                        IsStart = x.IsStart,
+                        Roles = ParseRoles(x.RolesJson)
+                    });
+
+            var startStatusId = statuses.FirstOrDefault(x => x.IsStart)?.Id ?? statusOrder.First();
+
+            // Load sprints for this query
+            var includeClosed = !query.OnlyActiveSprints;
+            var sprints = await _repo.GetSprintsAsync(
+                projectId,
+                query.SprintId,
+                includeClosed,
+                from: null,
+                to: null,
+                ct);
+
+            // Normalize page inputs
+            var pageNumber = query.PageNumber <= 0 ? 1 : query.PageNumber;
+            var pageSize = query.PageSize <= 0 ? 25 : query.PageSize;
+
+            if (sprints.Count == 0)
+            {
+                // Use constructor because PagedResult<T> is an immutable record
+                return new PagedResult<TaskVmDto>(
+                    Array.Empty<TaskVmDto>(), // items
+                    0,                        // totalCount
+                    pageNumber,
+                    pageSize
+                );
+            }
+
+            var sprintIds = sprints.Select(s => s.Id).ToList();
+
+            // Load all tasks for selected sprints
+            var tasks = await _repo.GetTasksForSprintsAsync(projectId, sprintIds, ct);
+
+            // ---------------- FILTERS ON ENTITY ----------------
+            IEnumerable<ProjectTask> filtered = tasks;
+
+            // Search on code + title
+            if (!string.IsNullOrWhiteSpace(query.Search))
+            {
+                var keyword = query.Search.Trim();
+                filtered = filtered.Where(t =>
+                    (!string.IsNullOrEmpty(t.Code) &&
+                     t.Code.Contains(keyword, StringComparison.OrdinalIgnoreCase)) ||
+                    (!string.IsNullOrEmpty(t.Title) &&
+                     t.Title.Contains(keyword, StringComparison.OrdinalIgnoreCase)));
+            }
+
+            // Status category (TODO / IN_PROGRESS / REVIEW / DONE)
+            if (!string.IsNullOrWhiteSpace(query.StatusCategory) &&
+                !string.Equals(query.StatusCategory, "ALL", StringComparison.OrdinalIgnoreCase))
+            {
+                var cat = query.StatusCategory.Trim().ToUpperInvariant();
+                var statusIds = statusMeta
+                    .Where(kv => string.Equals(kv.Value.Category, cat,
+                        StringComparison.OrdinalIgnoreCase))
+                    .Select(kv => kv.Key)
+                    .ToHashSet();
+
+                filtered = filtered.Where(t =>
+                {
+                    var cur = t.CurrentStatusId ?? startStatusId;
+                    return statusIds.Contains(cur);
+                });
+            }
+
+            // Priority
+            if (!string.IsNullOrWhiteSpace(query.Priority) &&
+                !string.Equals(query.Priority, "ALL", StringComparison.OrdinalIgnoreCase))
+            {
+                var pr = query.Priority.Trim();
+                filtered = filtered.Where(t =>
+                    string.Equals(t.Priority ?? string.Empty, pr,
+                        StringComparison.OrdinalIgnoreCase));
+            }
+
+            // Severity
+            if (!string.IsNullOrWhiteSpace(query.Severity) &&
+                !string.Equals(query.Severity, "ALL", StringComparison.OrdinalIgnoreCase))
+            {
+                var sev = query.Severity.Trim();
+                filtered = filtered.Where(t =>
+                    string.Equals(t.Severity ?? string.Empty, sev,
+                        StringComparison.OrdinalIgnoreCase));
+            }
+
+            // Due date range (inclusive)
+            if (query.DueFrom.HasValue)
+            {
+                var fromDate = query.DueFrom.Value.ToDateTime(TimeOnly.MinValue).Date;
+                filtered = filtered.Where(t =>
+                    t.DueDate.HasValue &&
+                    t.DueDate.Value.Date >= fromDate);
+            }
+
+            if (query.DueTo.HasValue)
+            {
+                var toDate = query.DueTo.Value.ToDateTime(TimeOnly.MaxValue).Date;
+                filtered = filtered.Where(t =>
+                    t.DueDate.HasValue &&
+                    t.DueDate.Value.Date <= toDate);
+            }
+
+            // Materialize list before assignee filter
+            var filteredList = filtered.ToList();
+
+            // Assignee filter (task must have at least one of selected assignees)
+            if (query.AssigneeIds != null && query.AssigneeIds.Count > 0)
+            {
+                var assigneeIds = query.AssigneeIds
+                    .Where(x => x != Guid.Empty)
+                    .ToHashSet();
+
+                if (assigneeIds.Count > 0)
+                {
+                    var assRows = await _repo.GetAssigneesForTasksAsync(
+                        filteredList.Select(t => t.Id),
+                        ct);
+
+                    var taskIdsWithAssignee = assRows
+     .Where(a => a.AssignUserId.HasValue && assigneeIds.Contains(a.AssignUserId.Value))
+     .Select(a => a.TaskId)
+     .ToHashSet();
+
+
+                    filteredList = filteredList
+                        .Where(t => taskIdsWithAssignee.Contains(t.Id))
+                        .ToList();
+                }
+            }
+
+            // Load assignee rows for DTO mapping
+            var assRowsAll = await _repo.GetAssigneesForTasksAsync(
+                filteredList.Select(t => t.Id),
+                ct);
+
+            var assigneesMap = assRowsAll
+                .GroupBy(a => a.TaskId)
+                .ToDictionary(g => g.Key, g => g.ToList());
+
+            // ---------------- MAP TO DTO ----------------
+            var dtoList = new List<TaskVmDto>(filteredList.Count);
+
+            foreach (var t in filteredList)
+            {
+                var curStatusId = t.CurrentStatusId ?? startStatusId;
+                if (!statusMeta.TryGetValue(curStatusId, out var meta))
+                {
+                    curStatusId = startStatusId;
+                    meta = statusMeta[curStatusId];
+                }
+
+                var assignees = assigneesMap.TryGetValue(t.Id, out var rows)
+                    ? rows.Select(a => new MemberRefDto(
+                            a.AssignUserId.ToString(),
+                            a.AssignUser?.UserName ?? a.AssignUser?.Email ?? "Member",
+                            a.AssignUser?.Avatar
+                        )).ToList()
+                    : new List<MemberRefDto>();
+
+                dtoList.Add(new TaskVmDto
+                {
+                    Id = t.Id,
+                    Code = t.Code ?? string.Empty,
+                    Title = t.Title ?? string.Empty,
+                    Type = t.Type ?? "Task",
+                    Priority = t.Priority ?? "Medium",
+                    Severity = t.Severity,
+
+                    StoryPoints = t.Point,
+                    EstimateHours = t.EstimateHours,
+                    RemainingHours = t.RemainingHours,
+                    DueDate = t.DueDate.HasValue
+                        ? new DateTimeOffset(DateTime.SpecifyKind(t.DueDate.Value, DateTimeKind.Utc))
+                        : null,
+
+                    SprintId = t.SprintId,
+                    WorkflowStatusId = curStatusId,
+                    StatusCode = meta.Code,
+                    StatusCategory = meta.Category,
+
+                    Assignees = assignees,
+                    DependsOn = new List<Guid>(),
+                    ParentTaskId = t.ParentTaskId,
+                    CarryOverCount = t.CarryOverCount,
+                    StatusName = meta.Name,
+                    OpenedAt = t.CreateAt ?? DateTime.UtcNow,
+                    UpdatedAt = t.UpdateAt ?? t.CreateAt ?? DateTime.UtcNow,
+                    CreatedAt = t.CreateAt ?? DateTime.UtcNow,
+
+                    TicketId = t.TicketId,
+                    TicketName = t.Ticket?.TicketName,
+                    SourceTicketId = t.SourceTaskId,
+                    SourceTicketCode = null
+                });
+            }
+
+            // Sorting
+            dtoList = SortTaskList(dtoList, query.SortBy);
+
+            // Paging
+            var totalCount = dtoList.Count;
+
+            var items = dtoList
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            // Again: use the record constructor
+            return new PagedResult<TaskVmDto>(
+                items,
+                totalCount,
+                pageNumber,
+                pageSize
+            );
+        }
+
+        private static List<TaskVmDto> SortTaskList(
+            IEnumerable<TaskVmDto> source,
+            string? sortBy)
+        {
+            var key = (sortBy ?? "updatedDesc").Trim();
+
+            IOrderedEnumerable<TaskVmDto> ordered;
+
+            switch (key)
+            {
+                case "dueAsc":
+                    ordered = source.OrderBy(t =>
+                        t.DueDate ?? DateTimeOffset.MaxValue);
+                    break;
+
+                case "dueDesc":
+                    ordered = source.OrderByDescending(t =>
+                        t.DueDate ?? DateTimeOffset.MinValue);
+                    break;
+
+                case "priority":
+                    var priorityOrder = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        ["Urgent"] = 1,
+                        ["High"] = 2,
+                        ["Medium"] = 3,
+                        ["Low"] = 4
+                    };
+                    ordered = source.OrderBy(t =>
+                    {
+                        if (t.Priority == null) return int.MaxValue;
+                        return priorityOrder.TryGetValue(t.Priority, out var v)
+                            ? v
+                            : int.MaxValue;
+                    });
+                    break;
+
+                case "updatedDesc":
+                default:
+                    ordered = source.OrderByDescending(t => t.UpdatedAt);
+                    break;
+            }
+
+            return ordered.ToList();
+        }
         // ----------------- MOVE (đổi cột / đổi sprint) -----------------
         public async Task<TaskVmDto> MoveTaskAsync(
             Guid projectId, Guid taskId, Guid toStatusId,

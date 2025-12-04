@@ -37,7 +37,6 @@ public class TaskController : ControllerBase
     }
 
     // ===== Create =====
-    // Cho phép: POST /api/tasks  (ProjectId nhận trong body)
     [HttpPost("tasks")]
     [ProducesResponseType(typeof(ResponseModel<ProjectTaskResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> Create([FromBody] ProjectTaskRequest req, CancellationToken ct)
@@ -51,7 +50,6 @@ public class TaskController : ControllerBase
             data, ResponseMessageHelper.FormatMessage(ResponseMessages.CREATE_SUCCESS, "task")));
     }
 
-    // Option: POST /api/projects/{projectId}/tasks  (FE thích pass projectId trên route)
     [HttpPost("projects/{projectId:guid}/tasks")]
     [ProducesResponseType(typeof(ResponseModel<ProjectTaskResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> CreateUnderProject(Guid projectId, [FromBody] ProjectTaskRequest req, CancellationToken ct)
@@ -577,7 +575,6 @@ public class TaskController : ControllerBase
     }
 
     // GET /api/tickets/{ticketId}/tasks
-    // Lấy danh sách task của 1 ticket (paged)
     [HttpGet("tickets/{ticketId:guid}/tasks")]
     [ProducesResponseType(typeof(ResponseModel<PagedResult<ProjectTaskResponse>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetTasksByTicketId(

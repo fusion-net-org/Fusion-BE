@@ -103,7 +103,6 @@ namespace Fusion.API
         {
             services.AddSwaggerGen(c =>
             {
-                // Thông tin API
                 c.SwaggerDoc("v1", new OpenApiInfo
                 {
                     Title = "Fusion API",
@@ -111,7 +110,6 @@ namespace Fusion.API
                     Description = "API documentation with JWT"
                 });
 
-                // Cấu hình JWT Bearer
                 var securityScheme = new OpenApiSecurityScheme
                 {
                     Name = "Authorization",

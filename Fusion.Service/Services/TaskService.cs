@@ -109,10 +109,8 @@ public class TaskService : ITaskService
     private async Task<Guid> GetCompanyIdOfProject(Guid? projectId, CancellationToken ct)
         => await _db.Projects.Where(p => p.Id == projectId)
                .Select(p => (Guid)p.CompanyId).FirstAsync(ct);
-    // trong TaskService
     private async Task<Guid> GetWorkflowIdForTask(Guid? projectId, Guid? currentStatusId, CancellationToken ct)
     {
-        // Ưu tiên: từ status hiện tại
         if (currentStatusId.HasValue)
         {
             Guid? wfFromStatus = await _db.WorkflowStatuses.AsNoTracking()
@@ -124,7 +122,6 @@ public class TaskService : ITaskService
                 return wfFromStatus.Value;
         }
 
-        // Fallback: từ project
         if (!projectId.HasValue)
             throw CustomExceptionFactory.CreateBadRequestError("Task has no ProjectId.");
 
