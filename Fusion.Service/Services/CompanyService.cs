@@ -920,7 +920,14 @@ namespace Fusion.Service.Services
                     Id = c.Id,
                     Name = c.Name ?? string.Empty,
                     TaxCode = c.TaxCode ?? string.Empty,
-                    CreateAt = c.CreateAt
+                    CreateAt = c.CreateAt,
+                    PhoneNumber = c.PhoneNumber ?? string.Empty,
+                    Address = c.Address ?? string.Empty,
+                    Website = c.Website ?? string.Empty,
+                    Email = c.Email ?? string.Empty,
+                    Detail = c.Detail ?? string.Empty,
+                    ImageCompany = c.ImageCompany ?? string.Empty,
+                    AvatarCompany = c.AvatarCompany ?? string.Empty
                 }).ToList(),
                 TotalCount = result.TotalCount,
                 PageNumber = result.PageNumber,
@@ -948,7 +955,13 @@ namespace Fusion.Service.Services
                     Id = c.Id,
                     Name = c.Name ?? string.Empty,
                     TaxCode = c.TaxCode ?? string.Empty,
-                    JoinAt = joinedAt
+                    JoinAt = joinedAt,
+                    PhoneNumber = c.PhoneNumber ?? string.Empty,
+                    Address = c.Address ?? string.Empty,
+                    Website = c.Website ?? string.Empty,
+                    Email = c.Email ?? string.Empty,
+                    ImageCompany = c.ImageCompany ?? string.Empty,
+                    AvatarCompany = c.AvatarCompany ?? string.Empty
                 };
             }).ToList();
 
