@@ -68,9 +68,9 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.Configure<MailSettings>(builder.Configuration.GetSection("MailSettings"));
 
 // Background service
-builder.Services.AddHostedService<BackgroundJobRunner>();
-builder.Services.AddSingleton<IBackgroundJob, AutoMonthlyEntitlementResetJob>();
-builder.Services.AddSingleton<IBackgroundJob, SubscriptionStatusMonitorJob>();
+//builder.Services.AddHostedService<BackgroundJobRunner>();
+//builder.Services.AddSingleton<IBackgroundJob, AutoMonthlyEntitlementResetJob>();
+//builder.Services.AddSingleton<IBackgroundJob, SubscriptionStatusMonitorJob>();
 #endregion End of custom application service configuration
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 
