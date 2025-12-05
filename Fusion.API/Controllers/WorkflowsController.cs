@@ -3,6 +3,7 @@ using Fusion.Repository.Repositories;
 using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.Services;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Fusion.API.Controllers
 {
@@ -81,6 +82,24 @@ namespace Fusion.API.Controllers
             await _svc.DeleteAsync(companyId, workflowId, ct);
             return Ok(ResponseModel<object>.Ok(new { workflowId },
                 ResponseMessageHelper.FormatMessage(ResponseMessages.DELETE_SUCCESS, "Xoá workflow thành công")));
+        }
+
+        // GET /api/workflows/admin/previews
+        [HttpGet("workflows/admin/previews")]
+        public async Task<IActionResult> GetWorkflowPreviewsAdmin(CancellationToken ct)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(ResponseModel<string>.Error(
+                    StatusCodes.Status401Unauthorized,
+                    "Don't find token!"));
+            }
+
+            var items = await _svc.GetPreviewsAdminAsync(userId, ct);
+            return Ok(ResponseModel<List<WorkflowPreviewVm>>.Ok(
+                data: items,
+                message: "Get workflow previews successfully"));
         }
     }
 }

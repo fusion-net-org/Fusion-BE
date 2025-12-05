@@ -1,4 +1,5 @@
-﻿using Fusion.Repository.Data;
+﻿using Fusion.Repository.Bases.Exceptions;
+using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
@@ -30,6 +31,7 @@ namespace Fusion.Repository.Repositories
         Task<DesignerDto> GetDesignerAsync(Guid workflowId, CancellationToken ct = default);
         Task SaveDesignerAsync(Guid companyId, Guid workflowId, DesignerDto payload, CancellationToken ct = default);
         Task<List<WorkflowPreviewVm>> GetPreviewsAsync(Guid companyId, CancellationToken ct = default);
+        Task<List<WorkflowPreviewVm>> GetPreviewsAdminAsync(Guid adminId, CancellationToken ct = default);
         Task<bool> ExistsInCompanyAsync(Guid workflowId, Guid companyId, CancellationToken ct = default);
 
     }
@@ -375,6 +377,77 @@ namespace Fusion.Repository.Repositories
 
             return map;
         }
+
+        public async Task<List<WorkflowPreviewVm>> GetPreviewsAdminAsync(Guid adminId, CancellationToken ct = default)
+        {
+
+            var adminUser = await _db.Users.SingleOrDefaultAsync(x => x.IsSystemAdmin && x.Id == adminId);
+
+            if (adminUser == null)
+                throw CustomExceptionFactory.CreateNotFoundError("Admin does not exist in this system");
+
+            var workflows = await _db.Workflows.AsNoTracking()
+                .OrderByDescending(w => w.IsDefault).ThenBy(w => w.Name)
+                .Select(w => new { w.Id, w.Name })
+                .ToListAsync(ct);
+
+            var wfIds = workflows.Select(w => w.Id).ToList();
+
+            var statuses = await _db.WorkflowStatuses.AsNoTracking()
+      .Where(s => s.WorkflowId.HasValue && wfIds.Contains(s.WorkflowId.Value))
+      .Select(s => new
+      {
+          s.WorkflowId,
+          s.Id,
+          s.Name,
+          s.IsStart,
+          s.IsEnd,
+          s.X,
+          s.Y,
+          s.Color,
+          Roles = WorkflowMap.ParseList(s.RolesJson)   // ⭐ lấy roles
+      })
+      .ToListAsync(ct);
+
+            var transitions = await _db.WorkflowTransitions.AsNoTracking()
+                .Where(t => t.WorkflowId.HasValue
+                         && wfIds.Contains(t.WorkflowId.Value)
+                         && t.FromStatusId.HasValue
+                         && t.ToStatusId.HasValue)
+                .Select(t => new
+                {
+                    WorkflowId = t.WorkflowId!.Value,
+                    From = t.FromStatusId!.Value,
+                    To = t.ToStatusId!.Value,
+                    t.Type,
+                    t.Label
+                })
+                .ToListAsync(ct);
+
+            var map = workflows.Select(w => new WorkflowPreviewVm(
+                w.Id.ToString(),
+                w.Name ?? "",
+               statuses.Where(s => s.WorkflowId == w.Id)
+    .OrderBy(s => s.Name)
+    .Select(s => new StatusPreviewVm(
+        s.Id.ToString(), s.Name ?? "", s.IsStart, s.IsEnd,
+        s.X == 0 ? 200 : s.X,
+        s.Y == 0 ? 320 : s.Y,
+        s.Color,
+        s.Roles
+    )).ToList(),
+                transitions.Where(t => t.WorkflowId == w.Id)
+                           .Select(t => new TransitionPreviewVm(
+                               t.From.ToString(),
+                               t.To.ToString(),
+                               WorkflowMap.NormalizeType(t.Type),
+                               t.Label
+                           )).ToList()
+            )).ToList();
+
+            return map;
+        }
+
 
         private static Guid? TryParseGuid(string? s)
             => string.IsNullOrWhiteSpace(s) ? (Guid?)null
