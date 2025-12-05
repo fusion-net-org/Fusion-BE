@@ -20,6 +20,8 @@ using Fusion.Service.ViewModels.ProjectMembers.Request;
 using Fusion.Service.ViewModels.ProjectMembers.Responses;
 using Fusion.Service.ViewModels.Projects.Requests;
 using Fusion.Service.ViewModels.Projects.Responses;
+using Fusion.Service.ViewModels.Role.Request;
+using Fusion.Service.ViewModels.Role.Responses;
 using Fusion.Service.ViewModels.SubscriptionPlan.Requests;
 using Fusion.Service.ViewModels.SubscriptionPlan.Responses;
 using Fusion.Service.ViewModels.Task.Request;
@@ -621,5 +623,11 @@ public class MappingProfile : Profile
         CreateMap<UserLog, UserLogResponse>().ReverseMap();
 
 
+        //----------------------------     entity: Role ---------------------------------------------
+        CreateMap<Role, RoleResponseVersion2>();
+        CreateMap<CreateRoleRequest, Role>()
+            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => "ACTIVE"));
+
+        CreateMap<UpdateRoleRequest, Role>();
     }
 }

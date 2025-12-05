@@ -181,8 +181,8 @@ public partial class FusionDbContext : DbContext
         {
             entity.HasIndex(e => new { e.CompanyId, e.RoleName }, "UX_Roles_Company_RoleName")
                 .IsUnique()
-                .HasFilter("([company_id] IS NOT NULL AND [role_name] IS NOT NULL)");
-
+                .HasFilter("([company_id] IS NOT NULL AND [role_name] IS NOT NULL AND [status] = 'Active')");
+    
             entity.HasOne(d => d.Company).WithMany(p => p.Roles).HasConstraintName("FK_Roles_Company");
         });
 

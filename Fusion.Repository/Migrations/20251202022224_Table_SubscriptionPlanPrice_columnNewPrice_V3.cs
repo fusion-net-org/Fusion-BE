@@ -10,81 +10,149 @@ namespace Fusion.Repository.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<int>(
-                name: "limit_unit",
-                table: "UserSubscriptionEntitlements",
-                type: "int",
-                nullable: true);
+            // Add limit_unit to UserSubscriptionEntitlements
+            migrationBuilder.Sql(@"
+                IF NOT EXISTS (
+                    SELECT 1 FROM sys.columns 
+                    WHERE Name = 'limit_unit' 
+                      AND Object_ID = Object_ID('UserSubscriptionEntitlements')
+                )
+                ALTER TABLE UserSubscriptionEntitlements ADD limit_unit int NULL;
+            ");
 
-            migrationBuilder.AddColumn<int>(
-                name: "monthly_limit",
-                table: "UserSubscriptionEntitlements",
-                type: "int",
-                nullable: true);
+            // Add monthly_limit to UserSubscriptionEntitlements
+            migrationBuilder.Sql(@"
+                IF NOT EXISTS (
+                    SELECT 1 FROM sys.columns 
+                    WHERE Name = 'monthly_limit' 
+                      AND Object_ID = Object_ID('UserSubscriptionEntitlements')
+                )
+                ALTER TABLE UserSubscriptionEntitlements ADD monthly_limit int NULL;
+            ");
 
-            migrationBuilder.AddColumn<bool>(
-                name: "auto_grant_monthly",
-                table: "SubscriptionPlans",
-                type: "bit",
-                nullable: false,
-                defaultValue: false);
+            // Add auto_grant_monthly to SubscriptionPlans
+            migrationBuilder.Sql(@"
+                IF NOT EXISTS (
+                    SELECT 1 FROM sys.columns 
+                    WHERE Name = 'auto_grant_monthly'
+                      AND Object_ID = Object_ID('SubscriptionPlans')
+                )
+                ALTER TABLE SubscriptionPlans ADD auto_grant_monthly bit NOT NULL DEFAULT 0;
+            ");
 
-            migrationBuilder.AddColumn<decimal>(
-                name: "new_price",
-                table: "SubscriptionPlanPrices",
-                type: "decimal(18,2)",
-                nullable: false,
-                defaultValue: 0m);
+            // Add new_price to SubscriptionPlanPrices (decimal 18,2)
+            migrationBuilder.Sql(@"
+                IF NOT EXISTS (
+                    SELECT 1 FROM sys.columns 
+                    WHERE Name = 'new_price'
+                      AND Object_ID = Object_ID('SubscriptionPlanPrices')
+                )
+                ALTER TABLE SubscriptionPlanPrices ADD new_price decimal(18,2) NOT NULL DEFAULT 0;
+            ");
 
-            migrationBuilder.AddColumn<int>(
-                name: "monthly_limit",
-                table: "subscriptionplanfeatures",
-                type: "int",
-                nullable: true);
+            // Add monthly_limit to subscriptionplanfeatures
+            migrationBuilder.Sql(@"
+                IF NOT EXISTS (
+                    SELECT 1 FROM sys.columns 
+                    WHERE Name = 'monthly_limit'
+                      AND Object_ID = Object_ID('subscriptionplanfeatures')
+                )
+                ALTER TABLE subscriptionplanfeatures ADD monthly_limit int NULL;
+            ");
 
-            migrationBuilder.AddColumn<int>(
-                name: "limit_unit",
-                table: "CompanySubscriptionEntitlements",
-                type: "int",
-                nullable: true);
+            // Add limit_unit to CompanySubscriptionEntitlements
+            migrationBuilder.Sql(@"
+                IF NOT EXISTS (
+                    SELECT 1 FROM sys.columns 
+                    WHERE Name = 'limit_unit'
+                      AND Object_ID = Object_ID('CompanySubscriptionEntitlements')
+                )
+                ALTER TABLE CompanySubscriptionEntitlements ADD limit_unit int NULL;
+            ");
 
-            migrationBuilder.AddColumn<int>(
-                name: "monthly_limit",
-                table: "CompanySubscriptionEntitlements",
-                type: "int",
-                nullable: true);
+            // Add monthly_limit to CompanySubscriptionEntitlements
+            migrationBuilder.Sql(@"
+                IF NOT EXISTS (
+                    SELECT 1 FROM sys.columns 
+                    WHERE Name = 'monthly_limit'
+                      AND Object_ID = Object_ID('CompanySubscriptionEntitlements')
+                )
+                ALTER TABLE CompanySubscriptionEntitlements ADD monthly_limit int NULL;
+            ");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
-                name: "limit_unit",
-                table: "UserSubscriptionEntitlements");
+            // Drop limit_unit from UserSubscriptionEntitlements
+            migrationBuilder.Sql(@"
+                IF EXISTS (
+                    SELECT 1 FROM sys.columns 
+                    WHERE Name = 'limit_unit' 
+                      AND Object_ID = Object_ID('UserSubscriptionEntitlements')
+                )
+                ALTER TABLE UserSubscriptionEntitlements DROP COLUMN limit_unit;
+            ");
 
-            migrationBuilder.DropColumn(
-                name: "monthly_limit",
-                table: "UserSubscriptionEntitlements");
+            // Drop monthly_limit from UserSubscriptionEntitlements
+            migrationBuilder.Sql(@"
+                IF EXISTS (
+                    SELECT 1 FROM sys.columns 
+                    WHERE Name = 'monthly_limit' 
+                      AND Object_ID = Object_ID('UserSubscriptionEntitlements')
+                )
+                ALTER TABLE UserSubscriptionEntitlements DROP COLUMN monthly_limit;
+            ");
 
-            migrationBuilder.DropColumn(
-                name: "auto_grant_monthly",
-                table: "SubscriptionPlans");
+            // Drop auto_grant_monthly from SubscriptionPlans
+            migrationBuilder.Sql(@"
+                IF EXISTS (
+                    SELECT 1 FROM sys.columns 
+                    WHERE Name = 'auto_grant_monthly'
+                      AND Object_ID = Object_ID('SubscriptionPlans')
+                )
+                ALTER TABLE SubscriptionPlans DROP COLUMN auto_grant_monthly;
+            ");
 
-            migrationBuilder.DropColumn(
-                name: "new_price",
-                table: "SubscriptionPlanPrices");
+            // Drop new_price from SubscriptionPlanPrices
+            migrationBuilder.Sql(@"
+                IF EXISTS (
+                    SELECT 1 FROM sys.columns 
+                    WHERE Name = 'new_price'
+                      AND Object_ID = Object_ID('SubscriptionPlanPrices')
+                )
+                ALTER TABLE SubscriptionPlanPrices DROP COLUMN new_price;
+            ");
 
-            migrationBuilder.DropColumn(
-                name: "monthly_limit",
-                table: "subscriptionplanfeatures");
+            // Drop monthly_limit from subscriptionplanfeatures
+            migrationBuilder.Sql(@"
+                IF EXISTS (
+                    SELECT 1 FROM sys.columns 
+                    WHERE Name = 'monthly_limit'
+                      AND Object_ID = Object_ID('subscriptionplanfeatures')
+                )
+                ALTER TABLE subscriptionplanfeatures DROP COLUMN monthly_limit;
+            ");
 
-            migrationBuilder.DropColumn(
-                name: "limit_unit",
-                table: "CompanySubscriptionEntitlements");
+            // Drop limit_unit from CompanySubscriptionEntitlements
+            migrationBuilder.Sql(@"
+                IF EXISTS (
+                    SELECT 1 FROM sys.columns 
+                    WHERE Name = 'limit_unit'
+                      AND Object_ID = Object_ID('CompanySubscriptionEntitlements')
+                )
+                ALTER TABLE CompanySubscriptionEntitlements DROP COLUMN limit_unit;
+            ");
 
-            migrationBuilder.DropColumn(
-                name: "monthly_limit",
-                table: "CompanySubscriptionEntitlements");
+            // Drop monthly_limit from CompanySubscriptionEntitlements
+            migrationBuilder.Sql(@"
+                IF EXISTS (
+                    SELECT 1 FROM sys.columns 
+                    WHERE Name = 'monthly_limit'
+                      AND Object_ID = Object_ID('CompanySubscriptionEntitlements')
+                )
+                ALTER TABLE CompanySubscriptionEntitlements DROP COLUMN monthly_limit;
+            ");
         }
     }
 }

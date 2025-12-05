@@ -107,6 +107,8 @@ namespace Fusion.Service
             // tiocket comment
             services.AddScoped<ITicketCommentService, TicketCommentService>();
 
+            //role
+            services.AddScoped<IRoleService, RoleService>();
             // PayOS
             services.AddSingleton<PayOS>(sp =>
             {

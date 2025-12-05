@@ -20,4 +20,16 @@ namespace Fusion.Service.ViewModels.Role.Responses
         public string RoleName { get; set; } = string.Empty;
         public int TotalMembers { get; set; }
     }
+
+
+    public class RoleResponseVersion2
+    {
+        public int Id { get; set; }
+        public Guid? CompanyId { get; set; }
+        public string RoleName { get; set; }
+        public string? Description { get; set; }
+        public string Status { get; set; }
+        public DateTime CreatedAt { get; set; }
+    }
+
 }
