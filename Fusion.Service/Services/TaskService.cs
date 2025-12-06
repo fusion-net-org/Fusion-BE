@@ -184,12 +184,17 @@ public class TaskService : ITaskService
     #endregion
     #region Handle Task
     /* -------------------- Change status by Id -------------------- */
-    public async Task<ProjectTaskResponse> ChangeStatusById(Guid id, Guid statusId, Guid userId, CancellationToken ct = default)
+    public async Task<ProjectTaskResponse> ChangeStatusById(
+      Guid id, Guid statusId, Guid userId, CancellationToken ct = default)
     {
         var e = await _repo.FindByIdAsync(id, ct)
-            ?? throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Task"));
+            ?? throw CustomExceptionFactory.CreateNotFoundError(
+                ResponseMessages.NOT_FOUND.FormatMessage("Task"));
 
         var st = await EnsureStatus(statusId, ct);
+
+        var oldStatusId = e.CurrentStatusId;          // status cũ
+
         e.CurrentStatusId = st.Id;
         e.Status = !string.IsNullOrWhiteSpace(st.Code) ? st.Code : st.Name;
 
@@ -200,7 +205,7 @@ public class TaskService : ITaskService
 
         e.UpdateAt = DateTime.UtcNow;
         await _repo.UpdateAsync(e, ct);
-      
+
         var companyId = await GetCompanyIdOfProject(e.ProjectId, ct);
 
         await _log.CreateLog(new CompanyActivityLog
@@ -211,25 +216,50 @@ public class TaskService : ITaskService
             Description = $"User '{await GetUserName(_current.GetUserId())}' changed status of '{e.Title}' to '{st.Code ?? st.Name}'"
         });
 
+        // CHỈ notify nếu thực sự đổi status
+        if (oldStatusId != st.Id)
+        {
+            await _taskWorkflowService.NotifyAssigneeOnStatusChangeAsync(
+        e.Id,
+        oldStatusId,   
+        st.Id,
+        userId,
+        ct);
+        }
+
         return _mapper.Map<ProjectTaskResponse>(e);
     }
 
+
     /* -------------------- Reorder (drag & drop) -------------------- */
-    public async Task<ProjectTaskResponse> ReorderAsync(Guid projectId, Guid sprintId, Guid taskId, Guid toStatusId, int toIndex, Guid userId, CancellationToken ct = default)
+    public async Task<ProjectTaskResponse> ReorderAsync(
+     Guid projectId,
+     Guid sprintId,
+     Guid taskId,
+     Guid toStatusId,
+     int toIndex,
+     Guid userId,
+     CancellationToken ct = default)
     {
         await using var trx = await _db.Database.BeginTransactionAsync(ct);
 
-        var task = await _db.ProjectTasks.FirstOrDefaultAsync(t => t.Id == taskId && !t.IsDeleted, ct)
-            ?? throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Task"));
+        var task = await _db.ProjectTasks
+            .FirstOrDefaultAsync(t => t.Id == taskId && !t.IsDeleted, ct)
+            ?? throw CustomExceptionFactory.CreateNotFoundError(
+                ResponseMessages.NOT_FOUND.FormatMessage("Task"));
 
         if (task.ProjectId != projectId)
             throw CustomExceptionFactory.CreateBadRequestError("Task does not belong to the project.");
 
-        var sprint = await _db.Sprints.AsNoTracking().FirstOrDefaultAsync(s => s.Id == sprintId && s.ProjectId == projectId, ct)
-            ?? throw CustomExceptionFactory.CreateNotFoundError(ResponseMessages.NOT_FOUND.FormatMessage("Sprint"));
+        var sprint = await _db.Sprints.AsNoTracking()
+            .FirstOrDefaultAsync(s => s.Id == sprintId && s.ProjectId == projectId, ct)
+            ?? throw CustomExceptionFactory.CreateNotFoundError(
+                ResponseMessages.NOT_FOUND.FormatMessage("Sprint"));
 
         var toStatus = await EnsureStatus(toStatusId, ct);
-       
+
+        var oldStatusId = task.CurrentStatusId;
+        var changedStatus = oldStatusId != toStatus.Id;    // CHỈ gửi notify nếu true
 
         // Danh sách các task trong (sprint, toStatus)
         var list = await _db.ProjectTasks
@@ -242,13 +272,15 @@ public class TaskService : ITaskService
         list.Insert(insertAt, task);
 
         // Nếu đổi cột thì cập nhật status + status text
-        if (task.CurrentStatusId != toStatusId)
+        if (changedStatus)
         {
             task.CurrentStatusId = toStatus.Id;
             task.Status = !string.IsNullOrWhiteSpace(toStatus.Code) ? toStatus.Code : toStatus.Name;
         }
 
-        if (task.SprintId != sprintId) task.SprintId = sprintId;
+        if (task.SprintId != sprintId)
+            task.SprintId = sprintId;
+
         task.IsBacklog = false;
 
         // Re-number từ 1
@@ -261,6 +293,7 @@ public class TaskService : ITaskService
         await trx.CommitAsync(ct);
 
         var companyId = await GetCompanyIdOfProject(task.ProjectId, ct);
+
         await _log.CreateLog(new CompanyActivityLog
         {
             CompanyId = companyId,
@@ -269,8 +302,20 @@ public class TaskService : ITaskService
             Description = $"User '{await GetUserName(_current.GetUserId())}' reordered task '{task.Title}'"
         });
 
+        // CHỈ notify khi đổi status (kéo qua cột khác), không notify khi chỉ reorder trong cùng cột
+        if (changedStatus)
+        {
+            await _taskWorkflowService.NotifyAssigneeOnStatusChangeAsync(
+         task.Id,
+         oldStatusId,     
+         toStatus.Id,    
+         userId,
+         ct);
+        }
+
         return _mapper.Map<ProjectTaskResponse>(task);
     }
+
 
     /* -------------------- Move to sprint -------------------- */
     public async Task<ProjectTaskResponse> MoveToSprintAsync(Guid taskId, Guid toSprintId, Guid userId, CancellationToken ct = default)

@@ -40,6 +40,12 @@ namespace Fusion.Service.Services
     Guid taskId,
     IDictionary<Guid, Guid?> assignments,
     CancellationToken ct = default);
+    Task NotifyAssigneeOnStatusChangeAsync(
+        Guid taskId,
+        Guid? oldStatusId,  
+        Guid newStatusId,
+        Guid actorUserId,
+        CancellationToken ct = default);
     }
     public class TaskWorkflowService : ITaskWorkflowService
     {
@@ -50,6 +56,7 @@ namespace Fusion.Service.Services
         private readonly ICurrentService _current;
         private readonly IMapper _mapper;
         private readonly INotificationService _notificationService;
+
         public TaskWorkflowService(
             FusionDbContext db,
             ITaskWorkflowRepository taskWorkflowRepo,
@@ -128,6 +135,84 @@ namespace Fusion.Service.Services
             }
 
             await _db.SaveChangesAsync(ct);
+        }
+        public async Task NotifyAssigneeOnStatusChangeAsync(
+        Guid taskId,
+        Guid? oldStatusId,
+        Guid newStatusId,
+        Guid actorUserId,
+        CancellationToken ct = default)
+        {
+            // 1) Lấy task
+            var task = await _db.ProjectTasks
+                .AsNoTracking()
+                .FirstOrDefaultAsync(t => t.Id == taskId && !t.IsDeleted, ct);
+
+            if (task == null)
+                return;
+
+            // 2) Lấy status mới
+            var newStatus = await _db.WorkflowStatuses
+                .AsNoTracking()
+                .FirstOrDefaultAsync(s => s.Id == newStatusId, ct);
+
+            if (newStatus == null)
+                return;
+
+            var statusName = !string.IsNullOrWhiteSpace(newStatus.Code)
+                ? newStatus.Code
+                : newStatus.Name ?? "Unknown";
+
+            var receivers = new HashSet<Guid>();
+
+            // 3) Ưu tiên assignee của status mới
+            var newRows = await _db.TaskWorkflows
+                .AsNoTracking()
+                .Where(tw =>
+                    tw.TaskId == taskId &&
+                    tw.WorkflowStatusId == newStatusId &&
+                    tw.AssignUserId.HasValue)
+                .ToListAsync(ct);
+
+            foreach (var r in newRows)
+                receivers.Add(r.AssignUserId!.Value);
+
+            // 4) Nếu status mới không có ai → fallback lấy assignee của status cũ
+            if (!receivers.Any() && oldStatusId.HasValue)
+            {
+                var oldRows = await _db.TaskWorkflows
+                    .AsNoTracking()
+                    .Where(tw =>
+                        tw.TaskId == taskId &&
+                        tw.WorkflowStatusId == oldStatusId.Value &&
+                        tw.AssignUserId.HasValue)
+                    .ToListAsync(ct);
+
+                foreach (var r in oldRows)
+                    receivers.Add(r.AssignUserId!.Value);
+            }
+
+            if (!receivers.Any())
+                return; // không ai liên quan thì thôi
+
+            var actorName = await GetUserName(actorUserId) ?? "Someone";
+
+            foreach (var userId in receivers)
+            {
+                // Nếu không muốn notify chính actor thì bỏ comment
+                // if (userId == actorUserId) continue;
+
+                await _notificationService.CreateNotificationAsync(new SendNotificationRequest
+                {
+                    UserId = userId,
+                    Title = $"Task \"{task.Title}\" moved to {statusName}",
+                    Body = $"User {actorName} moved task \"{task.Title}\" to status \"{statusName}\" where you are assigned in the workflow.",
+                    LinkKey = "TASK_DETAIL_PAGE",
+                    IdLink = task.Id,
+                    Event = "TaskStatusChanged",
+                    NotificationType = "TASK",
+                }, ct);
+            }
         }
 
         /// <summary>
@@ -349,9 +434,9 @@ namespace Fusion.Service.Services
             {
                 var assigneeId = kvp.Key;
 
-              /*  // Optionally skip notifying the actor themself
-                if (assigneeId == actorUserId)
-                    continue;*/
+                /*  // Optionally skip notifying the actor themself
+                  if (assigneeId == actorUserId)
+                      continue;*/
 
                 var statusNames = kvp.Value
                     .Select(id => statusNameById.TryGetValue(id, out var n) ? n : null)
@@ -368,7 +453,7 @@ namespace Fusion.Service.Services
                     UserId = assigneeId,
                     Title = $"You have been assigned in the workflow of task \"{task.Title}\"",
                     Body = $"User {actorUserName} updated the workflow and assigned you to the following statuses: {statusesText} in task \"{task.Title}\".",
-                    LinkKey = "TASK_DETAIL_PAGE",  
+                    LinkKey = "TASK_DETAIL_PAGE",
                     IdLink = task.Id,
                     Event = "TaskWorkflowAssigneeUpdated",
                     NotificationType = "TASK",

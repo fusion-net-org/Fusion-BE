@@ -39,37 +39,72 @@ namespace Fusion.Service.Services
         public ProjectBoardService(IProjectBoardRepository repo) => _repo = repo;
 
         public async Task<MultiSprintBoardResponseDto> GetSprintBoardAsync(
-            Guid projectId, Guid? sprintId = null, bool includeClosed = false,
-            DateOnly? from = null, DateOnly? to = null, CancellationToken ct = default)
+    Guid projectId, Guid? sprintId = null, bool includeClosed = false,
+    DateOnly? from = null, DateOnly? to = null, CancellationToken ct = default)
         {
             var project = await _repo.GetProjectWithWorkflowAsync(projectId, ct)
                          ?? throw new KeyNotFoundException("Project not found");
             if (project.WorkflowId == null)
                 throw new InvalidOperationException("Project has no workflow assigned.");
 
+            var workflowId = project.WorkflowId.Value;
+
+            // 1) Load sprint
             var sprints = await _repo.GetSprintsAsync(projectId, sprintId, includeClosed, from, to, ct);
             if (sprints.Count == 0) return new MultiSprintBoardResponseDto();
 
-            var statuses = await _repo.GetStatusesAsync(project.WorkflowId!.Value, ct);
-            if (statuses.Count == 0) throw new InvalidOperationException("Workflow has no statuses.");
+            // 2) Load statuses + transitions
+            var statuses = await _repo.GetStatusesAsync(workflowId, ct);
+            if (statuses.Count == 0)
+                throw new InvalidOperationException("Workflow has no statuses.");
 
-            var statusOrder = statuses.OrderBy(x => x.Position).Select(x => x.Id).ToList();
-            var statusMeta = statuses.OrderBy(x => x.Position).ToDictionary(
-                x => x.Id,
-                x => new StatusMetaDto
-                {
-                    Id = x.Id,
-                    Code = !string.IsNullOrWhiteSpace(x.Code) ? x.Code! : Slug(x.Name),
-                    Name = x.Name ?? "",
-                    Category = NormalizeCategory(x.Category, x.IsStart, x.IsEnd),
-                    Order = x.Position,
-                    WipLimit = null,
-                    Color = x.Color,
-                    IsFinal = x.IsEnd, 
-                    IsStart = x.IsStart,
-                    Roles = ParseRoles(x.RolesJson)          
-                });
+            var transitions = await _repo.GetTransitionsAsync(workflowId, ct);
 
+            var statusOrder = statuses
+                .OrderBy(x => x.Position)
+                .Select(x => x.Id)
+                .ToList();
+
+            var statusMeta = statuses
+                .OrderBy(x => x.Position)
+                .ToDictionary(
+                    x => x.Id,
+                    x => new StatusMetaDto
+                    {
+                        Id = x.Id,
+                        Code = !string.IsNullOrWhiteSpace(x.Code) ? x.Code! : Slug(x.Name),
+                        Name = x.Name ?? "",
+                        Category = NormalizeCategory(x.Category, x.IsStart, x.IsEnd),
+                        Order = x.Position,
+                        WipLimit = null,
+                        Color = x.Color,
+                        IsFinal = x.IsEnd,
+                        IsStart = x.IsStart,
+                        Roles = ParseRoles(x.RolesJson)
+                    });
+
+            var workflowDto = new WorkflowBoardDto
+            {
+                Id = workflowId,
+                Name = project.Workflow?.Name ?? project.Name ?? "Workflow",
+                StatusOrder = statusOrder,
+                StatusMeta = statusMeta,
+                Transitions = transitions
+                    .Select(tr => new WorkflowTransitionDto
+                    {
+                        Id = tr.Id,
+                        WorkflowId = tr.WorkflowId ?? workflowId,
+                        FromStatusId = tr.FromStatusId ?? Guid.Empty,
+                        ToStatusId = tr.ToStatusId ?? Guid.Empty,
+                        Type = tr.Type,
+                        Label = tr.Label,
+                        Rule = tr.Rule,
+                        Roles = ParseRoles(tr.RoleNamesJson)
+                    })
+                    .ToList()
+            };
+
+            // 3) Sprint DTO không còn statusMeta/statusOrder
             var sprintDtos = sprints.Select(s => new SprintVmDto
             {
                 Id = s.Id,
@@ -79,13 +114,12 @@ namespace Fusion.Service.Services
                 State = MapSprintState(s.Status),
                 CapacityHours = s.CapacityHours,
                 CommittedPoints = s.CommittedPoints,
-                WorkflowId = project.WorkflowId,
-                StatusOrder = statusOrder,
-                StatusMeta = statusMeta
+                WorkflowId = workflowId
             }).ToList();
 
             var sprintIds = sprintDtos.Select(x => x.Id).ToList();
 
+            // 4) build tasks như cũ (sử dụng statusMeta ở trên)
             var tasks = await _repo.GetTasksForSprintsAsync(projectId, sprintIds, ct);
             var assRows = await _repo.GetAssigneesForTasksAsync(tasks.Select(t => t.Id), ct);
             var assigneesMap = assRows.GroupBy(a => a.TaskId)
@@ -97,8 +131,11 @@ namespace Fusion.Service.Services
             foreach (var t in tasks)
             {
                 var curStatusId = t.CurrentStatusId ?? startStatusId;
-                if (!statusMeta.ContainsKey(curStatusId)) curStatusId = startStatusId;
-                var meta = statusMeta[curStatusId];
+                if (!statusMeta.TryGetValue(curStatusId, out var meta))
+                {
+                    curStatusId = startStatusId;
+                    meta = statusMeta[curStatusId];
+                }
 
                 var assignees = assigneesMap.TryGetValue(t.Id, out var rows)
                     ? rows.Select(a => new MemberRefDto(
@@ -116,22 +153,24 @@ namespace Fusion.Service.Services
                     Type = t.Type ?? "Task",
                     Priority = t.Priority ?? "Medium",
                     Severity = t.Severity,
-
                     StoryPoints = t.Point,
                     EstimateHours = t.EstimateHours,
                     RemainingHours = t.RemainingHours,
-                    DueDate = t.DueDate.HasValue ? new DateTimeOffset(DateTime.SpecifyKind(t.DueDate.Value, DateTimeKind.Utc)) : null,
+                    DueDate = t.DueDate.HasValue
+                        ? new DateTimeOffset(DateTime.SpecifyKind(t.DueDate.Value, DateTimeKind.Utc))
+                        : null,
 
                     SprintId = t.SprintId,
                     WorkflowStatusId = curStatusId,
                     StatusCode = meta.Code,
                     StatusCategory = meta.Category,
-                    
+
                     Assignees = assignees,
                     DependsOn = new List<Guid>(),
                     ParentTaskId = t.ParentTaskId,
                     CarryOverCount = t.CarryOverCount,
                     StatusName = meta.Name,
+
                     OpenedAt = t.CreateAt ?? DateTime.UtcNow,
                     UpdatedAt = t.UpdateAt ?? t.CreateAt ?? DateTime.UtcNow,
                     CreatedAt = t.CreateAt ?? DateTime.UtcNow,
@@ -139,16 +178,19 @@ namespace Fusion.Service.Services
                     TicketId = t.TicketId,
                     TicketName = t.Ticket?.TicketName,
                     SourceTicketId = t.SourceTaskId,
-                    SourceTicketCode = null
+                    SourceTicketCode = null,
                 });
             }
 
+            // 5) response mới
             return new MultiSprintBoardResponseDto
             {
+                Workflow = workflowDto,
                 Sprints = sprintDtos,
                 Tasks = taskDtos
             };
         }
+
         public async Task<PagedResult<TaskVmDto>> GetTaskListAsync(
      Guid projectId,
      ProjectTaskListQuery query,

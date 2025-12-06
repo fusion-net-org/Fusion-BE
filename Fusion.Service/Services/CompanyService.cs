@@ -493,15 +493,21 @@ namespace Fusion.Service.Services
             result.TotalProjectRequestPendingReceive = received.Count(p => p.Status.Equals("Pending", StringComparison.OrdinalIgnoreCase));
 
 
-            result.companyRoles = roles.Select(role =>
-                        new CompanyRoleSummaryResponse
-                        {
-                            RoleId = role.Id,
-                            RoleName = role.RoleName,
-                            TotalMembers = role.UserRoles.Count(ur =>
-                                ur.User.CompanyMembers.Any(cm => cm.CompanyId == companyId))
-                        }
-                ).ToList();
+            result.companyRoles = roles
+            .Where(role => role.Status.Equals("Active", StringComparison.OrdinalIgnoreCase))
+            .Select(role => new CompanyRoleSummaryResponse
+            {
+                RoleId = role.Id,
+                RoleName = role.RoleName,
+                TotalMembers = role.UserRoles.Count(ur =>
+                    ur.User.CompanyMembers.Any(cm =>
+                        cm.CompanyId == companyId &&
+                        cm.Status.Equals("Active", StringComparison.OrdinalIgnoreCase)
+                    )
+                )
+            })
+            .ToList();
+
 
 
             return result;

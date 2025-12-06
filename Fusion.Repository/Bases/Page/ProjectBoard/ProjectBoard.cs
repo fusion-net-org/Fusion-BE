@@ -31,8 +31,6 @@ public record SprintVmDto
     public int? CommittedPoints { get; init; }
 
     public Guid? WorkflowId { get; init; }
-    [Required] public List<Guid> StatusOrder { get; init; } = new();
-    [Required] public Dictionary<Guid, StatusMetaDto> StatusMeta { get; init; } = new();
 }
 
 public record TaskVmDto
@@ -70,6 +68,35 @@ public record TaskVmDto
 
 public record MultiSprintBoardResponseDto
 {
+    public WorkflowBoardDto Workflow { get; init; } = default!;
+
     public List<SprintVmDto> Sprints { get; init; } = new();
     public List<TaskVmDto> Tasks { get; init; } = new();
+}
+
+public record WorkflowTransitionDto
+{
+    [Required] public long Id { get; init; }
+    [Required] public Guid WorkflowId { get; init; }
+    [Required] public Guid FromStatusId { get; init; }
+    [Required] public Guid ToStatusId { get; init; }
+
+    public string? Type { get; init; }
+    public string? Label { get; init; }
+    public string? Rule { get; init; }
+
+    public IReadOnlyList<string> Roles { get; init; } = Array.Empty<string>();
+}
+
+
+public record WorkflowBoardDto
+{
+    [Required] public Guid Id { get; init; }
+    public string Name { get; init; } = "";
+
+    [Required] public List<Guid> StatusOrder { get; init; } = new();
+
+    [Required] public Dictionary<Guid, StatusMetaDto> StatusMeta { get; init; } = new();
+
+    public List<WorkflowTransitionDto> Transitions { get; init; } = new();
 }
