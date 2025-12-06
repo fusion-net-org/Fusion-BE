@@ -13,3 +13,9 @@ public class DateRange<T> where T : struct
     public T? From { get; set; }
     public T? To { get; set; }
 }
+
+public class Range<T> where T : struct
+{
+    public T? From { get; set; }
+    public T? To { get; set; }
+}
