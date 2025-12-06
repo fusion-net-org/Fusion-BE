@@ -401,14 +401,19 @@ namespace Fusion.Service.Services
         {
             var company = await _companyRepository.GetCompanyByIdAsync(companyId);
 
+            if(company == null)
+                throw CustomExceptionFactory.CreateBadRequestError("Company is not existed");
 
-            var friendships = company.CompanyFriendshipCompanyAs
-                .Concat(company.CompanyFriendshipCompanyBs)
+            var friendships =
+                (company?.CompanyFriendshipCompanyAs ?? Enumerable.Empty<CompanyFriendship>())
+                .Concat(company?.CompanyFriendshipCompanyBs ?? Enumerable.Empty<CompanyFriendship>())
                 .ToList();
 
-            var allProjects = company.ProjectCompanies
-                .Concat(company.ProjectCompanyRequests)
+            var allProjects =
+                (company?.ProjectCompanies ?? Enumerable.Empty<Project>())
+                .Concat(company?.ProjectCompanyRequests ?? Enumerable.Empty<Project>())
                 .ToList();
+
 
             var roles = await _roleRepository.GetRoleWithMemberAsync(cancellationToken);
 

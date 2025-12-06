@@ -1,11 +1,13 @@
-﻿using System;
+﻿using Fusion.Repository.Bases.Page;
+using Fusion.Repository.Bases.Page.Contract;
+using Fusion.Service.ViewModels.Contract.Requests;
+using Fusion.Service.ViewModels.Contract.Responses;
+using Microsoft.AspNetCore.Http;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Fusion.Service.ViewModels.Contract.Requests;
-using Fusion.Service.ViewModels.Contract.Responses;
-using Microsoft.AspNetCore.Http;
 
 namespace Fusion.Service.IServices
 {
@@ -21,6 +23,10 @@ namespace Fusion.Service.IServices
         Task<ContractResponse> GetContractByIdAsync(Guid contractId, CancellationToken ct = default);
 
         Task<List<ContractResponse>> GetAllContractsAsync(CancellationToken ct = default);
+
+        Task<PagedResult<ContractResponse>> GetAllContractsAdminAsync(ContractSearchRequest request,
+    CancellationToken ct = default);
+
         Task<ContractResponse> UpdateContractStatusAsync(Guid contractId, Guid userId, string status, CancellationToken ct = default);
     }
 }

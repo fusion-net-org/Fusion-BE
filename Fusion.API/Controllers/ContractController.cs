@@ -1,4 +1,6 @@
-﻿using Fusion.Repository.Bases.Responses;
+﻿using Fusion.Repository.Bases.Page;
+using Fusion.Repository.Bases.Page.Contract;
+using Fusion.Repository.Bases.Responses;
 using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.IServices;
 using Fusion.Service.Services;
@@ -73,6 +75,17 @@ namespace Fusion.API.Controllers
                 data: result,
                 message: "Get contracts successfully"));
         }
+
+        [HttpGet("admin")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<PagedResult<ContractResponse>>))]
+        public async Task<IActionResult> GetAdminContracts([FromQuery] ContractSearchRequest request, CancellationToken cancellationToken)
+        {
+            var result = await _contractService.GetAllContractsAdminAsync(request, cancellationToken);
+            return Ok(ResponseModel<PagedResult<ContractResponse>>.Ok(
+                data: result,
+                message: "Get contracts successfully"));
+        }
+
         [HttpPost("{id:guid}/upload")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<string>))]
         public async Task<IActionResult> UploadContractAttachment(Guid id, IFormFile file, CancellationToken cancellationToken)

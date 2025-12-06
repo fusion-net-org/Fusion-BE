@@ -1,17 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Fusion.Repository.Bases.Exceptions;
+﻿using Fusion.Repository.Bases.Exceptions;
+using Fusion.Repository.Bases.Page;
+using Fusion.Repository.Bases.Page.Contract;
+using Fusion.Repository.Bases.Responses;
 using Fusion.Repository.Entities;
 using Fusion.Repository.Enums;
 using Fusion.Repository.IRepositories;
 using Fusion.Repository.Repositories;
 using Fusion.Service.IServices;
+using Fusion.Service.ViewModels.Companies.Responses;
 using Fusion.Service.ViewModels.Contract.Requests;
 using Fusion.Service.ViewModels.Contract.Responses;
 using Microsoft.AspNetCore.Http;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace Fusion.Service.Services
 {
@@ -160,8 +164,6 @@ namespace Fusion.Service.Services
             return response;
         }
 
-
-
         public async Task<ContractResponse> GetContractByIdAsync(Guid contractId, CancellationToken ct = default)
         {
             var contract = await _contractRepository.GetContractByIdAsync(contractId, ct);
@@ -241,5 +243,43 @@ namespace Fusion.Service.Services
         {
             return await _contractRepository.ContractExistsAsync(contractId, ct);
         }
+
+        public async Task<PagedResult<ContractResponse>> GetAllContractsAdminAsync(ContractSearchRequest request,
+    CancellationToken ct = default)
+        {
+            var pagedContracts = await _contractRepository.GetAllContractsAdminAsync(request, ct);
+
+            if (pagedContracts == null || pagedContracts.Items.Count == 0)
+                throw CustomExceptionFactory.CreateNotFoundError(
+                    ResponseMessages.NOT_FOUND.FormatMessage("Contract"));
+
+            var responseItems = pagedContracts.Items.Select(contract => new ContractResponse
+            {
+                Id = contract.Id,
+                ContractCode = contract.ContractCode,
+                ContractName = contract.ContractName,
+                Budget = contract.Budget ?? 0,
+                Status = contract.Status ?? "Unknown",
+                EffectiveDate = contract.EffectiveDate ?? default,
+                ExpiredDate = contract.ExpiredDate ?? default,
+
+                Appendices = contract.ContractAppendices.Select(a => new ContractAppendixResponse
+                {
+                    Id = a.Id,
+                    AppendixName = a.Title,
+                    AppendixCode = a.AppendixCode
+                }).ToList()
+
+            }).ToList();
+
+            return new PagedResult<ContractResponse>
+            {
+                Items = responseItems,
+                TotalCount = pagedContracts.TotalCount,
+                PageNumber = pagedContracts.PageNumber,
+                PageSize = pagedContracts.PageSize
+            };
+        }
+
     }
 }

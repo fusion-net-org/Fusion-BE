@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.Contract;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
@@ -16,6 +17,8 @@ namespace Fusion.Repository.IRepositories
         Task<Contract> UpdateContractAttachmentAsync(Guid contractId, string attachmentUrl, Guid userId, CancellationToken ct = default);
 
         Task<List<Contract>> GetAllContractsAsync(CancellationToken ct = default);
+
+        Task<PagedResult<Contract>> GetAllContractsAdminAsync(ContractSearchRequest request, CancellationToken ct = default);
 
         Task<Contract?> GetContractByIdAsync(Guid contractId, CancellationToken ct = default);
 
