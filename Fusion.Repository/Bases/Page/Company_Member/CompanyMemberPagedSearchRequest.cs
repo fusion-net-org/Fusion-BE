@@ -12,7 +12,7 @@ namespace Fusion.Repository.Bases.Page.Company_Member
         public string? KeyWord { get; set; }
 
         public DateRange<DateOnly>? DateRange { get; set; }
-
+        public string? Gender { get; set; }
     }
 
     public class CompanyMemberPagedSearchAdminRequest : PagedRequest

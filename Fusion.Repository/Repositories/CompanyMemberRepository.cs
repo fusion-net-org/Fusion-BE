@@ -224,6 +224,14 @@ namespace Fusion.Repository.Repositories
                     (u.User.Gender ?? "").ToLower() == keyword.ToLower()
                 );
             }
+            if (!string.IsNullOrEmpty(request.Gender))
+            {
+                var gender = request.Gender.Trim().ToLower();
+
+                query = query.Where(cm =>
+                    (cm.User.Gender ?? "").ToLower() == gender
+                );
+            }
 
             if (request.DateRange != null)
             {
