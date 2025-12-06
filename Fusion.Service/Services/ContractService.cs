@@ -34,11 +34,15 @@ namespace Fusion.Service.Services
             if (file == null || file.Length == 0)
                 throw new ArgumentException("File is null or empty.", nameof(file));
 
-            var attachmentUrl = await _cloudinaryService.UploadImageAsync(file, "ContractAttachment", ct);
+            var (url, publicId) = await _cloudinaryService.UploadDocumentAsync(
+                  file,
+                  "ContractAttachment",  // folder
+                  ct
+              );
 
-            await _contractRepository.UpdateContractAttachmentAsync(contractId, attachmentUrl, userId, ct);
+            await _contractRepository.UpdateContractAttachmentAsync(contractId,url,userId,ct);
 
-            return attachmentUrl;
+            return url;
         }
 
         public async Task<ContractResponse> CreateContractAsync(Guid userId, CreateContractRequest request, CancellationToken ct = default)
@@ -68,8 +72,8 @@ namespace Fusion.Service.Services
                 EffectiveDate = request.EffectiveDate,
                 ExpiredDate = request.ExpiredDate,
                 Status = "DRAFT",
-                ExecutorCompanyId = request.ExecutorCompanyId,   
-                RequesterCompanyId = request.RequesterCompanyId 
+                ExecutorCompanyId = request.ExecutorCompanyId,
+                RequesterCompanyId = request.RequesterCompanyId
                 //Attachment = attachmentUrl,
             }, ct);
 
