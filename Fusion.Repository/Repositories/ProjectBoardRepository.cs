@@ -25,6 +25,8 @@ namespace Fusion.Repository.Repositories
         Task<bool> HasTransitionAsync(Guid workflowId, Guid fromStatusId, Guid toStatusId, CancellationToken ct = default);
         Task AddTaskWorkflowAsync(TaskWorkflow entity, CancellationToken ct = default);
         Task SaveAsync(CancellationToken ct = default);
+        Task<List<WorkflowTransition>> GetTransitionsAsync(Guid workflowId, CancellationToken ct = default);
+
     }
 
 
@@ -54,6 +56,12 @@ namespace Fusion.Repository.Repositories
                 .Where(s => s.WorkflowId == workflowId)
                 .OrderBy(s => s.Position)
                 .ToListAsync(ct);
+        public Task<List<WorkflowTransition>> GetTransitionsAsync(Guid workflowId, CancellationToken ct = default)
+        {
+            return _db.WorkflowTransitions
+                     .Where(x => x.WorkflowId == workflowId)
+                     .ToListAsync(ct);
+        }
 
         public Task<List<ProjectTask>> GetTasksForSprintsAsync(Guid projectId, IEnumerable<Guid> sprintIds, CancellationToken ct = default)
         {
