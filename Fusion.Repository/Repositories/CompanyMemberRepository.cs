@@ -581,6 +581,9 @@ namespace Fusion.Repository.Repositories
                     query = query.Where(cm => cm.JoinedAt <= request.JoinedAtRange.To.Value);
             }
 
+            query = query.OrderByDescending(cm => cm.JoinedAt);
+
+
             return await query.ToPagedResultAsync(request, token);
         }
         public async Task<CompanyMember?> AcceptJoinMemberByIdAsync(long memberId, CancellationToken token = default)
