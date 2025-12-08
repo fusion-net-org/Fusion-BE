@@ -27,5 +27,6 @@ namespace Fusion.Service.ViewModels.AITaskGenerate
         /// Max tokens of output for the completion.
         /// </summary>
         public int MaxTokens { get; set; } = 2048;
+        public int MaxTotalTasksPerRequest { get; set; } = 50;
     }
 }
