@@ -78,8 +78,8 @@ public class PayOSService : IPayOSService
         var amountVnd = Convert.ToInt32(Math.Round(tx.Amount, MidpointRounding.AwayFromZero));
         var description = (tx.OrderCode ?? 0).ToString(); // PayOS description ngắn/gọn
 
-        var returnUrl = $"http://localhost:5173/payment-success?transactionId={tx.Id}&orderCode={tx.OrderCode}";
-        var cancelUrl = $"http://localhost:5173/payment-failed?transactionId={tx.Id}&orderCode={tx.OrderCode}";
+        var returnUrl = $"https://www.fusion.info.vn/payment-success?transactionId={tx.Id}&orderCode={tx.OrderCode}";
+        var cancelUrl = $"https://www.fusion.info.vn/payment-failed?transactionId={tx.Id}&orderCode={tx.OrderCode}";
 
         var items = new List<ItemData> { new ItemData(plan.Name, 1, amountVnd) };
 
