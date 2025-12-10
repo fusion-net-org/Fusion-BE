@@ -33,16 +33,17 @@ namespace Fusion.Repository.Repositories
 
 
             var query = _dbSet
-                .Include(x => x.CompanyMembers)
+                .Include(x => x.CompanyMembers.Where(m => m.Status == "Active"))
                 .Include(x => x.OwnerUser)
                 .Include(x => x.ProjectCompanies)
                 .Include(c => c.ProjectCompanyRequests)
                 .Include(c => c.CompanyFriendshipCompanyAs)
                 .Include(c => c.CompanyFriendshipCompanyBs)
                 .Where(c =>
-                            c.OwnerUser.Email == userMail ||
-                            c.CompanyMembers.Any(m => m.User.Email == userMail))
+                    c.OwnerUser.Email == userMail ||
+                    c.CompanyMembers.Any(m => m.User.Email == userMail && m.Status == "Active"))
                 .AsQueryable();
+
 
             query = query.Where(c => (bool)!c.IsDeleted);
 
@@ -59,7 +60,7 @@ namespace Fusion.Repository.Repositories
                     case ProjectSearchRelationShipEnums.Member:
                         // User là chủ sở hữu hoặc thành viên công ty
                         query = query.Where(c =>
-                            c.CompanyMembers.Any(m => m.User.Email == userMail));
+                            c.CompanyMembers.Any(m => m.User.Email == userMail && m.Status.ToLower() == "active"));
                         break;
                 }
             }
