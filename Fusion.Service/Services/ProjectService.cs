@@ -6,6 +6,7 @@ using Fusion.Repository.Bases.Page.Project;
 using Fusion.Repository.Bases.Responses;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
+using Fusion.Repository.Enums;
 using Fusion.Repository.IRepositories;
 using Fusion.Repository.Repositories;
 using Fusion.Repository.ViewModels;
@@ -150,12 +151,18 @@ namespace Fusion.Service.Services
                 stagedMembers.Add((actorUserId, isPartner: false));
             }
 
-
+            var userFeature = new UserFeatureRequest
+            {
+                ActorUserId = actorUserId,
+                CompanyId = companyId,
+                FeatureName = FeatureInProject.Project.ToString()
+            };
 
             // 8) Transactional save
             using var tx = await _ctx.Database.BeginTransactionAsync(ct);
             try
             {
+                await _companySubscriptionService.UseFeatureInCompanyAutoAsync(userFeature, ct);
                 await _ctx.Projects.AddAsync(project, ct);
                 await _sprintRepo.AddRangeAsync(sprints, ct);
 

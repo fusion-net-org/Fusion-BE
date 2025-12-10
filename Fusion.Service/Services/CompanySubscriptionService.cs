@@ -94,11 +94,11 @@ namespace Fusion.Service.Services
         public async Task<PagedResult<CompanySubscriptionListResponse>> GetAllByCompanyAsync(Guid companyId, CompanySubscriptionPagedRequest request, CancellationToken ct = default)
         {
             var userId = _currentService.GetUserId();
+            await EnsureAutoMonthlyForCompanyAsync(companyId, userId, ct);
+
             var entities = await _companySubscriptionRepository
             .GetAllByCompanyIdAsync(companyId, request, ct);
 
-            // 2) Đảm bảo company này có CompanySubscription auto-month
-            await EnsureAutoMonthlyForCompanyAsync(companyId, userId, ct);
             return new PagedResult<CompanySubscriptionListResponse>
             {
                 Items = _mapper.Map<List<CompanySubscriptionListResponse>>(entities.Items),
