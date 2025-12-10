@@ -84,11 +84,10 @@ namespace Fusion.Service.Services
 
 
             //// 3. Consume feature "Company" trước khi tạo công ty
-            //await _companySubscriptionService.UseFeatureInUserAsync(
-            //    request.UserSubscriptionId,
-            //    user.Id,
-            //    FeatureInProject.Company.ToString(), 
-            //    cancellationToken);
+            await _companySubscriptionService.UseFeatureInUserAutoAsync(
+                user.Id,
+                FeatureInProject.Company.ToString(),
+                cancellationToken);
 
 
             //check tax-code có tồn tại duy nhất hay không (trong hệ thống)

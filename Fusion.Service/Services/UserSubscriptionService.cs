@@ -341,6 +341,7 @@ public class UserSubscriptionService : IUserSubscriptionService
     public async Task<PagedResult<UserSubscriptionResponse>> GetPagedByUserIdAsync(UserSubscriptionPagedRequest request, CancellationToken ct = default)
     {
         var userId = _current.GetUserId();
+        await EnsureAutoMonthlyForUserAsync(userId);
         var paged = await _repo.GetPagedByUserIdAsync(userId, request, ct);
         return new PagedResult<UserSubscriptionResponse>
         {
