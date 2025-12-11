@@ -8,6 +8,7 @@ using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.Enums;
 using Fusion.Repository.IRepositories;
+using Fusion.Repository.Repositories;
 using Fusion.Service.Commons.Helpers;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.UserSubscription.Requests;
@@ -341,7 +342,6 @@ public class UserSubscriptionService : IUserSubscriptionService
     public async Task<PagedResult<UserSubscriptionResponse>> GetPagedByUserIdAsync(UserSubscriptionPagedRequest request, CancellationToken ct = default)
     {
         var userId = _current.GetUserId();
-        await EnsureAutoMonthlyForUserAsync(userId);
         var paged = await _repo.GetPagedByUserIdAsync(userId, request, ct);
         return new PagedResult<UserSubscriptionResponse>
         {
@@ -595,5 +595,30 @@ public class UserSubscriptionService : IUserSubscriptionService
         await _unitOfWork.SaveChangesAsync(ct);
 
         return updated;
+    }
+    public async Task PauseOtherActiveByUserAsync(Guid userId, Guid keepActiveId, CancellationToken ct = default)
+    {
+        var actives = await _repo.GetAllActiveByUserIdAsync(userId, ct);
+        if (actives == null || actives.Count == 0) return;
+
+        foreach (var sub in actives)
+        {
+            if (sub.Id == keepActiveId)
+                continue;
+
+            sub.Status = SubscriptionStatus.Paused;
+            sub.UpdatedAt = DateTimeOffset.UtcNow;
+
+            var companySubs = await _companyRepo
+               .GetAllActiveByUserSubscriptionAsync(sub.Id, ct);
+
+            foreach (var csub in companySubs)
+            {
+                csub.Status = SubscriptionStatus.Paused;
+                csub.UpdatedAt = DateTimeOffset.UtcNow;
+            }
+        }
+
+        await _unitOfWork.SaveChangesAsync(ct);
     }
 }

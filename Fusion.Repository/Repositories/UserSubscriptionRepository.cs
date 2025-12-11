@@ -87,7 +87,7 @@ namespace Fusion.Repository.Repositories
         public async Task<List<UserSubscription>> GetAllActiveByUserIdAsync(Guid userId, CancellationToken ct = default)
         {
             return await _context.UserSubscriptions
-                                  .AsNoTracking()
+                                 
             .Include(cs => cs.Plan)                         // để map NameSubscription
             .Include(cs => cs.Entitlements)
                 .ThenInclude(e => e.Feature)               // để map FeatureName

@@ -398,6 +398,7 @@ namespace Fusion.Service.Services
         }
         public async Task<CompanyResponse> GetCompanyByIdAsync(Guid companyId, CancellationToken cancellationToken = default)
         {
+
             var company = await _companyRepository.GetCompanyByIdAsync(companyId);
 
             if(company == null)
@@ -507,7 +508,7 @@ namespace Fusion.Service.Services
             })
             .ToList();
 
-
+            await _companySubscriptionService.EnsureAutoMonthlyForCompanyAsync(companyId, company.OwnerUser.Id, cancellationToken);
 
             return result;
         }

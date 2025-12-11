@@ -18,4 +18,6 @@ public interface ICompanySubscriptionRepository
     Task<List<CompanySubscriptionEntitlement>> GetEntitlementsByCompanySubIdAsync(Guid companySubscriptionId, CancellationToken ct = default);
     Task BulkAddEntitlementsAsync(IEnumerable<CompanySubscriptionEntitlement> entitlements,CancellationToken ct = default);
     Task<List<CompanySubscription>> GetAllActiveAutoMonthlyByPlanIdsWithEntitlementsAsync(IEnumerable<Guid> planIds,DateTimeOffset now, CancellationToken ct = default);
+
+    Task<List<CompanySubscription>> GetAllActiveByUserSubscriptionAsync(Guid userSubscriptionId, CancellationToken ct = default);
 }

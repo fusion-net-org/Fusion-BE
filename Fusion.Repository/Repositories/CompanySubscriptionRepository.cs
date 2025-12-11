@@ -8,6 +8,7 @@ using Fusion.Repository.Entities;
 using Fusion.Repository.Enums;
 using Fusion.Repository.IRepositories;
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.Design;
 
 namespace Fusion.Repository.Repositories
 {
@@ -443,5 +444,12 @@ namespace Fusion.Repository.Repositories
                 .ToListAsync(ct);
         }
 
+        public Task<List<CompanySubscription>> GetAllActiveByUserSubscriptionAsync(Guid userSubscriptionId, CancellationToken ct = default)
+        {
+            return _context.CompanySubscriptions
+            .Where(x => x.UserSubscriptionId == userSubscriptionId
+                     && x.Status != SubscriptionStatus.Paused)
+            .ToListAsync(ct);
         }
+    }
 }

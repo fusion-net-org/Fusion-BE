@@ -71,8 +71,6 @@ public class UserService : IUserService
 
         return roles;
     }
-
-
     public async Task<User?> GetFullInfoByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         if (id == Guid.Empty)

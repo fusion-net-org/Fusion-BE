@@ -259,7 +259,9 @@ public class PayOSService : IPayOSService
                         }, ct);
 
                         tx.UserSubscriptionId = created.Id;
-       
+                    //  sẽ pause các UserSub cũ + cascade sang CompanySub liên quan
+                    await _userSubService.PauseOtherActiveByUserAsync(tx.UserId, created.Id, ct);
+
                 }
                 else // INSTALLMENTS
                 {
@@ -274,7 +276,7 @@ public class PayOSService : IPayOSService
                         //  Gắn UserSubscriptionId cho transaction hiện tại
                         tx.UserSubscriptionId = created.Id;
 
-          
+                        await _userSubService.PauseOtherActiveByUserAsync(tx.UserId, created.Id, ct);
                         // Gắn luôn subscription này cho toàn bộ installment charge cùng user + plan
                         await _txRepo.AttachSubscriptionToInstallmentBatchAsync(
                             tx.UserId,

@@ -94,7 +94,7 @@ namespace Fusion.Service.Services
         public async Task<PagedResult<CompanySubscriptionListResponse>> GetAllByCompanyAsync(Guid companyId, CompanySubscriptionPagedRequest request, CancellationToken ct = default)
         {
             var userId = _currentService.GetUserId();
-            await EnsureAutoMonthlyForCompanyAsync(companyId, userId, ct);
+            //await EnsureAutoMonthlyForCompanyAsync(companyId, userId, ct);
 
             var entities = await _companySubscriptionRepository
             .GetAllByCompanyIdAsync(companyId, request, ct);

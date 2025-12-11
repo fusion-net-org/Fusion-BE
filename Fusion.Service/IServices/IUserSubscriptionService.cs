@@ -28,4 +28,5 @@ public interface IUserSubscriptionService
     Task<int> EnsureAutoMonthlyForUserAsync(Guid userId, CancellationToken ct = default);
     Task<int> ResetAutoMonthlyEntitlementsAsync(CancellationToken ct = default);
     Task<int> SyncSubscriptionStatusesByTimeAsync(CancellationToken ct = default);
+    Task PauseOtherActiveByUserAsync(Guid userId, Guid keepActiveId, CancellationToken ct = default);
 }
