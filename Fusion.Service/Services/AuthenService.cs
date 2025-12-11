@@ -25,9 +25,10 @@ public class AuthenService : IAuthenService
     private readonly IMailService _mailService;
     private readonly IUserLogService _userLogService;
     private readonly IConfiguration _config;
+    private readonly IUserSubscriptionService _userSub;
 
     public AuthenService(IUnitOfWork unitOfWork, IUserRepository userRepository,
-        IMapper mapper, IJwtService jwtService, IMailService mailService, IUserLogService userLogService, IConfiguration configuration)
+        IMapper mapper, IJwtService jwtService, IMailService mailService, IUserLogService userLogService, IConfiguration configuration, IUserSubscriptionService userSub)
     {
         _unitOfWork = unitOfWork;
         _userRepository = userRepository;
@@ -36,6 +37,7 @@ public class AuthenService : IAuthenService
         _mailService = mailService;
         _userLogService = userLogService;
         _config = configuration;
+        _userSub = userSub;
     }
     public async Task<bool> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken = default)
     {
@@ -184,6 +186,7 @@ public class AuthenService : IAuthenService
             Description = $"User {user.UserName} logged into the system."
         };
         await _userLogService.CreateLog(userLog);
+        await _userSub.EnsureAutoMonthlyForUserAsync(user.Id);
         return response;
     }
     public async Task<LoginResponse> GoogleLoginAsync(GoogleLoginRequest request, CancellationToken cancellationToken = default)
