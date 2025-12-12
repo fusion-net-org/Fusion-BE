@@ -1,4 +1,5 @@
 ﻿
+using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.Project;
 using Fusion.Repository.Data;
@@ -31,21 +32,24 @@ namespace Fusion.Repository.Repositories
                 .CountAsync(cancellationToken);
         }
         public async Task<(List<Project> Items, int TotalCount)> GetProjectsForCompanyAsync(
-       Guid companyId,
-       string? q,
-       IEnumerable<string>? statuses,
-       string? sort,
-       int pageNumber,
-       int pageSize,
-       CancellationToken ct = default)
+      Guid companyId,
+      Guid userId,
+      string? q,
+      IEnumerable<string>? statuses,
+      string? sort,
+      int pageNumber,
+      int pageSize,
+      CancellationToken ct = default)
         {
             var query = _ctx.Projects
-                .AsNoTracking()
-                .Include(p => p.Company)
-                .Include(p => p.CompanyRequest)
-                .Include(p => p.Workflow)
-                .Where(p => p.CompanyId == companyId || p.CompanyRequestId == companyId);
-
+        .AsNoTracking()
+        .Include(p => p.Company)
+        .Include(p => p.CompanyRequest)
+        .Include(p => p.Workflow)
+        .Where(p =>
+            (p.CompanyId == companyId || p.CompanyRequestId == companyId)
+            && p.ProjectMembers.Any(pm => pm.UserId == userId)
+        );
             // Search
             if (!string.IsNullOrWhiteSpace(q))
             {
@@ -682,7 +686,78 @@ namespace Fusion.Repository.Repositories
 
             return await query.ToListAsync(cancellationToken);
         }
+        public async Task<bool> CloseFromProjectAsync(Guid projectId, Guid actorUserId, CancellationToken ct = default)
+        {
+            using var tx = await _context.Database.BeginTransactionAsync(ct);
 
+            var project = await _context.Projects
+                .Include(p => p.ProjectRequest)
+                .FirstOrDefaultAsync(p => p.Id == projectId, ct);
+
+            if (project == null)
+                throw CustomExceptionFactory.CreateNotFoundError("Project not found");
+
+            if (!project.CreatedBy.HasValue || project.CreatedBy.Value != actorUserId)
+                throw CustomExceptionFactory.CreateForbiddenError();
+
+            project.IsClosed = true;
+            project.ClosedBy = actorUserId;
+            project.UpdateAt = DateTime.UtcNow;
+
+            var pr = project.ProjectRequest;
+            if (pr != null)
+            {
+                if (pr.IsDeleted == true)
+                    throw CustomExceptionFactory.CreateBadRequestError("Linked project request is deleted");
+
+                pr.IsClosed = true;
+                pr.ClosedBy = actorUserId;
+                pr.UpdatedBy = actorUserId;
+                pr.UpdateAt = DateTime.UtcNow.AddHours(7);
+            }
+
+            await _context.SaveChangesAsync(ct);
+            await tx.CommitAsync(ct);
+            return true;
+        }
+
+        public async Task<bool> ReopenFromProjectAsync(Guid projectId, Guid actorUserId, CancellationToken ct = default)
+        {
+            using var tx = await _context.Database.BeginTransactionAsync(ct);
+
+            var project = await _context.Projects
+                .Include(p => p.ProjectRequest)
+                .FirstOrDefaultAsync(p => p.Id == projectId, ct);
+
+            if (project == null)
+                throw CustomExceptionFactory.CreateNotFoundError("Project not found");
+
+            // quyền: chỉ người tạo project
+            if (!project.CreatedBy.HasValue || project.CreatedBy.Value != actorUserId)
+                throw CustomExceptionFactory.CreateForbiddenError();
+
+            // mở lại project
+            project.IsClosed = false;
+            project.ClosedBy = null;
+            project.UpdateAt = DateTime.UtcNow;
+
+            // cascade mở lại project request (nếu có)
+            var pr = project.ProjectRequest;
+            if (pr != null)
+            {
+                if (pr.IsDeleted == true)
+                    throw CustomExceptionFactory.CreateBadRequestError("Linked project request is deleted");
+
+                pr.IsClosed = false;
+                pr.ClosedBy = null;
+                pr.UpdatedBy = actorUserId;
+                pr.UpdateAt = DateTime.UtcNow.AddHours(7);
+            }
+
+            await _context.SaveChangesAsync(ct);
+            await tx.CommitAsync(ct);
+            return true;
+        }
 
     }
 }

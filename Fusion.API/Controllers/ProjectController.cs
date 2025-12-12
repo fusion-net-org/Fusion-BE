@@ -6,6 +6,7 @@ using Fusion.Repository.Bases.Responses;
 using Fusion.Repository.ViewModels;
 using Fusion.Repository.ViewModels.Project;
 using Fusion.Service.Commons.BaseResponses;
+using Fusion.Service.Commons.Helpers;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.Project.Requests;
 using Fusion.Service.ViewModels.Project.Requests.Overview;
@@ -23,10 +24,11 @@ namespace Fusion.API.Controllers
     public class ProjectController : ControllerBase
     {
         private readonly IProjectService _service;
-
-        public ProjectController(IProjectService service)
+        private readonly ICurrentService _current;
+        public ProjectController(IProjectService service, ICurrentService current)
         {
             _service = service;
+            _current = current;
         }
 
 
@@ -67,7 +69,8 @@ namespace Fusion.API.Controllers
         [ProducesResponseType(typeof(ResponseModel<PagedResult<ProjectListItemResponse>>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetProjects(Guid companyId, [FromQuery] ProjectListSearchRequest req, CancellationToken ct)
         {
-            var result = await _service.GetProjectsForCompanyAsync(companyId, req, ct);
+            var userIdClaim = _current.GetUserId();
+            var result = await _service.GetProjectsForCompanyAsync(companyId, userIdClaim, req, ct);
             return Ok(ResponseModel<ProjectListResult>.Ok(result));
         }
 
@@ -206,6 +209,52 @@ namespace Fusion.API.Controllers
                 message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "Projects By Company Request")
             ));
         }
+        [HttpPost("projects/{projectId:guid}/close")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<bool>))]
+        public async Task<IActionResult> CloseProject(Guid projectId, CancellationToken ct)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+                return Unauthorized(ResponseModel<string>.Error(StatusCodes.Status401Unauthorized, "Don't find token!"));
 
+            var ok = await _service.CloseProjectAsync(projectId, userId, ct);
+
+            return Ok(ResponseModel<bool>.Ok(
+                data: ok,
+                message: ResponseMessageHelper.FormatMessage(ResponseMessages.UPDATE_SUCCESS, "Close project")));
+        }
+
+        [HttpPost("projects/{projectId:guid}/reopen")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<bool>))]
+        public async Task<IActionResult> ReopenProject(Guid projectId, CancellationToken ct)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+                return Unauthorized(ResponseModel<string>.Error(StatusCodes.Status401Unauthorized, "Don't find token!"));
+
+            var ok = await _service.ReopenProjectAsync(projectId, userId, ct);
+
+            return Ok(ResponseModel<bool>.Ok(
+                data: ok,
+                message: ResponseMessageHelper.FormatMessage(ResponseMessages.UPDATE_SUCCESS, "Reopen project")));
+        }
+
+        [Authorize]
+        [HttpGet("projects/{projectId:guid}/access")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<ProjectAccessCheckResponse>))]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> CheckProjectAccess(Guid projectId, CancellationToken ct)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+                return Unauthorized(ResponseModel<string>.Error(StatusCodes.Status401Unauthorized, "Don't find token!"));
+
+            var data = await _service.CheckProjectAccessAsync(projectId, userId, ct);
+
+            return Ok(ResponseModel<ProjectAccessCheckResponse>.Ok(
+                data: data,
+                message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "Project access")
+            ));
+        }
     }
 }

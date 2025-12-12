@@ -59,6 +59,11 @@ public partial class Project
     [Column("update_at")]
     [Precision(3)]
     public DateTime UpdateAt { get; set; }
+    [Column("is_closed")]
+    public bool IsClosed { get; set; } = false;
+
+    [Column("closed_by")]
+    public Guid? ClosedBy { get; set; }
     [Column("sprint_length_weeks")]
     public int? SprintLengthWeeks { get; set; }
 

@@ -27,7 +27,7 @@ namespace Fusion.Service.IServices
             Guid actorUserId,
             CancellationToken ct = default);
         Task<ProjectListResult> GetProjectsForCompanyAsync(
-        Guid companyId, ProjectListSearchRequest req, CancellationToken ct = default);
+        Guid companyId, Guid actorId, ProjectListSearchRequest req, CancellationToken ct = default);
 
         Task<PagedResult<ProjectSummaryResponseV2>> GetProjectsForAdminAsync(ProjectSummarySearchRequest request, CancellationToken cancellationToken = default);
         Task<PagedResult<ProjectSummaryResponseV2>> GetProjectsByUserIdAsync(ProjectSummarySearchRequest request, Guid userId, CancellationToken cancellationToken = default);
@@ -44,6 +44,12 @@ namespace Fusion.Service.IServices
             ProjectGrowthOverviewRequest req,
             CancellationToken ct = default);
         public Task<List<ProjectResponseVersion3>> GetProjectsByCompanyAsync(Guid companyId, Guid? companyRequestId, Guid? executorCompanyId,CancellationToken cancellationToken = default);
+        Task<bool> CloseProjectAsync(Guid projectId, Guid actorUserId, CancellationToken ct = default);
+        Task<bool> ReopenProjectAsync(Guid projectId, Guid actorUserId, CancellationToken ct = default);
+        Task<ProjectAccessCheckResponse> CheckProjectAccessAsync(
+       Guid projectId,
+       Guid actorUserId,
+       CancellationToken ct = default);
     }
 
 }

@@ -77,6 +77,9 @@ namespace Fusion.Service.ViewModels.Project.Responses
         public Guid? WorkflowId { get; set; }
         public DateOnly? StartDate { get; set; }
         public DateOnly? EndDate { get; set; }
+        public bool IsClosed { get; set; } = false;
+
+        public Guid? ClosedBy { get; set; }
         public Guid? CreatedBy { get; set; }
         public string? CreateByName { get; set; }
         public DateTime CreateAt { get; set; }

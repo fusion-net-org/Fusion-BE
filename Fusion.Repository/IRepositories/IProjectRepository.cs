@@ -19,18 +19,20 @@ namespace Fusion.Repository.IRepositories
         Task<Project?> GetByIdWithSprintsAsync(Guid projectId, CancellationToken ct = default);
         Task<int> GetAllProjectCountAsync(CancellationToken cancellationToken = default);
         Task<(List<Project> Items, int TotalCount)> GetProjectsForCompanyAsync(
-       Guid companyId,
-       string? q,
-       IEnumerable<string>? statuses,
-       string? sort,
-       int pageNumber,
-       int pageSize,
-       CancellationToken ct = default);
+          Guid companyId,
+          Guid userId,
+          string? q,
+          IEnumerable<string>? statuses,
+          string? sort,
+          int pageNumber,
+          int pageSize,
+          CancellationToken ct = default);
         Task<Project> GetProjectById(Guid projectId, CancellationToken cancellationToken = default);
         Task<PagedResult<Project>> GetProjectsForAdminAsync(ProjectSummarySearchRequest request, CancellationToken cancellationToken = default);
 
         Task<PagedResult<Project>> GetProjectsByUserIdAsync(ProjectSummarySearchRequest request, Guid userId, CancellationToken cancellationToken = default);
-
+        Task<bool> CloseFromProjectAsync(Guid projectId, Guid actorUserId, CancellationToken ct = default);
+        Task<bool> ReopenFromProjectAsync(Guid projectId, Guid actorUserId, CancellationToken ct = default);
         Task<Project?> GetProjectsByIdForAdminAsync(Guid projectId, CancellationToken cancellationToken = default);
 
         Task<int> GetTotalProjectsAsync(CancellationToken cancellationToken = default);
