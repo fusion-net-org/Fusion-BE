@@ -28,12 +28,14 @@ namespace Fusion.Service.IServices
 
         Task<ProjectRequestResponseV2?> GetProjectRequestAdminByIdAsync(Guid id, Guid adminId, CancellationToken cancellationToken = default);
 
-        Task<bool> DeleteProjectRequestAsync(Guid id,string reason, CancellationToken cancellationToken = default);
+        Task<bool> DeleteProjectRequestAsync(Guid id, string reason, CancellationToken cancellationToken = default);
         Task<bool> RestoreProjectRequestAsync(Guid id, CancellationToken cancellationToken = default);
         Task<ProjectRequestResponse> AcceptProjectRequestAsync(Guid requestId, string executorEmail, CancellationToken cancellationToken = default);
 
         Task<ProjectRequestRejectResponse> RejectProjectRequestAsync(Guid requestId, string executorEmail, string reason, CancellationToken cancellationToken = default);
         Task<ProjectRequestResponse?> GetProjectRequestByContractIdAsync(Guid contractId, CancellationToken cancellationToken = default);
+        Task<bool> CloseProjectRequestAsync(Guid requestId, Guid actorUserId, CancellationToken ct = default);
+        Task<bool> ReopenProjectRequestAsync(Guid requestId, Guid actorUserId, CancellationToken ct = default);
 
     }
 }

@@ -558,7 +558,9 @@ public class MappingProfile : Profile
       .ForMember(d => d.Status, o => o.MapFrom(s => s.Status))
       .ForMember(d => d.WorkflowId, o => o.MapFrom(s => s.WorkflowId))
       .ForMember(d => d.CreatedBy, o => o.MapFrom(s => s.CreatedBy))
-      .ForMember(d => d.CreateByName, o => o.MapFrom(s => s.CreatedByNavigation != null ? s.CreatedByNavigation.UserName : null));
+      .ForMember(d => d.CreateByName, o => o.MapFrom(s => s.CreatedByNavigation != null ? s.CreatedByNavigation.UserName : null))
+      .ForMember(d => d.IsClosed, o => o.MapFrom(s => s.IsClosed ))
+      .ForMember(d => d.ClosedBy, o => o.MapFrom(s => s.ClosedBy != null ? s.ClosedBy : null));
 
         // ===================== Project Member =====================
         CreateMap<ProjectMember, ProjectMemberResponseV2>()

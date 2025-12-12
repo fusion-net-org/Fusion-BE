@@ -680,6 +680,11 @@ namespace Fusion.Service.Services
         }
 
 
+        public Task<bool> CloseProjectRequestAsync(Guid requestId, Guid actorUserId, CancellationToken ct = default)
+    => _projectRequestRepository.CloseFromProjectRequestAsync(requestId, actorUserId, ct);
+
+        public Task<bool> ReopenProjectRequestAsync(Guid requestId, Guid actorUserId, CancellationToken ct = default)
+            => _projectRequestRepository.ReopenFromProjectRequestAsync(requestId, actorUserId, ct);
 
     }
 }

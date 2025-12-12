@@ -53,7 +53,51 @@ namespace Fusion.Service.Services
             _ctx = ctx;
             _companySubscriptionService = companySubscriptionService;
         }
+        public async Task<ProjectAccessCheckResponse> CheckProjectAccessAsync(
+    Guid projectId,
+    Guid actorUserId,
+    CancellationToken ct = default)
+        {
+            var p = await _ctx.Projects
+                .AsNoTracking()
+                .Where(x => x.Id == projectId )
+                .Select(x => new
+                {
+                    x.Id,
+                    x.IsClosed,
+                    x.CreatedBy
+                })
+                .FirstOrDefaultAsync(ct);
 
+            if (p == null)
+                throw CustomExceptionFactory.CreateNotFoundError("Project not found.");
+
+            var pm = await _ctx.ProjectMembers
+                .AsNoTracking()
+                .Where(x => x.ProjectId == projectId && x.UserId == actorUserId)
+                .Select(x => new
+                {
+                    x.UserId,
+                    x.IsPartner,
+                    x.IsViewAll
+                })
+                .FirstOrDefaultAsync(ct);
+
+            var isOwner = p.CreatedBy == actorUserId;
+            var isMember = isOwner || pm != null;
+
+            return new ProjectAccessCheckResponse
+            {
+                ProjectId = p.Id,
+                UserId = actorUserId,
+                IsClosed = p.IsClosed,
+                IsMember = isMember,
+
+                IsOwner = isOwner,
+                IsPartner = pm?.IsPartner ?? false,
+                IsViewAll = pm?.IsViewAll ?? false
+            };
+        }
         public async Task<ProjectDetailResponse> CreateProjectAsync(
             Guid companyId, ProjectCreateRequest request, Guid actorUserId, CancellationToken ct = default)
         {
@@ -158,11 +202,11 @@ namespace Fusion.Service.Services
                 FeatureName = FeatureInProject.Project.ToString()
             };
 
-            // 8) Transactional save
+            //8) Transactional save
             using var tx = await _ctx.Database.BeginTransactionAsync(ct);
             try
             {
-                await _companySubscriptionService.UseFeatureInCompanyAutoAsync(userFeature, ct);
+               // await _companySubscriptionService.UseFeatureInCompanyAutoAsync(userFeature, ct);
                 await _ctx.Projects.AddAsync(project, ct);
                 await _sprintRepo.AddRangeAsync(sprints, ct);
 
@@ -255,18 +299,22 @@ namespace Fusion.Service.Services
             return list;
         }
         public async Task<ProjectListResult> GetProjectsForCompanyAsync(
-      Guid companyId, ProjectListSearchRequest req, CancellationToken ct = default)
+      Guid companyId,
+      Guid actorUserId,
+      ProjectListSearchRequest req,
+      CancellationToken ct = default)
         {
             var statusStrings = req.Statuses?.Select(s => s.ToString());
 
             var result = await _projectRepo.GetProjectsForCompanyAsync(
-                companyId: companyId,
-                q: req.Q,
-                statuses: statusStrings,   // convert enum -> string
-                sort: req.Sort,
-                pageNumber: req.PageNumber,
-                pageSize: req.PageSize,
-                ct: ct);
+        companyId: companyId,
+        userId: actorUserId,        
+        q: req.Q,
+        statuses: statusStrings,
+        sort: req.Sort,
+        pageNumber: req.PageNumber,
+        pageSize: req.PageSize,
+        ct: ct);
 
             var (entities, total) = result;
 
@@ -288,7 +336,7 @@ namespace Fusion.Service.Services
                 EndDate = p.EndDate.HasValue
     ? p.EndDate.Value.ToDateTime(TimeOnly.MinValue)
     : (DateTime?)null,
-
+                IsClosed = p.IsClosed,
                 Status = p.Status ?? "Planned",
                 Ptype = p.CompanyRequestId != null? "Outsourced" : "Internal",
                 IsRequest = (p.CompanyRequestId == companyId)
@@ -837,6 +885,10 @@ namespace Fusion.Service.Services
             return _mapper.Map<List<ProjectResponseVersion3>>(projects);
         }
 
+        public Task<bool> CloseProjectAsync(Guid projectId, Guid actorUserId, CancellationToken ct = default)
+    => _projectRepo.CloseFromProjectAsync(projectId, actorUserId, ct);
 
+        public Task<bool> ReopenProjectAsync(Guid projectId, Guid actorUserId, CancellationToken ct = default)
+            => _projectRepo.ReopenFromProjectAsync(projectId, actorUserId, ct);
     }
 }

@@ -132,6 +132,7 @@ namespace Fusion.Repository.Repositories
                 CompanyId = companyId,
                 RoleName = dto.Name.Trim(),
                 Description = dto.Description?.Trim(),
+                Status = "Active"
             };
             _db.Roles.Add(role);
             await _db.SaveChangesAsync(ct); // có Id
@@ -208,7 +209,7 @@ namespace Fusion.Repository.Repositories
             var roles = await _db.Roles.AsNoTracking()
                 .Where(r => r.CompanyId == companyId)
                 .OrderBy(r => r.RoleName)
-                .Select(r => new { r.Id, r.RoleName, r.Description })
+                .Select(r => new { r.Id, r.RoleName, r.Description, r.Status })
                 .ToListAsync(ct);
             if (roles.Count == 0) return new();
 

@@ -481,7 +481,7 @@ public class TaskService : ITaskService
         EstimateHours = task.EstimateHours,
         RemainingHours = takeHrs,
         DueDate = task.DueDate,
-        ParentTaskId = rootId, // luôn trỏ về ROOT để FE nhóm mượt
+        ParentTaskId = rootId, 
         SourceTaskId = task.SourceTaskId,
         CurrentStatusId = firstStatus.Id,
         Status = !string.IsNullOrWhiteSpace(firstStatus.Code) ? firstStatus.Code : firstStatus.Name,

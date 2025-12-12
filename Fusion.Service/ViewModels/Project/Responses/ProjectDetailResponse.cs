@@ -1,6 +1,7 @@
 ﻿using Fusion.Service.ViewModels.Project.Requests;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -31,6 +32,9 @@ namespace Fusion.Service.ViewModels.Project.Responses
         public string? CompanyName { get; set; }
         public string? CompanyHiredName { get; set; }
         public string? CreatedByName { get; set; }
+        public bool IsClosed { get; set; } = false;
+
+        public Guid? ClosedBy { get; set; }
 
         // ---- Sprint ----
         public List<SprintDto> Sprints { get; set; } = new();

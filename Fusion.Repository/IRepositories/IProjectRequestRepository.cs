@@ -34,5 +34,8 @@ namespace Fusion.Repository.IRepositories
         Task<ProjectRequest?> RejectProjectRequestAsync(Guid requestId, string executorEmail, string reason, CancellationToken cancellationToken = default);
         Task<ProjectRequest?> GetProjectRequestByContractIdAsync(Guid contractId, CancellationToken cancellationToken = default);
         Task<ProjectRequest> UpdateProjectRequestStatusAsync(Guid requestId, ProjectRequestStatusEnum status, CancellationToken cancellationToken = default);
+
+        Task<bool> CloseFromProjectRequestAsync(Guid requestId, Guid actorUserId, CancellationToken ct = default);
+        Task<bool> ReopenFromProjectRequestAsync(Guid requestId, Guid actorUserId, CancellationToken ct = default);
     }
 }

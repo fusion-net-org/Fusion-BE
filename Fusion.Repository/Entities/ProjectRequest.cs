@@ -71,6 +71,11 @@ public partial class ProjectRequest
 
     [Column("deleted_by")]
     public Guid? DeletedBy { get; set; }
+    [Column("is_closed")]
+    public bool IsClosed { get; set; } = false;
+
+    [Column("closed_by")]
+    public Guid? ClosedBy { get; set; }
 
     [Column("converted_project_id")]
     public Guid? ConvertedProjectId { get; set; }

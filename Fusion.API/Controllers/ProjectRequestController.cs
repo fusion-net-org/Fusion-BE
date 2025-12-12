@@ -226,5 +226,35 @@ namespace Fusion.API.Controllers
                 data: result,
                 message: "Get paged project request successfully"));
         }
+        [HttpPost("{id:guid}/close")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<bool>))]
+        public async Task<IActionResult> CloseProjectRequest(Guid id, CancellationToken ct)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+                return Unauthorized(ResponseModel<string>.Error(StatusCodes.Status401Unauthorized, "Invalid or missing token"));
+
+            var ok = await _projectRequestService.CloseProjectRequestAsync(id, userId, ct);
+
+            return Ok(ResponseModel<bool>.Ok(
+                data: ok,
+                message: ResponseMessageHelper.FormatMessage(ResponseMessages.UPDATE_SUCCESS, "Close project request")));
+        }
+
+        [HttpPost("{id:guid}/reopen")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<bool>))]
+        public async Task<IActionResult> ReopenProjectRequest(Guid id, CancellationToken ct)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+                return Unauthorized(ResponseModel<string>.Error(StatusCodes.Status401Unauthorized, "Invalid or missing token"));
+
+            var ok = await _projectRequestService.ReopenProjectRequestAsync(id, userId, ct);
+
+            return Ok(ResponseModel<bool>.Ok(
+                data: ok,
+                message: ResponseMessageHelper.FormatMessage(ResponseMessages.UPDATE_SUCCESS, "Reopen project request")));
+        }
+
     }
 }

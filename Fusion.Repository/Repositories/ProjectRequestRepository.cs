@@ -671,6 +671,101 @@ namespace Fusion.Repository.Repositories
 
             return projectRequest;
         }
+        public async Task<bool> CloseFromProjectRequestAsync(Guid requestId, Guid actorUserId, CancellationToken ct = default)
+        {
+            using var tx = await _context.Database.BeginTransactionAsync(ct);
 
+            var pr = await _context.ProjectRequests
+                .Include(x => x.Project)
+                .FirstOrDefaultAsync(x => x.Id == requestId, ct);
+
+            if (pr == null)
+                throw CustomExceptionFactory.CreateNotFoundError("Project request not found");
+
+            if (pr.IsDeleted == true)
+                throw CustomExceptionFactory.CreateBadRequestError("Project request is deleted");
+
+            // quyền: chỉ người tạo project request
+            if (!pr.CreatedBy.HasValue || pr.CreatedBy.Value != actorUserId)
+                throw CustomExceptionFactory.CreateForbiddenError();
+
+            // đóng request
+            pr.IsClosed = true;
+            pr.ClosedBy = actorUserId;
+            pr.UpdatedBy = actorUserId;
+            pr.UpdateAt = DateTime.UtcNow.AddHours(7);
+
+            // cascade đóng project (nếu có)
+            var project = pr.Project;
+
+            // fallback nếu nav chưa map nhưng có ConvertedProjectId
+            if (project == null && pr.ConvertedProjectId.HasValue)
+            {
+                project = await _context.Projects.FirstOrDefaultAsync(p => p.Id == pr.ConvertedProjectId.Value, ct);
+            }
+
+            // fallback nữa: tìm theo FK Project.ProjectRequestId
+            if (project == null)
+            {
+                project = await _context.Projects.FirstOrDefaultAsync(p => p.ProjectRequestId == pr.Id, ct);
+            }
+
+            if (project != null)
+            {
+                project.IsClosed = true;
+                project.ClosedBy = actorUserId;
+                project.UpdateAt = DateTime.UtcNow;
+            }
+
+            await _context.SaveChangesAsync(ct);
+            await tx.CommitAsync(ct);
+            return true;
+        }
+
+        public async Task<bool> ReopenFromProjectRequestAsync(Guid requestId, Guid actorUserId, CancellationToken ct = default)
+        {
+            using var tx = await _context.Database.BeginTransactionAsync(ct);
+
+            var pr = await _context.ProjectRequests
+                .Include(x => x.Project)
+                .FirstOrDefaultAsync(x => x.Id == requestId, ct);
+
+            if (pr == null)
+                throw CustomExceptionFactory.CreateNotFoundError("Project request not found");
+
+            if (pr.IsDeleted == true)
+                throw CustomExceptionFactory.CreateBadRequestError("Project request is deleted");
+
+            if (!pr.CreatedBy.HasValue || pr.CreatedBy.Value != actorUserId)
+                throw CustomExceptionFactory.CreateForbiddenError();
+
+            pr.IsClosed = false;
+            pr.ClosedBy = actorUserId;
+            pr.UpdatedBy = actorUserId;
+            pr.UpdateAt = DateTime.UtcNow.AddHours(7);
+
+            var project = pr.Project;
+
+            if (project == null && pr.ConvertedProjectId.HasValue)
+            {
+                project = await _context.Projects.FirstOrDefaultAsync(p => p.Id == pr.ConvertedProjectId.Value, ct);
+            }
+
+            if (project == null)
+            {
+                project = await _context.Projects.FirstOrDefaultAsync(p => p.ProjectRequestId == pr.Id, ct);
+            }
+
+            if (project != null)
+            {
+                project.IsClosed = false;
+                project.ClosedBy = null;
+                project.UpdateAt = DateTime.UtcNow;
+            }
+
+            await _context.SaveChangesAsync(ct);
+            await tx.CommitAsync(ct);
+            return true;
+        }
     }
 }

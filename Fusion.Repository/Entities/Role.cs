@@ -24,7 +24,7 @@ public partial class Role
 
     [Column("status")]
     [StringLength(50)]
-    public string Status { get; set; }
+    public string Status { get; set; } = "Active";
 
     [Column("created_at")]
     public DateTime CreatedAt { get; set; }
