@@ -42,11 +42,11 @@ namespace Fusion.Service.Services
         private readonly INotificationService _notificationService;
         private readonly IRoleAdminRepository _roleRepository;
         private readonly ICompanySubscriptionService _companySubscriptionService;
-
+        private readonly IRbacBootstrapper _rbacBootstrapper;
         public CompanyService(IMapper mapper, ICompanyRepository companyRepository, ICloudinaryService cloudinaryService
             , IUserRepository userRepository, ICompanyMemberRepository companyMemberRepository, IValidator<CompanyRequest> validator, ICompanyFriendshipRepository companyFriendshipRepository,
             IMailService mailService, ICompanyActivityService logService, ICurrentService currentService,
-            INotificationService notificationService, IRoleAdminRepository roleRepository, ICompanySubscriptionService companySubscriptionService)
+            INotificationService notificationService, IRoleAdminRepository roleRepository, ICompanySubscriptionService companySubscriptionService, IRbacBootstrapper rbacBootstrapper)
         {
             _mapper = mapper;
             _companyRepository = companyRepository;
@@ -61,6 +61,7 @@ namespace Fusion.Service.Services
             _notificationService = notificationService;
             _roleRepository = roleRepository;
             _companySubscriptionService = companySubscriptionService;
+            _rbacBootstrapper = rbacBootstrapper;
         }
 
         public async Task<CompanyResponse> CreateCompanyAsync(CompanyRequest request, string Email, CancellationToken cancellationToken = default)
@@ -84,10 +85,10 @@ namespace Fusion.Service.Services
 
 
             //// 3. Consume feature "Company" trước khi tạo công ty
-            await _companySubscriptionService.UseFeatureInUserAutoAsync(
-                user.Id,
-                FeatureInProject.Company.ToString(),
-                cancellationToken);
+            //await _companySubscriptionService.UseFeatureInUserAutoAsync(
+            //    user.Id,
+            //    FeatureInProject.Company.ToString(),
+            //    cancellationToken);
 
 
             //check tax-code có tồn tại duy nhất hay không (trong hệ thống)
@@ -108,6 +109,9 @@ namespace Fusion.Service.Services
 
             if (newCompany == null)
                 throw CustomExceptionFactory.CreateInternalServerError(ResponseMessages.INTERNAL_SERVER_ERROR.FormatMessage("Add Company fail"));
+            // ✅ -------------- RBAC bootstrap OWNER role --------------
+
+            await _rbacBootstrapper.EnsureOwnerRoleAsync(newCompany.Id, user.Id, cancellationToken);
 
             await _notificationService.CreateNotificationAsync(new SendNotificationRequest
             {

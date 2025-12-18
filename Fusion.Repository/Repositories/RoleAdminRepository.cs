@@ -35,6 +35,7 @@ namespace Fusion.Repository.Repositories
         Task<int> UpdateInfoAsync(Guid companyId, int roleId, UpdateRoleInfoDto dto, CancellationToken ct = default);
         Task DeleteAsync(Guid companyId, int roleId, CancellationToken ct = default);
         Task<List<Role>> GetRoleWithMemberAsync(CancellationToken ct = default);
+        Task EnsureNotOwnerRole(Guid companyId, int roleId, CancellationToken ct);
     }
 
     public class RoleAdminRepository : IRoleAdminRepository
@@ -78,6 +79,19 @@ namespace Fusion.Repository.Repositories
 
             await _db.SaveChangesAsync(ct);
             return role.Id;
+        }
+        private static bool IsOwnerRoleName(string? name)
+            => string.Equals(name?.Trim(), "Owner", StringComparison.OrdinalIgnoreCase);
+
+        public async Task EnsureNotOwnerRole(Guid companyId, int roleId, CancellationToken ct)
+        {
+            var role = await _db.Roles.AsNoTracking()
+                .Where(r => r.CompanyId == companyId && r.Id == roleId)
+                .Select(r => new { r.RoleName })
+                .FirstOrDefaultAsync(ct);
+
+            if (role != null && IsOwnerRoleName(role.RoleName))
+                throw new InvalidOperationException("Owner role is system role and cannot be modified.");
         }
 
         public async Task UpdatePermissionsAsync(Guid companyId, int roleId, IEnumerable<int> functionIds, CancellationToken ct = default)

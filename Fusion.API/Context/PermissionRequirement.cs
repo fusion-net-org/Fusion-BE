@@ -16,8 +16,13 @@ namespace Fusion.API.Context
         protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, PermissionRequirement req)
         {
             var cc = _http.HttpContext?.Items[nameof(CompanyContext)] as CompanyContext;
-            if (cc != null && (cc.IsSystemAdmin || (cc.CurrentCompanyId != null && cc.Permissions.Contains(req.Code))))
+            if (cc == null) return Task.CompletedTask;
+
+            if (cc.IsSystemAdmin) { context.Succeed(req); return Task.CompletedTask; }
+
+            if (cc.CurrentCompanyId != null && cc.Permissions.Contains(req.Code))
                 context.Succeed(req);
+
             return Task.CompletedTask;
         }
     }

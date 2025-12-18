@@ -16,6 +16,7 @@ namespace Fusion.Service.Services
         Task UpdatePermissionsAsync(Guid companyId, int roleId, IEnumerable<int> functionIds, CancellationToken ct = default);
         Task<int> UpdateInfoAsync(Guid companyId, int roleId, UpdateRoleInfoDto dto, CancellationToken ct = default);
         Task DeleteAsync(Guid companyId, int roleId, CancellationToken ct = default);
+        Task EnsureNotOwnerRole(Guid companyId, int roleId, CancellationToken ct);
     }
 
     public class RoleAdminService : IRoleAdminService
@@ -32,6 +33,8 @@ namespace Fusion.Service.Services
         => _repo.GetByIdWithPermissionsAsync(companyId, roleId, ct);
         public Task UpdatePermissionsAsync(Guid companyId, int roleId, IEnumerable<int> functionIds, CancellationToken ct = default)
         => _repo.UpdatePermissionsAsync(companyId, roleId, functionIds, ct);
+        public Task EnsureNotOwnerRole(Guid companyId, int roleId, CancellationToken ct)
+       => _repo.EnsureNotOwnerRole(companyId, roleId, ct);
         public Task<List<RoleDetailVm>> GetAllAsync(Guid companyId, CancellationToken ct = default)
         => _repo.GetAllWithPermissionsAsync(companyId, ct);
         public Task<int> UpdateInfoAsync(Guid companyId, int roleId, UpdateRoleInfoDto dto, CancellationToken ct = default)
