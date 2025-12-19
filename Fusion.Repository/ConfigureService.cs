@@ -105,6 +105,7 @@ namespace Fusion.Repository
 
             //roles
             services.AddScoped<IRoleRepository, RoleRepository>();
+            services.AddScoped<IRbacBootstrapper, RbacBootstrapper>();
             return services;
 
         }

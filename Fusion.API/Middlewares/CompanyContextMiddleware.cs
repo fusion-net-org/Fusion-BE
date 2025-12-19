@@ -1,6 +1,8 @@
 ﻿using Fusion.API.Context;
-using Fusion.Repository.Repositories;   // IPermissionQuery
+using Fusion.Repository.Data;
+using Fusion.Repository.Repositories;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using System.Security.Claims;
 
@@ -11,31 +13,39 @@ namespace Fusion.API.Auth
         private readonly RequestDelegate _next;
         public CompanyContextMiddleware(RequestDelegate next) => _next = next;
 
-        public async Task Invoke(HttpContext ctx, IPermissionQuery permQuery, IMemoryCache cache)
+        public async Task Invoke(HttpContext ctx, IPermissionQuery permQuery, IMemoryCache cache, FusionDbContext db)
         {
             if (ctx.User?.Identity?.IsAuthenticated != true)
-            {
-                await _next(ctx); return;
-            }
+            { await _next(ctx); return; }
 
-            // userId từ "sub" hoặc NameIdentifier
             var sub = ctx.User.FindFirstValue("sub") ?? ctx.User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (!Guid.TryParse(sub, out var userId)) { await _next(ctx); return; }
+            if (!Guid.TryParse(sub, out var userId))
+            { await _next(ctx); return; }
 
-            // companyId: ưu tiên route → header X-Company-Id
             Guid? companyId = null;
             if (ctx.Request.RouteValues.TryGetValue("companyId", out var rv) &&
-                Guid.TryParse(rv?.ToString(), out var routeCid))
-                companyId = routeCid;
+                Guid.TryParse(rv?.ToString(), out var routeCid)) companyId = routeCid;
             else if (ctx.Request.Headers.TryGetValue("X-Company-Id", out var hv) &&
-                     Guid.TryParse(hv.ToString(), out var headerCid))
-                companyId = headerCid;
+                     Guid.TryParse(hv.ToString(), out var headerCid)) companyId = headerCid;
 
-            var isSysAdmin = ctx.User.HasClaim("is_sys_admin", "1") || ctx.User.IsInRole("SystemAdmin");
+            // SystemAdmin: nguồn sự thật từ DB
+            var isSysAdmin = await db.Users.AsNoTracking()
+                .Where(u => u.Id == userId)
+                .Select(u => u.IsSystemAdmin)
+                .FirstOrDefaultAsync(ctx.RequestAborted);
 
-            var cc = new CompanyContext { UserId = userId, CurrentCompanyId = companyId, IsSystemAdmin = isSysAdmin };
+            // fallback nếu cần
+            if (!isSysAdmin)
+                isSysAdmin = ctx.User.HasClaim("is_sys_admin", "1") || ctx.User.IsInRole("SystemAdmin");
 
-            if (companyId is Guid cid && !isSysAdmin)
+            var cc = new CompanyContext
+            {
+                UserId = userId,
+                CurrentCompanyId = companyId,
+                IsSystemAdmin = isSysAdmin
+            };
+
+            if (!isSysAdmin && companyId is Guid cid)
             {
                 var key = $"perm:{userId}:{cid}";
                 if (!cache.TryGetValue(key, out HashSet<string>? codes))
@@ -43,7 +53,6 @@ namespace Fusion.API.Auth
                     codes = await permQuery.GetEffectivePermissionsAsync(cid, userId, ctx.RequestAborted);
                     cache.Set(key, codes, TimeSpan.FromMinutes(10));
                 }
-                Console.WriteLine($"[DEBUG] User {userId} in company {cid} has permissions: {string.Join(",", codes)}");
 
                 foreach (var code in codes!) cc.Permissions.Add(code);
             }

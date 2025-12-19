@@ -32,24 +32,27 @@ namespace Fusion.Repository.Repositories
                 .CountAsync(cancellationToken);
         }
         public async Task<(List<Project> Items, int TotalCount)> GetProjectsForCompanyAsync(
-      Guid companyId,
-      Guid userId,
-      string? q,
-      IEnumerable<string>? statuses,
-      string? sort,
-      int pageNumber,
-      int pageSize,
-      CancellationToken ct = default)
+       Guid companyId,
+       Guid userId,
+       string? q,
+       IEnumerable<string>? statuses,
+       string? sort,
+       int pageNumber,
+       int pageSize,
+       CancellationToken ct = default)
         {
             var query = _ctx.Projects
-        .AsNoTracking()
-        .Include(p => p.Company)
-        .Include(p => p.CompanyRequest)
-        .Include(p => p.Workflow)
-        .Where(p =>
-            (p.CompanyId == companyId || p.CompanyRequestId == companyId)
-            && p.ProjectMembers.Any(pm => pm.UserId == userId)
-        );
+                .AsNoTracking()
+                .Include(p => p.Company)
+                .Include(p => p.CompanyRequest)
+                .Include(p => p.Workflow)
+                .Where(p =>
+                    // Case A: company là owner/executor của project => phải là project member
+                    (p.CompanyId == companyId && p.ProjectMembers.Any(pm => pm.UserId == userId))
+                    // Case B: company là company request => xem tất cả, không cần project member
+                    || (p.CompanyRequestId == companyId)
+                );
+
             // Search
             if (!string.IsNullOrWhiteSpace(q))
             {
@@ -65,6 +68,7 @@ namespace Fusion.Repository.Repositories
                 var bag = statuses.Where(s => !string.IsNullOrWhiteSpace(s))
                                   .Select(s => s.Trim())
                                   .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
                 query = query.Where(p => p.Status != null && bag.Contains(p.Status));
             }
 
@@ -87,8 +91,8 @@ namespace Fusion.Repository.Repositories
                 .ToListAsync(ct);
 
             return (items, total);
-
         }
+
         public async Task<PagedResult<Project>> GetAllProjectAsync(ProjectSearchRequest req, CancellationToken ct = default)
         {
             req ??= new ProjectSearchRequest();

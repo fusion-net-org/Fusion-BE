@@ -206,7 +206,7 @@ namespace Fusion.Service.Services
             using var tx = await _ctx.Database.BeginTransactionAsync(ct);
             try
             {
-               // await _companySubscriptionService.UseFeatureInCompanyAutoAsync(userFeature, ct);
+               //await _companySubscriptionService.UseFeatureInCompanyAutoAsync(userFeature, ct);
                 await _ctx.Projects.AddAsync(project, ct);
                 await _sprintRepo.AddRangeAsync(sprints, ct);
 
