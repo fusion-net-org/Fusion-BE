@@ -55,6 +55,6 @@ namespace Fusion.Repository.IRepositories
         public Task<List<Project>> GetProjectsByCompanyAsync(Guid companyId,Guid? companyRequestId,Guid? executorCompanyId,
          CancellationToken cancellationToken = default);
 
-
-        }
+        Task<ProjectTaskProgressVm> GetTaskProgressAsync(Guid projectId, CancellationToken ct = default);
+    }
 }

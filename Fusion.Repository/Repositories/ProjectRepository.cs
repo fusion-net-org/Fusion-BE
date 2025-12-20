@@ -31,6 +31,7 @@ namespace Fusion.Repository.Repositories
                 .AsNoTracking()
                 .CountAsync(cancellationToken);
         }
+
         public async Task<(List<Project> Items, int TotalCount)> GetProjectsForCompanyAsync(
        Guid companyId,
        Guid userId,
@@ -762,6 +763,30 @@ namespace Fusion.Repository.Repositories
             await tx.CommitAsync(ct);
             return true;
         }
+        public async Task<ProjectTaskProgressVm> GetTaskProgressAsync(Guid projectId, CancellationToken ct = default)
+        {
+            var row = await (
+                from t in _ctx.ProjectTasks.AsNoTracking()
+                join s in _ctx.WorkflowStatuses.AsNoTracking()
+                    on t.CurrentStatusId equals s.Id into sj
+                from s in sj.DefaultIfEmpty()
+                where t.ProjectId == projectId && !t.IsDeleted
+                group new { t, s } by 1 into g
+                select new
+                {
+                    Total = g.Count(),
+                    Done = g.Count(x => x.s != null && x.s.IsEnd)
+                }
+            ).FirstOrDefaultAsync(ct);
 
+            if (row == null)
+                return new ProjectTaskProgressVm { TotalTasks = 0, DoneTasks = 0 };
+
+            return new ProjectTaskProgressVm
+            {
+                TotalTasks = row.Total,
+                DoneTasks = row.Done
+            };
+        }
     }
 }

@@ -890,5 +890,28 @@ namespace Fusion.Service.Services
 
         public Task<bool> ReopenProjectAsync(Guid projectId, Guid actorUserId, CancellationToken ct = default)
             => _projectRepo.ReopenFromProjectAsync(projectId, actorUserId, ct);
+        public async Task<ProjectProgressResponse> GetProjectProgressAsync(Guid projectId, CancellationToken ct = default)
+        {
+            var exists = await _ctx.Projects
+                .AsNoTracking()
+                .AnyAsync(p => p.Id == projectId, ct);
+
+            if (!exists)
+                throw CustomExceptionFactory.CreateNotFoundError("Project not found");
+
+            var vm = await _projectRepo.GetTaskProgressAsync(projectId, ct);
+
+            var percent = vm.TotalTasks == 0
+                ? 0d
+                : Math.Round(vm.DoneTasks * 100.0 / vm.TotalTasks, 2);
+
+            return new ProjectProgressResponse
+            {
+                ProjectId = projectId,
+                TotalTasks = vm.TotalTasks,
+                DoneTasks = vm.DoneTasks,
+                ProgressPercent = percent
+            };
+        }
     }
 }
