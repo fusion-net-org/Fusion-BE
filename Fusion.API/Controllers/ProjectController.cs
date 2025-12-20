@@ -256,5 +256,16 @@ namespace Fusion.API.Controllers
                 message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "Project access")
             ));
         }
+        [HttpGet("projects/{projectId:guid}/progress")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<ProjectProgressResponse>))]
+        public async Task<IActionResult> GetProjectProgress([FromRoute] Guid projectId, CancellationToken ct)
+        {
+            var data = await _service.GetProjectProgressAsync(projectId, ct);
+
+            return Ok(ResponseModel<ProjectProgressResponse>.Ok(
+                data: data,
+                message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "Project progress")
+            ));
+        }
     }
 }

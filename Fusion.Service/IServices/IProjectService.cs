@@ -50,6 +50,8 @@ namespace Fusion.Service.IServices
        Guid projectId,
        Guid actorUserId,
        CancellationToken ct = default);
+        Task<ProjectProgressResponse> GetProjectProgressAsync(Guid projectId, CancellationToken ct = default);
+
     }
 
 }
