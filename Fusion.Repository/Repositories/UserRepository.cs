@@ -70,6 +70,11 @@ namespace Fusion.Repository.Repositories
                 );
             }
 
+            if (request.Stauts.HasValue)
+            {
+                query = query.Where(u => u.Status == request.Stauts);
+            }
+
             // dùng extension để phân trang + sort
             return await query.ToPagedResultAsync(request, cancellationToken);
         }

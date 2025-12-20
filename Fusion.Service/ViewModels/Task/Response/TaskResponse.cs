@@ -29,6 +29,7 @@ namespace Fusion.Service.ViewModels.Task.Response
         public int CarryOverCount { get; set; } = 0;
         public int? OrderInSprint { get; set; }
         public bool IsBacklog { get; set; }
+        public bool IsDeleted { get; set; }
         public DateTime? CreateAt { get; set; }
         public DateTime? DueDate { get; set; }
 

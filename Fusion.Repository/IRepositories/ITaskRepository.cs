@@ -83,5 +83,8 @@ namespace Fusion.Repository.IRepositories
         // ===================== TICKETS =====================
         Task<Ticket?> GetTicketByIdAsync(Guid ticketId, CancellationToken ct = default);
         Task<bool> TicketExistsAsync(Guid ticketId, CancellationToken ct = default);
+
+        //===================== ADMIN =====================
+        Task<ProjectTask> GetTaskDetailForAdminByTaskIdAsync(Guid userId, Guid taskId, CancellationToken token = default);
     }
 }
