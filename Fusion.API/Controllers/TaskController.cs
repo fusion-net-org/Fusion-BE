@@ -591,4 +591,22 @@ public class TaskController : ControllerBase
 
     #endregion
 
+
+    #region Task Detail Admin
+    [HttpGet("tasks/admin/{taskId}")]
+    [ProducesResponseType(typeof(ResponseModel<TaskResponse>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<TaskResponse>> GetTaskDetailForAdmin(
+    Guid taskId,
+    CancellationToken cancellationToken)
+    {
+        var uid = GetUserId();
+        if (uid is null)
+            return Unauthorized(ResponseModel<string>.Error(StatusCodes.Status401Unauthorized, "Missing token"));
+
+        var data = await _svc.GetTaskDetailForAdminByTaskIdAsync(uid.Value, taskId, cancellationToken);
+
+        return Ok(ResponseModel<TaskResponse>.Ok(
+            data, ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "task")));
+    }
+    #endregion
 }

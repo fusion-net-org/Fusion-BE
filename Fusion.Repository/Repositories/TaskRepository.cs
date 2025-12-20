@@ -203,6 +203,38 @@ namespace Fusion.Repository.Repositories
             return task;
         }
 
+        public async Task<ProjectTask> GetTaskDetailForAdminByTaskIdAsync(Guid userId, Guid taskId, CancellationToken token = default)
+        {
+            var user = await _db.Users.FindAsync(new object?[] { userId }, token);
+            if (user == null) throw CustomExceptionFactory.CreateNotFoundError("User Not existed");
+            if (!user.IsSystemAdmin) throw CustomExceptionFactory.CreateBadRequestError("User is not system admin");
+
+            var task = await _db.ProjectTasks
+                .Include(t => t.Project).ThenInclude(t => t.Company)
+                .Include(t => t.Project).ThenInclude(p => p.CompanyRequest)
+                .Include(t => t.Project).ThenInclude(p => p.ProjectRequest)
+                .Include(t => t.Sprint)
+                .Include(t => t.CurrentStatus)
+                .Include(t => t.CreatedByNavigation)
+                .Include(t => t.TaskWorkflows).ThenInclude(a => a.AssignUser)
+                .Include(t => t.Comments)
+                .Include(t => t.ChecklistItems)
+                .Include(t => t.Attachments)
+                .Include(t => t.Dependencies).ThenInclude(d => d.DependsOnTask)
+                .SingleOrDefaultAsync(t => t.Id == taskId, token);
+
+            if (task == null) throw CustomExceptionFactory.CreateNotFoundError("Task is not existed");
+
+            //var projectMember = await _db.ProjectMembers
+            //    .AsNoTracking()
+            //    .SingleOrDefaultAsync(pm => pm.UserId == userId && pm.ProjectId == task.ProjectId, token);
+
+            //if (projectMember == null)
+            //    throw CustomExceptionFactory.CreateNotFoundError("User is not belong to this project.");
+
+            return task;
+        }
+
         public async Task<List<Guid>> GetMemberIdByTaskId(Guid taskId, CancellationToken token = default)
         {
             var task = await _db.ProjectTasks
