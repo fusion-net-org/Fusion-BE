@@ -48,7 +48,8 @@ namespace Fusion.Service.ViewModels.Projects.Responses
 
         public bool? IsDeleted { get; set; }
         public bool? isHaveProject { get; set; }
-
+        public bool? IsClosed { get; set; }
+        public string? ClosedBy { get; set; }
         public Guid? ConvertedProjectId { get; set; }
     }
 

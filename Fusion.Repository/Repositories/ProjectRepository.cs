@@ -686,7 +686,7 @@ namespace Fusion.Repository.Repositories
                 .Include(x => x.Company)            // Executor company
                 .Include(x => x.CompanyRequest)     // Request company
                 .Include(x => x.Workflow)
-                .Where(x => x.CompanyRequestId == companyId);
+                .Where(x => x.CompanyRequestId == companyId && x.IsHired == true);
 
             return await query.ToListAsync(cancellationToken);
         }
@@ -700,7 +700,7 @@ namespace Fusion.Repository.Repositories
 
             if (project == null)
                 throw CustomExceptionFactory.CreateNotFoundError("Project not found");
-
+            
             if (!project.CreatedBy.HasValue || project.CreatedBy.Value != actorUserId)
                 throw CustomExceptionFactory.CreateForbiddenError();
 
