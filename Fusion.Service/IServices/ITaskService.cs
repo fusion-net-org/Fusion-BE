@@ -86,5 +86,7 @@ namespace Fusion.Service.IServices
             Guid ticketId,
             PagedRequest request,
             CancellationToken ct = default);
+
+        Task<TaskResponse> GetTaskDetailForAdminByTaskIdAsync(Guid userId, Guid taskId, CancellationToken token = default);
     }
 }
