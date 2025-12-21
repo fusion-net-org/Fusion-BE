@@ -270,7 +270,7 @@ public class AuthenService : IAuthenService
         // create link reset password page
         if (device.ToLower().Equals("mobile"))
         {
-            resetLink = $"https://unsincerely-curly-rosenda.ngrok-free.dev/reset-password?token={token}";
+            resetLink = $"https://www.fusion.info.vn/reset-password?token={token}";
         }
         else
         {
