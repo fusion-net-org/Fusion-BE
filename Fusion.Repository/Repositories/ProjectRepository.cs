@@ -701,8 +701,15 @@ namespace Fusion.Repository.Repositories
 
             if (project == null)
                 throw CustomExceptionFactory.CreateNotFoundError("Project not found");
-            
-            if (!project.CreatedBy.HasValue || project.CreatedBy.Value != actorUserId)
+
+            var projectCreatorId = project.CreatedBy;
+            var projectRequestCreatorId = project.ProjectRequest?.CreatedBy;
+
+            var isAllowed =
+                (projectCreatorId.HasValue && projectCreatorId.Value == actorUserId) ||
+                (projectRequestCreatorId.HasValue && projectRequestCreatorId.Value == actorUserId);
+
+            if (!isAllowed)
                 throw CustomExceptionFactory.CreateForbiddenError();
 
             project.IsClosed = true;
@@ -737,9 +744,12 @@ namespace Fusion.Repository.Repositories
             if (project == null)
                 throw CustomExceptionFactory.CreateNotFoundError("Project not found");
 
-            // quyền: chỉ người tạo project
-            if (!project.CreatedBy.HasValue || project.CreatedBy.Value != actorUserId)
+            if (!project.ClosedBy.HasValue || project.ClosedBy.Value != actorUserId)
                 throw CustomExceptionFactory.CreateForbiddenError();
+
+            if (!project.IsClosed)
+                throw CustomExceptionFactory.CreateBadRequestError("Project is not closed");
+
 
             // mở lại project
             project.IsClosed = false;
