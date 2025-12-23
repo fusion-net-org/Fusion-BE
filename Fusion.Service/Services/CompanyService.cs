@@ -419,7 +419,7 @@ namespace Fusion.Service.Services
                 .ToList();
 
 
-            var roles = await _roleRepository.GetRoleWithMemberAsync(cancellationToken);
+            var roles = await _roleRepository.GetRoleWithMemberAsync(companyId,cancellationToken);
 
 
             var partners = new List<PartnerResponse>();
