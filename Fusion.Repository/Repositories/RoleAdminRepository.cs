@@ -34,7 +34,7 @@ namespace Fusion.Repository.Repositories
         Task UpdatePermissionsAsync(Guid companyId, int roleId, IEnumerable<int> functionIds, CancellationToken ct = default);
         Task<int> UpdateInfoAsync(Guid companyId, int roleId, UpdateRoleInfoDto dto, CancellationToken ct = default);
         Task DeleteAsync(Guid companyId, int roleId, CancellationToken ct = default);
-        Task<List<Role>> GetRoleWithMemberAsync(CancellationToken ct = default);
+        Task<List<Role>> GetRoleWithMemberAsync(Guid companyId, CancellationToken ct = default);
         Task EnsureNotOwnerRole(Guid companyId, int roleId, CancellationToken ct);
     }
 
@@ -315,12 +315,13 @@ namespace Fusion.Repository.Repositories
                 .ToListAsync(ct);
         }
 
-        public async Task<List<Role>> GetRoleWithMemberAsync(CancellationToken ct = default)
+        public async Task<List<Role>> GetRoleWithMemberAsync(Guid companyId, CancellationToken ct = default)
         {
             return await _db.Roles
-                .Include( x => x.UserRoles)
+                .Include(x => x.UserRoles)
                     .ThenInclude(x => x.User)
-                        .ThenInclude(x => x.CompanyMembers).ToListAsync(ct);
+                        .ThenInclude(x => x.CompanyMembers)
+                .Where(r => r.CompanyId == companyId).ToListAsync(ct);
         }
 
 
