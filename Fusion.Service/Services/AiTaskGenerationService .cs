@@ -141,71 +141,148 @@ namespace Fusion.Service.Services
         }
 
         public async Task<List<ProjectTask>> GenerateAndSaveAsync(
-            AiTaskGenerateRequestDto request,
-            CancellationToken ct = default)
+       AiTaskGenerateRequestDto request,
+       CancellationToken ct = default)
         {
-            // ===== Lấy danh sách sprint trên board (nếu có) =====
-            var boardSprints = (request.BoardSprints ?? new List<AiBoardSprintDto>())
+            var boardSprints = (request.BoardSprints ?? Array.Empty<AiBoardSprintDto>())
                 .Where(s => s.Id != Guid.Empty)
                 .ToList();
 
-            // Không có board hoặc chỉ 1 sprint → hành vi cũ: generate cho sprint hiện tại
-            if (boardSprints.Count <= 1)
+            HashSet<Guid>? targetSet = null;
+            if (request.TargetSprintIds != null && request.TargetSprintIds.Count > 0)
             {
-                var aiSingle = await GenerateTasksAsync(request, ct);
-
-                // Đảm bảo tất cả task có SprintId hợp lệ
-                foreach (var t in aiSingle.Tasks)
-                {
-                    if (!t.SprintId.HasValue || t.SprintId.Value == Guid.Empty)
-                        t.SprintId = request.SprintId;
-                }
-
-                return await SaveGeneratedTasksAsync(
-                    request.ProjectId,
-                    request.SprintId,
-                    aiSingle,
-                    ct);
+                targetSet = request.TargetSprintIds
+                    .Where(x => x != Guid.Empty)
+                    .ToHashSet();
             }
 
-            // ===== Multi-sprint mode: quantity = số task / sprint =====
-            // Gọi AI cho từng sprint, mỗi sprint ~ request.Quantity task
-            var merged = new AiGenerateTasksResponseDto
+            var targetSprints = targetSet == null
+                ? boardSprints
+                : boardSprints.Where(s => targetSet.Contains(s.Id)).ToList();
+
+            if (targetSprints.Count == 0)
             {
-                Tasks = new List<AiGeneratedTaskDraftDto>()
-            };
-
-            foreach (var sp in boardSprints)
+                targetSprints = new List<AiBoardSprintDto>
+        {
+            new AiBoardSprintDto
             {
-                // Ghi đè context sprint cho lần gọi này
-                request.SprintId = sp.Id;
-                request.SprintName = sp.Name;
-                request.SprintStart = sp.Start;
-                request.SprintEnd = sp.End;
-                request.SprintCapacityHours = sp.CapacityHours;
+                Id = request.SprintId,
+                Name = request.SprintName,
+                Start = request.SprintStart,
+                End = request.SprintEnd,
+                CapacityHours = request.SprintCapacityHours
+            }
+        };
+            }
 
-                var aiForSprint = await GenerateTasksAsync(request, ct);
+            if (targetSprints.Count == 1)
+            {
+                var only = targetSprints[0];
+                var reqOne = CloneRequest(request, only);
 
+                var aiSingle = await GenerateTasksAsync(reqOne, ct);
+
+                foreach (var t in aiSingle.Tasks)
+                    t.SprintId = only.Id;
+
+                return await SaveGeneratedTasksAsync(request.ProjectId, only.Id, aiSingle, ct);
+            }
+
+            var merged = new AiGenerateTasksResponseDto { Tasks = new List<AiGeneratedTaskDraftDto>() };
+
+            var seenTitles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var sp in targetSprints)
+            {
+                var reqSp = CloneRequest(request, sp);
+
+                var aiForSprint = await GenerateTasksAsync(reqSp, ct);
                 if (aiForSprint?.Tasks == null || aiForSprint.Tasks.Count == 0)
                     continue;
+                var seenInSprint = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
                 foreach (var t in aiForSprint.Tasks)
                 {
-                    // Nếu AI không gán sprintId hoặc gán bậy → ép về sprint hiện tại
-                    if (!t.SprintId.HasValue || t.SprintId.Value == Guid.Empty)
-                        t.SprintId = sp.Id;
+                    t.SprintId = sp.Id;
 
+                    var title = (t.Title ?? "").Trim();
+                    if (string.IsNullOrWhiteSpace(title)) continue;
+
+                    if (!seenInSprint.Add(title)) continue; 
                     merged.Tasks.Add(t);
                 }
             }
 
-            // Sau khi merge: tất cả task trong merged.Tasks đều đã có SprintId hợp lệ
-            return await SaveGeneratedTasksAsync(
-                request.ProjectId,
-                request.SprintId,
-                merged,
-                ct);
+            var fallbackSprintId = targetSprints[0].Id;
+
+            return await SaveGeneratedTasksAsync(request.ProjectId, fallbackSprintId, merged, ct);
         }
+
+        private static AiTaskGenerateRequestDto CloneRequest(AiTaskGenerateRequestDto src, AiBoardSprintDto sp)
+        {
+            return new AiTaskGenerateRequestDto
+            {
+                ProjectId = src.ProjectId,
+                ProjectName = src.ProjectName,
+
+                SprintId = sp.Id,
+                SprintName = sp.Name,
+                SprintStart = sp.Start,
+                SprintEnd = sp.End,
+                SprintCapacityHours = sp.CapacityHours,
+
+                TargetSprintIds = src.TargetSprintIds,
+
+                WorkflowStatuses = src.WorkflowStatuses,
+                DefaultStatusId = src.DefaultStatusId,
+
+                Goal = src.Goal,
+                Context = src.Context,
+
+                WorkTypes = src.WorkTypes,
+                Modules = src.Modules,
+
+                Quantity = src.Quantity,
+                Granularity = src.Granularity,
+
+                EstimateUnit = src.EstimateUnit,
+                WithEstimate = src.WithEstimate,
+                EstimateMin = src.EstimateMin,
+                EstimateMax = src.EstimateMax,
+                TotalEffortHours = src.TotalEffortHours,
+
+                Deadline = src.Deadline,
+
+                TeamMemberCount = src.TeamMemberCount,
+                TeamRoles = src.TeamRoles,
+                TechStack = src.TechStack,
+
+                FunctionalRequirements = src.FunctionalRequirements,
+                NonFunctionalRequirements = src.NonFunctionalRequirements,
+                AcceptanceHint = src.AcceptanceHint,
+
+                IncludeTitle = src.IncludeTitle,
+                IncludeDescription = src.IncludeDescription,
+                IncludeType = src.IncludeType,
+                IncludePriority = src.IncludePriority,
+                IncludeEstimate = src.IncludeEstimate,
+                IncludeAcceptanceCriteria = src.IncludeAcceptanceCriteria,
+                IncludeDependencies = src.IncludeDependencies,
+                IncludeStatusSuggestion = src.IncludeStatusSuggestion,
+                IncludeChecklist = src.IncludeChecklist,
+
+                IncludeExistingTasks = src.IncludeExistingTasks,
+                AvoidSameTitle = src.AvoidSameTitle,
+                AvoidSameDescription = src.AvoidSameDescription,
+
+                ExistingTasksSnapshot = src.ExistingTasksSnapshot,
+
+                // ✅ full board context (FE gửi full)
+                BoardSprints = src.BoardSprints,
+                BoardTasks = src.BoardTasks
+            };
+        }
+
 
         private string BuildSystemPrompt()
         {
@@ -221,6 +298,7 @@ Rules:
 - If dependencies are requested, only refer to existing tasks by code or title that appear in the context.
 - When checklists are requested, generate 3–7 clear, testable checklist items per task.
 - If estimate is requested, keep each task size consistent with the sprint capacity and the given range.
+Always set storyPoints (1,2,3,5,8,13) based on estimateHours.
 """;
 
             return defaultPrompt;
@@ -402,16 +480,15 @@ Rules:
 
             // 3) OrderInSprint: quản lý theo từng sprint
             var orderBySprint = await _db.ProjectTasks.AsNoTracking()
-                .Where(t => t.ProjectId == projectId
-                            && t.CurrentStatusId == defaultStatus.Id
-                            && !t.IsDeleted)
-                .GroupBy(t => t.SprintId)
-                .Select(g => new { SprintId = g.Key, MaxOrder = g.Max(t => t.OrderInSprint) })
-                .ToDictionaryAsync(
-                    x => x.SprintId ?? sprintId,
-                    x => x.MaxOrder,
-                    ct);
-
+       .Where(t => t.ProjectId == projectId
+                   && !t.IsDeleted
+                   && t.SprintId.HasValue
+                   && t.SprintId.Value != Guid.Empty)
+       .GroupBy(t => t.SprintId!.Value)
+       .Select(g => new { SprintId = g.Key, MaxOrder = g.Max(t => t.OrderInSprint) })
+       .ToDictionaryAsync(x => x.SprintId, x => x.MaxOrder, ct);
+            if (!orderBySprint.ContainsKey(sprintId))
+                orderBySprint[sprintId] = 0;
             foreach (var g in ai.Tasks)
             {
                 seq++;

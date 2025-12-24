@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Fusion.Service.ViewModels.Task.Response;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -43,6 +44,7 @@ namespace Fusion.Service.ViewModels.AITaskGenerate
 
         public List<AiWorkflowStatusDto> WorkflowStatuses { get; set; } = new();
         public Guid DefaultStatusId { get; set; }
+        public IReadOnlyList<Guid>? TargetSprintIds { get; set; }
 
         public string Goal { get; set; } = default!;
         public string? Context { get; set; }
@@ -146,5 +148,16 @@ namespace Fusion.Service.ViewModels.AITaskGenerate
     {
         public List<AiGeneratedTaskDraftDto> Tasks { get; set; } = new();
     }
+    public sealed class AiGenerateAndSaveBySprintResponseDto
+    {
+        public Guid ProjectId { get; set; }
+        public List<AiSprintTasksDto> Sprints { get; set; } = new();
+    }
 
+    public sealed class AiSprintTasksDto
+    {
+        public Guid SprintId { get; set; }
+        public string? SprintName { get; set; }
+        public List<ProjectTaskResponse> Tasks { get; set; } = new();
+    }
 }

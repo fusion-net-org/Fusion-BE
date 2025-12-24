@@ -102,6 +102,7 @@ namespace Fusion.Repository
             services.AddScoped<ITicketCommentRepository, TicketCommentRepository>();
             // company entry
             services.AddScoped<ICompanySubscriptionEntryRepository, CompanySubscriptionEntryRepository>();
+            services.AddScoped<ITaskLogEventRepository, TaskLogEventRepository>();
 
             //roles
             services.AddScoped<IRoleRepository, RoleRepository>();
