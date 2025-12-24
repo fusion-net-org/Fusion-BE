@@ -85,7 +85,7 @@ public class AuthenService : IAuthenService
             throw CustomExceptionFactory.CreateNotFoundError("Not found user.");
 
         var rawToken = GenerateUrlSafeToken(32);
-        user.ResetToken = rawToken;                         
+        user.ResetToken = rawToken;
 
         await _unitOfWork.SaveChangesAsync(ct);
 
@@ -125,7 +125,7 @@ public class AuthenService : IAuthenService
                 Body = html,
                 Attachments = null
             };
-           // await _mailService.SendEmailAsync(mail);  
+            // await _mailService.SendEmailAsync(mail);  
 
             return true;
         }
@@ -150,9 +150,9 @@ public class AuthenService : IAuthenService
         var user = await _userRepository.GetUserByEmailAsync(request.Email, cancellationToken);
         if (user == null)
             throw CustomExceptionFactory.
-                CreateBadRequestError(ResponseMessages.INVALID_INPUT,"Email incorrect!");
+                CreateBadRequestError(ResponseMessages.INVALID_INPUT, "Email incorrect!");
         if (user.Status == false)
-            throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.BAD_REQUEST,"Please verify gmail");
+            throw CustomExceptionFactory.CreateBadRequestError(ResponseMessages.BAD_REQUEST, "Please verify gmail");
 
         //3. vertify password
         using var hmac = new HMACSHA512(user.PasswordSalt);
@@ -162,12 +162,12 @@ public class AuthenService : IAuthenService
         // Optional: check length
         if (computedHash.Length != user.PasswordHash.Length)
             throw CustomExceptionFactory.
-                CreateBadRequestError(ResponseMessages.BAD_REQUEST,"Password incorrect!");
+                CreateBadRequestError(ResponseMessages.BAD_REQUEST, "Password incorrect!");
 
         // So sánh constant-time
         if (!CryptographicOperations.FixedTimeEquals(computedHash, user.PasswordHash))
             throw CustomExceptionFactory.
-                CreateBadRequestError(ResponseMessages.BAD_REQUEST,"Password incorrect!");
+                CreateBadRequestError(ResponseMessages.BAD_REQUEST, "Password incorrect!");
 
         // 4. Generate JWT tokens
         var tokens = await _jwtService.GenerateTokensAsync(user);
@@ -199,34 +199,34 @@ public class AuthenService : IAuthenService
         try
         {
             payload = await GoogleJsonWebSignature.ValidateAsync(request.IdToken);
-      
 
-        // Check user existed
-        var user = await _userRepository.GetUserByGoogleSubAsync(payload.Subject, cancellationToken);
-        if (user != null)
-        {
-            user.GoogleSub = payload.Subject;
-            await _unitOfWork.SaveChangesAsync();
-        }
-        else
-        {
+
+            // Check user existed
+            var user = await _userRepository.GetUserByGoogleSubAsync(payload.Subject, cancellationToken);
+            if (user != null)
+            {
+                user.GoogleSub = payload.Subject;
+                await _unitOfWork.SaveChangesAsync();
+            }
+            else
+            {
                 using var rng = RandomNumberGenerator.Create();
                 var salt = new byte[128]; rng.GetBytes(salt);
                 var hash = new byte[64]; rng.GetBytes(hash);
                 // if not, create new user
                 user = new User
-            {
-                UserName = payload.Name ?? payload.Email,
-                Email = payload.Email,
-                GoogleSub = payload.Subject,
-                CreateAt = DateTime.UtcNow,
-                Status = true,
-                PasswordHash = hash,
-                PasswordSalt = salt
-            };
+                {
+                    UserName = payload.Name ?? payload.Email,
+                    Email = payload.Email,
+                    GoogleSub = payload.Subject,
+                    CreateAt = DateTime.UtcNow,
+                    Status = true,
+                    PasswordHash = hash,
+                    PasswordSalt = salt
+                };
 
-            await _unitOfWork.Repository<User>().AddAsync(user, cancellationToken);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+                await _unitOfWork.Repository<User>().AddAsync(user, cancellationToken);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
                 var userLog = new UserLog
                 {
                     ActorUserId = user.Id,
@@ -236,13 +236,13 @@ public class AuthenService : IAuthenService
                 await _userLogService.CreateLog(userLog);
             }
 
-        var tokens = await _jwtService.GenerateTokensAsync(user);
-        return new LoginResponse
-        {
-            UserName = user.UserName,
-            AccessToken = tokens.AccessToken,
-            RefreshToken = tokens.RefreshToken
-        };
+            var tokens = await _jwtService.GenerateTokensAsync(user);
+            return new LoginResponse
+            {
+                UserName = user.UserName,
+                AccessToken = tokens.AccessToken,
+                RefreshToken = tokens.RefreshToken
+            };
         }
         catch (Exception ex)
         {
@@ -274,7 +274,7 @@ public class AuthenService : IAuthenService
         }
         else
         {
-            resetLink = $"http://localhost:5173/reset-password?token={token}";
+            resetLink = $"https://www.fusion.info.vn/reset-password?token={token}";
         }
 
         //send mail

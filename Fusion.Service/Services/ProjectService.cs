@@ -22,6 +22,7 @@ using Fusion.Service.ViewModels.ProjectMembers.Responses;
 using Fusion.Service.ViewModels.Sprint.Responses;
 using Fusion.Service.ViewModels.Task.Response;
 using Microsoft.EntityFrameworkCore;
+using Pipelines.Sockets.Unofficial.Arenas;
 using System;
 namespace Fusion.Service.Services
 {
@@ -464,8 +465,12 @@ namespace Fusion.Service.Services
                 var doneTasks = sprintSummary
                     .SelectMany(s => s.Tasks)
                     .Count(t => (t.Status ?? "").Equals("Done", StringComparison.OrdinalIgnoreCase));
-                double progress = totalTasks == 0 ? 0 : (double)doneTasks / totalTasks * 100;
 
+                var vm = await _projectRepo.GetTaskProgressAsync(p.Id, cancellationToken);
+
+                var progress = vm.TotalTasks == 0
+                    ? 0d
+                    : Math.Round(vm.DoneTasks * 100.0 / vm.TotalTasks, 2);
                 response.Items.Add(new ProjectSummaryResponseV2
                 {
                     Id = p.Id,
@@ -545,8 +550,11 @@ namespace Fusion.Service.Services
                 var doneTasks = sprintSummary
                     .SelectMany(s => s.Tasks)
                     .Count(t => (t.Status ?? "").Equals("Done", StringComparison.OrdinalIgnoreCase));
-                double progress = totalTasks == 0 ? 0 : (double)doneTasks / totalTasks * 100;
+                var vm = await _projectRepo.GetTaskProgressAsync(p.Id, cancellationToken);
 
+                var progress = vm.TotalTasks == 0
+                    ? 0d
+                    : Math.Round(vm.DoneTasks * 100.0 / vm.TotalTasks, 2);
                 response.Items.Add(new ProjectSummaryResponseV2
                 {
                     Id = p.Id,
@@ -621,8 +629,11 @@ namespace Fusion.Service.Services
                 .Count(t => (t.Status ?? "")
                 .Equals("Done", StringComparison.OrdinalIgnoreCase));
 
-            double progress = totalTasks == 0 ? 0 : (double)doneTasks / totalTasks * 100;
+            var vm = await _projectRepo.GetTaskProgressAsync(projectId, cancellationToken);
 
+            var progress = vm.TotalTasks == 0
+                ? 0d
+                : Math.Round(vm.DoneTasks * 100.0 / vm.TotalTasks, 2);
             return new ProjectSummaryResponseV2
             {
                 Id = result.Id,
