@@ -36,6 +36,7 @@ namespace Fusion.Service.Services
         Task<List<ProjectTask>> GenerateAndSaveAsync(
             AiTaskGenerateRequestDto request,
             CancellationToken ct = default);
+
     }
 
     public sealed class AiTaskGenerationService : IAiTaskGenerationService
@@ -277,7 +278,6 @@ namespace Fusion.Service.Services
 
                 ExistingTasksSnapshot = src.ExistingTasksSnapshot,
 
-                // ✅ full board context (FE gửi full)
                 BoardSprints = src.BoardSprints,
                 BoardTasks = src.BoardTasks
             };

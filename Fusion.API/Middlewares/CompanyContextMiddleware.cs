@@ -47,12 +47,8 @@ namespace Fusion.API.Auth
 
             if (!isSysAdmin && companyId is Guid cid)
             {
-                var key = $"perm:{userId}:{cid}";
-                if (!cache.TryGetValue(key, out HashSet<string>? codes))
-                {
-                    codes = await permQuery.GetEffectivePermissionsAsync(cid, userId, ctx.RequestAborted);
-                    cache.Set(key, codes, TimeSpan.FromMinutes(10));
-                }
+                var codes = await permQuery.GetEffectivePermissionsAsync(cid, userId, ctx.RequestAborted);
+
 
                 foreach (var code in codes!) cc.Permissions.Add(code);
             }

@@ -1,4 +1,5 @@
-﻿using Fusion.Repository.Bases.Responses;
+﻿using Fusion.API.Auth;
+using Fusion.Repository.Bases.Responses;
 using Fusion.Repository.Repositories;
 using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.Services;
@@ -33,6 +34,7 @@ namespace Fusion.API.Controllers
         }
         // POST /api/companies/{companyId}/workflows/designer
         [HttpPost("companies/{companyId:guid}/workflows/designer")]
+        [HasPermission("WORKFLOW_CREATE")]
         [Consumes("application/json")]
         public async Task<ActionResult<object>> CreateWithDesigner(
             Guid companyId,
@@ -68,6 +70,7 @@ namespace Fusion.API.Controllers
         // PUT /api/workflows/{workflowId}/designer?companyId=...
         [HttpPut("workflows/{workflowId:guid}/designer")]
         [Consumes("application/json")]
+        [HasPermission("WORKFLOW_UPDATE")]
         public async Task<IActionResult> SaveDesigner(Guid workflowId, [FromQuery] Guid companyId, [FromBody] DesignerDto dto, CancellationToken ct)
         {
             await _svc.SaveDesignerAsync(companyId, workflowId, dto, ct);
@@ -77,6 +80,7 @@ namespace Fusion.API.Controllers
 
         // DELETE /api/companies/{companyId}/workflows/{workflowId}
         [HttpDelete("companies/{companyId:guid}/workflows/{workflowId:guid}")]
+        [HasPermission("WORKFLOW_DELETE")]
         public async Task<IActionResult> Delete(Guid companyId, Guid workflowId, CancellationToken ct)
         {
             await _svc.DeleteAsync(companyId, workflowId, ct);
