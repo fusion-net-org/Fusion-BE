@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Fusion.API.Auth;
 using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Bases.Responses;
 using Fusion.Service.Services;
@@ -90,6 +91,7 @@ namespace Fusion.API.Controllers
             var result = await _service.GenerateTasksAsync(dto, ct);
             return Ok(result);
         }
+        [HasPermission("SPRINT_AI_GENERATE")]
         [HttpPost("generate-and-save/by-sprint")]
         public async Task<ActionResult<AiGenerateAndSaveBySprintResponseDto>> GenerateAndSaveBySprint(
     Guid projectId,
@@ -123,12 +125,11 @@ namespace Fusion.API.Controllers
       })
       .ToList();
 
-            // nếu có TargetSprintIds thì giữ đúng thứ tự FE tick
             if (request.TargetSprintIds != null && request.TargetSprintIds.Count > 0)
             {
                 var order = request.TargetSprintIds
        .Where(id => id != Guid.Empty)
-       .Distinct() // ✅ chống trùng
+       .Distinct() 
        .Select((id, idx) => new { id, idx })
        .ToDictionary(x => x.id, x => x.idx);
 
@@ -143,6 +144,7 @@ namespace Fusion.API.Controllers
                 Sprints = grouped
             });
         }
+
 
     }
 }

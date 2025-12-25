@@ -1,4 +1,5 @@
-﻿using Fusion.Repository.Bases.Page;
+﻿using Fusion.API.Auth;
+using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.Company;
 using Fusion.Repository.Bases.Page.ProjectRequest;
 using Fusion.Repository.Bases.Responses;
@@ -29,6 +30,7 @@ namespace Fusion.API.Controllers
 
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(ResponseModel<ProjectRequestResponse>))]
+        [HasPermission("PRQ_CREATE")]
         public async Task<IActionResult> CreateProjectRequest([FromQuery] CreateProjectRequestRequest request, CancellationToken cancellationToken = default)
         {
             var emailClaim = User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email || c.Type == ClaimTypes.Email || c.Type == "email");
@@ -49,6 +51,7 @@ namespace Fusion.API.Controllers
 
         [HttpPut("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<ProjectRequestResponse>))]
+        [HasPermission("PRQ_UPDATE")]
         public async Task<IActionResult> UpdateProjectRequest(Guid id, [FromQuery] UpdateProjectRequestRequest request, CancellationToken cancellationToken = default)
         {
             var emailClaim = User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email || c.Type == ClaimTypes.Email || c.Type == "email");
@@ -179,6 +182,7 @@ namespace Fusion.API.Controllers
 
         [HttpPost("{id:guid}/accept")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<ProjectRequestResponse>))]
+        [HasPermission("PRQ_ACCEPT")]
         public async Task<IActionResult> AcceptProjectRequest(Guid id, CancellationToken cancellationToken)
         {
             var emailClaim = User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email || c.Type == ClaimTypes.Email || c.Type == "email");
@@ -199,6 +203,7 @@ namespace Fusion.API.Controllers
 
         [HttpPost("{id:guid}/reject")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<ProjectRequestRejectResponse>))]
+        [HasPermission("PRQ_REJECT")]
         public async Task<IActionResult> RejectProjectRequest(Guid id, string? reason, CancellationToken cancellationToken)
         {
             var emailClaim = User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email || c.Type == ClaimTypes.Email || c.Type == "email");
