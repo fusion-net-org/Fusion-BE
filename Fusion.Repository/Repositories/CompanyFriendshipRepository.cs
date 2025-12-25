@@ -91,7 +91,15 @@ namespace Fusion.Repository.Repositories
           Guid userID, Guid companyID, CompanyFriendshipSearchRequest request, CancellationToken cancellationToken = default)
         {
             var company = await _context.Companies
-                .FirstOrDefaultAsync(c => c.Id == companyID && c.OwnerUserId == userID);
+                .Where(c => c.Id == companyID)
+                .Where(c =>
+                    c.OwnerUserId == userID ||
+                    c.CompanyMembers.Any(cm =>
+                        cm.UserId == userID &&
+                        (cm.IsDeleted == false || cm.IsDeleted == null)
+                    )
+                )
+                .FirstOrDefaultAsync(cancellationToken);
 
             if (company == null)
             {
