@@ -53,13 +53,12 @@ namespace Fusion.Repository.Repositories
             // Nếu không có sort column -> default: trong từng nhóm sort theo CreatedAt desc
             if (string.IsNullOrWhiteSpace(request.SortColumn))
             {
-                ordered = ordered.ThenByDescending(x => x.CreatedAt);
+                q = q.OrderByDescending(x => x.CreatedAt);
 
-                // để ToPagedResultAsync không override order nữa
+                // để ToPagedResultAsync khỏi tự sort lại
                 request.SortColumn = null;
             }
-
-                return await q.ToPagedResultAsync(request, ct);
+            return await q.ToPagedResultAsync(request, ct);
         }
         public Task<UserSubscription?> GetByIdAsync(Guid id, CancellationToken ct = default)
      => _context.Set<UserSubscription>()
