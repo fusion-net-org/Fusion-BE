@@ -99,7 +99,8 @@ namespace Fusion.Service.Services
                         Type = tr.Type,
                         Label = tr.Label,
                         Rule = tr.Rule,
-                        Roles = ParseRoles(tr.RoleNamesJson)
+                        Roles = ParseRoles(tr.RoleNamesJson),
+                        EnforceTransitions = tr.EnforceTransitions
                     })
                     .ToList()
             };

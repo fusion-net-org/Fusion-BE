@@ -80,7 +80,7 @@ public record WorkflowTransitionDto
     [Required] public Guid WorkflowId { get; init; }
     [Required] public Guid FromStatusId { get; init; }
     [Required] public Guid ToStatusId { get; init; }
-
+    public bool EnforceTransitions { get; set; } = false;
     public string? Type { get; init; }
     public string? Label { get; init; }
     public string? Rule { get; init; }
