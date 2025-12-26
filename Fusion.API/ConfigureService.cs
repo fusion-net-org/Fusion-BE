@@ -5,6 +5,7 @@ using Fusion.API.Context;
 using Fusion.Repository.Repositories;
 using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.Services;
+using Fusion.Service.ViewModels.AITaskGenerate;
 using Fusion.Service.ViewModels.Users.Validators;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -62,7 +63,8 @@ namespace Fusion.API
             services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
             services.AddFluentValidationAutoValidation();
             services.AddFluentValidationClientsideAdapters();
-
+            services.Configure<AiTaskGenerationOptions>(
+     configuration.GetSection("AiTaskGeneration"));
             return services;
         }  
         public static void AddAuthenJwt(this IServiceCollection services, IConfiguration configuration)

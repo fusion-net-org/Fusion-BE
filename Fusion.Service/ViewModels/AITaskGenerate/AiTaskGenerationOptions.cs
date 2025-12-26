@@ -17,7 +17,7 @@ namespace Fusion.Service.ViewModels.AITaskGenerate
         /// Base system prompt. If empty, service will use its internal default.
         /// </summary>
         public string? SystemPrompt { get; set; }
-
+        public string? InstructionsForModelTemplate { get; set; }
         /// <summary>
         /// Temperature for the model (0–2).
         /// </summary>
@@ -28,5 +28,6 @@ namespace Fusion.Service.ViewModels.AITaskGenerate
         /// </summary>
         public int MaxTokens { get; set; } = 2048;
         public int MaxTotalTasksPerRequest { get; set; } = 50;
+
     }
 }
