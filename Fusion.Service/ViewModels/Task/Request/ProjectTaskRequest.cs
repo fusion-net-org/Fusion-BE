@@ -16,7 +16,7 @@ public class ProjectTaskRequest
     public string? Type { get; set; } = "Feature";           // Feature/Bug/Chore…
     public string? Priority { get; set; } = "Medium";        // Urgent/High/Medium/Low
     public string? Severity { get; set; }                    // Critical/High/Medium/Low
-
+    public int? RemainingHours { get; set; }
     public int? Point { get; set; }                          // story points
     public int? EstimateHours { get; set; }
     public DateTime? DueDate { get; set; }

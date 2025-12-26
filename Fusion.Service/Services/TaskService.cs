@@ -746,6 +746,7 @@ public class TaskService : ITaskService
         e.Severity = req.Severity ?? e.Severity;
         e.Point = req.Point;
         e.EstimateHours = req.EstimateHours;
+        e.RemainingHours = req.RemainingHours;
         e.DueDate = req.DueDate;
         e.ParentTaskId = req.ParentTaskId;
         e.SourceTaskId = req.SourceTaskId;
