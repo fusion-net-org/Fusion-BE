@@ -113,7 +113,7 @@ namespace Fusion.Service.Services
             }
             else if (pr.PaymentMode == PaymentMode.Prepaid)
             {
-                // 👉 RULE: Prepaid chỉ cho 1 discount, index = 1
+                //  RULE: Prepaid chỉ cho 1 discount, index = 1
                 if (discounts.Count > 1)
                 {
                     throw CustomExceptionFactory.CreateBadRequestError(

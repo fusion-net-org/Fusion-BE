@@ -182,7 +182,7 @@ public class TransactionPaymentRepository : GenericRepository<TransactionPayment
                 tp.SubscriptionPlan.Name.Contains(k));
         }
 
-        // 🔥 Status: parse string -> enum, không phân biệt hoa thường
+        //  Status: parse string -> enum, không phân biệt hoa thường
         if (!string.IsNullOrWhiteSpace(request.Status) &&
             Enum.TryParse<PaymentStatus>(request.Status.Trim(), true, out var parsedStatus))
         {
@@ -200,7 +200,7 @@ public class TransactionPaymentRepository : GenericRepository<TransactionPayment
                 (tp.OrderCode != null && tp.OrderCode.ToString().Contains(k)));
         }
 
-        // 🔥 Filter theo khoảng TransactionDateTime
+        //  Filter theo khoảng TransactionDateTime
         if (request.TransactionAt != null)
         {
             if (request.TransactionAt.From.HasValue)
