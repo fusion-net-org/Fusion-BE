@@ -76,6 +76,7 @@ public class TaskService : ITaskService
     }
     #region Helpers
     /* -------------------- Helpers -------------------- */
+
     private static string StripPartSuffix(string? title)
     => Regex.Replace(title ?? "", @"\s*\(Part\s+[A-Z]+\)\s*$", "", RegexOptions.IgnoreCase).Trim();
    
