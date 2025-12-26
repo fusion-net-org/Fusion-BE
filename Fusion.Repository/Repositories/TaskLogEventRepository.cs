@@ -128,7 +128,7 @@ namespace Fusion.Repository.Repositories
             return request;
         }
 
-        // ✅ ApplyFilters cho DTO, hỗ trợ Action = "A,B,C"
+        //  ApplyFilters cho DTO, hỗ trợ Action = "A,B,C"
         private static IQueryable<ProjectActivityVm> ApplyFilters(
             IQueryable<ProjectActivityVm> query,
             TaskLogEventPagedSearchRequest request)
@@ -650,7 +650,7 @@ namespace Fusion.Repository.Repositories
             if (friendOnly)
                 baseQuery = baseQuery.Where(x => x.IsView == true);
 
-            // ✅ reuse filter/sort VM (đã support Action CSV)
+            // reuse filter/sort VM (đã support Action CSV)
             baseQuery = ApplyFilters(baseQuery, request);
             baseQuery = ApplySort(baseQuery, request);
 

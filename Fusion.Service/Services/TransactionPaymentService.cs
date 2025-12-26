@@ -135,7 +135,7 @@ public class TransactionPaymentService : ITransactionPaymentService
                     sumBase += baseAmount;
                 }
 
-                // 👇 Tìm discount config cho kỳ i (nếu có)
+                // Tìm discount config cho kỳ i (nếu có)
                 var discountCfg = discounts.FirstOrDefault(d => d.InstallmentIndex == i);
                 decimal finalAmount = baseAmount;
 

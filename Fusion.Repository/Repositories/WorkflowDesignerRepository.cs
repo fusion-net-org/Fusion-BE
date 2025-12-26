@@ -338,7 +338,7 @@ namespace Fusion.Repository.Repositories
           s.X,
           s.Y,
           s.Color,
-          Roles = WorkflowMap.ParseList(s.RolesJson)   // ⭐ lấy roles
+          Roles = WorkflowMap.ParseList(s.RolesJson)   // lấy roles
       })
       .ToListAsync(ct);
 
@@ -408,7 +408,7 @@ namespace Fusion.Repository.Repositories
           s.X,
           s.Y,
           s.Color,
-          Roles = WorkflowMap.ParseList(s.RolesJson)   // ⭐ lấy roles
+          Roles = WorkflowMap.ParseList(s.RolesJson)   // lấy roles
       })
       .ToListAsync(ct);
 
