@@ -1,4 +1,5 @@
-﻿using Fusion.Repository.Bases.Page;
+﻿using Fusion.API.Auth;
+using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.ProjectMember;
 using Fusion.Repository.Bases.Responses;
 using Fusion.Service.Commons.BaseResponses;
@@ -107,6 +108,7 @@ namespace Fusion.API.Controllers
             return Ok(data);
         }
         [HttpPost]
+        [HasPermission("PROJECT_INVITE_MEMBER")]
         public async Task<IActionResult> AddMember(
     [FromBody] ProjectMemberCreateRequest request,
     CancellationToken cancellationToken)
@@ -118,6 +120,7 @@ namespace Fusion.API.Controllers
                 message: ResponseMessageHelper.FormatMessage(ResponseMessages.SUCCESS, "Member assigned to project successfully")
             ));
         }
+        [HasPermission("PROJECT_KICK_MEMBER")]
         [HttpDelete("project/{projectId:guid}/member/{memberId:guid}")]
         public async Task<IActionResult> RemoveMember(
     Guid projectId,

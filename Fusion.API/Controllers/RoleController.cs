@@ -1,4 +1,5 @@
 ﻿using System.Security.Claims;
+using Fusion.API.Auth;
 using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.Role;
 using Fusion.Service.Commons.BaseResponses;
@@ -45,6 +46,7 @@ public class RoleController : ControllerBase
 
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(ResponseModel<RoleResponseVersion2>))]
+    [HasPermission("ROLE_CREATE")]
     public async Task<IActionResult> CreateRole(CreateRoleRequest request, CancellationToken cancellationToken)
     {
         var result = await _roleService.CreateRoleAsync(request, cancellationToken);
@@ -55,6 +57,7 @@ public class RoleController : ControllerBase
 
     [HttpPut("{roleId:int}")]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<RoleResponseVersion2>))]
+    [HasPermission("ROLE_UPDATE")]
     public async Task<IActionResult> UpdateRole(int roleId, UpdateRoleRequest request, CancellationToken cancellationToken)
     {
         var result = await _roleService.UpdateRoleAsync(roleId, request, cancellationToken);
@@ -65,6 +68,7 @@ public class RoleController : ControllerBase
 
     [HttpDelete("{roleId:int}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
+    [HasPermission("ROLE_DELETE")]
     public async Task<IActionResult> DeleteRole(int roleId, [FromBody] DeleteRoleRequest request, CancellationToken cancellationToken)
     {
         var result = await _roleService.DeleteRoleAsync(roleId, request.Reason, cancellationToken);

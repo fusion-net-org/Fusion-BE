@@ -160,4 +160,5 @@ namespace Fusion.Service.ViewModels.AITaskGenerate
         public string? SprintName { get; set; }
         public List<ProjectTaskResponse> Tasks { get; set; } = new();
     }
+
 }

@@ -1,4 +1,5 @@
-﻿using Fusion.Repository.Bases.Page;
+﻿using Fusion.API.Auth;
+using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.Task;
 using Fusion.Repository.Bases.Responses;
 using Fusion.Service.Commons.BaseResponses;     // ResponseModel, ResponseMessages
@@ -61,6 +62,7 @@ public class TaskController : ControllerBase
     // ===== Update =====
     [HttpPut("tasks/{id:guid}")]
     [ProducesResponseType(typeof(ResponseModel<ProjectTaskResponse>), StatusCodes.Status200OK)]
+    [HasPermission("TASK_DETAIL_UPDATE")]
     public async Task<IActionResult> Update(Guid id, [FromBody] ProjectTaskRequest req, CancellationToken ct)
     {
         var uid = GetUserId();
@@ -189,6 +191,7 @@ public class TaskController : ControllerBase
 
     // POST /api/tasks/{id}/split
     [HttpPost("tasks/{id:guid}/split")]
+    [HasPermission("TASK_SPLIT")]
     [ProducesResponseType(typeof(ResponseModel<SplitTaskResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> Split(Guid id, CancellationToken ct)
     {
@@ -221,6 +224,7 @@ public class TaskController : ControllerBase
     }
     // POST /api/tasks/{taskId}/checklist
     [HttpPost("tasks/{taskId:guid}/checklist")]
+    [HasPermission("TASK_CHECKLIST_ADD")]
     [ProducesResponseType(typeof(ResponseModel<TaskChecklistItemResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> AddChecklistItem(
         Guid taskId,
@@ -275,6 +279,7 @@ public class TaskController : ControllerBase
     }
     // DELETE /api/tasks/{taskId}/checklist/{id}
     [HttpDelete("tasks/{taskId:guid}/checklist/{id:guid}")]
+    [HasPermission("TASK_DELETE_ATTACHMENT")]
     [ProducesResponseType(typeof(ResponseModel<bool>), StatusCodes.Status200OK)]
     public async Task<IActionResult> DeleteChecklistItem(
         Guid taskId,
@@ -349,6 +354,7 @@ public class TaskController : ControllerBase
         [HttpPost("tasks/{taskId:guid}/attachments")]
     [Consumes("multipart/form-data")]
     [ProducesResponseType(typeof(ResponseModel<IReadOnlyList<TaskAttachmentResponse>>), StatusCodes.Status200OK)]
+    [HasPermission("TASK_ADD_ATTACHMENT")]
     public async Task<IActionResult> UploadAttachments(
       Guid taskId,
       [FromForm] TaskAttachmentUploadRequest request,
@@ -381,6 +387,7 @@ public class TaskController : ControllerBase
 
     // DELETE /api/tasks/{taskId}/attachments/{attachmentId}
     [HttpDelete("tasks/{taskId:guid}/attachments/{attachmentId:guid}")]
+    [HasPermission("TASK_DELETE_ATTACHMENT")]
     [ProducesResponseType(typeof(ResponseModel<bool>), StatusCodes.Status200OK)]
     public async Task<IActionResult> DeleteAttachment(
         Guid taskId,
@@ -440,6 +447,7 @@ public class TaskController : ControllerBase
     #region Draft Tasks (IsBacklog == true, SprintId == null)
 
     // POST /api/projects/{projectId}/draft-tasks
+    [HasPermission("BACKLOG_CREATE")]
     [HttpPost("projects/{projectId:guid}/draft-tasks")]
     [ProducesResponseType(typeof(ResponseModel<ProjectTaskResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> CreateDraftUnderProject(
@@ -510,6 +518,7 @@ public class TaskController : ControllerBase
 
     // DELETE /api/draft-tasks/{id}
     [HttpDelete("draft-tasks/{id:guid}")]
+    [HasPermission("BACKLOG_DELETE")]
     [ProducesResponseType(typeof(ResponseModel<bool>), StatusCodes.Status200OK)]
     public async Task<IActionResult> DeleteDraft(
         Guid id,
@@ -526,6 +535,7 @@ public class TaskController : ControllerBase
             ResponseMessageHelper.FormatMessage(ResponseMessages.DELETE_SUCCESS, "draft task")));
     }
     [HttpPost("draft-tasks/{id:guid}/materialize")]
+    [HasPermission("MOVE_BACKLOG_TO_SPRINT")]
     [ProducesResponseType(typeof(ResponseModel<ProjectTaskResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> MaterializeDraft(
     Guid id,
@@ -558,6 +568,7 @@ public class TaskController : ControllerBase
     // Tạo task backlog từ ticket
     [HttpPost("tickets/{ticketId:guid}/tasks")]
     [ProducesResponseType(typeof(ResponseModel<ProjectTaskResponse>), StatusCodes.Status200OK)]
+    [HasPermission("TICKET_TASK_CREATE")]
     public async Task<IActionResult> CreateTaskForTicket(
         Guid ticketId,
         [FromBody] ProjectTaskRequest req,

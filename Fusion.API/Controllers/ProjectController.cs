@@ -1,5 +1,6 @@
 ﻿
 using Azure;
+using Fusion.API.Auth;
 using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.Project;
 using Fusion.Repository.Bases.Responses;
@@ -47,8 +48,9 @@ namespace Fusion.API.Controllers
                  message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "Growth and completion project")
             ));
         }
-
+        
         [HttpPost("companies/{companyId:guid}/projects")]
+        [HasPermission("PROJECT_CREATE")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<ProjectDetailResponse>))]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> CreateProject([FromRoute] Guid companyId,

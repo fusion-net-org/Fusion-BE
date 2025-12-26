@@ -54,6 +54,7 @@ namespace Fusion.API.Controllers
         }
         [HttpPut("{roleId:int}/permissions")]
         [Consumes("application/json")]
+        [HasPermission("ROLE_PERMISSION_EDIT")]
         public async Task<IActionResult> PutPermissions(
          Guid companyId,
          int roleId,
