@@ -563,8 +563,22 @@ public class MappingProfile : Profile
       .ForMember(d => d.WorkflowId, o => o.MapFrom(s => s.WorkflowId))
       .ForMember(d => d.CreatedBy, o => o.MapFrom(s => s.CreatedBy))
       .ForMember(d => d.CreateByName, o => o.MapFrom(s => s.CreatedByNavigation != null ? s.CreatedByNavigation.UserName : null))
-      .ForMember(d => d.IsClosed, o => o.MapFrom(s => s.IsClosed ))
-      .ForMember(d => d.ClosedBy, o => o.MapFrom(s => s.ClosedBy != null ? s.ClosedBy : null));
+      .ForMember(d => d.IsClosed, o => o.MapFrom(s => s.IsClosed))
+      .ForMember(d => d.ClosedBy, o => o.MapFrom(s => s.ClosedBy != null ? s.ClosedBy : null))
+      .ForMember(d => d.ContractBudget,
+        o => o.MapFrom(s =>
+            s.ProjectRequest != null &&
+            s.ProjectRequest.Contract != null
+                ? s.ProjectRequest.Contract.Budget
+                : null
+        ))
+       .ForMember(d => d.TicketTotalBudget,
+        o => o.MapFrom(s =>
+            s.Tickets != null
+                ? s.Tickets.Sum(t => t.Budget ?? 0)
+                : 0
+        ));
+
 
         // ===================== Project Member =====================
         CreateMap<ProjectMember, ProjectMemberResponseV2>()

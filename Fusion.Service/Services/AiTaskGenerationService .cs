@@ -63,7 +63,6 @@ namespace Fusion.Service.Services
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase
             };
 
-            // ✅ Converter “hiền”: sprintId lởm → null, không quăng lỗi
             _jsonOptions.Converters.Add(new NullableGuidLenientConverter());
         }
 
@@ -111,7 +110,7 @@ namespace Fusion.Service.Services
                     "OpenAI API returned non-success status {StatusCode}: {Body}",
                     (int)response.StatusCode,
                     json);
-                response.EnsureSuccessStatusCode(); // will throw
+                response.EnsureSuccessStatusCode(); 
             }
 
             try
@@ -296,7 +295,6 @@ namespace Fusion.Service.Services
             var tpl = _options.InstructionsForModelTemplate;
 
 
-            // template đơn giản: {Quantity}
             return tpl.Replace("{Quantity}", r.Quantity.ToString());
         }
 
@@ -322,7 +320,6 @@ namespace Fusion.Service.Services
                         statuses = r.WorkflowStatuses,
                         defaultStatusId = r.DefaultStatusId
                     },
-                    // toàn bộ board (nếu có)
                     board = (r.BoardSprints != null || r.BoardTasks != null)
                         ? new
                         {
@@ -385,7 +382,6 @@ namespace Fusion.Service.Services
                                     priority = new { type = "string" },
                                     severity = new { type = "string" },
 
-                                    // sprint: AI có thể điền hoặc bỏ trống
                                     sprintId = new
                                     {
                                         type = "string",
@@ -440,7 +436,6 @@ namespace Fusion.Service.Services
             var now = DateTime.UtcNow;
             var tasks = new List<ProjectTask>();
 
-            // 1) Project + Workflow
             var project = await _db.Projects.AsNoTracking()
                 .FirstOrDefaultAsync(p => p.Id == projectId, ct)
                 ?? throw CustomExceptionFactory.CreateNotFoundError(
@@ -464,14 +459,12 @@ namespace Fusion.Service.Services
                 statuses.FirstOrDefault(x => x.Category == "TODO") ??
                 statuses.First();
 
-            // 2) Code sequence chung cho cả project
             var existingCount = await _db.ProjectTasks.AsNoTracking()
                 .LongCountAsync(t => t.ProjectId == projectId, ct);
 
             var seq = existingCount;
             var codePrefix = string.IsNullOrWhiteSpace(project.Code) ? "PRJ" : project.Code!;
 
-            // 3) OrderInSprint: quản lý theo từng sprint
             var orderBySprint = await _db.ProjectTasks.AsNoTracking()
        .Where(t => t.ProjectId == projectId
                    && !t.IsDeleted
@@ -486,7 +479,6 @@ namespace Fusion.Service.Services
             {
                 seq++;
 
-                // Sprint mục tiêu: ưu tiên SprintId đã set, fallback về sprintId route
                 var targetSprintId = g.SprintId.HasValue && g.SprintId.Value != Guid.Empty
                     ? g.SprintId.Value
                     : sprintId;
@@ -578,7 +570,6 @@ namespace Fusion.Service.Services
                     return match.Id;
             }
 
-            // 2. Match theo StatusCategory (TODO/IN_PROGRESS/REVIEW/DONE...)
             if (!string.IsNullOrWhiteSpace(g.StatusCategory))
             {
                 var cat = g.StatusCategory.Trim().ToUpperInvariant();
@@ -590,7 +581,6 @@ namespace Fusion.Service.Services
                     return match.Id;
             }
 
-            // 3. Không match thì trả null để caller dùng defaultStatus (IsStart)
             return null;
         }
 
@@ -622,7 +612,6 @@ namespace Fusion.Service.Services
     }
 
     /// <summary>
-    /// Converter “hiền” cho Guid?: string invalid → null, không quăng exception.
     /// Dùng để đọc sprintId từ AI.
     /// </summary>
     internal sealed class NullableGuidLenientConverter : JsonConverter<Guid?>
@@ -641,7 +630,6 @@ namespace Fusion.Service.Services
                 return Guid.TryParse(s, out var g) ? g : (Guid?)null;
             }
 
-            // Bất kỳ format khác → bỏ qua, trả null
             return null;
         }
 
