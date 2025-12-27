@@ -84,5 +84,7 @@ namespace Fusion.Service.ViewModels.Project.Responses
         public string? CreateByName { get; set; }
         public DateTime CreateAt { get; set; }
         public DateTime UpdateAt { get; set; }
+        public decimal? ContractBudget { get; set; }
+        public decimal TicketTotalBudget { get; set; }
     }
 }
