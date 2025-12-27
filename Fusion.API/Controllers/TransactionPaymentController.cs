@@ -82,7 +82,21 @@ namespace Fusion.API.Controllers
                 data: result,
                 message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "transactions")));
         }
+        [Authorize]
+        [HttpGet("me/paged")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<TransactionPaymentPagedSummaryResponse>))]
+        public async Task<IActionResult> GetPagedByUserId(
+            [FromQuery] TransactionPaymentUserPagedRequest request,
+            CancellationToken cancellationToken)
+        {
+            var result = await _service.GetPagedByUserIdAsync(request, cancellationToken);
 
+            return Ok(ResponseModel<TransactionPaymentPagedSummaryResponse>.Ok(
+                data: result,
+                message: ResponseMessageHelper.FormatMessage(
+                    ResponseMessages.GET_SUCCESS,
+                    "transactions")));
+        }
 
         [HttpPatch("{id:guid}/attach-link")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<bool>))]

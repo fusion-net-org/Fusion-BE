@@ -90,7 +90,7 @@ public class RefreshTokenService : IRefreshTokenService
         _unitOfWork.Repository<RefreshToken>().Update(oldToken);
         await _refreshTokenRepository.AddTokenAsync(newRefreshToken, cancellationToken);
 
-        // 5 Tạo access token mới (⚠️ KHÔNG gọi GenerateTokensAsync — vì hàm đó tạo thêm refresh token)
+        // 5 Tạo access token mới (KHÔNG gọi GenerateTokensAsync — vì hàm đó tạo thêm refresh token)
         var jwtSettings = _configuration.GetSection("JWT");
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Key"]!));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

@@ -46,4 +46,13 @@ public partial class TaskLogEvent
     [ForeignKey("TaskId")]
     [InverseProperty("TaskLogEvents")]
     public virtual ProjectTask? Task { get; set; }
+    [Column("is_view")]
+    public bool IsView { get; set; }
+
+    [Column("is_deleted")]
+    public bool IsDeleted { get; set; }
+
+    [Column("updated_at")]
+    [Precision(3)]
+    public DateTimeOffset? UpdatedAt { get; set; }
 }

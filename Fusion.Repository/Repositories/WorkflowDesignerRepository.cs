@@ -15,7 +15,7 @@ namespace Fusion.Repository.Repositories
         long? Id,
         string FromStatusId, string ToStatusId,
         string Type, string? Label, string? Rule,
-        List<string>? RoleNames
+        List<string>? RoleNames, bool EnforceTransitions = false
     );
     public record DesignerDto(WorkflowVm Workflow, List<StatusVm> Statuses, List<TransitionVm> Transitions);
     public record WorkflowListItemVm(string Id, string Name);
@@ -147,7 +147,8 @@ namespace Fusion.Repository.Repositories
                     WorkflowMap.NormalizeType(t.Type),
                     t.Label,
                     t.Rule,
-                    WorkflowMap.ParseList(t.RoleNamesJson)
+                    WorkflowMap.ParseList(t.RoleNamesJson),
+                    EnforceTransitions: t.EnforceTransitions
                 ))
                 .ToList();
 
@@ -276,11 +277,12 @@ namespace Fusion.Repository.Repositories
                         Type = WorkflowMap.NormalizeType(t.Type),
                         t.Label,
                         t.Rule,
-                        RoleNamesJson = WorkflowMap.ToJson(t.RoleNames ?? new())
+                        RoleNamesJson = WorkflowMap.ToJson(t.RoleNames ?? new()),
+                        EnforceTransitions = t.EnforceTransitions
                     };
                 })
                 .Where(x => x.From.HasValue && x.To.HasValue)
-                .Select(x => new { From = x.From!.Value, To = x.To!.Value, x.Type, x.Label, x.Rule, x.RoleNamesJson })
+                .Select(x => new { From = x.From!.Value, To = x.To!.Value, x.Type, x.Label, x.Rule, x.RoleNamesJson, x.EnforceTransitions })
                 .ToList();
 
             var keepPairs = trIncoming.Select(i => (i.From, i.To)).ToHashSet();
@@ -308,6 +310,7 @@ namespace Fusion.Repository.Repositories
                 tr.Label = inc.Label;
                 tr.Rule = inc.Rule;
                 tr.RoleNamesJson = inc.RoleNamesJson;
+                tr.EnforceTransitions = inc.EnforceTransitions;
             }
 
             await _db.SaveChangesAsync(ct);
@@ -335,7 +338,7 @@ namespace Fusion.Repository.Repositories
           s.X,
           s.Y,
           s.Color,
-          Roles = WorkflowMap.ParseList(s.RolesJson)   // ⭐ lấy roles
+          Roles = WorkflowMap.ParseList(s.RolesJson)   // lấy roles
       })
       .ToListAsync(ct);
 
@@ -405,7 +408,7 @@ namespace Fusion.Repository.Repositories
           s.X,
           s.Y,
           s.Color,
-          Roles = WorkflowMap.ParseList(s.RolesJson)   // ⭐ lấy roles
+          Roles = WorkflowMap.ParseList(s.RolesJson)   // lấy roles
       })
       .ToListAsync(ct);
 

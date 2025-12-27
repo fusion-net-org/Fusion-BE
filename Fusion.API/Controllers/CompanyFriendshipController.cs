@@ -1,5 +1,6 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using Fusion.API.Auth;
 using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.Company;
@@ -82,6 +83,7 @@ namespace Fusion.API.Controllers
         /// Invite company partnership
         /// </summary>
         [HttpPost("invite")]
+        [HasPermission("PARTNER_INVITE_SEND")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<CompanyFriendshipResponse>))]
         public async Task<IActionResult> InviteCompanyFriendship([FromBody] InviteCompanyRequest inviteCompanyRequest)
         {
@@ -108,6 +110,7 @@ namespace Fusion.API.Controllers
         /// Accept company partnership
         /// </summary>
         [HttpGet("accept/{id:long}")]
+        [HasPermission("PARTNER_INVITE_ACCEPT")]
         [AllowAnonymous] // để công ty B có thể click link trong mail
         public async Task<IActionResult> AcceptCompanyFriendship(long id)
         {
@@ -127,6 +130,7 @@ namespace Fusion.API.Controllers
         /// Cancel company partnership
         /// </summary>
         [HttpGet("cancel/{id:long}")]
+        [HasPermission("PARTNER_INVITE_REJECT")]
         [AllowAnonymous]
         public async Task<IActionResult> CancelCompanyFriendship(long id)
         {
@@ -259,6 +263,7 @@ namespace Fusion.API.Controllers
         /// Delete (Unfriend) company partnership
         /// </summary>
         [HttpDelete("delete/{id:long}")]
+        [HasPermission("PARTNER_UNFRIEND")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<CompanyFriendshipResponse>))]
         public async Task<IActionResult> DeleteCompanyFriendship(long id)
         {

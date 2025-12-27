@@ -5,7 +5,6 @@ using CloudinaryDotNet.Actions;
 using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Bases.Responses;
 using Fusion.Service.IServices;
-using Fusion.Service.ViewModels.Common;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using System.Net;
@@ -174,10 +173,10 @@ public class CloudinaryService : ICloudinaryService
             throw CustomExceptionFactory.CreateBadRequestError(
                 ResponseMessages.INVALID_INPUT.FormatMessage("Only PDF, DOC, DOCX are allowed."));
 
-        long maxSize = 20 * 1024 * 1024; // 20MB
+        long maxSize = 100 * 1024 * 1024; // 100MB
         if (file.Length > maxSize)
             throw CustomExceptionFactory.CreateBadRequestError(
-                ResponseMessages.INVALID_INPUT.FormatMessage("File size exceeds 20MB"));
+                ResponseMessages.INVALID_INPUT.FormatMessage("File size must not exceed 100MB"));
 
         var uploadParams = new RawUploadParams
         {

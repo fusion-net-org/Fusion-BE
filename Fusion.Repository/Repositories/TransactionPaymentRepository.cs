@@ -182,7 +182,7 @@ public class TransactionPaymentRepository : GenericRepository<TransactionPayment
                 tp.SubscriptionPlan.Name.Contains(k));
         }
 
-        // 🔥 Status: parse string -> enum, không phân biệt hoa thường
+        //  Status: parse string -> enum, không phân biệt hoa thường
         if (!string.IsNullOrWhiteSpace(request.Status) &&
             Enum.TryParse<PaymentStatus>(request.Status.Trim(), true, out var parsedStatus))
         {
@@ -200,7 +200,7 @@ public class TransactionPaymentRepository : GenericRepository<TransactionPayment
                 (tp.OrderCode != null && tp.OrderCode.ToString().Contains(k)));
         }
 
-        // 🔥 Filter theo khoảng TransactionDateTime
+        //  Filter theo khoảng TransactionDateTime
         if (request.TransactionAt != null)
         {
             if (request.TransactionAt.From.HasValue)
@@ -355,6 +355,113 @@ public class TransactionPaymentRepository : GenericRepository<TransactionPayment
             TotalPending = stats?.TotalPending ?? 0,
         };
     }
+
+    public async Task<TransactionPaymentPagedRepoResult> GetPagedByUserIdAsync(
+    Guid userId,
+    TransactionPaymentUserPagedRequest request,
+    CancellationToken ct = default)
+    {
+        request ??= new TransactionPaymentUserPagedRequest();
+
+        var baseQuery = _context.TransactionPayments
+            .AsNoTracking()
+            .Include(tp => tp.SubscriptionPlan)
+            .AsQueryable();
+
+        // 1) Filter (bắt buộc user)
+        baseQuery = ApplyUserFilter(baseQuery, userId, request);
+
+        // 2) Stats sau filter (chưa paging)
+        var stats = await baseQuery
+            .GroupBy(_ => 1)
+            .Select(g => new
+            {
+                TotalTransactions = g.Count(),
+                TotalRevenue = g.Sum(x =>
+                    x.Status == PaymentStatus.Success &&
+                    x.Type == TransactionType.Charge
+                        ? x.Amount
+                        : 0m),
+                TotalSuccess = g.Count(x => x.Status == PaymentStatus.Success),
+                TotalFailed = g.Count(x => x.Status == PaymentStatus.Failed),
+                TotalPending = g.Count(x => x.Status == PaymentStatus.Pending),
+            })
+            .FirstOrDefaultAsync(ct);
+
+        var totalCount = stats?.TotalTransactions ?? 0;
+
+        // 3)  Sort cố định: mới nhất (CreatedAt desc)
+        // Nếu bạn muốn sort theo ngày giao dịch: OrderByDescending(x => x.TransactionDateTime ?? x.CreatedAt)
+        var sorted = baseQuery.OrderByDescending(x => x.CreatedAt);
+
+        var pageNumber = request.PageNumber <= 0 ? 1 : request.PageNumber;
+        var pageSize = request.PageSize <= 0 ? 10 : request.PageSize;
+
+        var items = await sorted
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(ct);
+
+        // 4) Return
+        return new TransactionPaymentPagedRepoResult
+        {
+            Items = items,
+            PageNumber = pageNumber,
+            PageSize = pageSize,
+            TotalCount = totalCount,
+
+            TotalRevenue = stats?.TotalRevenue ?? 0m,
+            TotalSuccess = stats?.TotalSuccess ?? 0,
+            TotalFailed = stats?.TotalFailed ?? 0,
+            TotalPending = stats?.TotalPending ?? 0,
+        };
+    }
+
+    private static IQueryable<TransactionPayment> ApplyUserFilter(
+        IQueryable<TransactionPayment> query,
+        Guid userId,
+        TransactionPaymentUserPagedRequest request)
+    {
+        query = query.Where(tp => tp.UserId == userId);
+
+        // Status
+        if (!string.IsNullOrWhiteSpace(request.Status) &&
+            Enum.TryParse<PaymentStatus>(request.Status.Trim(), true, out var parsedStatus))
+        {
+            query = query.Where(tp => tp.Status == parsedStatus);
+        }
+
+        // Keyword
+        if (!string.IsNullOrWhiteSpace(request.Keyword))
+        {
+            var k = request.Keyword.Trim();
+            query = query.Where(tp =>
+                (tp.Reference != null && tp.Reference.Contains(k)) ||
+                (tp.Description != null && tp.Description.Contains(k)) ||
+                (tp.PaymentLinkId != null && tp.PaymentLinkId.Contains(k)) ||
+                (tp.OrderCode != null && tp.OrderCode.ToString().Contains(k)));
+        }
+
+        // Transaction date range
+        if (request.TransactionAt?.From.HasValue == true)
+        {
+            var from = request.TransactionAt.From.Value;
+            query = query.Where(tp =>
+                tp.TransactionDateTime.HasValue &&
+                tp.TransactionDateTime.Value >= from);
+        }
+
+        if (request.TransactionAt?.To.HasValue == true)
+        {
+            var to = request.TransactionAt.To.Value;
+            query = query.Where(tp =>
+                tp.TransactionDateTime.HasValue &&
+                tp.TransactionDateTime.Value <= to);
+        }
+
+        return query;
+    }
+
     public async Task<bool> LinkToSubscriptionAsync(Guid transactionId, Guid userSubscriptionId, CancellationToken ct = default)
     {
         var tx = await _context.TransactionPayments.FirstOrDefaultAsync(x => x.Id == transactionId, ct);

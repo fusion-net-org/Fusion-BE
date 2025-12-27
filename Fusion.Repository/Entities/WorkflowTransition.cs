@@ -20,6 +20,9 @@ public partial class WorkflowTransition
 
     [Column("to_status_id")]
     public Guid? ToStatusId { get; set; }
+    [Column("enforce_transitions")]
+    public bool EnforceTransitions { get; set; } = false;
+
 
     [ForeignKey("FromStatusId")]
     [InverseProperty("WorkflowTransitionFromStatuses")]

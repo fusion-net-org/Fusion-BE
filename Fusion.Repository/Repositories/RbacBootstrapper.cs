@@ -75,7 +75,7 @@ public sealed class RbacBootstrapper : IRbacBootstrapper
         }
     }
 
-    // ✅ OPTIONAL nhưng nên có để invalidate cache an toàn khi revoke quyền
+    //  OPTIONAL nhưng nên có để invalidate cache an toàn khi revoke quyền
     public async Task TouchCompanyPermVersionAsync(Guid companyId, CancellationToken ct)
     {
         var company = await _db.Companies.FirstOrDefaultAsync(c => c.Id == companyId, ct);

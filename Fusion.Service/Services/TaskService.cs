@@ -1,5 +1,6 @@
 ﻿// Fusion.Service/Services/TaskService.cs
 using AutoMapper;
+using FirebaseAdmin.Messaging;
 using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.Task;
@@ -7,6 +8,7 @@ using Fusion.Repository.Bases.Responses;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.IRepositories;
+using Fusion.Repository.Repositories;
 using Fusion.Service.Commons.Helpers;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.AITaskGenerate;
@@ -14,6 +16,7 @@ using Fusion.Service.ViewModels.Comment.Response;
 using Fusion.Service.ViewModels.Project.Responses;
 using Fusion.Service.ViewModels.ProjectMembers.Responses;
 using Fusion.Service.ViewModels.Projects.Responses;
+using Fusion.Service.ViewModels.Sprint;
 using Fusion.Service.ViewModels.Sprint.Responses;
 using Fusion.Service.ViewModels.Task.Request;
 using Fusion.Service.ViewModels.Task.Response;
@@ -23,44 +26,60 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
+using System.Net.NetworkInformation;
 using System.Reflection;
+using System.Security.Cryptography;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
+using System.Threading.Channels;
 using System.Threading.Tasks;
+using static System.Collections.Specialized.BitVector32;
 
 namespace Fusion.Service.Services;
 
 public class TaskService : ITaskService
 {
-    private readonly FusionDbContext _db;           
+    #region Repo
+    private readonly FusionDbContext _db;
+    #endregion
     private readonly ITaskRepository _repo;         
     private readonly IMapper _mapper;
-    private readonly ICompanyActivityService _log;
+    private readonly ITaskLogEventService _taskLog;
     private readonly ICurrentService _current;
     private readonly ITaskWorkflowService _taskWorkflowService;
     private readonly ICloudinaryService _cloudinary;
+    private readonly ITaskActivityLogService _activityLog;
 
+    private static readonly JsonSerializerOptions _jsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+    };
     public TaskService(
         FusionDbContext db,
         ITaskRepository repo,
         IMapper mapper,
-        ICompanyActivityService log,
+        ITaskLogEventService taskLog,
         ICurrentService current,
         ITaskWorkflowService taskWorkflowService,
-        ICloudinaryService cloudinary)
+        ICloudinaryService cloudinary, ITaskActivityLogService activityLog)
     {
         _db = db;
         _repo = repo;
         _mapper = mapper;
-        _log = log;
+        _taskLog = taskLog;
         _current = current;
         _taskWorkflowService = taskWorkflowService;
         _cloudinary = cloudinary;
+        _activityLog = activityLog;
     }
     #region Helpers
     /* -------------------- Helpers -------------------- */
+
     private static string StripPartSuffix(string? title)
     => Regex.Replace(title ?? "", @"\s*\(Part\s+[A-Z]+\)\s*$", "", RegexOptions.IgnoreCase).Trim();
-
+   
     // 1->A, 2->B, ..., 26->Z, 27->AA ...
     private static string AlphaIndex(int n)
     {
@@ -193,11 +212,11 @@ public class TaskService : ITaskService
 
         var st = await EnsureStatus(statusId, ct);
 
-        var oldStatusId = e.CurrentStatusId;          // status cũ
+        var oldStatusId = e.CurrentStatusId;
+        var oldStatusText = e.Status;
 
         e.CurrentStatusId = st.Id;
         e.Status = !string.IsNullOrWhiteSpace(st.Code) ? st.Code : st.Name;
-
         if (e.SprintId != null)
             e.OrderInSprint = await GetNextOrderInSprint(e.SprintId.Value, st.Id, ct);
         else
@@ -208,13 +227,12 @@ public class TaskService : ITaskService
 
         var companyId = await GetCompanyIdOfProject(e.ProjectId, ct);
 
-        await _log.CreateLog(new CompanyActivityLog
-        {
-            CompanyId = companyId,
-            ActorUserId = _current.GetUserId(),
-            Title = "Change task status",
-            Description = $"User '{await GetUserName(_current.GetUserId())}' changed status of '{e.Title}' to '{st.Code ?? st.Name}'"
-        });
+        await _activityLog.TryWriteStatusChangedAsync(
+     e,
+     oldStatusId: oldStatusId,
+     oldStatusText: oldStatusText,
+     newStatus: st,
+     ct: ct);
 
         // CHỈ notify nếu thực sự đổi status
         if (oldStatusId != st.Id)
@@ -257,9 +275,12 @@ public class TaskService : ITaskService
                 ResponseMessages.NOT_FOUND.FormatMessage("Sprint"));
 
         var toStatus = await EnsureStatus(toStatusId, ct);
-
+        var oldSprintId = task.SprintId;
+        var oldOrder = task.OrderInSprint;
         var oldStatusId = task.CurrentStatusId;
-        var changedStatus = oldStatusId != toStatus.Id;    // CHỈ gửi notify nếu true
+        var changedStatus = oldStatusId != toStatus.Id;
+        var changedSprint = oldSprintId != sprintId;
+
 
         // Danh sách các task trong (sprint, toStatus)
         var list = await _db.ProjectTasks
@@ -294,13 +315,17 @@ public class TaskService : ITaskService
 
         var companyId = await GetCompanyIdOfProject(task.ProjectId, ct);
 
-        await _log.CreateLog(new CompanyActivityLog
-        {
-            CompanyId = companyId,
-            ActorUserId = _current.GetUserId(),
-            Title = "Reorder task",
-            Description = $"User '{await GetUserName(_current.GetUserId())}' reordered task '{task.Title}'"
-        });
+        await _activityLog.TryWriteReorderedAsync(
+          task,
+          toSprintId: sprintId,
+          toStatus: toStatus,
+          oldSprintId: oldSprintId,
+          oldStatusId: oldStatusId,
+          oldOrder: oldOrder,
+          newOrder: task.OrderInSprint,
+          changedSprint: changedSprint,
+          changedStatus: changedStatus,
+          ct: ct);
 
         // CHỈ notify khi đổi status (kéo qua cột khác), không notify khi chỉ reorder trong cùng cột
         if (changedStatus)
@@ -328,7 +353,9 @@ public class TaskService : ITaskService
 
         if (toSprint.ProjectId != task.ProjectId)
             throw CustomExceptionFactory.CreateBadRequestError("Sprint must be in the same project.");
-
+        var oldSprintId = task.SprintId;
+        var oldStatusId = task.CurrentStatusId;
+        var oldOrder = task.OrderInSprint;
         // Chuẩn hoá status theo workflow của sprint mới
         var curCode = task.Status;
         var wfId = await GetWorkflowIdForMove(task.ProjectId, task.CurrentStatusId, ct);
@@ -346,13 +373,16 @@ public class TaskService : ITaskService
         await _repo.UpdateAsync(task, ct);
 
         var companyId = await GetCompanyIdOfProject(task.ProjectId, ct);
-        await _log.CreateLog(new CompanyActivityLog
-        {
-            CompanyId = companyId,
-            ActorUserId = _current.GetUserId(),
-            Title = "Move task to sprint",
-            Description = $"User '{await GetUserName(_current.GetUserId())}' moved task '{task.Title}' to sprint '{toSprint.Name}'"
-        });
+        await _activityLog.TryWriteMovedToSprintAsync(
+      task,
+      oldSprintId: oldSprintId,
+      newSprintId: toSprint.Id,
+      oldStatusId: oldStatusId,
+      newStatusId: resolved.Id,
+      oldOrder: oldOrder,
+      newOrder: task.OrderInSprint,
+      carryOverCount: task.CarryOverCount,
+      ct: ct);
 
         return _mapper.Map<ProjectTaskResponse>(task);
     }
@@ -497,15 +527,48 @@ public class TaskService : ITaskService
     await trx.CommitAsync(ct);
 
     var companyId = await GetCompanyIdOfProject(task.ProjectId, ct);
-    await _log.CreateLog(new CompanyActivityLog
-    {
-        CompanyId = companyId,
-        ActorUserId = _current.GetUserId(),
-        Title = "Split task",
-        Description = $"User '{await GetUserName(_current.GetUserId())}' split '{baseTitle}' → created '{newPart.Title}'"
-    });
+        await _activityLog.TryWriteAsync(
+      task.Id,
+      action: "TASK_SPLIT",
+      message: $"Split {task.Code} \"{baseTitle}\" → created {newPart.Code} \"{newPart.Title}\" in sprint \"{next.Name}\".",
+      changedCols: new[] { "Title", "Point", "RemainingHours" },
+      metadata: new
+      {
+          taskId = task.Id,
+          rootId,
+          baseTitle,
+          keepPts,
+          takePts,
+          keepHrs,
+          takeHrs,
+          createdPartId = newPart.Id,
+          createdPartCode = newPart.Code,
+          createdPartTitle = newPart.Title,
+          toSprintId = next.Id,
+          toSprintName = next.Name
+      },
+      ct: ct);
 
-    return new SplitTaskResponse
+        await _activityLog.TryWriteAsync(
+            newPart.Id,
+            action: "TASK_SPLIT_PART_CREATED",
+            message: $"Created split part {newPart.Code} \"{newPart.Title}\" (parent: {task.Code}) in sprint \"{next.Name}\" / \"{newPart.Status}\", position {newPart.OrderInSprint}.",
+            changedCols: new[] { "Code", "Title", "SprintId", "CurrentStatusId", "OrderInSprint", "ParentTaskId" },
+            metadata: new
+            {
+                taskId = newPart.Id,
+                rootId,
+                sourceTaskId = task.Id,
+                parentTaskCode = task.Code,
+                title = newPart.Title,
+                sprintId = newPart.SprintId,
+                statusId = newPart.CurrentStatusId,
+                orderInSprint = newPart.OrderInSprint
+            },
+            ct: ct);
+
+
+        return new SplitTaskResponse
     {
         PartA = _mapper.Map<ProjectTaskResponse>(task),     // task đã được cập nhật (nếu là root lần đầu thì là Part A)
         PartB = _mapper.Map<ProjectTaskResponse>(newPart),  // part mới (B/C/…)
@@ -634,13 +697,33 @@ public class TaskService : ITaskService
     .Select(p => (Guid)p.CompanyId)    // ép về Guid
     .FirstAsync(ct);
         // 8) Log
-        await _log.CreateLog(new CompanyActivityLog
-        {
-            CompanyId = companyId,
-            ActorUserId = _current.GetUserId(),
-            Title = "Create task",
-            Description = $"User '{await GetUserName(_current.GetUserId())}' created task '{entity.Title}'"
-        });
+        var sprintName = entity.SprintId.HasValue
+    ? await _db.Sprints.AsNoTracking()
+        .Where(s => s.Id == entity.SprintId.Value)
+        .Select(s => s.Name)
+        .FirstOrDefaultAsync(ct)
+    : null;
+        await _activityLog.TryWriteAsync(
+      entity.Id,
+      action: "TASK_CREATED",
+      message:
+          $"Created {entity.Code} \"{entity.Title}\"" +
+          (sprintName != null ? $" in sprint \"{sprintName}\"" : " in backlog") +
+          $" / \"{entity.Status}\".",
+      changedCols: new[] { "Code", "Title", "ProjectId", "SprintId", "CurrentStatusId", "Status" },
+      metadata: new
+      {
+          taskId = entity.Id,
+          entity.Code,
+          entity.Title,
+          entity.ProjectId,
+          entity.SprintId,
+          entity.CurrentStatusId,
+          entity.Status,
+          assigneeIds = req.AssigneeIds
+      },
+      ct: ct);
+
 
         return _mapper.Map<ProjectTaskResponse>(entity);
     }
@@ -652,6 +735,9 @@ public class TaskService : ITaskService
         var e = await _repo.FindByIdAsync(req.Id, ct)
             ?? throw CustomExceptionFactory.CreateNotFoundError(
                 ResponseMessages.NOT_FOUND.FormatMessage("Task"));
+        var changed = new List<string>();
+
+        var old = new { e.Title, e.Description, e.Type, e.Priority, e.Severity, e.Point, e.EstimateHours, e.DueDate, e.SprintId, e.CurrentStatusId, e.Status };
 
         e.Title = string.IsNullOrWhiteSpace(req.Title) ? e.Title : req.Title.Trim();
         e.Description = req.Description ?? e.Description;
@@ -660,6 +746,7 @@ public class TaskService : ITaskService
         e.Severity = req.Severity ?? e.Severity;
         e.Point = req.Point;
         e.EstimateHours = req.EstimateHours;
+        e.RemainingHours = req.RemainingHours;
         e.DueDate = req.DueDate;
         e.ParentTaskId = req.ParentTaskId;
         e.SourceTaskId = req.SourceTaskId;
@@ -729,7 +816,18 @@ public class TaskService : ITaskService
 
         e.UpdateAt = DateTime.UtcNow;
         await _repo.UpdateAsync(e, ct);
-
+        var nowV = new { e.Title, e.Description, e.Type, e.Priority, e.Severity, e.Point, e.EstimateHours, e.DueDate, e.SprintId, e.CurrentStatusId, e.Status };
+        if (old.Title != nowV.Title) changed.Add("Title");
+        if (old.Description != nowV.Description) changed.Add("Description");
+        if (old.Type != nowV.Type) changed.Add("Type");
+        if (old.Priority != nowV.Priority) changed.Add("Priority");
+        if (old.Severity != nowV.Severity) changed.Add("Severity");
+        if (old.Point != nowV.Point) changed.Add("Point");
+        if (old.EstimateHours != nowV.EstimateHours) changed.Add("EstimateHours");
+        if (old.DueDate != nowV.DueDate) changed.Add("DueDate");
+        if (old.SprintId != nowV.SprintId) changed.Add("SprintId");
+        if (old.CurrentStatusId != nowV.CurrentStatusId) changed.Add("CurrentStatusId");
+        if (old.Status != nowV.Status) changed.Add("Status");
         var companyId = await _db.Projects
        .Where(p => p.Id == e.ProjectId)
        .Select(p => (Guid)p.CompanyId)    // ép về Guid
@@ -754,13 +852,13 @@ public class TaskService : ITaskService
                 ct);
         }
 
-        await _log.CreateLog(new CompanyActivityLog
-        {
-            CompanyId = companyId,
-            ActorUserId = _current.GetUserId(),
-            Title = "Update task",
-            Description = $"User '{await GetUserName(_current.GetUserId())}' updated task '{e.Title}'"
-        });
+        await _activityLog.TryWriteAsync(
+     e.Id,
+     action: "TASK_UPDATED",
+     message: $"Updated {e.Code} \"{e.Title}\" ({string.Join(", ", changed.Count == 0 ? new[] { "Unknown" } : changed)}).",
+     changedCols: changed.Count == 0 ? new[] { "Unknown" } : changed,
+     metadata: new { before = old, after = nowV },
+     ct: ct);
 
         return _mapper.Map<ProjectTaskResponse>(e);
     }
@@ -813,13 +911,13 @@ public class TaskService : ITaskService
      .Select(p => (Guid)p.CompanyId)    
      .FirstAsync(ct);
 
-            await _log.CreateLog(new CompanyActivityLog
-            {
-                CompanyId = companyId,
-                ActorUserId = _current.GetUserId(),
-                Title = "Delete task",
-                Description = $"User '{await GetUserName(_current.GetUserId())}' deleted task '{e.Title}'"
-            });
+            await _activityLog.TryWriteAsync(
+    e.Id,
+    action: "TASK_DELETED",
+    message: $"Deleted {e.Code} \"{e.Title}\".",
+    changedCols: new[] { "IsDeleted" },
+    metadata: new { taskId = e.Id, e.Code, e.Title, e.ProjectId },
+    ct: ct);
         }
         return ok;
     }
@@ -831,7 +929,8 @@ public class TaskService : ITaskService
         var e = await _repo.FindByIdAsync(id, ct)
             ?? throw CustomExceptionFactory.CreateNotFoundError(
                 ResponseMessages.NOT_FOUND.FormatMessage("Task"));
-
+        var oldStatusId = e.CurrentStatusId;
+        var oldStatusText = e.Status;
         var key = statusText.Trim().ToLower();
         var st = await _db.WorkflowStatuses.AsNoTracking()
             .FirstOrDefaultAsync(x =>
@@ -859,13 +958,13 @@ public class TaskService : ITaskService
      .Select(p => (Guid)p.CompanyId)    // ép về Guid
      .FirstAsync(ct);
 
-        await _log.CreateLog(new CompanyActivityLog
-        {
-            CompanyId = companyId,
-            ActorUserId = _current.GetUserId(),
-            Title = "Change task status",
-            Description = $"User '{await GetUserName(_current.GetUserId())}' changed status of '{e.Title}' to '{st.Code ?? st.Name}'"
-        });
+
+        await _activityLog.TryWriteStatusChangedAsync(
+     e,
+     oldStatusId: oldStatusId,
+     oldStatusText: oldStatusText,
+     newStatus: st,
+     ct: ct);
 
         return _mapper.Map<ProjectTaskResponse>(e);
     }
@@ -1397,6 +1496,24 @@ public class TaskService : ITaskService
         }
 
         await _db.SaveChangesAsync(ct);
+        var taskRef = await _db.ProjectTasks.AsNoTracking()
+     .Where(t => t.Id == taskId)
+     .Select(t => new { t.Code, t.Title })
+     .FirstOrDefaultAsync(ct);
+
+        await _activityLog.TryWriteAsync(
+            taskId,
+            action: "TASK_ATTACHMENT_UPLOADED",
+            message: $"Uploaded {attachments.Count} attachment(s) to {(taskRef?.Code ?? taskId.ToString())} \"{(taskRef?.Title ?? "")}\".",
+            changedCols: new[] { "Attachments" },
+            metadata: new
+            {
+                taskId,
+                count = attachments.Count,
+                files = attachments.Select(x => new { x.Id, x.FileName, x.Url, x.ContentType, x.SizeBytes, x.IsImage })
+            },
+            ct: ct);
+
 
         // map sang response
         var userName = await GetUserName(userId);
@@ -1485,6 +1602,19 @@ public class TaskService : ITaskService
 
         _db.ProjectTaskAttachments.Remove(attachment);
         await _db.SaveChangesAsync(ct);
+        var taskRef = await _db.ProjectTasks.AsNoTracking()
+       .Where(t => t.Id == taskId)
+       .Select(t => new { t.Code, t.Title })
+       .FirstOrDefaultAsync(ct);
+
+        await _activityLog.TryWriteAsync(
+            taskId,
+            action: "TASK_ATTACHMENT_DELETED",
+            message: $"Deleted attachment \"{attachment.FileName}\" from {(taskRef?.Code ?? taskId.ToString())} \"{(taskRef?.Title ?? "")}\".",
+            changedCols: new[] { "Attachments" },
+            metadata: new { taskId, attachmentId, attachment.FileName, attachment.Url },
+            ct: ct);
+
 
         return true;
     }
@@ -1644,6 +1774,20 @@ public class TaskService : ITaskService
         }
 
         await _db.SaveChangesAsync(ct);
+        await _activityLog.TryWriteAsync(
+      taskId,
+      action: "TASK_COMMENT_ADDED",
+      message: $"Added comment to {(task.Code ?? taskId.ToString())} \"{(task.Title ?? "")}\" (body: {!string.IsNullOrWhiteSpace(body)}, files: {files?.Count ?? 0}).",
+      changedCols: new[] { "Comments" },
+      metadata: new
+      {
+          taskId,
+          commentId = comment.Id,
+          hasBody = !string.IsNullOrWhiteSpace(body),
+          filesCount = files?.Count ?? 0
+      },
+      ct: ct);
+
 
         var author = await _db.Users
             .AsNoTracking()
@@ -1793,13 +1937,23 @@ public class TaskService : ITaskService
             .FirstAsync(ct);
 
         // 8) Log
-        await _log.CreateLog(new CompanyActivityLog
-        {
-            CompanyId = companyId,
-            ActorUserId = _current.GetUserId(),
-            Title = "Create draft task",
-            Description = $"User '{await GetUserName(_current.GetUserId())}' created draft task '{entity.Title}'"
-        });
+        await _activityLog.TryWriteAsync(
+      entity.Id,
+      action: "TASK_DRAFT_CREATED",
+      message: $"Created draft {entity.Code} \"{entity.Title}\" in backlog / \"{entity.Status}\".",
+      changedCols: new[] { "Code", "Title", "ProjectId", "IsBacklog", "CurrentStatusId", "Status" },
+      metadata: new
+      {
+          taskId = entity.Id,
+          entity.Code,
+          entity.Title,
+          entity.ProjectId,
+          entity.IsBacklog,
+          entity.CurrentStatusId,
+          entity.Status,
+          assigneeIds = req.AssigneeIds
+      },
+      ct: ct);
 
         return _mapper.Map<ProjectTaskResponse>(entity);
     }
@@ -1816,7 +1970,7 @@ public class TaskService : ITaskService
         // Chỉ cho sửa draft
         if (!e.IsBacklog || e.SprintId != null)
             throw CustomExceptionFactory.CreateBadRequestError("Task is not a draft task.");
-
+        var old = new { e.Title, e.Description, e.Type, e.Priority, e.Severity, e.Point, e.EstimateHours, e.DueDate, e.CurrentStatusId, e.Status };
         // Update các trường cơ bản
         e.Title = string.IsNullOrWhiteSpace(req.Title) ? e.Title : req.Title.Trim();
         e.Description = req.Description ?? e.Description;
@@ -1872,7 +2026,7 @@ public class TaskService : ITaskService
 
         e.UpdateAt = DateTime.UtcNow;
         await _repo.UpdateAsync(e, ct);
-
+        var after = new { e.Title, e.Description, e.Type, e.Priority, e.Severity, e.Point, e.EstimateHours, e.DueDate, e.CurrentStatusId, e.Status };
         var companyId = await _db.Projects
             .Where(p => p.Id == e.ProjectId)
             .Select(p => (Guid)p.CompanyId)
@@ -1899,13 +2053,14 @@ public class TaskService : ITaskService
                 ct);
         }
 
-        await _log.CreateLog(new CompanyActivityLog
-        {
-            CompanyId = companyId,
-            ActorUserId = _current.GetUserId(),
-            Title = "Update draft task",
-            Description = $"User '{await GetUserName(_current.GetUserId())}' updated draft task '{e.Title}'"
-        });
+        await _activityLog.TryWriteAsync(
+     e.Id,
+     action: "TASK_DRAFT_UPDATED",
+     message: $"Updated draft {e.Code} \"{e.Title}\".",
+     changedCols: new[] { "Title", "Description", "Type", "Priority", "Severity", "Point", "EstimateHours", "DueDate", "CurrentStatusId", "Status" },
+     metadata: new { before = old, after },
+     ct: ct);
+
 
         return _mapper.Map<ProjectTaskResponse>(e);
     }
@@ -2063,13 +2218,23 @@ public class TaskService : ITaskService
 
         // 6) Log activity
         var companyId = await GetCompanyIdOfProject(e.ProjectId, ct);
-        await _log.CreateLog(new CompanyActivityLog
-        {
-            CompanyId = companyId,
-            ActorUserId = _current.GetUserId(),
-            Title = "Materialize draft task",
-            Description = $"User '{await GetUserName(_current.GetUserId())}' materialized draft task '{e.Title}' to sprint '{sprint.Name}'"
-        });
+        await _activityLog.TryWriteAsync(
+      e.Id,
+      action: "TASK_DRAFT_MATERIALIZED",
+      message: $"Materialized draft {e.Code} \"{e.Title}\" to sprint \"{sprint.Name}\" / \"{(resolved.Code ?? resolved.Name)}\".",
+      changedCols: new[] { "SprintId", "IsBacklog", "CurrentStatusId", "Status", "OrderInSprint" },
+      metadata: new
+      {
+          taskId = e.Id,
+          fromBacklog = true,
+          toSprintId = sprint.Id,
+          sprintName = sprint.Name,
+          statusId = resolved.Id,
+          status = resolved.Code ?? resolved.Name,
+          orderInSprint = e.OrderInSprint
+      },
+      ct: ct);
+
 
         return _mapper.Map<ProjectTaskResponse>(e);
     }
@@ -2219,14 +2384,26 @@ public class TaskService : ITaskService
 
         // 7) Log
         var actorId = _current.GetUserId();
-        await _log.CreateLog(new CompanyActivityLog
-        {
-            CompanyId = companyId,
-            ActorUserId = actorId,
-            Title = "Create ticket task",
-            Description =
-                $"User '{await GetUserName(actorId)}' created backlog task '{entity.Title}' from ticket '{ticket.TicketName ?? ticket.Id.ToString()}'"
-        });
+        await _activityLog.TryWriteAsync(
+      entity.Id,
+      action: "TASK_CREATED_FROM_TICKET",
+      message: $"Created {entity.Code} \"{entity.Title}\" from ticket \"{ticket.TicketName}\".",
+      changedCols: new[] { "TicketId", "Code", "Title", "ProjectId", "IsBacklog", "CurrentStatusId", "Status" },
+      metadata: new
+      {
+          taskId = entity.Id,
+          ticketId = ticket.Id,
+          ticketName = ticket.TicketName,
+          entity.Code,
+          entity.Title,
+          entity.ProjectId,
+          entity.IsBacklog,
+          entity.CurrentStatusId,
+          entity.Status,
+          assigneeIds = req.AssigneeIds
+      },
+      ct: ct);
+
 
         return _mapper.Map<ProjectTaskResponse>(entity);
     }

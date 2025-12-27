@@ -8,7 +8,6 @@ using Fusion.Repository.Entities;
 using Fusion.Repository.Enums;
 using Fusion.Repository.IRepositories;
 using Microsoft.EntityFrameworkCore;
-using System.ComponentModel.Design;
 
 namespace Fusion.Repository.Repositories
 {
@@ -450,6 +449,62 @@ namespace Fusion.Repository.Repositories
             .Where(x => x.UserSubscriptionId == userSubscriptionId
                      && x.Status != SubscriptionStatus.Paused)
             .ToListAsync(ct);
+        }
+
+        public async Task<CompanySubscription> UpdateStatusForCompanyAsync(
+            Guid companyId,
+            Guid companySubscriptionId,
+            Guid actorUserId,                 // user đang thao tác (để check owner)
+            SubscriptionStatus newStatus,
+            DateTimeOffset now,
+            CancellationToken ct = default)
+        {
+            var companyOwnerId = await _context.Companies
+       .AsNoTracking()
+       .Where(c => c.Id == companyId && (c.IsDeleted == null || c.IsDeleted == false))
+       .Select(c => c.OwnerUserId)
+       .FirstOrDefaultAsync(ct);
+
+            if (!companyOwnerId.HasValue)
+                throw new KeyNotFoundException("Company not found.");
+
+            // chỉ cho update khi còn hạn
+            if (companyOwnerId.Value != actorUserId)
+                throw new UnauthorizedAccessException("Only company owner can update company subscriptions.");
+
+            // 2) Load company subscription
+            var cs = await _context.CompanySubscriptions.FirstOrDefaultAsync(x => x.CompanyId == companyId && x.Id == companySubscriptionId, ct);
+
+            if (cs == null)
+                throw new KeyNotFoundException("Company subscription not found.");
+
+            // 3) Chỉ cho update khi còn hạn
+            if (cs.ExpiredAt.HasValue && cs.ExpiredAt.Value <= now)
+                throw new InvalidOperationException("This subscription is expired and cannot be updated.");
+
+            // 4) Nếu set Active => ép tất cả gói khác Paused (đảm bảo only-one-active)
+            if (newStatus == SubscriptionStatus.Active)
+            {
+                await _context.CompanySubscriptions
+                    .Where(x => x.CompanyId == companyId
+                             && x.Id != companySubscriptionId
+                             // chỉ hạ những cái đang Active (đỡ đụng các status khác)
+                             && x.Status == SubscriptionStatus.Active
+                             // optional: tránh update các gói đã hết hạn
+                             && (!x.ExpiredAt.HasValue || x.ExpiredAt.Value > now))
+                    .ExecuteUpdateAsync(setters => setters
+                        .SetProperty(x => x.Status, SubscriptionStatus.Paused)
+                        .SetProperty(x => x.UpdatedAt, now),
+                        ct);
+            }
+
+            // 5) Update gói hiện tại
+            cs.Status = newStatus;            // Active hoặc Paused
+            cs.UpdatedAt = now;
+
+            await _context.SaveChangesAsync(ct);
+
+            return cs;
         }
     }
 }

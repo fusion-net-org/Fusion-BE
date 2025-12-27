@@ -1,4 +1,5 @@
 ﻿using Azure;
+using Fusion.API.Auth;
 using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.Company;
 using Fusion.Repository.Bases.Page.Company_Member;
@@ -14,7 +15,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using Travelogue.Repository.Caching;
 
 namespace Fusion.API.Controllers
 {
@@ -30,6 +30,7 @@ namespace Fusion.API.Controllers
         }
 
         [HttpPost("invite")]
+        [HasPermission("MEMBER_INVITE")]
         public async Task<IActionResult> InviteMemberToCompany([FromBody] InviteMemberRequest request, CancellationToken token)
         {
 
@@ -94,6 +95,7 @@ namespace Fusion.API.Controllers
 
 
         [HttpPut("fired")]
+        [HasPermission("MEMBER_REMOVE")]
         public async Task<IActionResult> FiredMemberFromCompany([FromBody] FiredMemberRequest request, CancellationToken token)
         {
 
@@ -173,6 +175,7 @@ namespace Fusion.API.Controllers
         }
 
         [HttpDelete("{companyId:guid}/users/roles")]
+        [HasPermission("MEMBER_REMOVE_ROLE")]
         public async Task<IActionResult> RemoveUserRolesFromCompany(
                Guid companyId,
                [FromBody] RemoveUserRoleFromCompanyRequest request,
@@ -204,6 +207,7 @@ namespace Fusion.API.Controllers
 
 
         [HttpPost("{companyId:guid}/users/roles")]
+        [HasPermission("MEMBER_ASSIGN_ROLE")]
         public async Task<IActionResult> AddUserRolesToCompany(Guid companyId, [FromBody] AddUserRoleToCompanyRequest request, CancellationToken token)
         {
             var emailClaim = User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email || c.Type == ClaimTypes.Email || c.Type == "email");

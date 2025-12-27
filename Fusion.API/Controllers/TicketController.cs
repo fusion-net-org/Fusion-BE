@@ -1,5 +1,6 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using Fusion.API.Auth;
 using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.Ticket;
 using Fusion.Repository.Bases.Responses;
@@ -59,6 +60,7 @@ namespace Fusion.API.Controllers
 
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(ResponseModel<TicketResponse>))]
+        [HasPermission("TICKET_CREATE")]
         public async Task<IActionResult> CreateTicket(TicketRequest request, CancellationToken cancellationToken)
         {
             var emailClaim = User.Claims.FirstOrDefault(c =>
@@ -103,6 +105,7 @@ namespace Fusion.API.Controllers
 
         [HttpPut("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<TicketResponse>))]
+        [HasPermission("TICKET_UPDATE")]
         public async Task<IActionResult> Update(Guid id, TicketRequest request, CancellationToken cancellationToken)
         {
             var emailClaim = User.Claims.FirstOrDefault(c =>
@@ -127,6 +130,7 @@ namespace Fusion.API.Controllers
 
         [HttpDelete("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [HasPermission("TICKET_DELETE")]
         public async Task<IActionResult> Delete(Guid id, [FromQuery] string reason, CancellationToken cancellationToken)
         {
             var emailClaim = User.Claims.FirstOrDefault(c =>
@@ -287,6 +291,7 @@ namespace Fusion.API.Controllers
 
         [HttpPut("{id:guid}/accept")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<TicketResponse>))]
+        [HasPermission("TICKET_ACCEPT")]
         public async Task<IActionResult> AcceptTicket(Guid id, CancellationToken cancellationToken)
         {
             var emailClaim = User.Claims.FirstOrDefault(c =>
@@ -335,6 +340,7 @@ namespace Fusion.API.Controllers
 
         [HttpPut("{id:guid}/reject")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<TicketResponse>))]
+        [HasPermission("TICKET_REJECT")]
         public async Task<IActionResult> RejectTicket(Guid id, [FromQuery] string? reason, CancellationToken cancellationToken)
         {
             var emailClaim = User.Claims.FirstOrDefault(c =>

@@ -13,6 +13,7 @@ using Fusion.Service.Commons.Helpers;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.CompanySubscription.Requests;
 using Fusion.Service.ViewModels.CompanySubscription.Responses;
+using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace Fusion.Service.Services
 {
@@ -354,6 +355,25 @@ namespace Fusion.Service.Services
             }
 
             return updatedEntitlements;
+        }
+
+        public async Task<bool> UpdateStatusForCompanyAsync(Guid companyId, Guid companySubscriptionId, CompanySubscriptionUpdateStatusRequest request, CancellationToken ct = default)
+        {
+            var actorUserId = _currentService.GetUserId();
+            if (request.Status != SubscriptionStatus.Active &&request.Status != SubscriptionStatus.Paused)
+                throw CustomExceptionFactory.CreateBadRequestError("Only Active / Paused are allowed.");
+
+            var now = DateTimeOffset.UtcNow;
+
+            var updated = await _companySubscriptionRepository.UpdateStatusForCompanyAsync(
+                companyId: companyId,
+                companySubscriptionId: companySubscriptionId,
+                actorUserId: actorUserId,
+                newStatus: request.Status,
+                now: now,
+                ct: ct);
+
+            return true;
         }
     }
 }

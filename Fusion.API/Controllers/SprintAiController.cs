@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Fusion.API.Auth;
 using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Bases.Responses;
 using Fusion.Service.Services;
@@ -90,6 +91,60 @@ namespace Fusion.API.Controllers
             var result = await _service.GenerateTasksAsync(dto, ct);
             return Ok(result);
         }
+        [HasPermission("SPRINT_AI_GENERATE")]
+        [HttpPost("generate-and-save/by-sprint")]
+        public async Task<ActionResult<AiGenerateAndSaveBySprintResponseDto>> GenerateAndSaveBySprint(
+    Guid projectId,
+    Guid sprintId,
+    [FromBody] AiTaskGenerateRequestDto request,
+    CancellationToken ct)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            if (projectId != request.ProjectId || sprintId != request.SprintId)
+                return BadRequest("ProjectId/SprintId mismatch.");
+
+            var entities = await _service.GenerateAndSaveAsync(request, ct);
+            var vms = _mapper.Map<List<ProjectTaskResponse>>(entities);
+
+            // map sprintName từ boardSprints nếu có
+            var nameById = (request.BoardSprints ?? Array.Empty<AiBoardSprintDto>())
+                .Where(s => s.Id != Guid.Empty)
+                .GroupBy(s => s.Id)
+                .ToDictionary(g => g.Key, g => g.First().Name);
+
+            var grouped = vms
+      .Where(x => x.SprintId.HasValue && x.SprintId.Value != Guid.Empty)
+      .GroupBy(x => x.SprintId!.Value)
+      .Select(g => new AiSprintTasksDto
+      {
+          SprintId = g.Key,
+          SprintName = nameById.TryGetValue(g.Key, out var n) ? n : null,
+          Tasks = g.ToList()
+      })
+      .ToList();
+
+            if (request.TargetSprintIds != null && request.TargetSprintIds.Count > 0)
+            {
+                var order = request.TargetSprintIds
+       .Where(id => id != Guid.Empty)
+       .Distinct() 
+       .Select((id, idx) => new { id, idx })
+       .ToDictionary(x => x.id, x => x.idx);
+
+                grouped = grouped
+        .OrderBy(x => order.TryGetValue(x.SprintId, out var idx) ? idx : int.MaxValue)
+        .ToList();
+            }
+
+            return Ok(new AiGenerateAndSaveBySprintResponseDto
+            {
+                ProjectId = projectId,
+                Sprints = grouped
+            });
+        }
+
 
     }
 }
