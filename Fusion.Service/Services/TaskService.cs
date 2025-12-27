@@ -1078,6 +1078,7 @@ public class TaskService : ITaskService
 
             ParentTaskId = t.ParentTaskId,
             SourceTaskId = t.SourceTaskId,
+            TicketId = t.TicketId,
 
             Project = t.Project == null ? null : new ProjectResponse
             {
@@ -1213,6 +1214,8 @@ public class TaskService : ITaskService
             RemainingHours = t.RemainingHours,
             CarryOverCount = t.CarryOverCount,
             OrderInSprint = t.OrderInSprint,
+
+            TicketId = t.TicketId,
 
             IsBacklog = t.IsBacklog,
             IsDeleted = t.IsDeleted,

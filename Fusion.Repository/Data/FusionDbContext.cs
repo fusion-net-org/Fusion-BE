@@ -512,7 +512,7 @@ public partial class FusionDbContext : DbContext
         modelBuilder.Entity<ProjectTaskAssignee>(e =>
         {
             e.ToTable("ProjectTaskAssignees");
-            e.HasKey(x => new { x.TaskId, x.UserId });               // ⬅️ khóa chính kép
+            e.HasKey(x => new { x.TaskId, x.UserId });               // khóa chính kép
             e.Property(x => x.AssignedAt).HasPrecision(3)
                 .HasDefaultValueSql("GETUTCDATE()");
           
