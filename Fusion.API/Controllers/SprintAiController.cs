@@ -43,7 +43,6 @@ namespace Fusion.API.Controllers
 
             var result = await _service.GenerateTasksAsync(request, ct);
             return Ok(result);
-            // Nếu bạn có wrapper chuẩn: return Ok(ApiSuccessResponse.Success(result));
         }
 
         /// <summary>
@@ -108,7 +107,6 @@ namespace Fusion.API.Controllers
             var entities = await _service.GenerateAndSaveAsync(request, ct);
             var vms = _mapper.Map<List<ProjectTaskResponse>>(entities);
 
-            // map sprintName từ boardSprints nếu có
             var nameById = (request.BoardSprints ?? Array.Empty<AiBoardSprintDto>())
                 .Where(s => s.Id != Guid.Empty)
                 .GroupBy(s => s.Id)
