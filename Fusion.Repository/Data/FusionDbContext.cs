@@ -2,6 +2,7 @@
 using Fusion.Repository.Entities;
 using Fusion.Repository.Enums;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Fusion.Repository.Data;
 
@@ -64,9 +65,13 @@ public partial class FusionDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        var utcKindConverter = new ValueConverter<DateTime, DateTime>(
+    v => v, 
+    v => DateTime.SpecifyKind(v, DateTimeKind.Utc) 
+);
         modelBuilder.Entity<Comment>(entity =>
         {
-            entity.Property(e => e.CreateAt).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.CreateAt).HasDefaultValueSql("(sysutcdatetime())").HasConversion(utcKindConverter);
 
             entity.HasOne(d => d.AuthorUser).WithMany(p => p.Comments).HasConstraintName("FK_Comments_Author");
 
@@ -104,7 +109,7 @@ public partial class FusionDbContext : DbContext
                 .IsUnique()
                 .HasFilter("([company_id] IS NOT NULL AND [user_id] IS NOT NULL)");
 
-            entity.Property(e => e.JoinedAt).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.JoinedAt).HasDefaultValueSql("(sysutcdatetime())").HasConversion(utcKindConverter);
             entity.Property(e => e.Status).HasDefaultValue(true);
 
             entity.HasOne(d => d.Company).WithMany(p => p.CompanyMembers).HasConstraintName("FK_CompanyMembers_Company");
@@ -125,8 +130,8 @@ public partial class FusionDbContext : DbContext
         modelBuilder.Entity<Project>(entity =>
         {
             entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
-            entity.Property(e => e.CreateAt).HasDefaultValueSql("(sysutcdatetime())");
-            entity.Property(e => e.UpdateAt).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.CreateAt).HasDefaultValueSql("(sysutcdatetime())").HasConversion(utcKindConverter);
+            entity.Property(e => e.UpdateAt).HasDefaultValueSql("(sysutcdatetime())").HasConversion(utcKindConverter);
 
             entity.HasOne(d => d.CompanyRequest).WithMany(p => p.ProjectCompanyRequests).HasConstraintName("FK_Projects_HiredCompany");
 
@@ -168,7 +173,8 @@ public partial class FusionDbContext : DbContext
         modelBuilder.Entity<ProjectTask>(entity =>
         {
             entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
-            entity.Property(e => e.CreateAt).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.CreateAt).HasDefaultValueSql("(sysutcdatetime())").HasConversion(utcKindConverter);
+            entity.Property(e => e.UpdateAt).HasDefaultValueSql("(sysutcdatetime())").HasConversion(utcKindConverter);
 
             entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.ProjectTasks).HasConstraintName("FK_ProjectTasks_CreatedBy");
 
