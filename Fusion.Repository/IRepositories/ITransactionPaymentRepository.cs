@@ -19,6 +19,7 @@ public interface ITransactionPaymentRepository : IGenericRepository<TransactionP
     Task<bool> LinkToSubscriptionAsync(Guid transactionId, Guid userSubscriptionId, CancellationToken ct = default);
     // Paged
     Task<TransactionPaymentPagedRepoResult> GetPagedAsync(TransactionPaymentPagedRequest request, CancellationToken ct = default);
+    Task<TransactionPaymentPagedRepoResult> GetPagedByUserIdAsync(Guid userId, TransactionPaymentUserPagedRequest request, CancellationToken ct = default);
 
     // Create
     Task<TransactionPayment> CreateDraftChargeAsync(TransactionPayment draft, CancellationToken ct = default);

@@ -335,7 +335,11 @@ public class MappingProfile : Profile
                 .FirstOrDefault()
             : null));
 
-        CreateMap<SubscriptionPlan, SubscriptionPlanListItemResponse>();
+        CreateMap<SubscriptionPlan, SubscriptionPlanListItemResponse>()
+                  .ForMember(d => d.BillingPeriod, o => o.MapFrom(s =>
+                    s.Price != null ? s.Price.BillingPeriod : BillingPeriod.Month))
+                  .ForMember(d => d.PeriodCount, o => o.MapFrom(s =>
+                    s.Price != null ? (int?)s.Price.PeriodCount : null));
 
         CreateMap<SubscriptionPlan, SubscriptionPlanDetailResponse>()
             .ForMember(d => d.Price, o => o.MapFrom(s => s.Price))

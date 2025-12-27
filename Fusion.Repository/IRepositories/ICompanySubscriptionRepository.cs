@@ -2,6 +2,7 @@
 using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.CompanySubscriptions;
 using Fusion.Repository.Entities;
+using Fusion.Repository.Enums;
 namespace Fusion.Repository.IRepositories;
 
 public interface ICompanySubscriptionRepository
@@ -20,4 +21,9 @@ public interface ICompanySubscriptionRepository
     Task<List<CompanySubscription>> GetAllActiveAutoMonthlyByPlanIdsWithEntitlementsAsync(IEnumerable<Guid> planIds,DateTimeOffset now, CancellationToken ct = default);
 
     Task<List<CompanySubscription>> GetAllActiveByUserSubscriptionAsync(Guid userSubscriptionId, CancellationToken ct = default);
+    Task<CompanySubscription> UpdateStatusForCompanyAsync(Guid companyId, Guid companySubscriptionId,
+           Guid actorUserId,                 // user đang thao tác (để check owner)
+           SubscriptionStatus newStatus,
+           DateTimeOffset now,
+           CancellationToken ct = default);
 }
