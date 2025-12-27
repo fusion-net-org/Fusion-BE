@@ -211,6 +211,29 @@ public class TransactionPaymentService : ITransactionPaymentService
         };
     }
 
+    public async Task<TransactionPaymentPagedSummaryResponse> GetPagedByUserIdAsync(
+    TransactionPaymentUserPagedRequest request,
+    CancellationToken ct = default)
+    {
+        var userId = _current.GetUserId();
+        request ??= new TransactionPaymentUserPagedRequest();
+
+        var paged = await _txRepo.GetPagedByUserIdAsync(userId, request, ct);
+
+        return new TransactionPaymentPagedSummaryResponse
+        {
+            Items = _mapper.Map<List<TransactionPaymentResponse>>(paged.Items),
+            PageNumber = paged.PageNumber,
+            PageSize = paged.PageSize,
+            TotalCount = paged.TotalCount,
+
+            TotalTransactions = paged.TotalTransactions,
+            TotalRevenue = paged.TotalRevenue,
+            TotalSuccess = paged.TotalSuccess,
+            TotalFailed = paged.TotalFailed,
+            TotalPending = paged.TotalPending,
+        };
+    }
     public Task<bool> AttachPaymentLinkAsync(Guid transactionId, long orderCode, string paymentLinkId, string? provider, CancellationToken ct = default)
     => _txRepo.AttachPaymentLinkAsync(transactionId, orderCode, paymentLinkId, provider, ct);
 

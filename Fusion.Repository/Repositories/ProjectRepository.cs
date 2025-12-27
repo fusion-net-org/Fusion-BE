@@ -352,6 +352,9 @@ namespace Fusion.Repository.Repositories
                         .Include(p => p.Company)
                         .Include(p => p.CompanyRequest)
                         .Include(p => p.CreatedByNavigation)
+                         .Include(p => p.ProjectRequest)
+                          .ThenInclude(pr => pr.Contract)
+                        .Include(p => p.Tickets)
                         .SingleOrDefaultAsync(x => x.Id == projectId);
             return query;
         }

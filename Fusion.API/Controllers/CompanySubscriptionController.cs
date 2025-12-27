@@ -1,5 +1,6 @@
 ﻿using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.CompanySubscriptions;
+using Fusion.Repository.Bases.Responses;
 using Fusion.Repository.ViewModels.CompanySubscriptionEntry;
 using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.IServices;
@@ -35,7 +36,26 @@ namespace Fusion.API.Controllers
                 data: result,
                 message: "Create company subscription successfully"));
         }
+        [HttpPut("companies/{companyId:guid}/items/{companySubscriptionId:guid}/status")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<bool>))]
+        public async Task<IActionResult> UpdateStatusForCompany(
+        [FromRoute] Guid companyId,
+        [FromRoute] Guid companySubscriptionId,
+        [FromBody] CompanySubscriptionUpdateStatusRequest request,
+        CancellationToken ct)
+        {
+            var ok = await _service.UpdateStatusForCompanyAsync(
+                companyId,
+                companySubscriptionId,
+                request,
+                ct);
 
+            return Ok(ResponseModel<bool>.Ok(
+                data: ok,
+                message: ResponseMessageHelper.FormatMessage(
+                    ResponseMessages.UPDATE_SUCCESS,
+                    "company subscription status")));
+        }
         /// <summary>
         /// Lấy chi tiết một Company Subscription theo ID
         /// </summary>
