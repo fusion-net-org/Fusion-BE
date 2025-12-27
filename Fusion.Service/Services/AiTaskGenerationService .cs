@@ -286,23 +286,20 @@ namespace Fusion.Service.Services
 
         private string BuildSystemPrompt()
         {
-            const string defaultPrompt = """
-You are an assistant that helps a product team break down work into sprint tasks
-for an Agile project management tool called FUSION.
+            if (!string.IsNullOrWhiteSpace(_options.SystemPrompt))
+                return _options.SystemPrompt;
 
-Rules:
-- Always respond with valid JSON that matches the schema given in the user message.
-- Do NOT assign tasks to specific people. Do not output assignee names, ids or emails.
-- Use the existing tasks list as context: avoid duplicates and instead generate tasks that cover missing flows, edge cases and testability.
-- Prefer short, action-oriented titles.
-- If dependencies are requested, only refer to existing tasks by code or title that appear in the context.
-- When checklists are requested, generate 3–7 clear, testable checklist items per task.
-- If estimate is requested, keep each task size consistent with the sprint capacity and the given range.
-Always set storyPoints (1,2,3,5,8,13) based on estimateHours.
-""";
-
-            return defaultPrompt;
+            return "You are an assistant that helps a product team break down work into sprint tasks for an Agile project management tool called FUSION. Always respond with valid JSON.";
         }
+        private string BuildInstructionsForModel(AiTaskGenerateRequestDto r)
+        {
+            var tpl = _options.InstructionsForModelTemplate;
+
+
+            // template đơn giản: {Quantity}
+            return tpl.Replace("{Quantity}", r.Quantity.ToString());
+        }
+
 
         private string BuildUserPayload(AiTaskGenerateRequestDto r)
         {
@@ -428,11 +425,7 @@ Always set storyPoints (1,2,3,5,8,13) based on estimateHours.
                     },
                     required = new[] { "tasks" }
                 },
-                instructionsForModel =
-                    $"You are generating tasks for ONE sprint at a time (instructions.sprint). " +
-                    $"For each call, try to generate around {r.Quantity} sprint-ready tasks for that sprint. " +
-                    "Use instructions.board.sprints and instructions.board.tasks as global context. " +
-                    "If you are not sure which sprint a task belongs to, omit sprintId or set it to null; do not invent random IDs."
+                instructionsForModel = BuildInstructionsForModel(r)
             };
 
             return JsonSerializer.Serialize(obj, _jsonOptions);
