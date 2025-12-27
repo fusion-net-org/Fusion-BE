@@ -10,8 +10,6 @@ public class TransactionPaymentPagedRepoResult : PagedResult<TransactionPayment>
     public int TotalSuccess { get; set; }
     public int TotalFailed { get; set; }
     public int TotalPending { get; set; }
-
-    // Cho tiện dùng ở service
     public int TotalTransactions => TotalCount;
 
 }

@@ -13,6 +13,8 @@ public class SubscriptionPlanListItemResponse
     public bool AutoGrantMonthly { get; set; }
     public int? CompanyShareLimit { get; set; }
     public int? SeatsPerCompanyLimit { get; set; }
+    public BillingPeriod BillingPeriod { get; set; }
+    public int? PeriodCount { get; set; }
 
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }

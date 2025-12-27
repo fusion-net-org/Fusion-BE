@@ -26,4 +26,9 @@ public interface ICompanySubscriptionService
 
     Task<int> ResetCompanyAutoMonthlyEntitlementsAsync(
         CancellationToken ct = default);
+        Task<bool> UpdateStatusForCompanyAsync(
+            Guid companyId,
+            Guid companySubscriptionId,
+            CompanySubscriptionUpdateStatusRequest request,
+            CancellationToken ct = default);
 }
