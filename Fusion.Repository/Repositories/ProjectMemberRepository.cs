@@ -33,18 +33,34 @@ namespace Fusion.Repository.Repositories
             _context.ProjectMembers.Remove(entity);
         }
         public async Task<List<ProjectMember>> GetProjectMembersWithUserAndRoleAsync(
-       Guid projectId,
-       CancellationToken ct = default)
+     Guid projectId,
+     CancellationToken ct = default)
         {
-            return await _context.ProjectMembers
+            var proj = await _context.Projects
+                .AsNoTracking()
+                .Where(p => p.Id == projectId)
+                .Select(p => new { p.IsHired, p.CompanyId, p.CompanyRequestId })
+                .FirstOrDefaultAsync(ct);
+
+            if (proj == null) return new List<ProjectMember>();
+
+            var roleCompanyId = proj.IsHired
+                ? (proj.CompanyRequestId ?? proj.CompanyId)
+                : proj.CompanyId;
+
+            var members = await _context.ProjectMembers
                 .AsNoTracking()
                 .Include(pm => pm.User)
-                    .ThenInclude(u => u.UserRoles)
+                    .ThenInclude(u => u.UserRoles
+                        .Where(ur => ur.Role != null && ur.Role.CompanyId == roleCompanyId))
                         .ThenInclude(ur => ur.Role)
                 .Include(pm => pm.Project)
                 .Where(pm => pm.ProjectId == projectId)
                 .ToListAsync(ct);
+
+            return members;
         }
+
         public async Task<int> GetTotalProjectsForMemberInCompanyAsync(Guid memberId, Guid companyId, CancellationToken cancellationToken = default)
         {
             var totalProjects = await _context.ProjectMembers
