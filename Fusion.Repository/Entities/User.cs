@@ -126,4 +126,14 @@ public partial class User
 
     [InverseProperty(nameof(UserSubscription.User))]
     public virtual ICollection<UserSubscription> UserSubscriptions { get; set; } = new List<UserSubscription>();
+
+    [InverseProperty(nameof(UserFriendship.Requester))]
+    public virtual ICollection<UserFriendship> SentFriendRequests { get; set; } = new List<UserFriendship>();
+
+    [InverseProperty(nameof(UserFriendship.Addressee))]
+    public virtual ICollection<UserFriendship> ReceivedFriendRequests { get; set; } = new List<UserFriendship>();
+
+    [InverseProperty(nameof(ChatConversationMember.User))]
+    public virtual ICollection<ChatConversationMember> ChatConversationMembers { get; set; }
+       = new List<ChatConversationMember>();
 }

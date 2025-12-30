@@ -4,6 +4,7 @@ using Fusion.Repository.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Fusion.Repository.Migrations
 {
     [DbContext(typeof(FusionDbContext))]
-    partial class FusionDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251230080025_ABC")]
+    partial class ABC
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,99 +24,6 @@ namespace Fusion.Repository.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
-
-            modelBuilder.Entity("Fusion.Repository.Entities.ChatConversation", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime?>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("DirectPairKey")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("LastMessageAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Title")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int?>("Type")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CreatedBy");
-
-                    b.ToTable("ChatConversation");
-                });
-
-            modelBuilder.Entity("Fusion.Repository.Entities.ChatConversationMember", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("AddedBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("ConversationId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime?>("JoinedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("Role")
-                        .HasColumnType("int");
-
-                    b.Property<Guid?>("UserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AddedBy");
-
-                    b.HasIndex("ConversationId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("ChatConversationMember");
-                });
-
-            modelBuilder.Entity("Fusion.Repository.Entities.ChatMessage", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("ClientMessageId")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Content")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<Guid?>("ConversationId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("SenderId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ConversationId");
-
-                    b.HasIndex("SenderId");
-
-                    b.ToTable("ChatMessage");
-                });
 
             modelBuilder.Entity("Fusion.Repository.Entities.Comment", b =>
                 {
@@ -2383,39 +2293,6 @@ namespace Fusion.Repository.Migrations
                     b.ToTable("UserDevices");
                 });
 
-            modelBuilder.Entity("Fusion.Repository.Entities.UserFriendship", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("AddresseeId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("PairKey")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("RequestedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("RequesterId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime?>("RespondedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int?>("Status")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AddresseeId");
-
-                    b.HasIndex("RequesterId");
-
-                    b.ToTable("UserFriendship");
-                });
-
             modelBuilder.Entity("Fusion.Repository.Entities.UserLog", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2829,51 +2706,6 @@ namespace Fusion.Repository.Migrations
                         .HasFilter("([workflow_id] IS NOT NULL AND [from_status_id] IS NOT NULL AND [to_status_id] IS NOT NULL)");
 
                     b.ToTable("WorkflowTransitions");
-                });
-
-            modelBuilder.Entity("Fusion.Repository.Entities.ChatConversation", b =>
-                {
-                    b.HasOne("Fusion.Repository.Entities.User", "CreatedByUser")
-                        .WithMany()
-                        .HasForeignKey("CreatedBy");
-
-                    b.Navigation("CreatedByUser");
-                });
-
-            modelBuilder.Entity("Fusion.Repository.Entities.ChatConversationMember", b =>
-                {
-                    b.HasOne("Fusion.Repository.Entities.User", "AddedByUser")
-                        .WithMany()
-                        .HasForeignKey("AddedBy");
-
-                    b.HasOne("Fusion.Repository.Entities.ChatConversation", "Conversation")
-                        .WithMany("Members")
-                        .HasForeignKey("ConversationId");
-
-                    b.HasOne("Fusion.Repository.Entities.User", "User")
-                        .WithMany("ChatConversationMembers")
-                        .HasForeignKey("UserId");
-
-                    b.Navigation("AddedByUser");
-
-                    b.Navigation("Conversation");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Fusion.Repository.Entities.ChatMessage", b =>
-                {
-                    b.HasOne("Fusion.Repository.Entities.ChatConversation", "Conversation")
-                        .WithMany("Messages")
-                        .HasForeignKey("ConversationId");
-
-                    b.HasOne("Fusion.Repository.Entities.User", "Sender")
-                        .WithMany()
-                        .HasForeignKey("SenderId");
-
-                    b.Navigation("Conversation");
-
-                    b.Navigation("Sender");
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.Comment", b =>
@@ -3488,21 +3320,6 @@ namespace Fusion.Repository.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Fusion.Repository.Entities.UserFriendship", b =>
-                {
-                    b.HasOne("Fusion.Repository.Entities.User", "Addressee")
-                        .WithMany("ReceivedFriendRequests")
-                        .HasForeignKey("AddresseeId");
-
-                    b.HasOne("Fusion.Repository.Entities.User", "Requester")
-                        .WithMany("SentFriendRequests")
-                        .HasForeignKey("RequesterId");
-
-                    b.Navigation("Addressee");
-
-                    b.Navigation("Requester");
-                });
-
             modelBuilder.Entity("Fusion.Repository.Entities.UserNotificationSetting", b =>
                 {
                     b.HasOne("Fusion.Repository.Entities.User", "User")
@@ -3615,13 +3432,6 @@ namespace Fusion.Repository.Migrations
                     b.Navigation("ToStatus");
 
                     b.Navigation("Workflow");
-                });
-
-            modelBuilder.Entity("Fusion.Repository.Entities.ChatConversation", b =>
-                {
-                    b.Navigation("Members");
-
-                    b.Navigation("Messages");
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.Comment", b =>
@@ -3757,8 +3567,6 @@ namespace Fusion.Repository.Migrations
 
             modelBuilder.Entity("Fusion.Repository.Entities.User", b =>
                 {
-                    b.Navigation("ChatConversationMembers");
-
                     b.Navigation("Comments");
 
                     b.Navigation("Companies");
@@ -3777,11 +3585,7 @@ namespace Fusion.Repository.Migrations
 
                     b.Navigation("Projects");
 
-                    b.Navigation("ReceivedFriendRequests");
-
                     b.Navigation("RefreshTokens");
-
-                    b.Navigation("SentFriendRequests");
 
                     b.Navigation("TaskLogEvents");
 
