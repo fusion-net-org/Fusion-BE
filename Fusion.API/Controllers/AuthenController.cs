@@ -2,8 +2,6 @@
 using Fusion.Repository.Bases.Responses;
 using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.IServices;
-using Fusion.Service.Services;
-using Fusion.Service.ViewModels;
 using Fusion.Service.ViewModels.Users.Requests;
 using Fusion.Service.ViewModels.Users.Responses;
 using Microsoft.AspNetCore.Mvc;

@@ -111,6 +111,13 @@ namespace Fusion.Service
 
             //role
             services.AddScoped<IRoleService, RoleService>();
+
+            //friend
+            services.AddScoped<IFriendshipService, FriendshipService>();
+            //chat
+            services.AddScoped<IChatService, ChatService>();
+
+
             // PayOS
             services.AddSingleton<PayOS>(sp =>
             {
