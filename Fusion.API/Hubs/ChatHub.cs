@@ -40,14 +40,14 @@ namespace Fusion.API.Hubs
         }
 
         public async Task SendGroupMessage(string groupKey, Guid fromUserId, string message, List<Guid>? mentionUserIds)
-        {
+{
             Console.WriteLine($"User {Context.UserIdentifier} joined {groupKey}");
             var sender = await _userRepository.GetUserByIdAsync(fromUserId);
 
             if (sender == null)
-            {
+    {
                 throw CustomExceptionFactory.CreateNotFoundError("User is not existed");
-            }
+    }
 
             //var msg = await _chatService .SaveGroupMessageAsync(groupKey, fromUserId, message);
 
@@ -56,7 +56,7 @@ namespace Fusion.API.Hubs
                 .SendAsync("ReceiveGroupMessage", message);
 
             if (mentionUserIds?.Any() == true)
-            {
+    {
                 foreach (var userId in mentionUserIds)
                 {
                     if (userId == fromUserId) continue;
@@ -82,7 +82,7 @@ namespace Fusion.API.Hubs
                     });
                 }
             }
-        }
+    }
 
 
         public async Task SendPrivateMessage(Guid fromUserId, Guid toUserId, string message)
@@ -92,7 +92,7 @@ namespace Fusion.API.Hubs
             var sender = await _userRepository.GetUserByIdAsync(fromUserId);
 
             if (sender == null)
-            {
+    {
                 throw CustomExceptionFactory.CreateNotFoundError("User is not existed");
             }
 

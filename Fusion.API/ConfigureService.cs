@@ -65,7 +65,10 @@ namespace Fusion.API
             services.AddFluentValidationAutoValidation();
             services.AddFluentValidationClientsideAdapters();
             services.Configure<AiTaskGenerationOptions>(
-     configuration.GetSection("AiTaskGeneration"));
+            configuration.GetSection("AiTaskGeneration"));
+
+            // SignalR
+            services.AddSignalR();
             return services;
         }  
         public static void AddAuthenJwt(this IServiceCollection services, IConfiguration configuration)
@@ -97,6 +100,22 @@ namespace Fusion.API
                         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
 
                         ClockSkew = TimeSpan.Zero
+                    };
+
+                    options.Events = new JwtBearerEvents
+                    {
+                        OnMessageReceived = context =>
+                        {
+                            var accessToken = context.Request.Query["access_token"];
+                            var path = context.HttpContext.Request.Path;
+
+                            // chỉ áp dụng cho hub chat
+                            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs/chat"))
+                            {
+                                context.Token = accessToken;
+                            }
+                            return Task.CompletedTask;
+                        }
                     };
                 });
         }
