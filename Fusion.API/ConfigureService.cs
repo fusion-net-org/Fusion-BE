@@ -26,6 +26,7 @@ namespace Fusion.API
             services.AddAuthenJwt(configuration);
             services.AddSwaggerWithJwt();
             services.ConfigCors();
+            services.AddSignalR();
             services.AddScoped<IPermissionQuery, PermissionQuery>();
             services.AddScoped<IPermissionCache, NoopPermissionCache>();
             services.AddSingleton<IAuthorizationPolicyProvider, DynamicPermissionPolicyProvider>();
