@@ -15,8 +15,7 @@ public interface IUserFriendshipRepository
 
     Task AddAsync(UserFriendship entity, CancellationToken ct = default);
     void Update(UserFriendship entity);
-    Task<PagedResult<FriendLiteResponse>> GetPagedUserFriendsAsync(
-           Guid userId,
-           UserFriendPagedRequest request,
-           CancellationToken ct = default);
+
+    Task<PagedResult<FriendLiteResponse>> GetPagedUserFriendsAsync(Guid userId, UserFriendPagedRequest request, CancellationToken ct = default);
+
 }

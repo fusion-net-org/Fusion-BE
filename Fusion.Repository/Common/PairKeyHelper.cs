@@ -1,6 +1,6 @@
 ﻿
 
-namespace Fusion.Service.Commons.Helpers;
+namespace Fusion.Repository.Common;
 
 public static class PairKeyHelper
 {

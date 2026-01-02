@@ -17,7 +17,7 @@ public class ChatConversationMemberRepository : IChatConversationMemberRepositor
     }
 
     public Task<bool> IsMemberAsync(Guid conversationId, Guid userId, CancellationToken ct = default)
-        => _dbSet.AnyAsync(x => x.ConversationId == conversationId && x.UserId == userId, ct);
+       => _dbSet.AnyAsync(x => x.ConversationId == conversationId && x.UserId == userId, ct);
 
     public Task<List<ChatConversationMember>> GetByConversationIdAsync(Guid conversationId, CancellationToken ct = default)
         => _dbSet.Where(x => x.ConversationId == conversationId).ToListAsync(ct);

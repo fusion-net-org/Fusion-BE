@@ -1,7 +1,8 @@
 ﻿
-namespace Fusion.Service.ViewModels.ChatMessage.Responses;
 
-public class ChatMessageResponse
+namespace Fusion.Repository.ViewModels.Chat;
+
+public class ChatMessageVm
 {
     public Guid Id { get; set; }
     public Guid ConversationId { get; set; }

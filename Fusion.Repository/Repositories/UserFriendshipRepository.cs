@@ -1,5 +1,6 @@
 ﻿using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.Friend;
+using Fusion.Repository.Common;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.IRepositories;
@@ -19,20 +20,20 @@ public class UserFriendshipRepository : GenericRepository<UserFriendship>, IUser
 
 
     public Task<UserFriendship?> GetByIdAsync(Guid id, CancellationToken ct = default)
-               => _context.Set<UserFriendship>().FirstOrDefaultAsync(x => x.Id == id, ct);
+     => _context.Set<UserFriendship>().FirstOrDefaultAsync(x => x.Id == id, ct);
 
     public Task<UserFriendship?> GetByPairKeyAsync(string pairKey, CancellationToken ct = default)
         => _context.Set<UserFriendship>().FirstOrDefaultAsync(x => x.PairKey == pairKey, ct);
 
     public Task<List<UserFriendship>> GetPendingSentAsync(Guid requesterId, CancellationToken ct = default)
         => _context.Set<UserFriendship>()
-            .Where(x => x.RequesterId == requesterId && x.Status == 0) // Pending
+            .Where(x => x.RequesterId == requesterId && x.Status == FriendshipStatus.Pending)
             .OrderByDescending(x => x.RequestedAt)
             .ToListAsync(ct);
 
     public Task<List<UserFriendship>> GetPendingReceivedAsync(Guid addresseeId, CancellationToken ct = default)
         => _context.Set<UserFriendship>()
-            .Where(x => x.AddresseeId == addresseeId && x.Status == 0) // Pending
+            .Where(x => x.AddresseeId == addresseeId && x.Status == FriendshipStatus.Pending)
             .OrderByDescending(x => x.RequestedAt)
             .ToListAsync(ct);
 
@@ -42,16 +43,21 @@ public class UserFriendshipRepository : GenericRepository<UserFriendship>, IUser
     public void Update(UserFriendship entity)
         => _context.Set<UserFriendship>().Update(entity);
 
-    public async Task<PagedResult<FriendLiteResponse>> GetPagedUserFriendsAsync(Guid userId, UserFriendPagedRequest request, CancellationToken ct = default)
+    public async Task<PagedResult<FriendLiteResponse>> GetPagedUserFriendsAsync(
+    Guid userId,
+    UserFriendPagedRequest request,
+    CancellationToken ct = default)
     {
         const int Pending = 0;
         const int Accepted = 1;
 
-        var query = _dbSet.AsNoTracking()
-                 .Where(x =>
-                     (x.RequesterId == userId || x.AddresseeId == userId) &&
-                     x.Status.HasValue &&
-                     (x.Status == Pending || x.Status == Accepted));
+        // QUAN TRỌNG: khai báo IQueryable để Where/OrderBy gán lại không lỗi
+        IQueryable<UserFriendship> query = _dbSet
+            .AsNoTracking()
+            .Where(x =>
+                (x.RequesterId == userId || x.AddresseeId == userId) &&
+                x.Status.HasValue &&
+                (x.Status == Pending || x.Status == Accepted));
 
         // Search theo email của "người bên kia"
         if (!string.IsNullOrWhiteSpace(request.Email))
@@ -65,27 +71,26 @@ public class UserFriendshipRepository : GenericRepository<UserFriendship>, IUser
                 .Contains(keyword));
         }
 
-        // Filter status nếu truyền (chỉ nhận 0/1)
+        // Filter status nếu truyền
         if (request.Status.HasValue)
         {
             if (request.Status.Value == Pending || request.Status.Value == Accepted)
                 query = query.Where(x => x.Status == request.Status.Value);
         }
 
-        // Ưu tiên Pending trước, sau đó mới theo thời gian request mới nhất
+        // Include sau cùng (hoặc thậm chí không cần nếu chỉ project)
         query = query
             .Include(x => x.Requester)
             .Include(x => x.Addressee)
-            .OrderBy(x => x.Status) // 0 Pending trước 1 Accepted
+            .OrderBy(x => x.Status)              // Pending trước
             .ThenByDescending(x => x.RequestedAt);
 
-        // Project ra đúng output bạn muốn (email/avatar/status)
         var projected = query.Select(x => new FriendLiteResponse
         {
             FriendshipId = x.Id,
             Status = x.Status ?? -1,
             Email = (x.RequesterId == userId ? x.Addressee!.Email : x.Requester!.Email),
-            Avatar = (x.RequesterId == userId ? x.Addressee!.Avatar : x.Requester!.Avatar)
+            Avatar = (x.RequesterId == userId ? x.Addressee!.Avatar : x.Requester!.Avatar),
         });
 
         return await projected.ToPagedResultAsync(request, ct);
