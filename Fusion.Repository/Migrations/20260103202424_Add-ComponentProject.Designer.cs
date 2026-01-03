@@ -4,6 +4,7 @@ using Fusion.Repository.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Fusion.Repository.Migrations
 {
     [DbContext(typeof(FusionDbContext))]
-    partial class FusionDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260103202424_Add-ComponentProject")]
+    partial class AddComponentProject
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -885,14 +888,6 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("bit")
                         .HasColumnName("isHired");
 
-                    b.Property<bool>("IsMaintenance")
-                        .HasColumnType("bit")
-                        .HasColumnName("is_maintenance");
-
-                    b.Property<Guid?>("MaintenanceForProjectId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("maintenance_for_project_id");
-
                     b.Property<string>("Name")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)")
@@ -1088,14 +1083,6 @@ namespace Fusion.Repository.Migrations
                     b.Property<bool?>("IsDeleted")
                         .HasColumnType("bit")
                         .HasColumnName("is_deleted");
-
-                    b.Property<bool>("IsMaintenance")
-                        .HasColumnType("bit")
-                        .HasColumnName("is_maintenance");
-
-                    b.Property<Guid?>("MaintenanceForProjectId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("maintenance_for_project_id");
 
                     b.Property<string>("Name")
                         .HasMaxLength(200)

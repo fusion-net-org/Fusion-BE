@@ -76,6 +76,10 @@ public partial class ProjectRequest
 
     [Column("closed_by")]
     public Guid? ClosedBy { get; set; }
+    [Column("is_maintenance")]
+    public bool IsMaintenance { get; set; } = false;
+    [Column("maintenance_for_project_id")]
+    public Guid? MaintenanceForProjectId { get; set; }
 
     [Column("converted_project_id")]
     public Guid? ConvertedProjectId { get; set; }
@@ -101,4 +105,6 @@ public partial class ProjectRequest
     [ForeignKey("RequesterCompanyId")]
     [InverseProperty("ProjectRequestRequesterCompanies")]
     public virtual Company? RequesterCompany { get; set; }
+    public virtual ICollection<ProjectComponent> Components { get; set; } = new List<ProjectComponent>();
+
 }
