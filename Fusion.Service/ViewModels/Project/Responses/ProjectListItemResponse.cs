@@ -28,5 +28,7 @@ namespace Fusion.Service.ViewModels.Project.Responses
         public string? Status { get; set; }    // Planned | InProgress | OnHold | Completed
         public string Ptype { get; set; } = "Internal"; // Internal | Outsourced
         public bool IsRequest { get; set; } = false;
+        public bool IsMaintenance { get; set; }
+        public int MaintenanceComponentCount { get; set; }
     }
 }

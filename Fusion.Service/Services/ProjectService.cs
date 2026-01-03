@@ -24,6 +24,7 @@ using Fusion.Service.ViewModels.Task.Response;
 using Microsoft.EntityFrameworkCore;
 using Pipelines.Sockets.Unofficial.Arenas;
 using System;
+using System.Linq;
 namespace Fusion.Service.Services
 {
 
@@ -151,6 +152,8 @@ namespace Fusion.Service.Services
                 EndDate = request.EndDate,
                 CreatedBy = actorUserId,
                 SprintLengthWeeks = request.SprintLengthWeeks,
+                IsMaintenance = request.IsMaintenance,
+                MaintenanceForProjectId = request.MaintenanceForProjectId,
                 CreateAt = DateTime.UtcNow,
                 UpdateAt = DateTime.UtcNow
             };
@@ -203,13 +206,52 @@ namespace Fusion.Service.Services
                 CompanyId = companyId,
                 FeatureName = FeatureInProject.Project.ToString()
             };
+            //if (request.IsMaintenance)
+            //{
+            //    var baseId = request.MaintenanceForProjectId!.Value;
+
+            //    var baseProject = await _ctx.Projects
+            //        .AsNoTracking()
+            //        .FirstOrDefaultAsync(p => p.Id == baseId, ct);
+
+            //    if (baseProject == null)
+            //        throw CustomExceptionFactory.CreateBadRequestError("Base project not found.");
+
+            //    if (baseProject.CompanyId != companyId)
+            //        throw CustomExceptionFactory.CreateBadRequestError("Base project is not in this company.");
+            //}
 
             //8) Transactional save
             using var tx = await _ctx.Database.BeginTransactionAsync(ct);
             try
             {
-                await _companySubscriptionService.UseFeatureInCompanyAutoAsync(userFeature, ct);
+                //await _companySubscriptionService.UseFeatureInCompanyAutoAsync(userFeature, ct);
                 await _ctx.Projects.AddAsync(project, ct);
+                if (request.IsMaintenance)
+                {
+                    var cleaned = (request.MaintenanceComponents ?? new())
+                        .Select(x => new
+                        {
+                            Name = (x.Name ?? "").Trim(),
+                            Note = (x.Note ?? "").Trim()
+                        })
+                        .Where(x => !string.IsNullOrWhiteSpace(x.Name))
+                        .ToList();
+
+                    var comps = cleaned.Select(x => new ProjectComponent
+                    {
+                        Id = Guid.NewGuid(),
+                        ProjectId = project.Id,                
+                        ProjectRequestId = null,              
+                        Name = x.Name,
+                        Description = string.IsNullOrWhiteSpace(x.Note) ? null : x.Note,
+                        CreatedBy = actorUserId,
+                        CreatedAt = DateTime.UtcNow
+                    }).ToList();
+
+                    await _ctx.Set<ProjectComponent>().AddRangeAsync(comps, ct);
+                }
+
                 await _sprintRepo.AddRangeAsync(sprints, ct);
 
                 foreach (var (uid, isPartner) in stagedMembers)
@@ -319,29 +361,54 @@ namespace Fusion.Service.Services
         ct: ct);
 
             var (entities, total) = result;
+            var projectIds = entities.Select(p => p.Id).ToList();
 
-            var items = entities.Select(p => new ProjectListItemResponse
+            var maintenanceIds = entities.Where(x => x.IsMaintenance == true).Select(x => x.Id).ToList();
+
+            var componentCounts = maintenanceIds.Count == 0
+                ? new Dictionary<Guid, int>()
+                : await _ctx.Set<ProjectComponent>()
+                    .AsNoTracking()
+                    .Where(x => x.ProjectId.HasValue && maintenanceIds.Contains(x.ProjectId.Value)) 
+                    .GroupBy(x => x.ProjectId!.Value)                                              
+                    .Select(g => new { ProjectId = g.Key, Count = g.Count() })
+                    .ToDictionaryAsync(x => x.ProjectId, x => x.Count, ct);
+
+            var items = entities.Select(p =>
             {
-                Id = p.Id,
-                Code = p.Code ?? "",
-                Name = p.Name ?? "",
-                Description = p.Description,
-                OwnerCompany = p.Company != null ? p.Company.Name : "",
-                HiredCompany = p.CompanyRequest != null ? p.CompanyRequest.Name : null,
-                Workflow = p.Company != null && p.Workflow != null
-                                  ? $"{p.Company.Name} — {p.Workflow.Name}"
-                                  : p.Workflow?.Name,
-                StartDate = p.StartDate.HasValue
-    ? p.StartDate.Value.ToDateTime(TimeOnly.MinValue)
-    : (DateTime?)null,
-                RequestCompany = p.CompanyRequestId,
-                EndDate = p.EndDate.HasValue
-    ? p.EndDate.Value.ToDateTime(TimeOnly.MinValue)
-    : (DateTime?)null,
-                IsClosed = p.IsClosed,
-                Status = p.Status ?? "Planned",
-                Ptype = p.CompanyRequestId != null? "Outsourced" : "Internal",
-                IsRequest = (p.CompanyRequestId == companyId)
+                componentCounts.TryGetValue(p.Id, out var cnt); 
+
+                return new ProjectListItemResponse
+                {
+                    Id = p.Id,
+                    Code = p.Code ?? "",
+                    Name = p.Name ?? "",
+                    Description = p.Description,
+
+                    OwnerCompany = p.Company != null ? p.Company.Name : "",
+                    HiredCompany = p.CompanyRequest != null ? p.CompanyRequest.Name : null,
+
+                    Workflow = p.Company != null && p.Workflow != null
+                        ? $"{p.Company.Name} — {p.Workflow.Name}"
+                        : p.Workflow?.Name,
+
+                    StartDate = p.StartDate.HasValue
+                        ? p.StartDate.Value.ToDateTime(TimeOnly.MinValue)
+                        : (DateTime?)null,
+
+                    EndDate = p.EndDate.HasValue
+                        ? p.EndDate.Value.ToDateTime(TimeOnly.MinValue)
+                        : (DateTime?)null,
+
+                    IsClosed = p.IsClosed,
+                    Status = p.Status ?? "Planned",
+                    Ptype = p.CompanyRequestId != null ? "Outsourced" : "Internal",
+
+                    IsMaintenance = p.IsMaintenance == true,
+                    MaintenanceComponentCount = (p.IsMaintenance == true) ? cnt : 0, 
+
+                    IsRequest = (p.CompanyRequestId == companyId)
+                };
             }).ToList();
 
             return new ProjectListResult
