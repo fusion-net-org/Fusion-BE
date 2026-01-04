@@ -4,6 +4,7 @@ using Fusion.Repository.Bases.Page.Partner;
 using Fusion.Repository.Entities;
 using Fusion.Repository.Enums;
 using Fusion.Repository.ViewModels.CompanySubscriptionEntry;
+using Fusion.Service.ViewModels.ChatMessage.Responses;
 using Fusion.Service.ViewModels.Comment.Request;
 using Fusion.Service.ViewModels.Comment.Response;
 using Fusion.Service.ViewModels.Companies.Requests;
@@ -649,5 +650,9 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.Status, opt => opt.MapFrom(src => "ACTIVE"));
 
         CreateMap<UpdateRoleRequest, Role>();
+
+        //------------------------------- entity: Chat ---------------------------------------------
+        CreateMap<ChatConversation, ChatConversationResponse>();
+        CreateMap<ChatMessage, ChatMessageResponse>();
     }
 }
