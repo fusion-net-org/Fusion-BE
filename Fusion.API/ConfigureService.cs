@@ -109,7 +109,7 @@ namespace Fusion.API
                             var path = context.HttpContext.Request.Path;
 
                             // chỉ áp dụng cho hub chat
-                            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs/chat"))
+                            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/chatHub"))
                             {
                                 context.Token = accessToken;
                             }

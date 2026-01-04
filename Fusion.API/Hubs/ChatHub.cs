@@ -1,13 +1,9 @@
 ﻿using Fusion.Repository.Bases.Exceptions;
-using Fusion.Repository.Bases.Responses;
-using Fusion.Repository.Entities;
 using Fusion.Repository.Enums;
 using Fusion.Repository.IRepositories;
-using Fusion.Repository.Repositories;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.Notifications.Requests;
 using Microsoft.AspNetCore.SignalR;
-using System.Text;
 
 namespace Fusion.API.Hubs
 {
@@ -39,15 +35,18 @@ namespace Fusion.API.Hubs
             );
         }
 
-        public async Task SendGroupMessage(string groupKey, Guid fromUserId, string message, List<Guid>? mentionUserIds)
-{
+        public async Task SendGroupMessage(string groupKey, string message, List<Guid>? mentionUserIds)
+        {
+            var fromUserId = Guid.Parse(Context.UserIdentifier);
+
+
             Console.WriteLine($"User {Context.UserIdentifier} joined {groupKey}");
             var sender = await _userRepository.GetUserByIdAsync(fromUserId);
 
             if (sender == null)
-    {
+            {
                 throw CustomExceptionFactory.CreateNotFoundError("User is not existed");
-    }
+            }
 
             //var msg = await _chatService .SaveGroupMessageAsync(groupKey, fromUserId, message);
 
@@ -56,7 +55,7 @@ namespace Fusion.API.Hubs
                 .SendAsync("ReceiveGroupMessage", message);
 
             if (mentionUserIds?.Any() == true)
-    {
+            {
                 foreach (var userId in mentionUserIds)
                 {
                     if (userId == fromUserId) continue;
@@ -82,17 +81,19 @@ namespace Fusion.API.Hubs
                     });
                 }
             }
-    }
+        }
 
 
-        public async Task SendPrivateMessage(Guid fromUserId, Guid toUserId, string message)
+        public async Task SendPrivateMessage(Guid toUserId, string message)
         {
-            Console.WriteLine($"User mentioned you in group joined.");      
+            var fromUserId = Guid.Parse(Context.UserIdentifier);
+
+            Console.WriteLine($"User mentioned you in group joined.");
 
             var sender = await _userRepository.GetUserByIdAsync(fromUserId);
 
             if (sender == null)
-    {
+            {
                 throw CustomExceptionFactory.CreateNotFoundError("User is not existed");
             }
 
