@@ -116,6 +116,8 @@ namespace Fusion.Repository
             services.AddScoped<IChatMessageRepository, ChatMessageRepository>();
             services.AddScoped<IChatConversationMemberRepository, ChatConversationMemberRepository>();
 
+            //components
+            services.AddScoped<IProjectComponentRepository, ProjectComponentRepository>();
 
             return services;
 

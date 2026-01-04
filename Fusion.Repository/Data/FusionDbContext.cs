@@ -62,6 +62,7 @@ public partial class FusionDbContext : DbContext
     public virtual DbSet<CompanySubscriptionEntry> CompanySubscriptionEntries { get; set; } = null!;
 
     public virtual DbSet<SubscriptionPlanPriceDiscount> SubscriptionPlanPriceDiscounts { get; set; }
+    public virtual DbSet<ProjectComponent> ProjectComponents { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -101,6 +102,19 @@ public partial class FusionDbContext : DbContext
             entity.HasOne(d => d.CompanyB).WithMany(p => p.CompanyFriendshipCompanyBs).HasConstraintName("FK_CompanyFriendships_B");
 
             entity.HasOne(d => d.LastActionByNavigation).WithMany(p => p.CompanyFriendships).HasConstraintName("FK_CompanyFriendships_LastActor");
+        });
+
+        modelBuilder.Entity<ProjectComponent>(entity =>
+        {
+            entity.HasOne(pc => pc.Project)
+                .WithMany(p => p.Components)
+                .HasForeignKey(pc => pc.ProjectId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(pc => pc.ProjectRequest)
+                .WithMany(pr => pr.Components)
+                .HasForeignKey(pc => pc.ProjectRequestId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<CompanyMember>(entity =>

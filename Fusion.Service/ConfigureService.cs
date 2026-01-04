@@ -117,6 +117,8 @@ namespace Fusion.Service
             //chat
             services.AddScoped<IChatService, ChatService>();
 
+            //component
+            services.AddScoped<IProjectComponentService, ProjectComponentService>();
 
             // PayOS
             services.AddSingleton<PayOS>(sp =>

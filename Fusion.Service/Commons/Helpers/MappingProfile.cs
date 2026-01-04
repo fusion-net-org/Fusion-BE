@@ -17,6 +17,7 @@ using Fusion.Service.ViewModels.Notifications.Requests;
 using Fusion.Service.ViewModels.Notifications.Responses;
 using Fusion.Service.ViewModels.Project.Requests;
 using Fusion.Service.ViewModels.Project.Responses;
+using Fusion.Service.ViewModels.ProjectComponent;
 using Fusion.Service.ViewModels.ProjectMembers.Request;
 using Fusion.Service.ViewModels.ProjectMembers.Responses;
 using Fusion.Service.ViewModels.Projects.Requests;
@@ -654,5 +655,21 @@ public class MappingProfile : Profile
         //------------------------------- entity: Chat ---------------------------------------------
         CreateMap<ChatConversation, ChatConversationResponse>();
         CreateMap<ChatMessage, ChatMessageResponse>();
+
+        CreateMap<CreateProjectComponent, ProjectComponent>()
+                .ForMember(d => d.Id, o => o.Ignore())
+                .ForMember(d => d.CreatedAt, o => o.Ignore())
+                .ForMember(d => d.Project, o => o.Ignore())
+                .ForMember(d => d.ProjectRequest, o => o.Ignore());
+
+        CreateMap<UpdateProjectComponent, ProjectComponent>()
+            .ForMember(d => d.ProjectId, o => o.Ignore())
+            .ForMember(d => d.ProjectRequestId, o => o.Ignore())
+            .ForMember(d => d.CreatedAt, o => o.Ignore())
+            .ForMember(d => d.CreatedBy, o => o.Ignore())
+            .ForMember(d => d.Project, o => o.Ignore())
+            .ForMember(d => d.ProjectRequest, o => o.Ignore());
+        CreateMap<ProjectComponent,ProjectComponentResponse>();
+
     }
 }
