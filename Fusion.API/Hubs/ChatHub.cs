@@ -6,6 +6,7 @@ using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.ChatMessage.Requests;
 using Fusion.Service.ViewModels.Notifications.Requests;
 using Microsoft.AspNetCore.SignalR;
+using static Org.BouncyCastle.Math.EC.ECCurve;
 
 namespace Fusion.API.Hubs
 {
@@ -45,6 +46,8 @@ namespace Fusion.API.Hubs
 
         public async Task LeaveGroup(Guid conversationId)
         {
+            Console.WriteLine($"User {Context.UserIdentifier} leave {conversationId}");
+
             await Groups.RemoveFromGroupAsync(
                 Context.ConnectionId,
                 $"GROUP_{conversationId}"
@@ -96,6 +99,11 @@ namespace Fusion.API.Hubs
         public async Task SendPrivateMessage(Guid toUserId, Guid conversationId, string clientMessageId, string message)
         {
             Console.WriteLine($"User you in group joined.");
+
+            Console.WriteLine("=== SIGNALR CONNECTED ===");
+            Console.WriteLine($"ConnectionId: {conversationId}");
+            Console.WriteLine($"UserIdentifier: {toUserId}");
+            Console.WriteLine($"IsAuthenticated: {Context.User?.Identity?.IsAuthenticated}");
 
             var sender = await GetCurrentUserAsync();
             if (sender == null)

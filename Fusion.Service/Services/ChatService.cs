@@ -339,6 +339,7 @@ public class ChatService : IChatService
                 Id = existed.Id,
                 ConversationId = existed.ConversationId ?? Guid.Empty,
                 SenderId = existed.SenderId ?? Guid.Empty,
+                EmailSender = existed.Sender.Email ?? String.Empty,
                 Content = existed.Content,
                 ClientMessageId = existed.ClientMessageId,
                 CreatedAt = existed.CreatedAt
@@ -364,11 +365,17 @@ public class ChatService : IChatService
 
         await _uow.SaveChangesAsync(ct);
 
+        var sender = await _uow.userRepository.GetUserByIdAsync(msg.SenderId.Value);
+
+        if(sender == null)
+            throw CustomExceptionFactory.CreateBadRequestError("Sender not found.");
+
         return new ChatMessageResponse
         {
             Id = msg.Id,
             ConversationId = msg.ConversationId ?? Guid.Empty,
             SenderId = msg.SenderId ?? Guid.Empty,
+            EmailSender = sender.Email,
             Content = msg.Content,
             ClientMessageId = msg.ClientMessageId,
             CreatedAt = msg.CreatedAt

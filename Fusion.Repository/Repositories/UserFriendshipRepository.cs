@@ -92,6 +92,7 @@ public class UserFriendshipRepository : GenericRepository<UserFriendship>, IUser
             Status = x.Status ?? -1,
             Email = (x.RequesterId == userId ? x.Addressee!.Email : x.Requester!.Email),
             Avatar = (x.RequesterId == userId ? x.Addressee!.Avatar : x.Requester!.Avatar),
+            UserName = (x.RequesterId == userId ? x.Addressee!.UserName : x.Requester!.UserName),
         });
 
         return await projected.ToPagedResultAsync(request, ct);

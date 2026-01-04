@@ -126,7 +126,7 @@ namespace Fusion.Service.Services
             _friendRepo.Update(fr);
             await _uow.SaveChangesAsync(ct);
 
-            // ✅ Auto create DM when friendship forms
+            //  Auto create DM when friendship forms
             var a = fr.RequesterId ?? Guid.Empty;
             var b = fr.AddresseeId ?? Guid.Empty;
             if (a != Guid.Empty && b != Guid.Empty)

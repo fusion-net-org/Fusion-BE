@@ -21,7 +21,7 @@ public class ChatMessageRepository : IChatMessageRepository
     }
 
     public Task<ChatMessage?> GetByClientMessageIdAsync(Guid conversationId, Guid senderId, string clientMessageId, CancellationToken ct = default)
-        => _dbSet.FirstOrDefaultAsync(x =>
+        => _dbSet.Include(x => x.Sender).FirstOrDefaultAsync(x =>
             x.ConversationId == conversationId &&
             x.SenderId == senderId &&
             x.ClientMessageId == clientMessageId, ct);
@@ -32,6 +32,7 @@ public class ChatMessageRepository : IChatMessageRepository
     public async Task<PagedResult<ChatMessageVm>> GetMessagesPagedAsync(Guid conversationId, ChatMessagePagedRequest request, CancellationToken ct = default)
     {
         var q = _dbSet.AsNoTracking()
+            .Include(x => x.Sender)
             .Where(x => x.ConversationId == conversationId)
             .OrderByDescending(x => x.CreatedAt)
             .Select(x => new ChatMessageVm
@@ -39,6 +40,8 @@ public class ChatMessageRepository : IChatMessageRepository
                 Id = x.Id,
                 ConversationId = x.ConversationId ?? Guid.Empty,
                 SenderId = x.SenderId ?? Guid.Empty,
+                SenderAvatar = x.Sender.Avatar,
+                SenderName =x.Sender.UserName,
                 Content = x.Content,
                 ClientMessageId = x.ClientMessageId,
                 CreatedAt = x.CreatedAt

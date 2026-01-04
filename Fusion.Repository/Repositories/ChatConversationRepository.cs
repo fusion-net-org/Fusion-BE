@@ -84,6 +84,7 @@ public class ChatConversationRepository : IChatConversationRepository
                 // các field peer (nếu Vm bạn khác tên thì đổi lại)
                 PeerUserId = peer.UserId,
                 PeerEmail = pu.Email,
+                PeerUserName = pu.UserName,
                 PeerAvatar = pu.Avatar, // nếu là AvatarUrl => đổi pu.AvatarUrl
             };
 
@@ -103,6 +104,7 @@ public class ChatConversationRepository : IChatConversationRepository
                 PeerUserId = null,
                 PeerEmail = null,
                 PeerAvatar = null,
+                PeerUserName = null,
             };
 
         IQueryable<ChatConversationListItemVm> q;
@@ -151,6 +153,7 @@ public class ChatConversationRepository : IChatConversationRepository
                 UserId = m.UserId ?? Guid.Empty,
                 Role = m.Role,
                 Email = u.Email,
+                UserName = u.UserName,
                 Avatar = u.Avatar, // nếu AvatarUrl => đổi u.AvatarUrl
             }
         ).ToListAsync(ct);

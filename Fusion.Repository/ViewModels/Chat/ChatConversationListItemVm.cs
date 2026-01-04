@@ -13,4 +13,5 @@ public class ChatConversationListItemVm
     public Guid? PeerUserId { get; set; }
     public string? PeerEmail { get; set; }
     public string? PeerAvatar { get; set; }
+    public string? PeerUserName { get; set; }
 }
