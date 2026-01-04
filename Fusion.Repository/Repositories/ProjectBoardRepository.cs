@@ -26,6 +26,8 @@ namespace Fusion.Repository.Repositories
         Task AddTaskWorkflowAsync(TaskWorkflow entity, CancellationToken ct = default);
         Task SaveAsync(CancellationToken ct = default);
         Task<List<WorkflowTransition>> GetTransitionsAsync(Guid workflowId, CancellationToken ct = default);
+        Task<List<ProjectComponent>> GetComponentsAsync(Guid projectId, CancellationToken ct = default);
+
 
     }
 
@@ -37,7 +39,14 @@ namespace Fusion.Repository.Repositories
 
         public Task<Project?> GetProjectWithWorkflowAsync(Guid projectId, CancellationToken ct = default)
             => _db.Projects.AsNoTracking().Include(p => p.Workflow).SingleOrDefaultAsync(p => p.Id == projectId, ct);
-
+        public Task<List<ProjectComponent>> GetComponentsAsync(Guid projectId, CancellationToken ct = default)
+        {
+            return _db.ProjectComponents
+                .AsNoTracking()
+                .Where(c => c.ProjectId == projectId)
+                .OrderBy(c => c.Name)
+                .ToListAsync(ct);
+        }
         public async Task<List<Sprint>> GetSprintsAsync(Guid projectId, Guid? sprintId, bool includeClosed, DateOnly? from, DateOnly? to, CancellationToken ct = default)
         {
             var q = _db.Sprints.AsNoTracking()
@@ -70,7 +79,7 @@ namespace Fusion.Repository.Repositories
 
             return _db.ProjectTasks
         .AsNoTracking()
-        .Include(t => t.Ticket) 
+        .Include(t => t.Ticket).Include(t => t.Component)
         .Where(t =>
             !t.IsDeleted &&
             t.ProjectId == projectId &&
@@ -97,7 +106,7 @@ namespace Fusion.Repository.Repositories
 
         // write ops giữ nguyên
         public Task<ProjectTask?> GetTaskForMoveAsync(Guid taskId, CancellationToken ct = default)
-            => _db.ProjectTasks.Include(t => t.Ticket).SingleOrDefaultAsync(t => t.Id == taskId && !t.IsDeleted, ct);
+            => _db.ProjectTasks.Include(t => t.Ticket).Include(t => t.Component).SingleOrDefaultAsync(t => t.Id == taskId && !t.IsDeleted, ct);
 
         public Task<bool> HasTransitionAsync(Guid workflowId, Guid fromStatusId, Guid toStatusId, CancellationToken ct = default)
             => _db.WorkflowTransitions.AsNoTracking()

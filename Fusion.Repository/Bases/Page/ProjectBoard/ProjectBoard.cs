@@ -62,8 +62,18 @@ public record TaskVmDto
     public DateTime CreatedAt { get; init; }
     public Guid? TicketId { get; set; }
     public string? TicketName { get; set; }
+    public Guid? ComponentId { get; init; }
+    public string? ComponentName { get; init; }
     public Guid? SourceTicketId { get; init; }
     public string? SourceTicketCode { get; init; }
+}
+public record ComponentVmDto
+{
+    [Required] public Guid Id { get; init; }
+    [Required] public string Name { get; init; } = "";
+    public string? Description { get; init; }
+    public DateTime CreatedAt { get; init; }
+    public Guid? CreatedBy { get; init; }
 }
 
 public record MultiSprintBoardResponseDto
@@ -72,6 +82,7 @@ public record MultiSprintBoardResponseDto
 
     public List<SprintVmDto> Sprints { get; init; } = new();
     public List<TaskVmDto> Tasks { get; init; } = new();
+    public List<ComponentVmDto> Components { get; init; } = new();
 }
 
 public record WorkflowTransitionDto

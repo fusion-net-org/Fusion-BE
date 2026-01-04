@@ -62,6 +62,8 @@ public partial class FusionDbContext : DbContext
     public virtual DbSet<CompanySubscriptionEntry> CompanySubscriptionEntries { get; set; } = null!;
 
     public virtual DbSet<SubscriptionPlanPriceDiscount> SubscriptionPlanPriceDiscounts { get; set; }
+    public virtual DbSet<ProjectComponent> ProjectComponents { get; set; } = null!;
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -726,7 +728,25 @@ public partial class FusionDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("FK_ProjectTaskChecklistItems_Task");
         });
+        modelBuilder.Entity<ProjectComponent>(entity =>
+        {
+            entity.ToTable("ProjectComponents");
 
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.CreatedAt)
+                  .HasDefaultValueSql("(sysutcdatetime())")
+                  .HasConversion(utcKindConverter);
+
+            entity.HasOne(e => e.Project)
+                  .WithMany() 
+                  .HasForeignKey(e => e.ProjectId)
+                  .HasConstraintName("FK_ProjectComponents_Project");
+
+            entity.HasOne(e => e.ProjectRequest)
+                  .WithMany() 
+                  .HasForeignKey(e => e.ProjectRequestId)
+                  .HasConstraintName("FK_ProjectComponents_ProjectRequest");
+        });
 
         OnModelCreatingPartial(modelBuilder);
     }

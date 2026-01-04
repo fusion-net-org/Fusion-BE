@@ -114,7 +114,12 @@ public partial class ProjectTask
     public ICollection<TaskWorkflow> Assignees { get; set; } = new List<TaskWorkflow>();
     public ICollection<ProjectTaskDependency> Dependencies { get; set; } = new List<ProjectTaskDependency>();
     //---------------------------------------------------------
+    [Column("component_id")]
+    public Guid? ComponentId { get; set; }
 
+    [ForeignKey(nameof(ComponentId))]
+    [InverseProperty(nameof(ProjectComponent.Tasks))]
+    public virtual ProjectComponent? Component { get; set; }
     [InverseProperty("Task")]
     public virtual ICollection<TaskLogEvent> TaskLogEvents { get; set; } = new List<TaskLogEvent>();
 
