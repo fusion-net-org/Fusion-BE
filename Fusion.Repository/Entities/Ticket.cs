@@ -76,7 +76,12 @@ public partial class Ticket
     [ForeignKey("StatusId")]
     [InverseProperty("Tickets")]
     public virtual WorkflowStatus? WorkflowStatus { get; set; }
+    [Column("component_id")]
+    public Guid? ComponentId { get; set; }
 
+    [ForeignKey(nameof(ComponentId))]
+    [InverseProperty(nameof(ProjectComponent.Tickets))]
+    public virtual ProjectComponent? Component { get; set; }
 
     [ForeignKey("SubmittedBy")]
     [InverseProperty("Tickets")]

@@ -86,5 +86,7 @@ namespace Fusion.Service.ViewModels.Project.Responses
         public DateTime UpdateAt { get; set; }
         public decimal? ContractBudget { get; set; }
         public decimal TicketTotalBudget { get; set; }
+        public bool IsMaintenance { get; set; } = false;
+        public Guid? MaintenanceForProjectId { get; set; }
     }
 }
