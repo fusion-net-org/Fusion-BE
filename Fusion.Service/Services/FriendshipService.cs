@@ -2,6 +2,7 @@
 using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.Friend;
+using Fusion.Repository.Common;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.IRepositories;
@@ -11,61 +12,55 @@ using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.UserFriend.Requests;
 using Fusion.Service.ViewModels.UserFriend.Responses;
 
+
 namespace Fusion.Service.Services
 {
     public class FriendshipService : IFriendshipService
     {
-        private const int Pending = 0;
-        private const int Accepted = 1;
-        private const int Rejected = 2;
-
         private readonly IUserFriendshipRepository _friendRepo;
         private readonly IUserRepository _userRepo;
         private readonly IUnitOfWork _uow;
         private readonly ICurrentService _current;
-        private readonly IMapper _mapper;
+        private readonly IChatService _chatService;
 
-        public FriendshipService(IUserFriendshipRepository friendRepo,IUserRepository userRepo, IUnitOfWork uow, ICurrentService current, IMapper mapper)
+        public FriendshipService(
+            IUserFriendshipRepository friendRepo,
+            IUserRepository userRepo,
+            IUnitOfWork uow,
+            ICurrentService current,
+            IChatService chatService)
         {
             _friendRepo = friendRepo;
             _userRepo = userRepo;
             _uow = uow;
             _current = current;
-            _mapper = mapper;
+            _chatService = chatService;
         }
-
 
         public async Task<FriendshipResponse> SendRequestByEmailAsync(CreateFriendRequest dto, CancellationToken ct = default)
         {
-            var currentUserId = _current.GetUserId();
-            if (currentUserId == Guid.Empty)
-                throw CustomExceptionFactory.CreateBadRequestError("Current user is not found.");
+            var me = _current.GetUserId();
+            if (me == Guid.Empty) throw CustomExceptionFactory.CreateBadRequestError("Current user is not found.");
 
             var email = (dto.Email ?? "").Trim().ToLowerInvariant();
-            if (string.IsNullOrWhiteSpace(email))
-                throw CustomExceptionFactory.CreateBadRequestError("Email is required.");
+            if (string.IsNullOrWhiteSpace(email)) throw CustomExceptionFactory.CreateBadRequestError("Email is required.");
 
             var target = await _userRepo.GetUserByEmailAsync(email, ct);
-            if (target == null)
-                throw new KeyNotFoundException("User not found.");
+            if (target == null) throw new KeyNotFoundException("User not found.");
+            if (target.Id == me) throw CustomExceptionFactory.CreateBadRequestError("You cannot send a friend request to yourself.");
 
-            if (target.Id == currentUserId)
-                throw CustomExceptionFactory.CreateBadRequestError("You cannot send a friend request to yourself.");
-
-            var pairKey = PairKeyHelper.Build(currentUserId, target.Id);
-
+            var pairKey = PairKeyHelper.Build(me, target.Id);
             var existed = await _friendRepo.GetByPairKeyAsync(pairKey, ct);
 
-            // CHƯA CÓ => tạo mới pending
             if (existed == null)
             {
                 var fr = new UserFriendship
                 {
                     Id = Guid.NewGuid(),
                     PairKey = pairKey,
-                    RequesterId = currentUserId,
+                    RequesterId = me,
                     AddresseeId = target.Id,
-                    Status = Pending,
+                    Status = FriendshipStatus.Pending,
                     RequestedAt = DateTime.UtcNow,
                     RespondedAt = null
                 };
@@ -74,27 +69,23 @@ namespace Fusion.Service.Services
                 await _uow.SaveChangesAsync(ct);
                 return ToVm(fr);
             }
+
             var st = existed.Status ?? -1;
-            if (st == Accepted)
+
+            if (st == FriendshipStatus.Accepted)
                 throw CustomExceptionFactory.CreateBadRequestError("You are already friends.");
 
-            // ĐANG PENDING
-            if (st == Pending)
+            if (st == FriendshipStatus.Pending)
             {
-                // mình đã gửi rồi => trả lại record
-                if (existed.RequesterId == currentUserId)
-                    return ToVm(existed);
-
-                // người kia đã gửi mình => bắt buộc accept/reject
+                if (existed.RequesterId == me) return ToVm(existed);
                 throw CustomExceptionFactory.CreateBadRequestError("You already have a pending request from this user. Please accept or reject it.");
             }
 
-            // BỊ REJECT => cho phép gửi lại (reset thành Pending)
-            if (st == Rejected)
+            if (st == FriendshipStatus.Rejected)
             {
-                existed.RequesterId = currentUserId;
+                existed.RequesterId = me;
                 existed.AddresseeId = target.Id;
-                existed.Status = Pending;
+                existed.Status = FriendshipStatus.Pending;
                 existed.RequestedAt = DateTime.UtcNow;
                 existed.RespondedAt = null;
 
@@ -106,57 +97,90 @@ namespace Fusion.Service.Services
             throw CustomExceptionFactory.CreateBadRequestError("Cannot send friend request in current state.");
         }
 
-        public async Task<List<FriendshipResponse>> GetPendingReceivedAsync( CancellationToken ct = default)
+        public async Task<List<FriendshipResponse>> GetPendingReceivedAsync(CancellationToken ct = default)
         {
-            var currentUserId = _current.GetUserId();
-
-            var list = await _friendRepo.GetPendingReceivedAsync(currentUserId, ct);
+            var me = _current.GetUserId();
+            var list = await _friendRepo.GetPendingReceivedAsync(me, ct);
             return list.Select(ToVm).ToList();
         }
 
-        public async Task<List<FriendshipResponse>> GetPendingSentAsync( CancellationToken ct = default)
+        public async Task<List<FriendshipResponse>> GetPendingSentAsync(CancellationToken ct = default)
         {
-            var currentUserId = _current.GetUserId();
-
-            var list = await _friendRepo.GetPendingSentAsync(currentUserId, ct);
+            var me = _current.GetUserId();
+            var list = await _friendRepo.GetPendingSentAsync(me, ct);
             return list.Select(ToVm).ToList();
         }
+
         public async Task<FriendshipResponse> AcceptAsync(Guid friendshipId, CancellationToken ct = default)
         {
-            var currentUserId = _current.GetUserId();
+            var me = _current.GetUserId();
 
             var fr = await _friendRepo.GetByIdAsync(friendshipId, ct);
             if (fr == null) throw new KeyNotFoundException("Friend request not found.");
+            if (fr.AddresseeId != me) throw CustomExceptionFactory.CreateForbiddenError();
+            if ((fr.Status ?? -1) != FriendshipStatus.Pending) throw CustomExceptionFactory.CreateBadRequestError("This request is not pending.");
 
-            if (fr.AddresseeId != currentUserId)
-                throw CustomExceptionFactory.CreateForbiddenError();
+            fr.Status = FriendshipStatus.Accepted;
+            fr.RespondedAt = DateTime.UtcNow;
 
-            if ((fr.Status ?? -1) != Pending)
-                throw CustomExceptionFactory.CreateBadRequestError("This request is not pending.");
+            _friendRepo.Update(fr);
+            await _uow.SaveChangesAsync(ct);
 
-            fr.Status = Accepted;
+            // ✅ Auto create DM when friendship forms
+            var a = fr.RequesterId ?? Guid.Empty;
+            var b = fr.AddresseeId ?? Guid.Empty;
+            if (a != Guid.Empty && b != Guid.Empty)
+                await _chatService.EnsureDirectConversationExistsAsync(a, b, ct);
+
+            return ToVm(fr);
+        }
+
+        public async Task<FriendshipResponse> RejectAsync(Guid friendshipId, CancellationToken ct = default)
+        {
+            var me = _current.GetUserId();
+
+            var fr = await _friendRepo.GetByIdAsync(friendshipId, ct);
+            if (fr == null) throw CustomExceptionFactory.CreateBadRequestError("Friend request not found.");
+            if (fr.AddresseeId != me) throw CustomExceptionFactory.CreateForbiddenError();
+            if ((fr.Status ?? -1) != FriendshipStatus.Pending) throw CustomExceptionFactory.CreateBadRequestError("This request is not pending.");
+
+            fr.Status = FriendshipStatus.Rejected;
             fr.RespondedAt = DateTime.UtcNow;
 
             _friendRepo.Update(fr);
             await _uow.SaveChangesAsync(ct);
             return ToVm(fr);
-
         }
 
-        public async Task<FriendshipResponse> RejectAsync(Guid friendshipId, CancellationToken ct = default)
+        // requester cancels pending
+        public async Task<FriendshipResponse> CancelAsync(Guid friendshipId, CancellationToken ct = default)
         {
-            var currentUserId = _current.GetUserId();
+            var me = _current.GetUserId();
 
             var fr = await _friendRepo.GetByIdAsync(friendshipId, ct);
             if (fr == null) throw CustomExceptionFactory.CreateBadRequestError("Friend request not found.");
+            if (fr.RequesterId != me) throw CustomExceptionFactory.CreateForbiddenError();
+            if ((fr.Status ?? -1) != FriendshipStatus.Pending) throw CustomExceptionFactory.CreateBadRequestError("This request is not pending.");
 
-            if (fr.AddresseeId != currentUserId)
-                throw CustomExceptionFactory.CreateForbiddenError();
+            fr.Status = FriendshipStatus.Rejected;
+            fr.RespondedAt = DateTime.UtcNow;
 
-            if ((fr.Status ?? -1) != Pending)
-                throw CustomExceptionFactory.CreateBadRequestError("This request is not pending.");
+            _friendRepo.Update(fr);
+            await _uow.SaveChangesAsync(ct);
+            return ToVm(fr);
+        }
 
-            fr.Status = Rejected;
+        // unfriend (any side)
+        public async Task<FriendshipResponse> UnfriendAsync(Guid friendshipId, CancellationToken ct = default)
+        {
+            var me = _current.GetUserId();
+
+            var fr = await _friendRepo.GetByIdAsync(friendshipId, ct);
+            if (fr == null) throw CustomExceptionFactory.CreateBadRequestError("Friendship not found.");
+            if (fr.RequesterId != me && fr.AddresseeId != me) throw CustomExceptionFactory.CreateForbiddenError();
+            if ((fr.Status ?? -1) != FriendshipStatus.Accepted) throw CustomExceptionFactory.CreateBadRequestError("You are not friends.");
+
+            fr.Status = FriendshipStatus.Rejected;
             fr.RespondedAt = DateTime.UtcNow;
 
             _friendRepo.Update(fr);
@@ -166,13 +190,12 @@ namespace Fusion.Service.Services
 
         public async Task<PagedResult<FriendLiteResponse>> GetPagedFriendsByUserIdAsync(UserFriendPagedRequest request, CancellationToken ct = default)
         {
-            var currentUserId = _current.GetUserId();
-            if (currentUserId == Guid.Empty)
-                throw CustomExceptionFactory.CreateBadRequestError("Current user is not found.");
-
-            return await _friendRepo.GetPagedUserFriendsAsync(currentUserId, request, ct);
+            var me = _current.GetUserId();
+            if (me == Guid.Empty) throw CustomExceptionFactory.CreateBadRequestError("Current user is not found.");
+            return await _friendRepo.GetPagedUserFriendsAsync(me, request, ct);
         }
-        private static FriendshipResponse ToVm(UserFriendship x) => new FriendshipResponse
+
+        private static FriendshipResponse ToVm(UserFriendship x) => new()
         {
             Id = x.Id,
             RequesterId = x.RequesterId ?? Guid.Empty,
@@ -181,6 +204,5 @@ namespace Fusion.Service.Services
             RequestedAt = x.RequestedAt,
             RespondedAt = x.RespondedAt
         };
-
     }
 }
