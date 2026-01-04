@@ -105,6 +105,19 @@ public partial class FusionDbContext : DbContext
             entity.HasOne(d => d.LastActionByNavigation).WithMany(p => p.CompanyFriendships).HasConstraintName("FK_CompanyFriendships_LastActor");
         });
 
+        modelBuilder.Entity<ProjectComponent>(entity =>
+        {
+            entity.HasOne(pc => pc.Project)
+                .WithMany(p => p.Components)
+                .HasForeignKey(pc => pc.ProjectId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(pc => pc.ProjectRequest)
+                .WithMany(pr => pr.Components)
+                .HasForeignKey(pc => pc.ProjectRequestId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
         modelBuilder.Entity<CompanyMember>(entity =>
         {
             entity.HasIndex(e => new { e.CompanyId, e.UserId }, "UX_CompanyMembers_Unique")

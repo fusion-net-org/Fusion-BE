@@ -3,6 +3,7 @@ using FluentValidation;
 using Fusion.API;
 using Fusion.API.Auth;
 using Fusion.API.Background.Jobs;
+using Fusion.API.Hubs;
 using Fusion.API.Middlewares;
 using Fusion.Repository;
 using Fusion.Service;
@@ -95,9 +96,10 @@ app.UseAuthentication();
 app.UseMiddleware<CompanyContextMiddleware>();
 app.UseAuthorization();
 
-
-
-
 app.MapControllers();
+
+app.UseWebSockets();
+
+app.MapHub<ChatHub>("/chatHub");
 
 app.Run();

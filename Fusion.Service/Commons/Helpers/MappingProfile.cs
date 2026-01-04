@@ -4,6 +4,7 @@ using Fusion.Repository.Bases.Page.Partner;
 using Fusion.Repository.Entities;
 using Fusion.Repository.Enums;
 using Fusion.Repository.ViewModels.CompanySubscriptionEntry;
+using Fusion.Service.ViewModels.ChatMessage.Responses;
 using Fusion.Service.ViewModels.Comment.Request;
 using Fusion.Service.ViewModels.Comment.Response;
 using Fusion.Service.ViewModels.Companies.Requests;
@@ -16,6 +17,7 @@ using Fusion.Service.ViewModels.Notifications.Requests;
 using Fusion.Service.ViewModels.Notifications.Responses;
 using Fusion.Service.ViewModels.Project.Requests;
 using Fusion.Service.ViewModels.Project.Responses;
+using Fusion.Service.ViewModels.ProjectComponent;
 using Fusion.Service.ViewModels.ProjectMembers.Request;
 using Fusion.Service.ViewModels.ProjectMembers.Responses;
 using Fusion.Service.ViewModels.Projects.Requests;
@@ -649,5 +651,25 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.Status, opt => opt.MapFrom(src => "ACTIVE"));
 
         CreateMap<UpdateRoleRequest, Role>();
+
+        //------------------------------- entity: Chat ---------------------------------------------
+        CreateMap<ChatConversation, ChatConversationResponse>();
+        CreateMap<ChatMessage, ChatMessageResponse>();
+
+        CreateMap<CreateProjectComponent, ProjectComponent>()
+                .ForMember(d => d.Id, o => o.Ignore())
+                .ForMember(d => d.CreatedAt, o => o.Ignore())
+                .ForMember(d => d.Project, o => o.Ignore())
+                .ForMember(d => d.ProjectRequest, o => o.Ignore());
+
+        CreateMap<UpdateProjectComponent, ProjectComponent>()
+            .ForMember(d => d.ProjectId, o => o.Ignore())
+            .ForMember(d => d.ProjectRequestId, o => o.Ignore())
+            .ForMember(d => d.CreatedAt, o => o.Ignore())
+            .ForMember(d => d.CreatedBy, o => o.Ignore())
+            .ForMember(d => d.Project, o => o.Ignore())
+            .ForMember(d => d.ProjectRequest, o => o.Ignore());
+        CreateMap<ProjectComponent,ProjectComponentResponse>();
+
     }
 }

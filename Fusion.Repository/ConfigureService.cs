@@ -107,6 +107,18 @@ namespace Fusion.Repository
             //roles
             services.AddScoped<IRoleRepository, RoleRepository>();
             services.AddScoped<IRbacBootstrapper, RbacBootstrapper>();
+
+            //friend 
+            services.AddScoped<IUserFriendshipRepository, UserFriendshipRepository>();
+
+            //Chat
+            services.AddScoped<IChatConversationRepository, ChatConversationRepository>();
+            services.AddScoped<IChatMessageRepository, ChatMessageRepository>();
+            services.AddScoped<IChatConversationMemberRepository, ChatConversationMemberRepository>();
+
+            //components
+            services.AddScoped<IProjectComponentRepository, ProjectComponentRepository>();
+
             return services;
 
         }

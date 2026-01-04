@@ -37,8 +37,6 @@ namespace Fusion.Repository.Repositories
                 .ToListAsync(cancellationToken);
         }
 
-
-
         public async Task<User?> GetUserByEmailAsync(string email, CancellationToken cancellationToken = default)
         {
             return await _context.Users.FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
