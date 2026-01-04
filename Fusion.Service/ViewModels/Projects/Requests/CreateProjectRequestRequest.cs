@@ -29,6 +29,7 @@ namespace Fusion.Service.ViewModels.Projects.Requests
 
         public DateOnly? EndDate { get; set; }
 
+        public bool IsMaintenance { get; set; }
 
     }
 }

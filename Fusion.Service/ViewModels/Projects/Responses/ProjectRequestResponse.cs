@@ -51,6 +51,7 @@ namespace Fusion.Service.ViewModels.Projects.Responses
         public bool? IsClosed { get; set; }
         public string? ClosedBy { get; set; }
         public Guid? ConvertedProjectId { get; set; }
+        public bool IsMaintenance { get; set; }
     }
 
     public class ProjectRequestResponseV2

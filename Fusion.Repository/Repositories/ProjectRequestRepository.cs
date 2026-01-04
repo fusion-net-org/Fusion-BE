@@ -92,6 +92,8 @@ namespace Fusion.Repository.Repositories
             request.Code = code;
             request.Status = "Pending";
             request.ContractId = request.ContractId;
+            request.IsMaintenance = request.IsMaintenance;
+
 
 
             var projectRequest = await _context.ProjectRequests.AddAsync(request, cancellationToken);
@@ -102,6 +104,7 @@ namespace Fusion.Repository.Repositories
                     .ThenInclude(rc => rc.OwnerUser)
                 .Include(x => x.ExecutorCompany)
                     .ThenInclude(ec => ec.OwnerUser)
+                .Include(x => x.Components)
                 .Include(x => x.CreatedByNavigation)
                 .Include(x => x.Project)
                 .FirstOrDefaultAsync(x => x.Id == projectRequest.Entity.Id, cancellationToken);

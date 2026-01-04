@@ -4,6 +4,7 @@ using Fusion.Repository.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Fusion.Repository.Migrations
 {
     [DbContext(typeof(FusionDbContext))]
-    partial class FusionDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260104163950_add dataset components")]
+    partial class adddatasetcomponents
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -948,12 +951,15 @@ namespace Fusion.Repository.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier")
-                        .HasColumnName("id");
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("(newid())");
 
                     b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
                         .HasPrecision(3)
                         .HasColumnType("datetime2(3)")
-                        .HasColumnName("created_at");
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("(sysutcdatetime())");
 
                     b.Property<Guid?>("CreatedBy")
                         .HasColumnType("uniqueidentifier")
@@ -973,15 +979,25 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("project_id");
 
+                    b.Property<Guid?>("ProjectId1")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<Guid?>("ProjectRequestId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("project_request_id");
+
+                    b.Property<Guid?>("ProjectRequestId1")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 
                     b.HasIndex("ProjectId");
 
+                    b.HasIndex("ProjectId1");
+
                     b.HasIndex("ProjectRequestId");
+
+                    b.HasIndex("ProjectRequestId1");
 
                     b.ToTable("ProjectComponents");
                 });
@@ -3155,14 +3171,22 @@ namespace Fusion.Repository.Migrations
             modelBuilder.Entity("Fusion.Repository.Entities.ProjectComponent", b =>
                 {
                     b.HasOne("Fusion.Repository.Entities.Project", "Project")
-                        .WithMany("Components")
+                        .WithMany()
                         .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasConstraintName("FK_ProjectComponents_Project");
+
+                    b.HasOne("Fusion.Repository.Entities.Project", null)
+                        .WithMany("Components")
+                        .HasForeignKey("ProjectId1");
 
                     b.HasOne("Fusion.Repository.Entities.ProjectRequest", "ProjectRequest")
-                        .WithMany("Components")
+                        .WithMany()
                         .HasForeignKey("ProjectRequestId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasConstraintName("FK_ProjectComponents_ProjectRequest");
+
+                    b.HasOne("Fusion.Repository.Entities.ProjectRequest", null)
+                        .WithMany("Components")
+                        .HasForeignKey("ProjectRequestId1");
 
                     b.Navigation("Project");
 
