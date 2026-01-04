@@ -87,7 +87,8 @@ public class UserFriendshipRepository : GenericRepository<UserFriendship>, IUser
 
         var projected = query.Select(x => new FriendLiteResponse
         {
-            FriendshipId = x.Id,
+            Id = x.Id,
+            FriendshipId = x.RequesterId.Value == userId ? x.AddresseeId.Value : x.RequesterId.Value,
             Status = x.Status ?? -1,
             Email = (x.RequesterId == userId ? x.Addressee!.Email : x.Requester!.Email),
             Avatar = (x.RequesterId == userId ? x.Addressee!.Avatar : x.Requester!.Avatar),

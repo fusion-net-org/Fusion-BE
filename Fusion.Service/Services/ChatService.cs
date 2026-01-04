@@ -330,7 +330,7 @@ public class ChatService : IChatService
                 throw CustomExceptionFactory.CreateForbiddenError();
         }
 
-        // idempotency
+        // idempotency (tránh gửi nhầm)
         var existed = await _msgRepo.GetByClientMessageIdAsync(request.ConversationId, me, clientMessageId, ct);
         if (existed != null)
         {
