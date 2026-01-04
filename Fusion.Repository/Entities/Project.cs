@@ -61,7 +61,10 @@ public partial class Project
     public DateTime UpdateAt { get; set; }
     [Column("is_closed")]
     public bool IsClosed { get; set; } = false;
-
+    [Column("is_maintenance")]
+    public bool IsMaintenance { get; set; } = false;
+    [Column("maintenance_for_project_id")]
+    public Guid? MaintenanceForProjectId { get; set; }
     [Column("closed_by")]
     public Guid? ClosedBy { get; set; }
     [Column("sprint_length_weeks")]
@@ -99,4 +102,6 @@ public partial class Project
     [ForeignKey("WorkflowId")]
     [InverseProperty("Projects")]
     public virtual Workflow? Workflow { get; set; }
+    public virtual ICollection<ProjectComponent> Components { get; set; } = new List<ProjectComponent>();
+
 }
