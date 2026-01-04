@@ -37,7 +37,6 @@ namespace Fusion.API.Hubs
 
         public async Task JoinGroup(Guid conversationId)
         {
-            Console.WriteLine($"User {Context.UserIdentifier} joined {conversationId}");
             await Groups.AddToGroupAsync(
                 Context.ConnectionId,
                 $"GROUP_{conversationId}"
@@ -46,8 +45,6 @@ namespace Fusion.API.Hubs
 
         public async Task LeaveGroup(Guid conversationId)
         {
-            Console.WriteLine($"User {Context.UserIdentifier} leave {conversationId}");
-
             await Groups.RemoveFromGroupAsync(
                 Context.ConnectionId,
                 $"GROUP_{conversationId}"
@@ -56,8 +53,6 @@ namespace Fusion.API.Hubs
 
         public async Task SendGroupMessage(Guid conversationId, string clientMessageId, string message, List<Guid>? mentionUserIds)
         {
-
-            Console.WriteLine($"User {Context.UserIdentifier} joined {conversationId}");
             var sender = await GetCurrentUserAsync();
 
             if (sender == null)
@@ -98,13 +93,6 @@ namespace Fusion.API.Hubs
 
         public async Task SendPrivateMessage(Guid toUserId, Guid conversationId, string clientMessageId, string message)
         {
-            Console.WriteLine($"User you in group joined.");
-
-            Console.WriteLine("=== SIGNALR CONNECTED ===");
-            Console.WriteLine($"ConnectionId: {conversationId}");
-            Console.WriteLine($"UserIdentifier: {toUserId}");
-            Console.WriteLine($"IsAuthenticated: {Context.User?.Identity?.IsAuthenticated}");
-
             var sender = await GetCurrentUserAsync();
             if (sender == null)
                 throw CustomExceptionFactory.CreateNotFoundError("User is not existed");
