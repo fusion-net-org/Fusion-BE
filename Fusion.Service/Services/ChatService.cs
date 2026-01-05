@@ -340,6 +340,7 @@ public class ChatService : IChatService
                 ConversationId = existed.ConversationId ?? Guid.Empty,
                 SenderId = existed.SenderId ?? Guid.Empty,
                 EmailSender = existed.Sender.Email ?? String.Empty,
+                AvatarSender = existed.Sender.Avatar ?? String.Empty,
                 Content = existed.Content,
                 ClientMessageId = existed.ClientMessageId,
                 CreatedAt = existed.CreatedAt
@@ -376,6 +377,7 @@ public class ChatService : IChatService
             ConversationId = msg.ConversationId ?? Guid.Empty,
             SenderId = msg.SenderId ?? Guid.Empty,
             EmailSender = sender.Email,
+            AvatarSender = sender.Avatar,
             Content = msg.Content,
             ClientMessageId = msg.ClientMessageId,
             CreatedAt = msg.CreatedAt
