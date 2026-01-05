@@ -97,18 +97,53 @@ namespace Fusion.Service.Services
             throw CustomExceptionFactory.CreateBadRequestError("Cannot send friend request in current state.");
         }
 
-        public async Task<List<FriendshipResponse>> GetPendingReceivedAsync(CancellationToken ct = default)
+        public async Task<List<FriendshipResponseV2>> GetPendingReceivedAsync(CancellationToken ct = default)
         {
             var me = _current.GetUserId();
             var list = await _friendRepo.GetPendingReceivedAsync(me, ct);
-            return list.Select(ToVm).ToList();
+
+            var result = new List<FriendshipResponseV2>();
+
+            foreach (var item in list)
+            {
+                result.Add(new FriendshipResponseV2
+                {
+                    Id = item.Id,
+                    AddresseeId = item.AddresseeId.Value,
+                    RequestedAt = item.RequestedAt.Value,
+                    RequesterId = item.RequesterId.Value,
+                    RequesterEmail = item.Requester.Email,
+                    RequesterName = item.Requester.UserName,
+                    Status = item.Status.Value,
+                    RespondedAt = item.RespondedAt,
+                });
+            }
+
+            return result;
         }
 
-        public async Task<List<FriendshipResponse>> GetPendingSentAsync(CancellationToken ct = default)
+        public async Task<List<FriendshipResponseV2>> GetPendingSentAsync(CancellationToken ct = default)
         {
             var me = _current.GetUserId();
             var list = await _friendRepo.GetPendingSentAsync(me, ct);
-            return list.Select(ToVm).ToList();
+            var result = new List<FriendshipResponseV2>();
+
+            foreach (var item in list)
+            {
+                result.Add(new FriendshipResponseV2
+                {
+                    Id = item.Id,
+                    AddresseeId = item.AddresseeId.Value,
+                    RequestedAt = item.RequestedAt.Value,
+                    RequesterId = item.RequesterId.Value,
+                    RequesterEmail = item.Requester.Email,
+                    RequesterName = item.Requester.UserName,
+                    Status = item.Status.Value,
+                    RespondedAt = item.RespondedAt,
+                });
+            }
+
+            return result;
         }
 
         public async Task<FriendshipResponse> AcceptAsync(Guid friendshipId, CancellationToken ct = default)
