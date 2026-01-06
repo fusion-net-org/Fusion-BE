@@ -175,6 +175,7 @@ public class MappingProfile : Profile
                              opt => opt.MapFrom(src => src.SubmittedByNavigation != null ? src.SubmittedByNavigation.UserName : null))
                   .ForMember(dest => dest.ProjectName,
                              opt => opt.MapFrom(src => src.Project != null ? src.Project.Name : null))
+                  .ForMember(dest => dest.TicketType,opt => opt.MapFrom(src =>Enum.Parse<TicketType>(src.TicketType!)))
                   .ReverseMap();
 
         CreateMap<Ticket, TicketResponseV2>()

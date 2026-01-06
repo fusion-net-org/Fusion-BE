@@ -18,4 +18,14 @@ namespace Fusion.Repository.Enums
         AsRequester, 
         AsExecutor   
     }
+    public enum TicketType
+    {
+        Bug,
+        Enhancement,
+        NewFeature,
+        Hotfix,
+        Improvement,
+        Spike
+    }
+
 }

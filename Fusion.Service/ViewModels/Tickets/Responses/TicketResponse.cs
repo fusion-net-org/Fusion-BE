@@ -1,10 +1,12 @@
-﻿using System;
+﻿using Fusion.Repository.Bases.Page;
+using Fusion.Repository.Enums;
+using Fusion.Service.ViewModels.ProjectComponent;
+using Fusion.Service.ViewModels.TicketComment;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Fusion.Repository.Bases.Page;
-using Fusion.Service.ViewModels.TicketComment;
 
 namespace Fusion.Service.ViewModels.Tickets.Responses
 {
@@ -16,7 +18,8 @@ namespace Fusion.Service.ViewModels.Tickets.Responses
 		public string? Priority { get; set; }
 		public bool? IsHighestUrgen { get; set; }
 		public string? TicketName { get; set; }
-		public string? Description { get; set; }
+        public TicketType TicketType { get; set; }
+        public string? Description { get; set; }
 		public Guid? StatusId { get; set; }
 		public Guid? SubmittedBy { get; set; }
 		public string? SubmittedByName {get;set;}
@@ -29,6 +32,7 @@ namespace Fusion.Service.ViewModels.Tickets.Responses
 		public DateTime? ClosedAt { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
+        public ProjectComponentResponse? Component { get; set; }
 
         public Dictionary<string, int> StatusCounts { get; set; } = new();
         public int Total { get; set; }
@@ -69,5 +73,4 @@ namespace Fusion.Service.ViewModels.Tickets.Responses
 
         public List<TicketCommentResponse>? TicketComments { get; set; }
     }
-
 }
