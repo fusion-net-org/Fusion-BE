@@ -37,8 +37,10 @@ namespace Fusion.Service.Services
         private readonly IProjectService _projectService;
         private readonly IWorkflowStatusRepository _workflowStatusRepository;
         private readonly ITaskRepository _taskRepository;
+        private readonly IProjectRepository _projectRepository;
+        private readonly IProjectComponentRepository _projectComponentRepository;
         public TicketService(IMapper mapper, ITicketRepository ticketRepository, IUserRepository userRepository, IValidator<TicketRequest> validator,
-            IUnitOfWork unitOfWork, ICompanyActivityService logService, ICurrentService currentService, IProjectService projectService, IWorkflowStatusRepository workflowStatusRepository, ITaskRepository taskRepository)
+            IUnitOfWork unitOfWork, ICompanyActivityService logService, ICurrentService currentService, IProjectService projectService, IWorkflowStatusRepository workflowStatusRepository, ITaskRepository taskRepository, IProjectRepository projectRepository,IProjectComponentRepository projectComponentRepository)
         {
             _mapper = mapper;
             _ticketRepository = ticketRepository;
@@ -50,6 +52,8 @@ namespace Fusion.Service.Services
             _projectService = projectService;
             _workflowStatusRepository = workflowStatusRepository;
             _taskRepository = taskRepository;
+            _projectRepository = projectRepository;
+            _projectComponentRepository = projectComponentRepository;
         }
 
         public async Task<TicketResponse?> CreateTicketAsync(TicketRequest request, CancellationToken cancellationToken = default)
@@ -71,8 +75,39 @@ namespace Fusion.Service.Services
             //if (!statusExists)
             //    throw CustomExceptionFactory.CreateBadRequestError("Workflow status is invalid or does not exist.");
 
+            Project? project = null;
+            if (request.ProjectId.HasValue)
+            {
+                project = await _projectRepository.GetProjectById(
+                    request.ProjectId.Value, cancellationToken);
+
+                if (project == null)
+                    throw CustomExceptionFactory.CreateBadRequestError(
+                        "Project does not exist.");
+            }
+
+            if (project?.IsMaintenance == true)
+            {
+                if (!request.ComponentId.HasValue)
+                    throw CustomExceptionFactory.CreateBadRequestError(
+                        "Component is required for maintenance project.");
+
+                var component = await _projectComponentRepository
+                    .GetByIdAsync(request.ComponentId.Value, cancellationToken);
+
+                if (component == null)
+                    throw CustomExceptionFactory.CreateBadRequestError(
+                        "Component does not exist.");
+
+                if (component.ProjectId != project.Id)
+                    throw CustomExceptionFactory.CreateBadRequestError(
+                        "Component does not belong to this project.");
+            }
+
             var ticket = _mapper.Map<Ticket>(request);
 
+            ticket.TicketType = request.TicketType.ToString();
+            ticket.ComponentId = request.ComponentId;
             ticket.SubmittedBy = request.SubmittedBy;
 
 
@@ -311,7 +346,7 @@ namespace Fusion.Service.Services
 
             var dto = _mapper.Map<TicketResponse>(ticket);
 
-            // 👇 build thêm Process từ các task non-backlog
+            //build thêm Process từ các task non-backlog
             dto.Process = await BuildTicketProcessAsync(ticket.Id, cancellationToken);
 
             return dto;

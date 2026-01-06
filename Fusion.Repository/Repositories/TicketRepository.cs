@@ -152,6 +152,7 @@ namespace Fusion.Repository.Repositories
                 .Include(x => x.SubmittedByNavigation)
                 .Include(x => x.Project)
                 .Include(x => x.WorkflowStatus)
+                .Include(x => x.Component)
                 .SingleOrDefaultAsync(x => x.Id == Id);
         }
 
@@ -168,7 +169,6 @@ namespace Fusion.Repository.Repositories
             newTicket.IsDeleted = false;
             newTicket.CreatedAt = DateTime.UtcNow.AddHours(7);
             newTicket.status = TicketStatusEnum.Pending.ToString();
-
             var ticket = await _context.Tickets.AddAsync(newTicket);
             await _context.SaveChangesAsync(cancellationToken);
             return ticket.Entity;

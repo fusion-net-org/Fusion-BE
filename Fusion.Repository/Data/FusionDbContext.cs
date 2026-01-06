@@ -105,18 +105,18 @@ public partial class FusionDbContext : DbContext
             entity.HasOne(d => d.LastActionByNavigation).WithMany(p => p.CompanyFriendships).HasConstraintName("FK_CompanyFriendships_LastActor");
         });
 
-        modelBuilder.Entity<ProjectComponent>(entity =>
-        {
-            entity.HasOne(pc => pc.Project)
-                .WithMany(p => p.Components)
-                .HasForeignKey(pc => pc.ProjectId)
-                .OnDelete(DeleteBehavior.Restrict);
+        //modelBuilder.Entity<ProjectComponent>(entity =>
+        //{
+        //    entity.HasOne(pc => pc.Project)
+        //        .WithMany(p => p.Components)
+        //        .HasForeignKey(pc => pc.ProjectId)
+        //        .OnDelete(DeleteBehavior.Restrict);
 
-            entity.HasOne(pc => pc.ProjectRequest)
-                .WithMany(pr => pr.Components)
-                .HasForeignKey(pc => pc.ProjectRequestId)
-                .OnDelete(DeleteBehavior.Restrict);
-        });
+        //    entity.HasOne(pc => pc.ProjectRequest)
+        //        .WithMany(pr => pr.Components)
+        //        .HasForeignKey(pc => pc.ProjectRequestId)
+        //        .OnDelete(DeleteBehavior.Restrict);
+        //});
 
         modelBuilder.Entity<CompanyMember>(entity =>
         {
@@ -751,15 +751,16 @@ public partial class FusionDbContext : DbContext
                   .HasConversion(utcKindConverter);
 
             entity.HasOne(e => e.Project)
-                  .WithMany() 
+                  .WithMany(p => p.Components)             
                   .HasForeignKey(e => e.ProjectId)
                   .HasConstraintName("FK_ProjectComponents_Project");
 
             entity.HasOne(e => e.ProjectRequest)
-                  .WithMany() 
+                  .WithMany(pr => pr.Components)           
                   .HasForeignKey(e => e.ProjectRequestId)
                   .HasConstraintName("FK_ProjectComponents_ProjectRequest");
         });
+
 
         OnModelCreatingPartial(modelBuilder);
     }
