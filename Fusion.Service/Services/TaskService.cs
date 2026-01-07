@@ -90,6 +90,24 @@ public class TaskService : ITaskService
         }
         return sb.ToString();
     }
+    private static Guid? NormalizeComponentId(Guid? id)
+        => (id.HasValue && id.Value != Guid.Empty) ? id : null;
+
+    private async Task EnsureComponentBelongsToProjectAsync(Guid projectId, Guid? componentId, CancellationToken ct)
+    {
+        var cid = NormalizeComponentId(componentId);
+        if (!cid.HasValue) return;
+
+        // ProjectComponent có cột ProjectId (theo entity bạn đang dùng)
+        var ok = await _db.Set<ProjectComponent>()
+            .AsNoTracking()
+            .AnyAsync(c => c.Id == cid.Value && c.ProjectId == projectId, ct);
+
+        if (!ok)
+            throw CustomExceptionFactory.CreateNotFoundError(
+                ResponseMessages.NOT_FOUND.FormatMessage("Component"));
+    }
+
 
     private async Task<string?> GetUserName(Guid userId)
         => (await _db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId))?.UserName;
@@ -580,7 +598,7 @@ public class TaskService : ITaskService
     #region CRUD
     /* -------------------- CREATE -------------------- */
     public async Task<ProjectTaskResponse> CreateTaskAsync(
-        ProjectTaskRequest req, Guid userId, CancellationToken ct = default)
+       ProjectTaskRequest req, Guid userId, CancellationToken ct = default)
     {
         // 1) Validate project
         var project = await _db.Projects.AsNoTracking()
@@ -597,6 +615,9 @@ public class TaskService : ITaskService
                 throw CustomExceptionFactory.CreateNotFoundError(
                     ResponseMessages.NOT_FOUND.FormatMessage("Sprint"));
         }
+
+        // ✅ ADD: validate component thuộc project (nếu có gửi)
+        await EnsureComponentBelongsToProjectAsync(req.ProjectId, req.ComponentId, ct);
 
         // 3) Chọn Status: ưu tiên WorkflowStatusId → StatusCode → default (TODO/first by Order)
         WorkflowStatus? status = null;
@@ -634,13 +655,14 @@ public class TaskService : ITaskService
             var max = await _db.ProjectTasks.AsNoTracking()
                 .Where(t => t.SprintId == req.SprintId && t.CurrentStatusId == status.Id && !t.IsDeleted)
                 .Select(t => t.OrderInSprint)
-    .FirstOrDefaultAsync(ct);
+                .FirstOrDefaultAsync(ct);
+
             orderInSprint = (max ?? 0) + 1;
         }
 
-        // 6) Map + defaults
         var now = DateTime.UtcNow;
         var entity = _mapper.Map<ProjectTask>(req);
+
         entity.Id = Guid.NewGuid();
         entity.ProjectId = req.ProjectId;
         entity.SprintId = req.SprintId;
@@ -655,7 +677,8 @@ public class TaskService : ITaskService
         entity.CreatedBy = userId;
         entity.IsDeleted = false;
 
-        // Assignees
+        entity.ComponentId = NormalizeComponentId(req.ComponentId);
+
         entity.Assignees = new List<TaskWorkflow>();
         if (req.AssigneeIds?.Count > 0)
         {
@@ -665,6 +688,7 @@ public class TaskService : ITaskService
 
         // 7) Persist
         await _repo.AddAsync(entity, ct);
+
         if (req.WorkflowAssignments != null)
         {
             var validItems = req.WorkflowAssignments
@@ -691,42 +715,44 @@ public class TaskService : ITaskService
             }
         }
 
-
         var companyId = await _db.Projects
-    .Where(p => p.Id == entity.ProjectId)
-    .Select(p => (Guid)p.CompanyId)    // ép về Guid
-    .FirstAsync(ct);
+            .Where(p => p.Id == entity.ProjectId)
+            .Select(p => (Guid)p.CompanyId)
+            .FirstAsync(ct);
+
         // 8) Log
         var sprintName = entity.SprintId.HasValue
-    ? await _db.Sprints.AsNoTracking()
-        .Where(s => s.Id == entity.SprintId.Value)
-        .Select(s => s.Name)
-        .FirstOrDefaultAsync(ct)
-    : null;
-        await _activityLog.TryWriteAsync(
-      entity.Id,
-      action: "TASK_CREATED",
-      message:
-          $"Created {entity.Code} \"{entity.Title}\"" +
-          (sprintName != null ? $" in sprint \"{sprintName}\"" : " in backlog") +
-          $" / \"{entity.Status}\".",
-      changedCols: new[] { "Code", "Title", "ProjectId", "SprintId", "CurrentStatusId", "Status" },
-      metadata: new
-      {
-          taskId = entity.Id,
-          entity.Code,
-          entity.Title,
-          entity.ProjectId,
-          entity.SprintId,
-          entity.CurrentStatusId,
-          entity.Status,
-          assigneeIds = req.AssigneeIds
-      },
-      ct: ct);
+            ? await _db.Sprints.AsNoTracking()
+                .Where(s => s.Id == entity.SprintId.Value)
+                .Select(s => s.Name)
+                .FirstOrDefaultAsync(ct)
+            : null;
 
+        await _activityLog.TryWriteAsync(
+            entity.Id,
+            action: "TASK_CREATED",
+            message:
+                $"Created {entity.Code} \"{entity.Title}\"" +
+                (sprintName != null ? $" in sprint \"{sprintName}\"" : " in backlog") +
+                $" / \"{entity.Status}\".",
+            changedCols: new[] { "Code", "Title", "ProjectId", "SprintId", "CurrentStatusId", "Status" },
+            metadata: new
+            {
+                taskId = entity.Id,
+                entity.Code,
+                entity.Title,
+                entity.ProjectId,
+                entity.SprintId,
+                entity.CurrentStatusId,
+                entity.Status,
+                assigneeIds = req.AssigneeIds,
+                componentId = entity.ComponentId 
+            },
+            ct: ct);
 
         return _mapper.Map<ProjectTaskResponse>(entity);
     }
+
 
     /* -------------------- UPDATE -------------------- */
     public async Task<ProjectTaskResponse?> UpdateTaskAsync(
@@ -1835,6 +1861,7 @@ public class TaskService : ITaskService
             .FirstOrDefaultAsync(p => p.Id == req.ProjectId, ct)
             ?? throw CustomExceptionFactory.CreateNotFoundError(
                 ResponseMessages.NOT_FOUND.FormatMessage("Project"));
+        await EnsureComponentBelongsToProjectAsync(req.ProjectId, req.ComponentId, ct);
 
         // 2) Draft: luôn backlog, không thuộc sprint
         req.SprintId = null;
@@ -1888,6 +1915,7 @@ public class TaskService : ITaskService
         entity.UpdateAt = now;
         entity.CreatedBy = userId;
         entity.IsDeleted = false;
+        entity.ComponentId = NormalizeComponentId(req.ComponentId);
 
         // Assignees
         entity.Assignees = new List<TaskWorkflow>();
@@ -1970,6 +1998,11 @@ public class TaskService : ITaskService
         // Chỉ cho sửa draft
         if (!e.IsBacklog || e.SprintId != null)
             throw CustomExceptionFactory.CreateBadRequestError("Task is not a draft task.");
+        if (req.ComponentId != null) 
+        {
+            await EnsureComponentBelongsToProjectAsync(e.ProjectId!.Value, req.ComponentId, ct);
+            e.ComponentId = NormalizeComponentId(req.ComponentId);
+        }
         var old = new { e.Title, e.Description, e.Type, e.Priority, e.Severity, e.Point, e.EstimateHours, e.DueDate, e.CurrentStatusId, e.Status };
         // Update các trường cơ bản
         e.Title = string.IsNullOrWhiteSpace(req.Title) ? e.Title : req.Title.Trim();
