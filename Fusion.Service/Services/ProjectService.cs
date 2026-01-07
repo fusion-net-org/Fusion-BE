@@ -241,8 +241,8 @@ namespace Fusion.Service.Services
                     var comps = cleaned.Select(x => new ProjectComponent
                     {
                         Id = Guid.NewGuid(),
-                        ProjectId = project.Id,                
-                        ProjectRequestId = null,              
+                        ProjectId = project.Id,
+                        ProjectRequestId = request.ProjectRequestId,
                         Name = x.Name,
                         Description = string.IsNullOrWhiteSpace(x.Note) ? null : x.Note,
                         CreatedBy = actorUserId,
@@ -291,7 +291,6 @@ namespace Fusion.Service.Services
                 CompanyName = created.Company?.Name,
                 CompanyHiredName = created.CompanyRequest?.Name,
                 CreatedByName = created.CreatedByNavigation?.UserName,
-
                 Sprints = created.Sprints
         .Where(s => !s.IsDeleted)
         .OrderBy(s => s.StartDate)
