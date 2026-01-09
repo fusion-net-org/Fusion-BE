@@ -4,6 +4,7 @@ using Fusion.Repository.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Fusion.Repository.Migrations
 {
     [DbContext(typeof(FusionDbContext))]
-    partial class FusionDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260104194351_Component-Field")]
+    partial class ComponentField
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -948,15 +951,12 @@ namespace Fusion.Repository.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("(newid())");
+                        .HasColumnName("id");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
                         .HasPrecision(3)
                         .HasColumnType("datetime2(3)")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("(sysutcdatetime())");
+                        .HasColumnName("created_at");
 
                     b.Property<Guid?>("CreatedBy")
                         .HasColumnType("uniqueidentifier")
@@ -986,7 +986,7 @@ namespace Fusion.Repository.Migrations
 
                     b.HasIndex("ProjectRequestId");
 
-                    b.ToTable("ProjectComponents", (string)null);
+                    b.ToTable("ProjectComponents");
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.ProjectMember", b =>
@@ -2077,12 +2077,6 @@ namespace Fusion.Repository.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)")
                         .HasColumnName("ticket_name");
-
-                    b.Property<string>("TicketType")
-                        .HasMaxLength(50)
-                        .IsUnicode(false)
-                        .HasColumnType("varchar(50)")
-                        .HasColumnName("ticket_type");
 
                     b.Property<DateTime>("UpdatedAt")
                         .ValueGeneratedOnAdd()
@@ -3177,13 +3171,11 @@ namespace Fusion.Repository.Migrations
                 {
                     b.HasOne("Fusion.Repository.Entities.Project", "Project")
                         .WithMany("Components")
-                        .HasForeignKey("ProjectId")
-                        .HasConstraintName("FK_ProjectComponents_Project");
+                        .HasForeignKey("ProjectId");
 
                     b.HasOne("Fusion.Repository.Entities.ProjectRequest", "ProjectRequest")
                         .WithMany("Components")
-                        .HasForeignKey("ProjectRequestId")
-                        .HasConstraintName("FK_ProjectComponents_ProjectRequest");
+                        .HasForeignKey("ProjectRequestId");
 
                     b.Navigation("Project");
 

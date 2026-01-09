@@ -11,7 +11,7 @@ public class ProjectTaskRequest
 
     [Required, MaxLength(200)]
     public string Title { get; set; } = string.Empty;
-
+    public Guid? ComponentId { get; set; }
     public string? Description { get; set; }
     public string? Type { get; set; } = "Feature";           // Feature/Bug/Chore…
     public string? Priority { get; set; } = "Medium";        // Urgent/High/Medium/Low

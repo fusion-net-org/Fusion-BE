@@ -35,9 +35,14 @@ namespace Fusion.Repository.Entities
 
         [Column("created_by")]
         public Guid? CreatedBy { get; set; }
-
+        //[ForeignKey(nameof(ProjectId))]
         public virtual Project? Project { get; set; }
+        //[ForeignKey(nameof(ProjectRequestId))]
         public virtual ProjectRequest? ProjectRequest { get; set; }
+        [InverseProperty(nameof(ProjectTask.Component))]
+        public virtual ICollection<ProjectTask> Tasks { get; set; } = new List<ProjectTask>();
+        [InverseProperty(nameof(Ticket.Component))]
+        public virtual ICollection<Ticket> Tickets { get; set; } = new List<Ticket>();
     }
 
 }

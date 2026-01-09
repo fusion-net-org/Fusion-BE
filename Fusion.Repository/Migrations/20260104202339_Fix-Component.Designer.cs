@@ -4,6 +4,7 @@ using Fusion.Repository.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Fusion.Repository.Migrations
 {
     [DbContext(typeof(FusionDbContext))]
-    partial class FusionDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260104202339_Fix-Component")]
+    partial class FixComponent
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -976,15 +979,25 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("project_id");
 
+                    b.Property<Guid?>("ProjectId1")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<Guid?>("ProjectRequestId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("project_request_id");
+
+                    b.Property<Guid?>("ProjectRequestId1")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 
                     b.HasIndex("ProjectId");
 
+                    b.HasIndex("ProjectId1");
+
                     b.HasIndex("ProjectRequestId");
+
+                    b.HasIndex("ProjectRequestId1");
 
                     b.ToTable("ProjectComponents", (string)null);
                 });
@@ -2078,12 +2091,6 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("nvarchar(200)")
                         .HasColumnName("ticket_name");
 
-                    b.Property<string>("TicketType")
-                        .HasMaxLength(50)
-                        .IsUnicode(false)
-                        .HasColumnType("varchar(50)")
-                        .HasColumnName("ticket_type");
-
                     b.Property<DateTime>("UpdatedAt")
                         .ValueGeneratedOnAdd()
                         .HasPrecision(3)
@@ -3176,14 +3183,22 @@ namespace Fusion.Repository.Migrations
             modelBuilder.Entity("Fusion.Repository.Entities.ProjectComponent", b =>
                 {
                     b.HasOne("Fusion.Repository.Entities.Project", "Project")
-                        .WithMany("Components")
+                        .WithMany()
                         .HasForeignKey("ProjectId")
                         .HasConstraintName("FK_ProjectComponents_Project");
 
-                    b.HasOne("Fusion.Repository.Entities.ProjectRequest", "ProjectRequest")
+                    b.HasOne("Fusion.Repository.Entities.Project", null)
                         .WithMany("Components")
+                        .HasForeignKey("ProjectId1");
+
+                    b.HasOne("Fusion.Repository.Entities.ProjectRequest", "ProjectRequest")
+                        .WithMany()
                         .HasForeignKey("ProjectRequestId")
                         .HasConstraintName("FK_ProjectComponents_ProjectRequest");
+
+                    b.HasOne("Fusion.Repository.Entities.ProjectRequest", null)
+                        .WithMany("Components")
+                        .HasForeignKey("ProjectRequestId1");
 
                     b.Navigation("Project");
 

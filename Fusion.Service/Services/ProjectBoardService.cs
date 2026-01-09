@@ -82,7 +82,15 @@ namespace Fusion.Service.Services
                         IsStart = x.IsStart,
                         Roles = ParseRoles(x.RolesJson)
                     });
-
+            var components = await _repo.GetComponentsAsync(projectId, ct);
+            var componentDtos = components.Select(c => new ComponentVmDto
+            {
+                Id = c.Id,
+                Name = c.Name,
+                Description = c.Description,
+                CreatedAt = c.CreatedAt,
+                CreatedBy = c.CreatedBy
+            }).ToList();
             var workflowDto = new WorkflowBoardDto
             {
                 Id = workflowId,
@@ -145,7 +153,7 @@ namespace Fusion.Service.Services
                             a.AssignUser?.Avatar
                         )).ToList()
                     : new List<MemberRefDto>();
-
+                var effectiveComponent = t.Component;
                 taskDtos.Add(new TaskVmDto
                 {
                     Id = t.Id,
@@ -175,7 +183,8 @@ namespace Fusion.Service.Services
                     OpenedAt = t.CreateAt ?? DateTime.UtcNow,
                     UpdatedAt = t.UpdateAt ?? t.CreateAt ?? DateTime.UtcNow,
                     CreatedAt = t.CreateAt ?? DateTime.UtcNow,
-
+                    ComponentId = effectiveComponent?.Id,
+                    ComponentName = effectiveComponent?.Name,
                     TicketId = t.TicketId,
                     TicketName = t.Ticket?.TicketName,
                     SourceTicketId = t.SourceTaskId,
@@ -188,7 +197,8 @@ namespace Fusion.Service.Services
             {
                 Workflow = workflowDto,
                 Sprints = sprintDtos,
-                Tasks = taskDtos
+                Tasks = taskDtos,
+                Components = componentDtos
             };
         }
 
@@ -411,7 +421,8 @@ namespace Fusion.Service.Services
                     WorkflowStatusId = curStatusId,
                     StatusCode = meta.Code,
                     StatusCategory = meta.Category,
-
+                    ComponentId = t.Component?.Id,
+                    ComponentName = t.Component?.Name,
                     Assignees = assignees,
                     DependsOn = new List<Guid>(),
                     ParentTaskId = t.ParentTaskId,
@@ -592,6 +603,9 @@ namespace Fusion.Service.Services
                 OpenedAt = task.CreateAt ?? DateTime.UtcNow,
                 UpdatedAt = task.UpdateAt ?? task.CreateAt ?? DateTime.UtcNow,
                 CreatedAt = task.CreateAt ?? DateTime.UtcNow,
+
+                ComponentId = task.Component?.Id,
+                ComponentName = task.Component?.Name,
 
                 TicketId = task.TicketId,
                 TicketName = task.Ticket?.TicketName,

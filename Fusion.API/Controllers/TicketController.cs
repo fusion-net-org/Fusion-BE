@@ -60,7 +60,7 @@ namespace Fusion.API.Controllers
 
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(ResponseModel<TicketResponse>))]
-        [HasPermission("TICKET_CREATE")]
+        //[HasPermission("TICKET_CREATE")]
         public async Task<IActionResult> CreateTicket(TicketRequest request, CancellationToken cancellationToken)
         {
             var emailClaim = User.Claims.FirstOrDefault(c =>

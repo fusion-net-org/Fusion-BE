@@ -27,6 +27,12 @@ public partial class Ticket
     [StringLength(200)]
     public string? TicketName { get; set; }
 
+    [Column("ticket_type")]
+    [StringLength(50)]
+    [Unicode(false)]
+    public string? TicketType { get; set; }
+
+
     [Column("description")]
     public string? Description { get; set; }
 
@@ -76,7 +82,12 @@ public partial class Ticket
     [ForeignKey("StatusId")]
     [InverseProperty("Tickets")]
     public virtual WorkflowStatus? WorkflowStatus { get; set; }
+    [Column("component_id")]
+    public Guid? ComponentId { get; set; }
 
+    [ForeignKey(nameof(ComponentId))]
+    [InverseProperty(nameof(ProjectComponent.Tickets))]
+    public virtual ProjectComponent? Component { get; set; }
 
     [ForeignKey("SubmittedBy")]
     [InverseProperty("Tickets")]

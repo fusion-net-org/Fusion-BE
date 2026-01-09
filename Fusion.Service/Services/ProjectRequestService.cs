@@ -207,6 +207,8 @@ namespace Fusion.Service.Services
 
 
             var projectRequest = _mapper.Map<ProjectRequest>(request);
+            //projectRequest.IsMaintenance = request.IsMaintenance;
+
             var code = ProjectCodeUtil.GenerateProjectRequestCode();
             var response = await _projectRequestRepository.AddProjectRequestAsync(projectRequest, vendorEmail, code, cancellationToken);
 

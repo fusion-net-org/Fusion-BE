@@ -23,7 +23,7 @@ public class ProjectTaskResponse
     public string? Type { get; set; }
     public string? Priority { get; set; }
     public string? Severity { get; set; }
-
+    public Guid? ComponentId { get; set; }
     public int? Point { get; set; }
     public int? EstimateHours { get; set; }
     public int? RemainingHours { get; set; }
