@@ -4,6 +4,7 @@ using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.Project;
 using Fusion.Repository.Bases.Responses;
+using Fusion.Repository.Common;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.Enums;
@@ -38,6 +39,8 @@ namespace Fusion.Service.Services
         private readonly IWorkflowDesignerRepository _workflowReadRepo;
         private readonly FusionDbContext _ctx;
         private readonly ICompanySubscriptionService _companySubscriptionService;
+        private readonly IChatConversationRepository _chatConversationRepository;
+
         public ProjectService(
             IMapper mapper,
             IValidator<ProjectCreateRequest> validator,
@@ -45,6 +48,7 @@ namespace Fusion.Service.Services
             ISprintRepository sprintRepo,
             IProjectMemberRepository projMemberRepo,
             IWorkflowDesignerRepository workflowReadRepo,
+            IChatConversationRepository chatConversationRepository,
             FusionDbContext ctx, ICompanySubscriptionService companySubscriptionService)
         {
             _mapper = mapper;
@@ -55,6 +59,7 @@ namespace Fusion.Service.Services
             _workflowReadRepo = workflowReadRepo;
             _ctx = ctx;
             _companySubscriptionService = companySubscriptionService;
+            _chatConversationRepository = chatConversationRepository;
         }
         public async Task<ProjectAccessCheckResponse> CheckProjectAccessAsync(
     Guid projectId,
@@ -63,7 +68,7 @@ namespace Fusion.Service.Services
         {
             var p = await _ctx.Projects
                 .AsNoTracking()
-                .Where(x => x.Id == projectId )
+                .Where(x => x.Id == projectId)
                 .Select(x => new
                 {
                     x.Id,
@@ -206,6 +211,32 @@ namespace Fusion.Service.Services
                 CompanyId = companyId,
                 FeatureName = FeatureInProject.Project.ToString()
             };
+
+            //7.1) Group Project Member
+            var chatMembers = stagedMembers
+            .Select(m => new ChatConversationMember
+            {
+                UserId = m.userId,
+                JoinedAt = DateTime.UtcNow,
+                AddedBy = actorUserId,
+                Role = m.userId == actorUserId
+                    ? ConversationRole.Owner
+                    : ConversationRole.Member
+            })
+            .ToList();
+
+            //7.2) Group Chat Project
+            var projectChat = new ChatConversation
+            {
+                Id = Guid.NewGuid(),
+                Type = ConversationType.Group,
+                Title = $"Project Group - {project.Name}",
+                CreatedAt = DateTime.UtcNow.AddHours(7),
+                CreatedBy = actorUserId,
+                DirectPairKey = ChatKeyHelper.BuildGroup(project.Id),
+                Members = chatMembers
+            };
+
             //if (request.IsMaintenance)
             //{
             //    var baseId = request.MaintenanceForProjectId!.Value;
@@ -241,8 +272,8 @@ namespace Fusion.Service.Services
                     var comps = cleaned.Select(x => new ProjectComponent
                     {
                         Id = Guid.NewGuid(),
-                        ProjectId = project.Id,                
-                        ProjectRequestId = null,              
+                        ProjectId = project.Id,
+                        ProjectRequestId = null,
                         Name = x.Name,
                         Description = string.IsNullOrWhiteSpace(x.Note) ? null : x.Note,
                         CreatedBy = actorUserId,
@@ -256,6 +287,8 @@ namespace Fusion.Service.Services
 
                 foreach (var (uid, isPartner) in stagedMembers)
                     await _projMemberRepo.AddIfNotExistsAsync(project.Id, uid, isPartner, isViewAll: false, ct);
+
+                await _chatConversationRepository.AddAsync(projectChat, ct);
 
                 await _ctx.SaveChangesAsync(ct);
                 await tx.CommitAsync(ct);
@@ -352,7 +385,7 @@ namespace Fusion.Service.Services
 
             var result = await _projectRepo.GetProjectsForCompanyAsync(
         companyId: companyId,
-        userId: actorUserId,        
+        userId: actorUserId,
         q: req.Q,
         statuses: statusStrings,
         sort: req.Sort,
@@ -369,14 +402,14 @@ namespace Fusion.Service.Services
                 ? new Dictionary<Guid, int>()
                 : await _ctx.Set<ProjectComponent>()
                     .AsNoTracking()
-                    .Where(x => x.ProjectId.HasValue && maintenanceIds.Contains(x.ProjectId.Value)) 
-                    .GroupBy(x => x.ProjectId!.Value)                                              
+                    .Where(x => x.ProjectId.HasValue && maintenanceIds.Contains(x.ProjectId.Value))
+                    .GroupBy(x => x.ProjectId!.Value)
                     .Select(g => new { ProjectId = g.Key, Count = g.Count() })
                     .ToDictionaryAsync(x => x.ProjectId, x => x.Count, ct);
 
             var items = entities.Select(p =>
             {
-                componentCounts.TryGetValue(p.Id, out var cnt); 
+                componentCounts.TryGetValue(p.Id, out var cnt);
 
                 return new ProjectListItemResponse
                 {
@@ -405,7 +438,7 @@ namespace Fusion.Service.Services
                     Ptype = p.CompanyRequestId != null ? "Outsourced" : "Internal",
 
                     IsMaintenance = p.IsMaintenance == true,
-                    MaintenanceComponentCount = (p.IsMaintenance == true) ? cnt : 0, 
+                    MaintenanceComponentCount = (p.IsMaintenance == true) ? cnt : 0,
 
                     IsRequest = (p.CompanyRequestId == companyId)
                 };
@@ -897,7 +930,7 @@ namespace Fusion.Service.Services
             };
         }
 
-        public async Task<ProjectExecutionOverviewResponse> GetProjectExecutionOverviewAsync( ProjectGrowthOverviewRequest req, CancellationToken ct = default)
+        public async Task<ProjectExecutionOverviewResponse> GetProjectExecutionOverviewAsync(ProjectGrowthOverviewRequest req, CancellationToken ct = default)
         {
             // Không xử lý from/to ở đây nữa,
             // để repo handle default range (12 tháng gần nhất) cho đồng bộ.
