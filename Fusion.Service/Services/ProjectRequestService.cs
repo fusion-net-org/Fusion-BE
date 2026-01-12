@@ -4,6 +4,7 @@ using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.ProjectRequest;
 using Fusion.Repository.Bases.Responses;
+using Fusion.Repository.Common;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.Enums;
@@ -39,8 +40,9 @@ namespace Fusion.Service.Services
         private readonly IContractService _contractService;
         private readonly ITicketService _ticketService;
         private readonly IUserRepository _userRepository;
+        private readonly IChatConversationRepository _chatConversationRepository;
 
-        public ProjectRequestService(IProjectRequestRepository projectRequestRepository, INotificationService notificationService, IMapper mapper, ICurrentService currentService, ICompanyActivityService logService, IMailService mailService, IUnitOfWork unitOfWork,IContractService contractService, ITicketService ticketService, IUserRepository userRepository)
+        public ProjectRequestService(IProjectRequestRepository projectRequestRepository, INotificationService notificationService, IMapper mapper, ICurrentService currentService, ICompanyActivityService logService, IMailService mailService, IUnitOfWork unitOfWork, IContractService contractService, ITicketService ticketService, IUserRepository userRepository, IChatConversationRepository chatConversationRepository)
         {
             _projectRequestRepository = projectRequestRepository;
             _notificationService = notificationService;
@@ -52,6 +54,7 @@ namespace Fusion.Service.Services
             _contractService = contractService;
             _ticketService = ticketService;
             _userRepository = userRepository;
+            _chatConversationRepository = chatConversationRepository;
         }
         public async Task<ProjectRequestResponse?> GetProjectRequestByContractIdAsync(Guid contractId, CancellationToken cancellationToken = default)
         {
@@ -87,10 +90,41 @@ namespace Fusion.Service.Services
                 await _contractService.UpdateContractStatusAsync(
                     result.ContractId.Value,
                     _currentService.GetUserId(),
-                    "Accepted", 
+                    "Accepted",
                     cancellationToken
                 );
             }
+
+            var user = await _userRepository.GetUserByEmailAsync(executorEmail, cancellationToken);
+
+            if(user == null)
+                throw CustomExceptionFactory.CreateNotFoundError("User not found");
+
+            await _chatConversationRepository.AddAsync(new ChatConversation
+            {
+                Type = ConversationType.Group,
+                Title = $"Project Outsource Group_{result.Name}",
+                CreatedAt = DateTime.UtcNow.AddHours(7),
+                CreatedBy = user.Id,
+                DirectPairKey = ChatKeyHelper.BuildGroup(result.Id),
+                Members = new List<ChatConversationMember>
+                {
+                    new ChatConversationMember
+                    {
+                        UserId = user.Id,
+                        JoinedAt = DateTime.UtcNow.AddHours(7),
+                        AddedBy = result.CreatedBy,
+                        Role = ConversationRole.Owner,
+                    },
+                    new ChatConversationMember
+                    {
+                        UserId = user.Id,
+                        JoinedAt = DateTime.UtcNow.AddHours(7),
+                        AddedBy = result.CreatedBy,
+                        Role = ConversationRole.Member,
+                    },
+                },
+            }, cancellationToken);
 
             var emailBody = $@"
                <h3>Dear {result.RequesterCompany?.Name},</h3>
@@ -147,6 +181,7 @@ namespace Fusion.Service.Services
                 NotificationType = NotificationTypeEnum.PROJECT_REQUEST.ToString(),
             }, cancellationToken);
 
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
             return _mapper.Map<ProjectRequestResponse>(result);
         }
 
@@ -242,11 +277,11 @@ namespace Fusion.Service.Services
             return _mapper.Map<ProjectRequestResponse>(response);
         }
 
-        public async Task<bool> DeleteProjectRequestAsync(Guid id,string reason, CancellationToken cancellationToken = default)
+        public async Task<bool> DeleteProjectRequestAsync(Guid id, string reason, CancellationToken cancellationToken = default)
         {
             var currentUserId = _currentService.GetUserId();
 
-            var result = await _projectRequestRepository.DeleteProjectRequestAsync(id,reason, currentUserId, cancellationToken);
+            var result = await _projectRequestRepository.DeleteProjectRequestAsync(id, reason, currentUserId, cancellationToken);
 
             var projectRequest = await _projectRequestRepository.GetProjectRequestByIdAsync(id);
             var currentUserName = await GetUserName(currentUserId);
@@ -366,7 +401,7 @@ namespace Fusion.Service.Services
             if (user == null)
                 throw CustomExceptionFactory.CreateNotFoundError("User is not existed");
 
-            if(user.IsSystemAdmin == false)
+            if (user.IsSystemAdmin == false)
                 throw CustomExceptionFactory.CreateBadRequestError("User is not a system admin");
 
             var raw = await _projectRequestRepository.GetProjectRequestByIdAsync(id, cancellationToken);
@@ -432,7 +467,7 @@ namespace Fusion.Service.Services
         public async Task<ProjectRequestRejectResponse> RejectProjectRequestAsync(Guid requestId, string executorEmail, string reason, CancellationToken cancellationToken = default)
         {
             var result = await _projectRequestRepository.RejectProjectRequestAsync(requestId, executorEmail, reason, cancellationToken);
-         
+
             if (result.ContractId.HasValue)
             {
                 await _contractService.UpdateContractStatusAsync(
@@ -604,7 +639,7 @@ namespace Fusion.Service.Services
                                     TicketId = tc.TicketId,
                                     AuthorUserId = tc.AuthorUserId,
                                     AuthorUserName = tc.AuthorUser.UserName,
-                                    AuthorUserAvatar = tc.AuthorUser.Avatar,   
+                                    AuthorUserAvatar = tc.AuthorUser.Avatar,
                                     Body = tc.Body,
                                     CreateAt = tc.CreateAt,
                                     UpdateAt = tc.UpdateAt,

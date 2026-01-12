@@ -301,6 +301,10 @@ public class ChatService : IChatService
         var me = _current.GetUserId();
         if (me == Guid.Empty) throw CustomExceptionFactory.CreateBadRequestError("Current user is not found.");
 
+        var user = await _uow.userRepository.GetUserByIdAsync(me);
+        if(user.Status == false)
+            throw CustomExceptionFactory.CreateForbiddenError();
+
         if (request.ConversationId == Guid.Empty)
             throw CustomExceptionFactory.CreateBadRequestError("ConversationId is required.");
 
@@ -340,6 +344,8 @@ public class ChatService : IChatService
                 ConversationId = existed.ConversationId ?? Guid.Empty,
                 SenderId = existed.SenderId ?? Guid.Empty,
                 EmailSender = existed.Sender.Email ?? String.Empty,
+                AvatarSender = existed.Sender.Avatar ?? String.Empty,
+                NameSender = existed.Sender.UserName ?? String.Empty,
                 Content = existed.Content,
                 ClientMessageId = existed.ClientMessageId,
                 CreatedAt = existed.CreatedAt
@@ -376,6 +382,8 @@ public class ChatService : IChatService
             ConversationId = msg.ConversationId ?? Guid.Empty,
             SenderId = msg.SenderId ?? Guid.Empty,
             EmailSender = sender.Email,
+            AvatarSender = sender.Avatar,
+            NameSender = sender.UserName,
             Content = msg.Content,
             ClientMessageId = msg.ClientMessageId,
             CreatedAt = msg.CreatedAt
@@ -414,5 +422,49 @@ public class ChatService : IChatService
 
         request.ConversationId = conversationId;
         return await _msgRepo.GetMessagesPagedAsync(conversationId, request, ct);
+    }
+
+    public async Task KickMemberAsync(Guid conversationId, Guid targetUserId, CancellationToken ct = default)
+    {
+        var me = _current.GetUserId();
+        if (me == Guid.Empty)
+            throw CustomExceptionFactory.CreateBadRequestError("Current user is not found.");
+
+        if (conversationId == Guid.Empty)
+            throw CustomExceptionFactory.CreateBadRequestError("ConversationId is required.");
+
+        if (targetUserId == Guid.Empty)
+            throw CustomExceptionFactory.CreateBadRequestError("TargetUserId is required.");
+
+        if (targetUserId == me)
+            throw CustomExceptionFactory.CreateBadRequestError("Owner cannot kick themself. Use leave group feature instead.");
+
+        var conv = await _convRepo.GetByIdAsync(conversationId, ct);
+        if (conv == null)
+            throw CustomExceptionFactory.CreateBadRequestError("Conversation not found.");
+
+        if ((conv.Type ?? 0) != ConversationType.Group)
+            throw CustomExceptionFactory.CreateBadRequestError("This conversation is not a group.");
+
+        // me must be owner
+        var meMember = await _memberRepo.GetMemberAsync(conversationId, me, ct);
+        if (meMember == null)
+            throw CustomExceptionFactory.CreateForbiddenError();
+
+        if (meMember.Role != ConversationRole.Owner)
+            throw CustomExceptionFactory.CreateForbiddenError();
+
+        // target must exist
+        var targetMember = await _memberRepo.GetMemberAsync(conversationId, targetUserId, ct);
+        if (targetMember == null)
+            throw CustomExceptionFactory.CreateBadRequestError("Target user is not a member of this group.");
+
+        // do not kick owner
+        if (meMember.Role != ConversationRole.Owner)
+            throw CustomExceptionFactory.CreateBadRequestError("Cannot kick the group owner.");
+
+        _memberRepo.Remove(targetMember);
+        await _uow.SaveChangesAsync(ct);
+
     }
 }

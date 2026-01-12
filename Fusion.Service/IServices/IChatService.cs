@@ -23,4 +23,5 @@ public interface IChatService
 
     // internal helper: used when Accept friend
     Task EnsureDirectConversationExistsAsync(Guid userA, Guid userB, CancellationToken ct = default);
+    Task KickMemberAsync(Guid conversationId, Guid targetUserId, CancellationToken ct = default);
 }

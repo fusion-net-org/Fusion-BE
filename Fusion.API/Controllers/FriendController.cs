@@ -55,12 +55,12 @@ public class FriendController : ControllerBase
         /// Dùng cho màn hình "Incoming requests".
         /// </summary>
         [HttpGet("pending/received")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<List<FriendshipResponse>>))]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<List<FriendshipResponseV2>>))]
         public async Task<IActionResult> GetPendingReceived(CancellationToken ct)
         {
             var result = await _friendshipService.GetPendingReceivedAsync(ct);
 
-            return Ok(ResponseModel<List<FriendshipResponse>>.Ok(
+            return Ok(ResponseModel<List<FriendshipResponseV2>>.Ok(
                 data: result,
                 message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "pending received friend requests")));
         }
@@ -70,12 +70,12 @@ public class FriendController : ControllerBase
         /// Dùng cho màn hình "Sent requests".
         /// </summary>
         [HttpGet("pending/sent")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<List<FriendshipResponse>>))]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<List<FriendshipResponseV2>>))]
         public async Task<IActionResult> GetPendingSent(CancellationToken ct)
         {
             var result = await _friendshipService.GetPendingSentAsync(ct);
 
-            return Ok(ResponseModel<List<FriendshipResponse>>.Ok(
+            return Ok(ResponseModel<List<FriendshipResponseV2>>.Ok(
                 data: result,
                 message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "pending sent friend requests")));
         }
