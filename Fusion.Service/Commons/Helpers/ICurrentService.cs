@@ -11,6 +11,7 @@ namespace Fusion.Service.Commons.Helpers
         Guid GetUserId();
         string? GetUserEmail();
         bool IsAdmin();
+        bool HasPermission(string code);
     }
 
     public class CurrentService : ICurrentService
@@ -39,6 +40,15 @@ namespace Fusion.Service.Commons.Helpers
         {
             var roleClaim = _httpContextAccessor.HttpContext?.User?.FindFirst("Admin");
             return roleClaim != null && roleClaim.Value == "true";
+        }
+        public bool HasPermission(string code)
+        {
+            var u = _httpContextAccessor.HttpContext?.User;
+            if (u == null) return false;
+
+            return u.Claims.Any(c =>
+                (c.Type == "permission" || c.Type == "permissions" || c.Type == "perm") &&
+                string.Equals(c.Value, code, StringComparison.OrdinalIgnoreCase));
         }
     }
 }
