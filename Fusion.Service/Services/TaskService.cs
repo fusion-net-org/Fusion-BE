@@ -50,7 +50,7 @@ public class TaskService : ITaskService
     private readonly ITaskWorkflowService _taskWorkflowService;
     private readonly ICloudinaryService _cloudinary;
     private readonly ITaskActivityLogService _activityLog;
-
+    private const string PERM_TASK_DRAG_ALL = "TASK_DRAG_ALL";
     private static readonly JsonSerializerOptions _jsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -92,6 +92,53 @@ public class TaskService : ITaskService
     }
     private static Guid? NormalizeComponentId(Guid? id)
         => (id.HasValue && id.Value != Guid.Empty) ? id : null;
+    private async Task EnsureCanMoveTaskAsync(
+        ProjectTask task,
+        Guid toStatusId,
+        Guid userId,
+        CancellationToken ct)
+    {
+        //  SysAdmin bypass
+        var isSysAdmin = await _db.Users.AsNoTracking()
+            .Where(u => u.Id == userId)
+            .Select(u => u.IsSystemAdmin)
+            .FirstOrDefaultAsync(ct);
+        if (isSysAdmin) return;
+
+        //  Must be project member
+        var isProjectMember = await _db.ProjectMembers.AsNoTracking()
+            .AnyAsync(pm => pm.ProjectId == task.ProjectId && pm.UserId == userId, ct);
+        if (!isProjectMember)
+            throw CustomExceptionFactory.CreateForbiddenError();
+
+        //  DragAll bypass
+        if (_current.HasPermission(PERM_TASK_DRAG_ALL))
+            return;
+
+        //  Load per-status assignments of this task
+        var wfResp = await _taskWorkflowService.GetAssignmentsForTaskAsync(task.Id, ct);
+        var wfItems = wfResp?.Items ?? new List<TaskWorkflowAssignmentItemResponse>();
+
+        if (!task.CurrentStatusId.HasValue || task.CurrentStatusId.Value == Guid.Empty)
+            throw CustomExceptionFactory.CreateForbiddenError();
+
+        var fromStatusId = task.CurrentStatusId.Value;
+
+        var fromAssignees = wfItems
+            .Where(x => x.WorkflowStatusId == fromStatusId
+                     && x.AssignUserId.HasValue
+                     && x.AssignUserId.Value != Guid.Empty)
+            .Select(x => x.AssignUserId!.Value)
+            .Distinct()
+            .ToList();
+
+        if (fromAssignees.Count == 0)
+            return;
+
+        if (!fromAssignees.Contains(userId))
+            throw CustomExceptionFactory.CreateForbiddenError();
+    }
+
 
     private async Task EnsureComponentBelongsToProjectAsync(Guid projectId, Guid? componentId, CancellationToken ct)
     {
@@ -252,7 +299,12 @@ public class TaskService : ITaskService
      newStatus: st,
      ct: ct);
 
-        // CHỈ notify nếu thực sự đổi status
+        var wfId = await GetWorkflowIdForMove(e.ProjectId, e.CurrentStatusId, ct);
+        if (st.WorkflowId != wfId)
+            throw CustomExceptionFactory.CreateBadRequestError("Target status is not in task workflow.");
+
+        await EnsureCanMoveTaskAsync(e, st.Id, userId, ct);
+
         if (oldStatusId != st.Id)
         {
             await _taskWorkflowService.NotifyAssigneeOnStatusChangeAsync(
@@ -299,6 +351,11 @@ public class TaskService : ITaskService
         var changedStatus = oldStatusId != toStatus.Id;
         var changedSprint = oldSprintId != sprintId;
 
+        var wfId = await GetWorkflowIdForMove(task.ProjectId, task.CurrentStatusId, ct);
+        if (toStatus.WorkflowId != wfId)
+            throw CustomExceptionFactory.CreateBadRequestError("Target status is not in task workflow.");
+
+
 
         // Danh sách các task trong (sprint, toStatus)
         var list = await _db.ProjectTasks
@@ -307,6 +364,8 @@ public class TaskService : ITaskService
             .ToListAsync(ct);
 
         // Clamp index
+        await EnsureCanMoveTaskAsync(task, toStatus.Id, userId, ct);
+
         var insertAt = Math.Max(0, Math.Min(toIndex, list.Count));
         list.Insert(insertAt, task);
 
@@ -380,6 +439,8 @@ public class TaskService : ITaskService
 
         // Chuẩn hoá status theo workflow của sprint mới
         var resolved = await ResolveStatusForWorkflow(task.CurrentStatusId, curCode, wfId, ct);
+        await EnsureCanMoveTaskAsync(task, resolved.Id, userId, ct);
+
         task.SprintId = toSprint.Id;
         task.IsBacklog = false;
         task.CurrentStatusId = resolved.Id;
@@ -963,6 +1024,12 @@ public class TaskService : ITaskService
                 (x.Code != null && x.Code.ToLower() == key) ||
                 (x.Name != null && x.Name.ToLower() == key), ct)
             ?? throw CustomExceptionFactory.CreateBadRequestError($"Status '{statusText}' not found.");
+        var wfId = await GetWorkflowIdForMove(e.ProjectId, e.CurrentStatusId, ct);
+        if (st.WorkflowId != wfId)
+            throw CustomExceptionFactory.CreateBadRequestError("Target status is not in task workflow.");
+
+        // permission/assignment check
+        await EnsureCanMoveTaskAsync(e, st.Id, userId, ct);
 
         e.CurrentStatusId = st.Id;
         e.Status = !string.IsNullOrWhiteSpace(st.Code) ? st.Code : st.Name;
