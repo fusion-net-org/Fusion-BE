@@ -154,5 +154,22 @@ namespace Fusion.API.Controllers
                 data: result,
                 message: ResponseMessageHelper.FormatMessage(ResponseMessages.CREATE_SUCCESS, "message")));
         }
+
+        /// <summary>
+        /// Kick 1 member khỏi group.
+        /// Điều kiện: người gọi API phải là Owner của group.
+        /// </summary>
+        [HttpDelete("group/{conversationId:guid}/members/{targetUserId:guid}")]
+        public async Task<IActionResult> KickMember(
+            [FromRoute] Guid conversationId,
+            [FromRoute] Guid targetUserId,
+            CancellationToken ct)
+        {
+            await _chatService.KickMemberAsync(conversationId, targetUserId, ct);
+
+            return Ok(ResponseModel<object>.Ok(
+                data: null,
+                message: ResponseMessageHelper.FormatMessage(ResponseMessages.UPDATE_SUCCESS, "kick member")));
+        }
     }
 }

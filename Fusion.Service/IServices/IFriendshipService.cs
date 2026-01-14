@@ -11,8 +11,8 @@ namespace Fusion.Service.IServices;
 public interface IFriendshipService
 {
     Task<FriendshipResponse> SendRequestByEmailAsync(CreateFriendRequest dto, CancellationToken ct = default);
-    Task<List<FriendshipResponse>> GetPendingReceivedAsync(CancellationToken ct = default);
-    Task<List<FriendshipResponse>> GetPendingSentAsync(CancellationToken ct = default);
+    Task<List<FriendshipResponseV2>> GetPendingReceivedAsync(CancellationToken ct = default);
+    Task<List<FriendshipResponseV2>> GetPendingSentAsync(CancellationToken ct = default);
 
     Task<FriendshipResponse> AcceptAsync(Guid friendshipId, CancellationToken ct = default);
     Task<FriendshipResponse> RejectAsync(Guid friendshipId, CancellationToken ct = default);

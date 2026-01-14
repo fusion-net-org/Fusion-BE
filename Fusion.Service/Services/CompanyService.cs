@@ -1,10 +1,13 @@
 ﻿
 using AutoMapper;
+using AutoMapper.Execution;
 using FluentValidation;
 using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.Company;
 using Fusion.Repository.Bases.Responses;
+using Fusion.Repository.Common;
+using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.Enums;
 using Fusion.Repository.IRepositories;
@@ -24,6 +27,7 @@ using Microsoft.EntityFrameworkCore;
 using Org.BouncyCastle.Asn1;
 using System.ComponentModel.Design;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
+using static Org.BouncyCastle.Math.EC.ECCurve;
 
 namespace Fusion.Service.Services
 {
@@ -43,10 +47,14 @@ namespace Fusion.Service.Services
         private readonly IRoleAdminRepository _roleRepository;
         private readonly ICompanySubscriptionService _companySubscriptionService;
         private readonly IRbacBootstrapper _rbacBootstrapper;
+        private readonly IChatConversationRepository _chatConversationRepository;
+        private readonly IChatConversationMemberRepository _chatConversationMemberRepository;
+        private readonly IUnitOfWork _unitOfWork;
+
         public CompanyService(IMapper mapper, ICompanyRepository companyRepository, ICloudinaryService cloudinaryService
             , IUserRepository userRepository, ICompanyMemberRepository companyMemberRepository, IValidator<CompanyRequest> validator, ICompanyFriendshipRepository companyFriendshipRepository,
             IMailService mailService, ICompanyActivityService logService, ICurrentService currentService,
-            INotificationService notificationService, IRoleAdminRepository roleRepository, ICompanySubscriptionService companySubscriptionService, IRbacBootstrapper rbacBootstrapper)
+            INotificationService notificationService, IRoleAdminRepository roleRepository, ICompanySubscriptionService companySubscriptionService, IRbacBootstrapper rbacBootstrapper, IChatConversationRepository chatConversationRepository, IChatConversationMemberRepository chatConversationMemberRepository, IUnitOfWork unitOfWork)
         {
             _mapper = mapper;
             _companyRepository = companyRepository;
@@ -62,6 +70,9 @@ namespace Fusion.Service.Services
             _roleRepository = roleRepository;
             _companySubscriptionService = companySubscriptionService;
             _rbacBootstrapper = rbacBootstrapper;
+            _chatConversationRepository = chatConversationRepository;
+            _chatConversationMemberRepository = chatConversationMemberRepository;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task<CompanyResponse> CreateCompanyAsync(CompanyRequest request, string Email, CancellationToken cancellationToken = default)
@@ -109,7 +120,7 @@ namespace Fusion.Service.Services
 
             if (newCompany == null)
                 throw CustomExceptionFactory.CreateInternalServerError(ResponseMessages.INTERNAL_SERVER_ERROR.FormatMessage("Add Company fail"));
-            // ✅ -------------- RBAC bootstrap OWNER role --------------
+            // -------------- RBAC bootstrap OWNER role --------------
 
             await _rbacBootstrapper.EnsureOwnerRoleAsync(newCompany.Id, user.Id, cancellationToken);
 
@@ -137,6 +148,24 @@ namespace Fusion.Service.Services
             if (newMember == null)
                 throw CustomExceptionFactory.CreateInternalServerError(ResponseMessages.INTERNAL_SERVER_ERROR.FormatMessage("Add new member fail"));
 
+            await _chatConversationRepository.AddAsync(new ChatConversation
+            {
+                Type = ConversationType.Group,
+                Title = $"Company Group_{newCompany.Name}",
+                CreatedAt = DateTime.UtcNow.AddHours(7),
+                CreatedBy = user.Id,
+                DirectPairKey = ChatKeyHelper.BuildGroup(newCompany.Id),
+                Members = new List<ChatConversationMember>
+                {
+                    new ChatConversationMember
+                    {
+                        UserId = user.Id,
+                        JoinedAt = DateTime.UtcNow.AddHours(7),
+                        AddedBy = user.Id,
+                        Role = ConversationRole.Owner,
+                    },
+                },
+            },cancellationToken);
 
             var emailBody = MailUtils.CreateCompanyThankYouEmail(
                 user.UserName, newCompany.Name, "http://localhost:5173/", "http://localhost:5173/company");
@@ -154,6 +183,7 @@ namespace Fusion.Service.Services
                 Body = emailBody,
                 ToEmail = company.Email,
             });
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
             return _mapper.Map<CompanyResponse>(newCompany);
 
         }
@@ -405,7 +435,7 @@ namespace Fusion.Service.Services
 
             var company = await _companyRepository.GetCompanyByIdAsync(companyId);
 
-            if(company == null)
+            if (company == null)
                 throw CustomExceptionFactory.CreateBadRequestError("Company is not existed");
 
             var friendships =
@@ -419,7 +449,7 @@ namespace Fusion.Service.Services
                 .ToList();
 
 
-            var roles = await _roleRepository.GetRoleWithMemberAsync(companyId,cancellationToken);
+            var roles = await _roleRepository.GetRoleWithMemberAsync(companyId, cancellationToken);
 
 
             var partners = new List<PartnerResponse>();
@@ -917,7 +947,7 @@ namespace Fusion.Service.Services
             {
                 Year = year,
                 MonthlyCounts = counts,
-                Total = counts.Sum() 
+                Total = counts.Sum()
             };
         }
         public async Task<PagedResult<CompanyOfOwnerResponse>> GetAllCompanyOfOwnerAsync(Guid userId, CancellationToken ct = default)
@@ -963,7 +993,7 @@ namespace Fusion.Service.Services
                 var joinedAt = c.CompanyMembers?
                                    .FirstOrDefault(m => m.UserId == userId && m.IsDeleted != true)
                                    ?.JoinedAt
-                               ?? c.CreateAt; 
+                               ?? c.CreateAt;
 
                 return new CompanyOfUserResponse
                 {
@@ -1006,7 +1036,7 @@ namespace Fusion.Service.Services
 
         // ================== OverView =============================================
 
-        public async Task<CompanyGrowthAndStatusOverviewDto> GetCompanyGrowthAndStatusOverviewAsync(DateOnly? from = null,DateOnly? to = null, CancellationToken ct = default)
+        public async Task<CompanyGrowthAndStatusOverviewDto> GetCompanyGrowthAndStatusOverviewAsync(DateOnly? from = null, DateOnly? to = null, CancellationToken ct = default)
         {
 
             var nowUtc = DateTime.UtcNow;

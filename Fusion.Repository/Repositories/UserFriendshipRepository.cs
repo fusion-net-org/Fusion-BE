@@ -27,12 +27,16 @@ public class UserFriendshipRepository : GenericRepository<UserFriendship>, IUser
 
     public Task<List<UserFriendship>> GetPendingSentAsync(Guid requesterId, CancellationToken ct = default)
         => _context.Set<UserFriendship>()
+        .Include(x => x.Addressee)
+        .Include(x => x.Requester)
             .Where(x => x.RequesterId == requesterId && x.Status == FriendshipStatus.Pending)
             .OrderByDescending(x => x.RequestedAt)
             .ToListAsync(ct);
 
     public Task<List<UserFriendship>> GetPendingReceivedAsync(Guid addresseeId, CancellationToken ct = default)
         => _context.Set<UserFriendship>()
+        .Include(x => x.Addressee)
+        .Include(x => x.Requester)
             .Where(x => x.AddresseeId == addresseeId && x.Status == FriendshipStatus.Pending)
             .OrderByDescending(x => x.RequestedAt)
             .ToListAsync(ct);

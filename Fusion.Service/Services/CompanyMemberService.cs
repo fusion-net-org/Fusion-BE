@@ -3,9 +3,12 @@ using CloudinaryDotNet.Actions;
 using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.Company_Member;
+using Fusion.Repository.Common;
+using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.Enums;
 using Fusion.Repository.IRepositories;
+using Fusion.Repository.Repositories;
 using Fusion.Repository.ViewModels;
 using Fusion.Service.Commons.Helpers;
 using Fusion.Service.IServices;
@@ -42,10 +45,13 @@ namespace Fusion.Service.Services
         private readonly IMapper _mapper;
         private readonly ICompanyActivityService _logService;
         private readonly ICurrentService _currentService;
+        private readonly IChatConversationRepository _chatConversationRepository;
+        private readonly IChatConversationMemberRepository _chatConversationMemberRepository;
+        private readonly IUnitOfWork _unitOfWork;
 
         public CompanyMemberService(ICompanyMemberRepository companyMemberRepository, IProjectMemberRepository projectMemberRepository,
             INotificationService notificationService, IUserRepository userRepository, ICompanyRepository companyRepository,
-            IMapper mapper, IMailService mailService, ICompanyActivityService logService, ICurrentService currentService)
+            IMapper mapper, IMailService mailService, ICompanyActivityService logService, ICurrentService currentService, IChatConversationRepository chatConversationRepository, IChatConversationMemberRepository chatConversationMemberRepository, IUnitOfWork unitOfWork)
         {
 
             _companyMemberRepository = companyMemberRepository;
@@ -57,6 +63,9 @@ namespace Fusion.Service.Services
             _mapper = mapper;
             _logService = logService;
             _currentService = currentService;
+            _chatConversationRepository = chatConversationRepository;
+            _chatConversationMemberRepository = chatConversationMemberRepository;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task<CompanyMemberResponse?> FiredMemberFromCompany(string terminatorEmail, string firedMemberMail, string reason, Guid companyId, CancellationToken token = default)
@@ -256,7 +265,6 @@ namespace Fusion.Service.Services
                 ActorUserId = data.UserId.Value,
                 Title = "Accept Join Member To Company",
                 Description = $"User '{userResult}' has agreed to join the company.",
-
             };
             await _logService.CreateLog(log, cancellationToken);
 
@@ -270,6 +278,19 @@ namespace Fusion.Service.Services
                 Event = "CompanyMemberAccepted",
                 NotificationType = "COMPANY"
             }, cancellationToken);
+
+            var chat = await _chatConversationRepository.GetByChatKeyAsync(ChatKeyHelper.BuildGroup(result.CompanyId.Value));
+
+            await _chatConversationMemberRepository.AddAsync(new ChatConversationMember
+            {
+                ConversationId = chat.Id,
+                JoinedAt = DateTime.UtcNow.AddHours(7),
+                Role = ConversationRole.Member,
+                AddedBy = data.Company.OwnerUserId,
+                UserId = data.UserId.Value,
+            },cancellationToken);
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
             return _mapper.Map<CompanyMemberResponse>(result);
 
         }

@@ -27,4 +27,10 @@ public class ChatConversationMemberRepository : IChatConversationMemberRepositor
 
     public Task AddRangeAsync(IEnumerable<ChatConversationMember> entities, CancellationToken ct = default)
         => _dbSet.AddRangeAsync(entities, ct);
+
+    public void Remove(ChatConversationMember entity)
+        => _dbSet.Remove(entity);
+
+    public Task<ChatConversationMember?> GetMemberAsync(Guid conversationId, Guid userId, CancellationToken ct = default)
+       => _dbSet.FirstOrDefaultAsync(x => x.ConversationId == conversationId && x.UserId == userId, ct);
 }

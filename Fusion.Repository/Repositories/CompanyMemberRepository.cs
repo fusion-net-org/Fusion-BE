@@ -368,6 +368,7 @@ namespace Fusion.Repository.Repositories
             var companyMember = await _context.CompanyMembers
                 .Include(x => x.User)
                 .Include(x => x.Company)
+                    .ThenInclude(x => x.OwnerUser)
                 .SingleOrDefaultAsync(cm => cm.UserId == inviteeMemberId && cm.CompanyId == companyId && cm.Status == "Pending" && cm.IsDeleted == false, token);
 
             if (companyMember == null)

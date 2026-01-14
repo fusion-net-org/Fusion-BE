@@ -2,23 +2,33 @@
 using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.ProjectMember;
+using Fusion.Repository.Common;
 using Fusion.Repository.Data;
+using Fusion.Repository.Entities;
 using Fusion.Repository.IRepositories;
 using Fusion.Repository.Repositories;
 using Fusion.Service.IServices;
 using Fusion.Service.ViewModels.ProjectMembers.Request;
 using Fusion.Service.ViewModels.ProjectMembers.Responses;
 using Microsoft.EntityFrameworkCore;
+using System.Threading;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 public class ProjectMemberService : IProjectMemberService
 {
     private readonly IProjectMemberRepository _projectMemberRepository;
+    private readonly IChatConversationRepository _chatConversationRepository;
+    private readonly IChatConversationMemberRepository _chatConversationMemberRepository;
+    private readonly IProjectRepository _projectRepository;
     private readonly IMapper _mapper;
 
     private readonly FusionDbContext _context;
-    public ProjectMemberService(IProjectMemberRepository projectMemberRepository, IMapper mapper, FusionDbContext context)
+    public ProjectMemberService(IProjectMemberRepository projectMemberRepository, IChatConversationMemberRepository chatConversationMemberRepository, IChatConversationRepository chatConversationRepository, IProjectRepository projectRepository, IMapper mapper, FusionDbContext context)
     {
         _projectMemberRepository = projectMemberRepository;
+        _chatConversationRepository = chatConversationRepository;
+        _chatConversationMemberRepository = chatConversationMemberRepository;
+        _projectRepository = projectRepository;
         _mapper = mapper;
         _context = context;
     }
@@ -88,6 +98,22 @@ public class ProjectMemberService : IProjectMemberService
             request.IsPartner,
             request.IsViewAll,
             ct);
+
+        var product = await _projectRepository.GetProjectById(request.ProjectId);
+        if(product == null)
+            throw CustomExceptionFactory.CreateNotFoundError("Project not found");
+
+
+        var chat = await _chatConversationRepository.GetByChatKeyAsync(ChatKeyHelper.BuildGroup(request.ProjectId));
+
+        await _chatConversationMemberRepository.AddAsync(new ChatConversationMember
+        {
+            ConversationId = chat.Id,
+            JoinedAt = DateTime.UtcNow.AddHours(7),
+            Role = ConversationRole.Member,
+            AddedBy = product.CreatedBy,
+            UserId = request.UserId,
+        }, ct);
 
         await _context.SaveChangesAsync(ct);
 
