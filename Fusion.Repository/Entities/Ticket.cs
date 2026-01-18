@@ -12,6 +12,11 @@ public partial class Ticket
     [Column("id")]
     public Guid Id { get; set; }
 
+    [Column("ticket_code")]
+    [StringLength(20)]
+    [Unicode(false)]
+    public string? TicketCode { get; set; } = null!;
+
     [Column("project_id")]
     public Guid? ProjectId { get; set; }
 
@@ -50,6 +55,9 @@ public partial class Ticket
 
 	[Column("is_deleted")]
 	public bool? IsDeleted { get; set; }
+    [Column("is_close")]
+    public bool? IsClose { get; set; } = false;
+
 
     [Column("reason")]
 
@@ -70,6 +78,10 @@ public partial class Ticket
     [Column("created_at")]
     [Precision(3)]
     public DateTime CreatedAt { get; set; }
+
+    [Column("due_date")]
+    [Precision(3)]
+    public DateTime? DueDate { get; set; }
 
     [Column("updated_at")]
     [Precision(3)]
@@ -97,4 +109,9 @@ public partial class Ticket
     public virtual ICollection<TicketComment> TicketComments { get; set; } = new List<TicketComment>();
     [InverseProperty(nameof(ProjectTask.Ticket))]
     public virtual ICollection<ProjectTask> Tasks { get; set; } = new List<ProjectTask>();
+
+    [InverseProperty(nameof(TicketHistory.Ticket))]
+    public virtual ICollection<TicketHistory> TicketHistories { get; set; }
+    = new List<TicketHistory>();
+
 }

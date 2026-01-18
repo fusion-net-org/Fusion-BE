@@ -672,5 +672,12 @@ public class MappingProfile : Profile
             .ForMember(d => d.ProjectRequest, o => o.Ignore());
         CreateMap<ProjectComponent,ProjectComponentResponse>();
 
+        //ticket history
+        CreateMap<TicketHistory, TicketHistoryResponse>()
+        .ForMember(dest => dest.PerformedByName,
+            opt => opt.MapFrom(src => src.PerformedByUser != null
+                ? src.PerformedByUser.UserName
+                : null));
+
     }
 }

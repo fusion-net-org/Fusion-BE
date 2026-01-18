@@ -12,10 +12,12 @@ namespace Fusion.Repository.Repositories
     public class TicketRepository : GenericRepository<Ticket>, ITicketRepository
     {
         private readonly FusionDbContext _context;
+        private readonly ITicketHistoryRepository _ticketHistoryRepository;
 
-        public TicketRepository(FusionDbContext context) : base(context)
+        public TicketRepository(FusionDbContext context,ITicketHistoryRepository ticketHistoryRepository) : base(context)
         {
             _context = context;
+            _ticketHistoryRepository = ticketHistoryRepository;
         }
 
         //public async Task<PagedResult<Ticket>> GetPageTicketshAsync(TicketPagedSearchRequest request, CancellationToken cancellationToken = default)
@@ -332,6 +334,14 @@ namespace Fusion.Repository.Repositories
             ticket.status = TicketStatusEnum.Accepted.ToString();
             ticket.UpdatedAt = DateTime.UtcNow.AddHours(7);
 
+            //await _ticketHistoryRepository.AddAsync(new TicketHistory
+            //{
+            //    TicketId = ticket.Id,
+            //    Action = TicketHistoryAction.Accepted.ToString(),
+            //    Description = "Ticket was accepted",
+            //    PerformedBy = userId
+            //}, cancellationToken);
+
             _context.Tickets.Update(ticket);
             await _context.SaveChangesAsync(cancellationToken);
             return ticket;
@@ -350,8 +360,40 @@ namespace Fusion.Repository.Repositories
             ticket.reason = reason;
             ticket.UpdatedAt = DateTime.UtcNow.AddHours(7);
 
+            //await _ticketHistoryRepository.AddAsync(new TicketHistory
+            //{
+            //    TicketId = ticket.Id,
+            //    Action = TicketHistoryAction.Rejected.ToString(),
+            //    Description = $"Ticket was rejected. Reason: {reason}",
+            //    PerformedBy = userId
+            //}, cancellationToken);
+
             _context.Tickets.Update(ticket);
             await _context.SaveChangesAsync(cancellationToken);
+            return ticket;
+        }
+        public Task<bool> ExistsByCodeAsync(string code)
+        {
+            return _context.Tickets.AnyAsync(t => t.TicketCode == code);
+        }
+
+        public async Task<Ticket?> CloseTicketAsync(Guid ticketId, CancellationToken cancellationToken = default)
+        {
+            var ticket = await _context.Tickets.FindAsync(ticketId);
+            if (ticket == null)
+                return null;
+
+            if ((bool)ticket.IsClose)
+                throw new InvalidOperationException("Ticket is already closed.");
+
+            ticket.IsClose = true;
+            ticket.status = TicketStatusEnum.Closed.ToString();
+            ticket.ClosedAt = DateTime.UtcNow.AddHours(7);
+            ticket.UpdatedAt = DateTime.UtcNow.AddHours(7);
+
+            _context.Tickets.Update(ticket);
+            await _context.SaveChangesAsync(cancellationToken);
+
             return ticket;
         }
 

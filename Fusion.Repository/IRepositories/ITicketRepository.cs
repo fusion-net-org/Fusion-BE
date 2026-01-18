@@ -24,5 +24,8 @@ namespace Fusion.Repository.IRepositories
 		IQueryable<Ticket> BuildTicketQuery(TicketPagedSearchRequest request);
 		Task<Ticket?> AcceptTicketAsync(Guid ticketId, CancellationToken cancellationToken = default);
 		Task<Ticket?> RejectTicketAsync(Guid ticketId, string? reason = null, CancellationToken cancellationToken = default);
+		Task<bool> ExistsByCodeAsync(string code);
+        Task<Ticket?> CloseTicketAsync(Guid ticketId, CancellationToken cancellationToken = default);
+
     }
 }

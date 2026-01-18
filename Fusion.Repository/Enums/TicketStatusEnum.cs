@@ -11,7 +11,8 @@ namespace Fusion.Repository.Enums
         Pending = 0,
         Accepted = 1,
         Rejected = 2,
-        Finished = 3
+        Finished = 3,
+        Closed = 4,
     }
     public enum TicketViewMode
     {

@@ -435,8 +435,8 @@ namespace Fusion.Service.Services
                     Reason = entityTicket.reason,
                     ResolvedAt = entityTicket.ResolvedAt,
                     ClosedAt = entityTicket.ClosedAt,
-                    CreatedAt = entityTicket.CreatedAt,
-                    UpdatedAt = entityTicket.UpdatedAt,
+                    CreatedAt = (DateTime)entityTicket.CreatedAt,
+                    UpdatedAt = (DateTime)entityTicket.UpdatedAt,
                     TicketComments = new List<TicketCommentResponse>()
                 };
 
@@ -624,8 +624,8 @@ namespace Fusion.Service.Services
                             Reason = entityTicket.reason,
                             ResolvedAt = entityTicket.ResolvedAt,
                             ClosedAt = entityTicket.ClosedAt,
-                            CreatedAt = entityTicket.CreatedAt,
-                            UpdatedAt = entityTicket.UpdatedAt,
+                            CreatedAt = (DateTime)entityTicket.CreatedAt,
+                            UpdatedAt = (DateTime)entityTicket.UpdatedAt,
                             TicketComments = new List<TicketCommentResponse>()
                         };
 

@@ -63,7 +63,7 @@ public partial class FusionDbContext : DbContext
 
     public virtual DbSet<SubscriptionPlanPriceDiscount> SubscriptionPlanPriceDiscounts { get; set; }
     public virtual DbSet<ProjectComponent> ProjectComponents { get; set; } = null!;
-
+    public virtual DbSet<TicketHistory> TicketHistories { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
