@@ -35,6 +35,7 @@ namespace Fusion.Service.IServices
         Task<TicketResponse?> RejectTicketAsync(Guid ticketId, string? reason = null, CancellationToken cancellationToken = default);
 
         Task<TicketProcessSummaryResponse?> BuildTicketProcessAsync(Guid ticketId, CancellationToken ct);
+        Task<TicketResponse?> CloseTicketAsync(Guid ticketId, CancellationToken cancellationToken = default);
 
     }
 }

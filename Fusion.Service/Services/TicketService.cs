@@ -6,6 +6,7 @@ using Fusion.Repository.Bases.Page.Ticket;
 using Fusion.Repository.Bases.Responses;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
+using Fusion.Repository.Enums;
 using Fusion.Repository.IRepositories;
 using Fusion.Repository.Repositories;
 using Fusion.Service.Commons.Helpers;
@@ -39,8 +40,10 @@ namespace Fusion.Service.Services
         private readonly ITaskRepository _taskRepository;
         private readonly IProjectRepository _projectRepository;
         private readonly IProjectComponentRepository _projectComponentRepository;
+        private readonly ITicketHistoryRepository _ticketHistoryRepository;
+
         public TicketService(IMapper mapper, ITicketRepository ticketRepository, IUserRepository userRepository, IValidator<TicketRequest> validator,
-            IUnitOfWork unitOfWork, ICompanyActivityService logService, ICurrentService currentService, IProjectService projectService, IWorkflowStatusRepository workflowStatusRepository, ITaskRepository taskRepository, IProjectRepository projectRepository,IProjectComponentRepository projectComponentRepository)
+            IUnitOfWork unitOfWork, ICompanyActivityService logService, ICurrentService currentService, IProjectService projectService, IWorkflowStatusRepository workflowStatusRepository, ITaskRepository taskRepository, IProjectRepository projectRepository,IProjectComponentRepository projectComponentRepository, ITicketHistoryRepository ticketHistoryRepository)
         {
             _mapper = mapper;
             _ticketRepository = ticketRepository;
@@ -54,6 +57,7 @@ namespace Fusion.Service.Services
             _taskRepository = taskRepository;
             _projectRepository = projectRepository;
             _projectComponentRepository = projectComponentRepository;
+            _ticketHistoryRepository = ticketHistoryRepository;
         }
 
         public async Task<TicketResponse?> CreateTicketAsync(TicketRequest request, CancellationToken cancellationToken = default)
@@ -86,6 +90,14 @@ namespace Fusion.Service.Services
                         "Project does not exist.");
             }
 
+            if (request.DueDate.HasValue &&
+              request.DueDate <= DateTime.UtcNow.AddHours(7))
+            {
+                throw CustomExceptionFactory.CreateBadRequestError(
+                    "Due date must be in the future.");
+            }
+
+
             if (project?.IsMaintenance == true)
             {
                 if (!request.ComponentId.HasValue)
@@ -110,8 +122,20 @@ namespace Fusion.Service.Services
             ticket.ComponentId = request.ComponentId;
             ticket.SubmittedBy = request.SubmittedBy;
 
+            ticket.TicketCode = await GenerateUniqueTicketCodeAsync();
+
 
             var newTicket = await _ticketRepository.AddTicketAsync(ticket, cancellationToken);
+
+            var currentUserId = _currentService.GetUserId();
+
+            await _ticketHistoryRepository.AddAsync(new TicketHistory
+            {
+                TicketId = newTicket.Id,
+                Action = TicketHistoryAction.Created.ToString(),
+                Description = "Ticket was created with status Pending",
+                PerformedBy = currentUserId
+            }, cancellationToken);
 
             return _mapper.Map<TicketResponse>(newTicket);
         }
@@ -466,11 +490,22 @@ namespace Fusion.Service.Services
             if (ticket == null)
                 throw new KeyNotFoundException("Ticket not found");
 
-            //var currentUserId = _currentService.GetUserId();
-            //if (ticket.SubmittedBy != currentUserId)
-            //    throw new UnauthorizedAccessException("You are not allowed to accept this ticket");
+            var currentUserId = _currentService.GetUserId();
+
+            if (ticket.status != TicketStatusEnum.Pending.ToString())
+                throw new InvalidOperationException("Only tickets with status Pending can be accepted.");
 
             var updatedTicket = await _ticketRepository.AcceptTicketAsync(ticketId, cancellationToken);
+
+            await _ticketHistoryRepository.AddAsync(new TicketHistory
+            {
+                TicketId = ticketId,
+                Action = TicketHistoryAction.Accepted.ToString(),
+                Description = "Ticket was accepted",
+                PerformedBy = currentUserId
+            }, cancellationToken);
+
+
             return _mapper.Map<TicketResponse>(updatedTicket);
         }
 
@@ -480,11 +515,20 @@ namespace Fusion.Service.Services
             if (ticket == null)
                 throw new KeyNotFoundException("Ticket not found");
 
-            //var currentUserId = _currentService.GetUserId();
-            //if (ticket.SubmittedBy != currentUserId)
-            //    throw new UnauthorizedAccessException("You are not allowed to reject this ticket");
+            var currentUserId = _currentService.GetUserId();
+
+
+            if (ticket.status != TicketStatusEnum.Pending.ToString())
+                throw new InvalidOperationException("Only tickets with status Pending can be accepted.");
 
             var updatedTicket = await _ticketRepository.RejectTicketAsync(ticketId, reason, cancellationToken);
+            await _ticketHistoryRepository.AddAsync(new TicketHistory
+            {
+                TicketId = ticketId,
+                Action = TicketHistoryAction.Rejected.ToString(),
+                Description = $"Ticket was rejected. Reason: {reason}",
+                PerformedBy = currentUserId
+            });
             return _mapper.Map<TicketResponse>(updatedTicket);
         }
 
@@ -517,6 +561,49 @@ namespace Fusion.Service.Services
             return user.UserName;
         }
 
+        private async Task<string> GenerateUniqueTicketCodeAsync()
+        {
+            string code;
+            do
+            {
+                code = TicketCodeGenerator.Generate("TK");
+            }
+            while (await _ticketRepository.ExistsByCodeAsync(code));
 
+            return code;
+        }
+
+        public async Task<TicketResponse?> CloseTicketAsync(Guid ticketId, CancellationToken cancellationToken = default)
+        {
+            var ticket = await _ticketRepository.GetTicketByIdAsync(ticketId);
+            if (ticket == null)
+                throw new KeyNotFoundException("Ticket not found");
+
+            if ((bool)ticket.IsClose)
+                throw new InvalidOperationException("Ticket is already closed");
+
+            var currentUserId = _currentService.GetUserId();
+
+            var updatedTicket = await _ticketRepository.CloseTicketAsync(ticketId, cancellationToken);
+
+            await _ticketHistoryRepository.AddAsync(new TicketHistory
+            {
+                TicketId = ticketId,
+                Action = TicketHistoryAction.Closed.ToString(),
+                Description = "Ticket was closed",
+                PerformedBy = currentUserId
+            }, cancellationToken);
+
+            return _mapper.Map<TicketResponse>(updatedTicket);
+        }
+
+    }
+    public static class TicketCodeGenerator
+    {
+        public static string Generate(string prefix = "TK")
+        {
+            var random = Random.Shared.Next(100000, 999999);
+            return $"{prefix}-{random}";
+        }
     }
 }

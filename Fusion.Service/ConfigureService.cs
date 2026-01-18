@@ -120,6 +120,9 @@ namespace Fusion.Service
             //component
             services.AddScoped<IProjectComponentService, ProjectComponentService>();
 
+            //ticket history
+            services.AddScoped<ITicketHistoryService, TicketHistoryService>();
+
             // PayOS
             services.AddSingleton<PayOS>(sp =>
             {

@@ -1,25 +1,28 @@
-﻿using System;
+﻿using Fusion.Repository.Bases.Page;
+using Fusion.Repository.Bases.Page.TicketComment;
+using Fusion.Repository.Data;
+using Fusion.Repository.Entities;
+using Fusion.Repository.Enums;
+using Fusion.Repository.IRepositories;
+using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.Design;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Fusion.Repository.Bases.Page;
-using Fusion.Repository.Bases.Page.TicketComment;
-using Fusion.Repository.Data;
-using Fusion.Repository.Entities;
-using Fusion.Repository.IRepositories;
-using Microsoft.EntityFrameworkCore;
 
 namespace Fusion.Repository.Repositories
 {
     public class TicketCommentRepository : GenericRepository<TicketComment>, ITicketCommentRepository
     {
         private readonly FusionDbContext _context;
+        private readonly ITicketHistoryRepository _ticketHistoryRepository;
 
-        public TicketCommentRepository(FusionDbContext context) : base(context)
+        public TicketCommentRepository(FusionDbContext context, ITicketHistoryRepository ticketHistoryRepository) : base(context)
         {
             _context = context;
+            _ticketHistoryRepository = ticketHistoryRepository;
         }
 
         public async Task<PagedResult<TicketComment>> GetCommentsByTicketIdAsync(
@@ -67,6 +70,15 @@ namespace Fusion.Repository.Repositories
             comment.IsDeleted = false;
 
             var entity = await _context.TicketComments.AddAsync(comment, cancellationToken);
+
+            await _ticketHistoryRepository.AddAsync(new TicketHistory
+            {
+                TicketId = comment.TicketId!.Value,
+                Action = TicketHistoryAction.CommentAdded.ToString(),
+                Description = "New comment added",
+                PerformedBy = comment.AuthorUserId
+            }, cancellationToken);
+
             await _context.SaveChangesAsync(cancellationToken);
             return entity.Entity;
         }
@@ -80,8 +92,18 @@ namespace Fusion.Repository.Repositories
             if (existing.AuthorUserId != UserId)
                 throw new UnauthorizedAccessException("You are not allowed to update this comment");
 
+
             existing.Body = comment.Body;
             existing.UpdateAt = DateTime.UtcNow.AddHours(7);
+
+            await _ticketHistoryRepository.AddAsync(new TicketHistory
+            {
+                TicketId = existing.TicketId!.Value,
+                Action = TicketHistoryAction.CommentUpdated.ToString(),
+                Description = "Comment updated",
+                PerformedBy = UserId
+            }, cancellationToken);
+
 
             await _context.SaveChangesAsync(cancellationToken);
             return existing;
@@ -99,6 +121,15 @@ namespace Fusion.Repository.Repositories
 
             comment.IsDeleted = true;
             _context.TicketComments.Update(comment);
+
+            await _ticketHistoryRepository.AddAsync(new TicketHistory
+            {
+                TicketId = existing.TicketId!.Value,
+                Action = TicketHistoryAction.CommentDeleted.ToString(),
+                Description = "Comment deleted",
+                PerformedBy = UserId
+            }, cancellationToken);
+
             await _context.SaveChangesAsync(cancellationToken);
             return true;
         }

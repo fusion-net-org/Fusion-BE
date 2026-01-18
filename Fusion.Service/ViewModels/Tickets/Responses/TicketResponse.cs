@@ -13,6 +13,7 @@ namespace Fusion.Service.ViewModels.Tickets.Responses
 	public class TicketResponse
 	{
 		public Guid? Id { get; set; }
+        public string? TicketCode {  get; set; }
 		public Guid? ProjectId { get; set; }
 		public string? ProjectName { get; set; }
 		public string? Priority { get; set; }
@@ -24,13 +25,16 @@ namespace Fusion.Service.ViewModels.Tickets.Responses
 		public Guid? SubmittedBy { get; set; }
 		public string? SubmittedByName {get;set;}
 		public bool? IsBillable { get; set; }
-		public decimal? Budget { get; set; }
+        public bool? IsClose { get; set; } = false;
+
+        public decimal? Budget { get; set; }
 		public bool? IsDeleted { get; set; }
 		public string? Status { get; set; }
 		public string? Reason { get; set; }
         public DateTime? ResolvedAt { get; set; }
 		public DateTime? ClosedAt { get; set; }
         public DateTime CreatedAt { get; set; }
+        public DateTime? DueDate { get; set; }
         public DateTime UpdatedAt { get; set; }
         public ProjectComponentResponse? Component { get; set; }
 
