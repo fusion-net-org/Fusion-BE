@@ -20,6 +20,7 @@ namespace Fusion.Service.ViewModels.Task.Response
         public string? Description { get; set; }
         public string? Img { get; set; }
         public string? Type { get; set; }
+        public bool IsClose { get; set; }
         public string? Priority { get; set; }
         public string? Severity { get; set; }
         public string? Status { get; set; }

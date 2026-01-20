@@ -88,5 +88,7 @@ namespace Fusion.Service.IServices
             CancellationToken ct = default);
 
         Task<TaskResponse> GetTaskDetailForAdminByTaskIdAsync(Guid userId, Guid taskId, CancellationToken token = default);
+        Task<ProjectTaskResponse> PatchIsCloseAsync(Guid taskId, bool isClose, Guid userId, CancellationToken ct = default);
+
     }
 }

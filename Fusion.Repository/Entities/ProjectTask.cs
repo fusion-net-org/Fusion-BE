@@ -41,6 +41,8 @@ public partial class ProjectTask
 
     [Column("is_backlog")]
     public bool IsBacklog { get; set; }
+    [Column("is_close")]
+    public bool IsClose { get; set; }
 
     [Column("point")]
     public int? Point { get; set; }

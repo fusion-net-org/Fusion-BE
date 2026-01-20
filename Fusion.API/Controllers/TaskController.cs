@@ -620,4 +620,25 @@ public class TaskController : ControllerBase
             data, ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "task")));
     }
     #endregion
+    [HttpPatch("tasks/{id:guid}/is-close")]
+    [ProducesResponseType(typeof(ResponseModel<ProjectTaskResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> PatchIsClose(
+        Guid id,
+        [FromBody] TaskIsClosePatchRequest req,
+        CancellationToken ct)
+    {
+        var uid = GetUserId();
+        if (uid is null)
+            return Unauthorized(ResponseModel<string>.Error(StatusCodes.Status401Unauthorized, "Missing token"));
+
+        if (req == null)
+            return BadRequest(ResponseModel<string>.Error(StatusCodes.Status400BadRequest, "Invalid payload"));
+
+        var data = await _svc.PatchIsCloseAsync(id, req.IsClose, uid.Value, ct);
+
+        return Ok(ResponseModel<ProjectTaskResponse>.Ok(
+            data,
+            req.IsClose ? "Task closed." : "Task reopened."));
+    }
+
 }

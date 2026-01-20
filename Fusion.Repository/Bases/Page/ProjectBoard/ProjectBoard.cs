@@ -50,7 +50,7 @@ public record TaskVmDto
     [Required] public Guid WorkflowStatusId { get; init; }
     public string StatusCode { get; init; } = "todo";
     public string StatusCategory { get; init; } = "TODO";
-
+    public bool IsClose { get; set; }
     public List<MemberRefDto> Assignees { get; init; } = new();
     public string? StatusName { get; init; }
     public List<Guid> DependsOn { get; init; } = new();

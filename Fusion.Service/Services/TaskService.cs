@@ -1121,7 +1121,7 @@ public class TaskService : ITaskService
             RemainingHours = t.RemainingHours,
             CarryOverCount = t.CarryOverCount,
             OrderInSprint = t.OrderInSprint,
-
+            IsClose = t.IsClose,
             IsBacklog = t.IsBacklog,
             CreateAt = t.CreateAt,
             DueDate = t.DueDate,
@@ -1260,7 +1260,7 @@ public class TaskService : ITaskService
             RemainingHours = t.RemainingHours,
             CarryOverCount = t.CarryOverCount,
             OrderInSprint = t.OrderInSprint,
-
+            IsClose = t.IsClose,
             IsBacklog = t.IsBacklog,
             CreateAt = t.CreateAt,
             DueDate = t.DueDate,
@@ -1408,7 +1408,7 @@ public class TaskService : ITaskService
             OrderInSprint = t.OrderInSprint,
 
             TicketId = t.TicketId,
-
+            IsClose = t.IsClose,
             IsBacklog = t.IsBacklog,
             IsDeleted = t.IsDeleted,
             CreateAt = t.CreateAt,
@@ -2594,5 +2594,38 @@ public class TaskService : ITaskService
     }
 
     #endregion
+    public async Task<ProjectTaskResponse> PatchIsCloseAsync(Guid taskId, bool isClose, Guid userId, CancellationToken ct = default)
+    {
+        var task = await _db.ProjectTasks
+            .FirstOrDefaultAsync(t => t.Id == taskId && !t.IsDeleted, ct)
+            ?? throw CustomExceptionFactory.CreateNotFoundError(
+                ResponseMessages.NOT_FOUND.FormatMessage("Task"));
+
+        if (!task.CurrentStatusId.HasValue || task.CurrentStatusId.Value == Guid.Empty)
+            throw CustomExceptionFactory.CreateBadRequestError("Task has no current status.");
+        if (task.IsClose) throw CustomExceptionFactory.CreateBadRequestError("Task is closed. Reopen it first.");
+
+        await EnsureCanMoveTaskAsync(task, task.CurrentStatusId.Value, userId, ct);
+
+        var old = task.IsClose;
+        if (old == isClose) return _mapper.Map<ProjectTaskResponse>(task);
+
+        task.IsClose = isClose;
+        task.UpdateAt = DateTime.UtcNow;
+
+        await _repo.UpdateAsync(task, ct);
+
+        await _activityLog.TryWriteAsync(
+            task.Id,
+            action: isClose ? "TASK_CLOSED" : "TASK_REOPENED",
+            message: isClose
+                ? $"Closed {task.Code} \"{task.Title}\"."
+                : $"Reopened {task.Code} \"{task.Title}\".",
+            changedCols: new[] { "IsClose" },
+            metadata: new { taskId = task.Id, oldIsClose = old, isClose },
+            ct: ct);
+
+        return _mapper.Map<ProjectTaskResponse>(task);
+    }
 
 }
