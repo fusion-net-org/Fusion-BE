@@ -4,6 +4,7 @@ using Fusion.Repository.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Fusion.Repository.Migrations
 {
     [DbContext(typeof(FusionDbContext))]
-    partial class FusionDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260119181755_IsCloseTask")]
+    partial class IsCloseTask
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -2042,18 +2045,9 @@ namespace Fusion.Repository.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("description");
 
-                    b.Property<DateTime?>("DueDate")
-                        .HasPrecision(3)
-                        .HasColumnType("datetime2(3)")
-                        .HasColumnName("due_date");
-
                     b.Property<bool>("IsBillable")
                         .HasColumnType("bit")
                         .HasColumnName("is_billable");
-
-                    b.Property<bool?>("IsClose")
-                        .HasColumnType("bit")
-                        .HasColumnName("is_close");
 
                     b.Property<bool?>("IsDeleted")
                         .HasColumnType("bit")
@@ -2085,12 +2079,6 @@ namespace Fusion.Repository.Migrations
                     b.Property<Guid?>("SubmittedBy")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("submitted_by");
-
-                    b.Property<string>("TicketCode")
-                        .HasMaxLength(20)
-                        .IsUnicode(false)
-                        .HasColumnType("varchar(20)")
-                        .HasColumnName("ticket_code");
 
                     b.Property<string>("TicketName")
                         .HasMaxLength(200)
@@ -2175,47 +2163,6 @@ namespace Fusion.Repository.Migrations
                     b.HasIndex("TicketId");
 
                     b.ToTable("TicketComments");
-                });
-
-            modelBuilder.Entity("Fusion.Repository.Entities.TicketHistory", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
-                        .HasColumnName("id");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasColumnName("action");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasPrecision(3)
-                        .HasColumnType("datetime2(3)")
-                        .HasColumnName("created_at");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("description");
-
-                    b.Property<Guid?>("PerformedBy")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("performed_by");
-
-                    b.Property<Guid>("TicketId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("ticket_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PerformedBy");
-
-                    b.HasIndex("TicketId");
-
-                    b.ToTable("ticket_histories");
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.TransactionPayment", b =>
@@ -3617,23 +3564,6 @@ namespace Fusion.Repository.Migrations
                     b.Navigation("Ticket");
                 });
 
-            modelBuilder.Entity("Fusion.Repository.Entities.TicketHistory", b =>
-                {
-                    b.HasOne("Fusion.Repository.Entities.User", "PerformedByUser")
-                        .WithMany()
-                        .HasForeignKey("PerformedBy");
-
-                    b.HasOne("Fusion.Repository.Entities.Ticket", "Ticket")
-                        .WithMany("TicketHistories")
-                        .HasForeignKey("TicketId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("PerformedByUser");
-
-                    b.Navigation("Ticket");
-                });
-
             modelBuilder.Entity("Fusion.Repository.Entities.TransactionPayment", b =>
                 {
                     b.HasOne("Fusion.Repository.Entities.SubscriptionPlan", "SubscriptionPlan")
@@ -3950,8 +3880,6 @@ namespace Fusion.Repository.Migrations
                     b.Navigation("Tasks");
 
                     b.Navigation("TicketComments");
-
-                    b.Navigation("TicketHistories");
                 });
 
             modelBuilder.Entity("Fusion.Repository.Entities.User", b =>

@@ -163,6 +163,7 @@ namespace Fusion.Service.Services
                     Priority = t.Priority ?? "Medium",
                     Severity = t.Severity,
                     StoryPoints = t.Point,
+                    IsClose = t.IsClose,
                     EstimateHours = t.EstimateHours,
                     RemainingHours = t.RemainingHours,
                     DueDate = t.DueDate.HasValue
@@ -409,7 +410,7 @@ namespace Fusion.Service.Services
                     Type = t.Type ?? "Task",
                     Priority = t.Priority ?? "Medium",
                     Severity = t.Severity,
-
+                    IsClose = t.IsClose,
                     StoryPoints = t.Point,
                     EstimateHours = t.EstimateHours,
                     RemainingHours = t.RemainingHours,
@@ -589,7 +590,7 @@ namespace Fusion.Service.Services
                 EstimateHours = task.EstimateHours,
                 RemainingHours = task.RemainingHours,
                 DueDate = task.DueDate.HasValue ? new DateTimeOffset(DateTime.SpecifyKind(task.DueDate.Value, DateTimeKind.Utc)) : null,
-
+                IsClose = task.IsClose,
                 SprintId = task.SprintId,
                 WorkflowStatusId = curStatusId,
                 StatusCode = meta.Code,
