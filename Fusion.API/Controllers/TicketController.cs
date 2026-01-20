@@ -386,6 +386,48 @@ namespace Fusion.API.Controllers
                 return BadRequest(ResponseModel<TicketResponse>.Error(StatusCodes.Status400BadRequest, ex.Message));
             }
         }
+        [HttpPut("{id:guid}/close")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<TicketResponse>))]
+        //[HasPermission("TICKET_CLOSE")]
+        public async Task<IActionResult> CloseTicket(Guid id, CancellationToken cancellationToken)
+        {
+            var emailClaim = User.Claims.FirstOrDefault(c =>
+                c.Type == JwtRegisteredClaimNames.Email ||
+                c.Type == ClaimTypes.Email ||
+                c.Type == "email");
+
+            var email = emailClaim?.Value;
+            if (email == null)
+            {
+                return Unauthorized(ResponseModel<TicketResponse>.Error(
+                    statusCode: StatusCodes.Status401Unauthorized,
+                    message: "Unauthorized: User identity not found"
+                ));
+            }
+
+            try
+            {
+                var result = await _ticketService.CloseTicketAsync(id, cancellationToken);
+
+                return Ok(ResponseModel<TicketResponse>.Ok(
+                    data: result,
+                    message: "Ticket closed successfully"));
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ResponseModel<TicketResponse>.Error(
+                    statusCode: StatusCodes.Status404NotFound,
+                    message: ex.Message
+                ));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ResponseModel<TicketResponse>.Error(
+                    statusCode: StatusCodes.Status400BadRequest,
+                    message: ex.Message
+                ));
+            }
+        }
 
     }
 }

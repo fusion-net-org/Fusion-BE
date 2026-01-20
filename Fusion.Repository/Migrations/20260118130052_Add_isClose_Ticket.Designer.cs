@@ -4,6 +4,7 @@ using Fusion.Repository.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Fusion.Repository.Migrations
 {
     [DbContext(typeof(FusionDbContext))]
-    partial class FusionDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260118130052_Add_isClose_Ticket")]
+    partial class Add_isClose_Ticket
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1216,10 +1219,6 @@ namespace Fusion.Repository.Migrations
                     b.Property<bool>("IsBacklog")
                         .HasColumnType("bit")
                         .HasColumnName("is_backlog");
-
-                    b.Property<bool>("IsClose")
-                        .HasColumnType("bit")
-                        .HasColumnName("is_close");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit")

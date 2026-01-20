@@ -119,6 +119,9 @@ namespace Fusion.Repository
             //components
             services.AddScoped<IProjectComponentRepository, ProjectComponentRepository>();
 
+            //ticket history
+            services.AddScoped<ITicketHistoryRepository, TicketHistoryRepository>();
+
             return services;
 
         }

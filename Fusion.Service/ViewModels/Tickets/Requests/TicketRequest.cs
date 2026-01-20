@@ -19,5 +19,6 @@ namespace Fusion.Service.ViewModels.Tickets.Requests
 		//public Guid? StatusId { get; set; }
 		public Guid? SubmittedBy;
 		public decimal? Budget { get; set; }
-	}
+        public DateTime? DueDate { get; set; }
+    }
 }
