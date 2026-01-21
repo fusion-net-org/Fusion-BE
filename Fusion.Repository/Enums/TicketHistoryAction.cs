@@ -15,5 +15,6 @@ namespace Fusion.Repository.Enums
         CommentUpdated,
         CommentDeleted,
         Closed,
+        RequestClose,
     }
 }

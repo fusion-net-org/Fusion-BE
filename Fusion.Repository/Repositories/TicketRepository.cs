@@ -155,6 +155,7 @@ namespace Fusion.Repository.Repositories
                 .Include(x => x.Project)
                 .Include(x => x.WorkflowStatus)
                 .Include(x => x.Component)
+                .Include(t => t.Tasks)
                 .SingleOrDefaultAsync(x => x.Id == Id);
         }
 
@@ -389,6 +390,86 @@ namespace Fusion.Repository.Repositories
             ticket.IsClose = true;
             ticket.status = TicketStatusEnum.Closed.ToString();
             ticket.ClosedAt = DateTime.UtcNow.AddHours(7);
+            ticket.UpdatedAt = DateTime.UtcNow.AddHours(7);
+
+            _context.Tickets.Update(ticket);
+            await _context.SaveChangesAsync(cancellationToken);
+
+            return ticket;
+        }
+        public async Task<Ticket?> RequestCloseTicketAsync(
+        Guid ticketId,
+        CancellationToken cancellationToken = default)
+        {
+            var ticket = await _context.Tickets.FindAsync(ticketId);
+            if (ticket == null)
+                return null;
+
+            if (ticket.status != TicketStatusEnum.Accepted.ToString())
+                throw new InvalidOperationException(
+                    "Only accepted tickets can request close.");
+
+            ticket.status = TicketStatusEnum.WaitingForCloseApproval.ToString();
+            ticket.UpdatedAt = DateTime.UtcNow.AddHours(7);
+
+            _context.Tickets.Update(ticket);
+            await _context.SaveChangesAsync(cancellationToken);
+
+            return ticket;
+        }
+        public async Task<Ticket?> AcceptCloseTicketAsync(
+            Guid ticketId,
+            CancellationToken cancellationToken = default)
+        {
+            var ticket = await _context.Tickets
+                .Include(t => t.Tasks)
+                .FirstOrDefaultAsync(t => t.Id == ticketId, cancellationToken);
+
+            if (ticket == null)
+                return null;
+
+            if (ticket.status != TicketStatusEnum.WaitingForCloseApproval.ToString())
+                throw new InvalidOperationException(
+                    "Ticket is not waiting for close approval.");
+
+            if (ticket.IsClose == true)
+                throw new InvalidOperationException("Ticket is already closed.");
+
+            var hasOpenTask = ticket.Tasks
+                .Any(t => !t.IsDeleted && !t.IsClose);
+
+            if (hasOpenTask)
+                throw new InvalidOperationException(
+                    "Cannot close ticket because there are unfinished tasks.");
+
+            ticket.status = TicketStatusEnum.Closed.ToString();
+            ticket.IsClose = true;
+            ticket.ClosedAt = DateTime.UtcNow.AddHours(7);
+            ticket.UpdatedAt = DateTime.UtcNow.AddHours(7);
+
+            _context.Tickets.Update(ticket);
+            await _context.SaveChangesAsync(cancellationToken);
+
+            return ticket;
+        }
+
+        public async Task<Ticket?> RejectCloseTicketAsync(
+            Guid ticketId,
+            string reason,
+            CancellationToken cancellationToken = default)
+        {
+            var ticket = await _context.Tickets
+                .FirstOrDefaultAsync(t => t.Id == ticketId, cancellationToken);
+
+            if (ticket == null)
+                return null;
+
+            if (ticket.status != TicketStatusEnum.WaitingForCloseApproval.ToString())
+                throw new InvalidOperationException(
+                    "Ticket is not waiting for close approval.");
+
+            ticket.status = TicketStatusEnum.Accepted.ToString(); 
+            ticket.reason = reason;
             ticket.UpdatedAt = DateTime.UtcNow.AddHours(7);
 
             _context.Tickets.Update(ticket);
