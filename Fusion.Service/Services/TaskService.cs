@@ -300,8 +300,8 @@ public class TaskService : ITaskService
      ct: ct);
 
         var wfId = await GetWorkflowIdForMove(e.ProjectId, e.CurrentStatusId, ct);
-        if (st.WorkflowId != wfId)
-            throw CustomExceptionFactory.CreateBadRequestError("Target status is not in task workflow.");
+        //if (st.WorkflowId != wfId)
+        //    throw CustomExceptionFactory.CreateBadRequestError("Target status is not in task workflow.");
 
         await EnsureCanMoveTaskAsync(e, st.Id, userId, ct);
 
@@ -352,8 +352,8 @@ public class TaskService : ITaskService
         var changedSprint = oldSprintId != sprintId;
 
         var wfId = await GetWorkflowIdForMove(task.ProjectId, task.CurrentStatusId, ct);
-        if (toStatus.WorkflowId != wfId)
-            throw CustomExceptionFactory.CreateBadRequestError("Target status is not in task workflow.");
+        //if (toStatus.WorkflowId != wfId)
+        //    throw CustomExceptionFactory.CreateBadRequestError("Target status is not in task workflow.");
 
 
 
@@ -1025,8 +1025,8 @@ public class TaskService : ITaskService
                 (x.Name != null && x.Name.ToLower() == key), ct)
             ?? throw CustomExceptionFactory.CreateBadRequestError($"Status '{statusText}' not found.");
         var wfId = await GetWorkflowIdForMove(e.ProjectId, e.CurrentStatusId, ct);
-        if (st.WorkflowId != wfId)
-            throw CustomExceptionFactory.CreateBadRequestError("Target status is not in task workflow.");
+        //if (st.WorkflowId != wfId)
+        //    throw CustomExceptionFactory.CreateBadRequestError("Target status is not in task workflow.");
 
         // permission/assignment check
         await EnsureCanMoveTaskAsync(e, st.Id, userId, ct);
