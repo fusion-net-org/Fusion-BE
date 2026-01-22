@@ -41,6 +41,11 @@ namespace Fusion.Service.ViewModels.Tickets.Responses
         public Dictionary<string, int> StatusCounts { get; set; } = new();
         public int Total { get; set; }
         public TicketProcessSummaryResponse? Process { get; set; }
+
+        public int TotalTask { get; set; }
+        public int TotalTaskClosed { get; set; }
+        public int TotalTaskNotClose { get; set; }
+        public int ProcessTicketIsClose { get; set; }
     }
     public class TicketPagedResponse
     {

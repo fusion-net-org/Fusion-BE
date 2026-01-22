@@ -26,6 +26,8 @@ namespace Fusion.Repository.IRepositories
 		Task<Ticket?> RejectTicketAsync(Guid ticketId, string? reason = null, CancellationToken cancellationToken = default);
 		Task<bool> ExistsByCodeAsync(string code);
         Task<Ticket?> CloseTicketAsync(Guid ticketId, CancellationToken cancellationToken = default);
-
+		Task<Ticket?> RequestCloseTicketAsync(Guid ticketId, CancellationToken cancellationToken = default);
+		Task<Ticket?> AcceptCloseTicketAsync(Guid ticketId, CancellationToken cancellationToken = default);
+        Task<Ticket?> RejectCloseTicketAsync(Guid ticketId,string reason,CancellationToken cancellationToken = default);
     }
 }
