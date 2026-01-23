@@ -43,6 +43,11 @@ public partial class ProjectRequest
     [Column("reason_delete")]
     public string? ReasonDelete { get; set; }
 
+    [Column("reason_reject_closed")]
+    public string? ReasonRejectClosed { get; set; }
+
+    [Column("request_type")]
+    public string? RequestType { get; set; }
 
     [Column("status")]
     [StringLength(20)]

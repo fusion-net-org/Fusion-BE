@@ -7,8 +7,11 @@ using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.Enums;
 using Fusion.Repository.IRepositories;
+using Fusion.Repository.ViewModels.ProjectRequest;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using System.Numerics;
+using System.Threading;
 
 
 namespace Fusion.Repository.Repositories
@@ -91,6 +94,7 @@ namespace Fusion.Repository.Repositories
             request.ConvertedProjectId = null;
             request.Code = code;
             request.Status = "Pending";
+            request.RequestType = "Created";
             request.ContractId = request.ContractId;
             request.IsMaintenance = request.IsMaintenance;
 
@@ -770,5 +774,85 @@ namespace Fusion.Repository.Repositories
             await tx.CommitAsync(ct);
             return true;
         }
+
+        public async Task<ProjectRequest> ReviewCloseProjectRequestAsync(Guid projectRequestId, Guid actorUserId,  ReviewCloseProjectRequest dto, CancellationToken ct = default)
+        {
+            using var tx = await _context.Database.BeginTransactionAsync(ct);
+
+            var request = await _context.ProjectRequests
+                .Include(r => r.Project)
+                    .ThenInclude(p => p.ProjectTasks)
+                    .ThenInclude(p => p.CreatedByNavigation)
+                .Include(r => r.Project.Tickets)
+                .Include(pr => pr.CreatedByNavigation)
+                .FirstOrDefaultAsync(r => r.Id == projectRequestId, ct);
+
+            if (request == null)
+                throw CustomExceptionFactory.CreateNotFoundError("Project request not found");
+
+            if (request.RequestType != "Closed")
+                throw CustomExceptionFactory.CreateBadRequestError("Invalid request type");
+
+            // check actor belong to requester company
+            var isRequesterMember = await _context.CompanyMembers.AnyAsync(
+                v => v.UserId == actorUserId && v.CompanyId == request.RequesterCompanyId,
+                ct);
+
+            if (!isRequesterMember)
+                throw CustomExceptionFactory.CreateForbiddenError();
+
+            if (dto.IsApproved)
+            {
+                // ACCEPT
+                ForceCloseProject(request.Project!, actorUserId);
+
+                request.Status = ProjectRequestStatusEnum.AcceptedClosed.ToString();
+                request.IsClosed = true;
+                request.ClosedBy = actorUserId;
+            }
+            else
+            {
+                // REJECT
+                if (string.IsNullOrWhiteSpace(dto.ReasonReject))
+                    throw CustomExceptionFactory.CreateBadRequestError("Reject reason is required");
+
+                request.Status = ProjectRequestStatusEnum.RejectedClosed.ToString();
+                request.ReasonRejectClosed = dto.ReasonReject;
+
+                request.Project!.Status = ProjectStatusEnum.ONGOING.ToString();
+                request.Project.UpdateAt = DateTime.UtcNow.AddHours(7);
+            }
+
+            request.UpdatedBy = actorUserId;
+            request.UpdateAt = DateTime.UtcNow.AddHours(7);
+
+            await _context.SaveChangesAsync(ct);
+            await tx.CommitAsync(ct);
+
+            return request;
+        }
+
+
+        private void ForceCloseProject(Project project, Guid actorUserId)
+        {
+            foreach (var task in project.ProjectTasks.Where(t => !t.IsClose))
+            {
+                task.IsClose = true;
+                task.UpdateAt = DateTime.UtcNow.AddHours(7);
+            }
+
+            foreach (var ticket in project.Tickets.Where(t => t.IsClose != true))
+            {
+                ticket.IsClose = true;
+                ticket.ClosedAt = DateTime.UtcNow.AddHours(7);
+            }
+
+            project.IsClosed = true;
+            project.ClosedBy = actorUserId;
+            project.UpdateAt = DateTime.UtcNow.AddHours(7);
+
+
+        }
+
     }
 }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Fusion.Repository.ViewModels.Project;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -173,6 +174,232 @@ namespace Fusion.Service.Commons.Helpers
         <p>© {DateTime.UtcNow.Year} Fusion Platform. All rights reserved.</p>
     </div>
 </div>";
+        }
+
+        public static string CreateCloseProjectRequestEmail( string requesterName, CloseProjectSummaryDto summary, string projectName, string projectDetailUrl, string actionUrl)
+        {
+            var componentSection = BuildComponentTable(summary);
+
+                        return $@"
+            <div style=""background-color:#f6f8fa;font-family:Arial,Helvetica,sans-serif;padding:24px"">
+                <div style=""max-width:640px;margin:auto;background:#ffffff;
+                            border:1px solid #d0d7de;border-radius:10px"">
+
+                    <!-- Header -->
+                    <div style=""padding:20px;text-align:center;border-bottom:1px solid #d0d7de"">
+                        <img src=""https://cdn-icons-png.flaticon.com/512/190/190411.png"" 
+                             style=""width:52px;height:52px;margin-bottom:10px"" />
+                        <h2 style=""margin:0;color:#24292f"">Project Close Request</h2>
+                    </div>
+
+                    <!-- Body -->
+                    <div style=""padding:24px;color:#24292f;font-size:14px;line-height:1.6"">
+                        <p>Hi <b>{requesterName}</b>,</p>
+
+                        <p>
+                            The project <b>{projectName}</b> has been requested to close.
+                            Below is the current completion status:
+                        </p>
+
+                        <!-- Summary -->
+                        <table style=""width:100%;border-collapse:collapse;margin:20px 0"">
+                            <tr>
+                                <td><b>Project Completion</b></td>
+                                <td style=""color:#2da44e;font-weight:bold"">
+                                    {summary.ProjectPercent}%
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td><b>Ticket Completion</b></td>
+                                <td style=""color:#2da44e;font-weight:bold"">
+                                    {summary.TicketPercent}%
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td><b>Total Tickets</b></td>
+                                <td>{summary.TotalTickets}</td>
+                            </tr>
+                        </table>
+
+                        {componentSection}
+
+                        <p style=""margin-top:20px;color:#57606a"">
+                            ⚠️ Some tasks or tickets may still be unfinished.
+                            Please review carefully before accepting.
+                        </p>
+
+                        <!-- Actions -->
+                        <div style=""text-align:center;margin:30px 0"">
+                            <a href=""{projectDetailUrl}""
+                               style=""background:#0969da;color:#fff;text-decoration:none;
+                                      padding:12px 24px;border-radius:6px;font-weight:bold"">
+                                View Project
+                            </a>
+                            <br/><br/>
+                            <a href=""{actionUrl}""
+                               style=""background:#2da44e;color:#fff;text-decoration:none;
+                                      padding:12px 24px;border-radius:6px;font-weight:bold"">
+                                Review Close Request
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div style=""text-align:center;margin-top:20px;font-size:12px;color:#57606a"">
+                    © {DateTime.UtcNow.Year} Fusion Platform. All rights reserved.
+                </div>
+            </div>";
+        }
+
+        public static string CreateCloseProjectApprovedEmail(string projectName, string requesterName, string executorName, string projectUrl)
+        {
+            return $@"
+<div style=""background-color:#f6f8fa;font-family:Arial,Helvetica,sans-serif;padding:24px"">
+    <div style=""max-width:620px;margin:auto;background:#ffffff;
+                border:1px solid #d0d7de;border-radius:10px"">
+
+        <!-- Header -->
+        <div style=""padding:20px;text-align:center;border-bottom:1px solid #d0d7de"">
+            <img src=""https://cdn-icons-png.flaticon.com/512/190/190411.png""
+                 style=""width:52px;height:52px;margin-bottom:10px"" />
+            <h2 style=""margin:0;color:#2da44e"">
+                Project Closed Successfully
+            </h2>
+        </div>
+
+        <!-- Body -->
+        <div style=""padding:24px;color:#24292f;font-size:14px;line-height:1.6"">
+            <p>Hi <b>{executorName}</b>,</p>
+
+            <p>
+                Your request to close the project
+                <b>""{projectName}""</b> has been
+                <span style=""color:#2da44e;font-weight:bold"">approved</span>
+                by <b>{requesterName}</b>.
+            </p>
+
+            <p>
+                The project is now officially marked as
+                <b style=""color:#cf222e"">Closed</b>.
+                All related tasks and tickets have been finalized.
+            </p>
+
+            <div style=""text-align:center;margin:30px 0"">
+                <a href=""{projectUrl}""
+                   style=""background:#0969da;color:#fff;text-decoration:none;
+                          padding:12px 26px;border-radius:6px;
+                          font-weight:bold;display:inline-block"">
+                    View Project Detail
+                </a>
+            </div>
+
+            <p style=""font-size:13px;color:#57606a"">
+                Thank you for using <b>Fusion Platform</b> to manage your projects efficiently.
+            </p>
+        </div>
+    </div>
+
+    <div style=""text-align:center;margin-top:20px;font-size:12px;color:#57606a"">
+        <p>© {DateTime.UtcNow.Year} Fusion Platform. All rights reserved.</p>
+    </div>
+</div>";
+        }
+
+        public static string CreateCloseProjectRejectedEmail(
+    string projectName,
+    string requesterName,
+    string executorName,
+    string reasonReject,
+    string projectUrl)
+        {
+            return $@"
+<div style=""background-color:#f6f8fa;font-family:Arial,Helvetica,sans-serif;padding:24px"">
+    <div style=""max-width:620px;margin:auto;background:#ffffff;
+                border:1px solid #d0d7de;border-radius:10px"">
+
+        <!-- Header -->
+        <div style=""padding:20px;text-align:center;border-bottom:1px solid #d0d7de"">
+            <img src=""https://cdn-icons-png.flaticon.com/512/190/190411.png""
+                 style=""width:52px;height:52px;margin-bottom:10px"" />
+            <h2 style=""margin:0;color:#cf222e"">
+                Close Project Request Rejected
+            </h2>
+        </div>
+
+        <!-- Body -->
+        <div style=""padding:24px;color:#24292f;font-size:14px;line-height:1.6"">
+            <p>Hi <b>{executorName}</b>,</p>
+
+            <p>
+                Your request to close the project
+                <b>""{projectName}""</b> has been
+                <span style=""color:#cf222e;font-weight:bold"">rejected</span>
+                by <b>{requesterName}</b>.
+            </p>
+
+            <div style=""background:#fff8c5;border:1px solid #e3b341;
+                        border-radius:6px;padding:14px;margin:20px 0"">
+                <b>Reason provided:</b>
+                <p style=""margin:8px 0 0;color:#24292f"">
+                    {reasonReject}
+                </p>
+            </div>
+
+            <p>
+                The project remains in
+                <b style=""color:#0969da"">Ongoing</b> status.
+                You may update the project and submit a new close request if needed.
+            </p>
+
+            <div style=""text-align:center;margin:30px 0"">
+                <a href=""{projectUrl}""
+                   style=""background:#0969da;color:#fff;text-decoration:none;
+                          padding:12px 26px;border-radius:6px;
+                          font-weight:bold;display:inline-block"">
+                    View Project Detail
+                </a>
+            </div>
+
+            <p style=""font-size:13px;color:#57606a"">
+                If you have questions, please contact the requester for clarification.
+            </p>
+        </div>
+    </div>
+
+    <div style=""text-align:center;margin-top:20px;font-size:12px;color:#57606a"">
+        <p>© {DateTime.UtcNow.Year} Fusion Platform. All rights reserved.</p>
+    </div>
+</div>";
+        }
+
+
+        private static string BuildComponentTable(CloseProjectSummaryDto summary)
+        {
+            if (!summary.IsMaintenance || summary.Components == null || !summary.Components.Any())
+                return "";
+
+            var rows = string.Join("", summary.Components.Select(c => $@"
+        <tr>
+            <td style=""padding:6px 0"">{c.ComponentName}</td>
+            <td style=""padding:6px 0"">{c.ClosedTasks}/{c.TotalTasks}</td>
+            <td style=""padding:6px 0;color:#0969da;font-weight:bold"">
+                {c.Percent}%
+            </td>
+        </tr>
+    "));
+
+            return $@"
+        <h4 style=""margin-top:30px"">Component Progress</h4>
+        <table style=""width:100%;border-collapse:collapse;margin-top:10px"">
+            <tr style=""border-bottom:1px solid #d0d7de"">
+                <th align=""left"" style=""padding-bottom:6px"">Component</th>
+                <th align=""left"" style=""padding-bottom:6px"">Tasks</th>
+                <th align=""left"" style=""padding-bottom:6px"">Completion</th>
+            </tr>
+            {rows}
+        </table>";
         }
 
     }

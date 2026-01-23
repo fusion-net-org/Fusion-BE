@@ -52,6 +52,10 @@ namespace Fusion.Service.IServices
        CancellationToken ct = default);
         Task<ProjectProgressResponse> GetProjectProgressAsync(Guid projectId, CancellationToken ct = default);
 
+        Task<CloseProjectResponse> CloseProjectAsync(Guid projectId, Guid actorUserId, bool isForceClose, CancellationToken ct);
+
+        Task<CloseProjectSummaryDto> GetCloseProjectSummaryAsync(Guid projectId, CancellationToken ct);
+
     }
 
 }

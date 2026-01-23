@@ -1,14 +1,15 @@
-﻿using System;
+﻿using Fusion.Repository.Bases.Page;
+using Fusion.Repository.Bases.Page.ProjectRequest;
+using Fusion.Repository.Entities;
+using Fusion.Repository.Enums;
+using Fusion.Repository.ViewModels.ProjectRequest;
+using Fusion.Service.ViewModels.Projects.Requests;
+using Fusion.Service.ViewModels.Projects.Responses;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Fusion.Repository.Bases.Page;
-using Fusion.Repository.Bases.Page.ProjectRequest;
-using Fusion.Repository.Entities;
-using Fusion.Repository.Enums;
-using Fusion.Service.ViewModels.Projects.Requests;
-using Fusion.Service.ViewModels.Projects.Responses;
 
 namespace Fusion.Service.IServices
 {
@@ -36,6 +37,7 @@ namespace Fusion.Service.IServices
         Task<ProjectRequestResponse?> GetProjectRequestByContractIdAsync(Guid contractId, CancellationToken cancellationToken = default);
         Task<bool> CloseProjectRequestAsync(Guid requestId, Guid actorUserId, CancellationToken ct = default);
         Task<bool> ReopenProjectRequestAsync(Guid requestId, Guid actorUserId, CancellationToken ct = default);
+        Task<ReviewCloseProjectResponse> ReviewCloseProjectRequestAsync(Guid projectRequestId, Guid actorUserId, ReviewCloseProjectRequest dto, CancellationToken ct = default);
 
     }
 }

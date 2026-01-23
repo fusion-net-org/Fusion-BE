@@ -97,4 +97,13 @@ namespace Fusion.Service.ViewModels.Projects.Responses
 
         public List<TicketResponseV2>? Tickets { get; set; }
     }
+
+    public class ReviewCloseProjectResponse
+    {
+        public Guid ProjectRequestId { get; set; }
+        public Guid ProjectId { get; set; }
+        public string RequestStatus { get; set; } = default!;
+        public string ProjectStatus { get; set; } = default!;
+        public string? ReasonReject { get; set; }
+    }
 }

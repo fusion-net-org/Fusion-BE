@@ -1,13 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Fusion.Repository.Bases.Page;
+﻿using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.ProjectRequest;
 using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.Enums;
+using Fusion.Repository.ViewModels.ProjectRequest;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace Fusion.Repository.IRepositories
 {
@@ -37,5 +38,7 @@ namespace Fusion.Repository.IRepositories
 
         Task<bool> CloseFromProjectRequestAsync(Guid requestId, Guid actorUserId, CancellationToken ct = default);
         Task<bool> ReopenFromProjectRequestAsync(Guid requestId, Guid actorUserId, CancellationToken ct = default);
+
+        Task<ProjectRequest> ReviewCloseProjectRequestAsync(Guid projectRequestId, Guid actorUserId, ReviewCloseProjectRequest dto, CancellationToken ct = default);
     }
 }

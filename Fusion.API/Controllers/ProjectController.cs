@@ -1,5 +1,6 @@
 ﻿
 using Azure;
+using FirebaseAdmin.Messaging;
 using Fusion.API.Auth;
 using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.Project;
@@ -9,6 +10,7 @@ using Fusion.Repository.ViewModels.Project;
 using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.Commons.Helpers;
 using Fusion.Service.IServices;
+using Fusion.Service.Services;
 using Fusion.Service.ViewModels.Project.Requests;
 using Fusion.Service.ViewModels.Project.Requests.Overview;
 using Fusion.Service.ViewModels.Project.Responses;
@@ -268,6 +270,45 @@ namespace Fusion.API.Controllers
                 data: data,
                 message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "Project progress")
             ));
+        }
+
+        [HttpPost("projects/{projectId:guid}/close/v2")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<CloseProjectResponse>))]
+        public async Task<IActionResult> CloseProjectV2(Guid projectId, [FromBody] CloseProjectRequest request, CancellationToken ct)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+                return Unauthorized(ResponseModel<string>.Error(StatusCodes.Status401Unauthorized, "Don't find token!"));
+
+            var result = await _service.CloseProjectAsync(projectId, userId, request.ForceClose.Value, ct);
+
+            var message = result.NeedConfirm? ProjectCloseMessages.NEED_CONFIRM: result.SentToRequester
+                ? ProjectCloseMessages.SENT_TO_REQUESTER
+                : ProjectCloseMessages.CLOSED;
+
+            return Ok(ResponseModel<CloseProjectResponse>.Ok(
+                data: result,
+                message: message));
+
+        }
+
+        [HttpGet("projects/{projectId}/close-summary")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<CloseProjectSummaryDto>))]
+        public async Task<IActionResult> GetCloseProjectSummary(Guid projectId, CancellationToken ct)
+        {
+            var result = await _service
+                .GetCloseProjectSummaryAsync(projectId, ct);
+
+            return Ok(ResponseModel<CloseProjectSummaryDto>.Ok(
+                            data: result,
+                            message: ResponseMessageHelper.FormatMessage(ResponseMessages.GET_SUCCESS, "Project close progress")));
+        }
+
+        public static class ProjectCloseMessages
+        {
+            public const string NEED_CONFIRM = "Project is not completed. Confirmation is required.";
+            public const string SENT_TO_REQUESTER = "Close project request has been sent to requester.";
+            public const string CLOSED = "Project has been closed successfully.";
         }
     }
 }
