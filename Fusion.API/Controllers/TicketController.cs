@@ -428,6 +428,115 @@ namespace Fusion.API.Controllers
                 ));
             }
         }
+        [HttpPut("{id:guid}/request-close")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<TicketResponse>))]
+        public async Task<IActionResult> RequestCloseTicket(
+        Guid id,
+        CancellationToken cancellationToken)
+        {
+            var emailClaim = User.Claims.FirstOrDefault(c =>
+                c.Type == JwtRegisteredClaimNames.Email ||
+                c.Type == ClaimTypes.Email ||
+                c.Type == "email");
+
+            var email = emailClaim?.Value;
+            if (email == null)
+            {
+                return Unauthorized(ResponseModel<TicketResponse>.Error(
+                    statusCode: StatusCodes.Status401Unauthorized,
+                    message: "Unauthorized: User identity not found"
+                ));
+            }
+
+            try
+            {
+                var result = await _ticketService
+                    .RequestCloseTicketAsync(id, cancellationToken);
+
+                return Ok(ResponseModel<TicketResponse>.Ok(
+                    data: result,
+                    message: "Request close ticket successfully"));
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ResponseModel<TicketResponse>.Error(
+                    statusCode: StatusCodes.Status404NotFound,
+                    message: ex.Message
+                ));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ResponseModel<TicketResponse>.Error(
+                    statusCode: StatusCodes.Status400BadRequest,
+                    message: ex.Message
+                ));
+            }
+        }
+        [HttpPut("{id:guid}/accept-close")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<TicketResponse>))]
+        public async Task<IActionResult> AcceptCloseTicket(
+      Guid id,
+      CancellationToken cancellationToken)
+        {
+            try
+            {
+                var result = await _ticketService
+                    .AcceptCloseTicketAsync(id, cancellationToken);
+
+                return Ok(ResponseModel<TicketResponse>.Ok(
+                    data: result,
+                    message: "Ticket closed successfully"));
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ResponseModel<TicketResponse>.Error(
+                    StatusCodes.Status404NotFound,
+                    ex.Message));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ResponseModel<TicketResponse>.Error(
+                    StatusCodes.Status400BadRequest,
+                    ex.Message));
+            }
+        }
+        [HttpPut("{id:guid}/reject-close")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<TicketResponse>))]
+        public async Task<IActionResult> RejectCloseTicket(
+    Guid id,
+    [FromQuery] string reason,
+    CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(reason))
+            {
+                return BadRequest(ResponseModel<TicketResponse>.Error(
+                    StatusCodes.Status400BadRequest,
+                    "Reject reason is required"));
+            }
+
+            try
+            {
+                var result = await _ticketService
+                    .RejectCloseTicketAsync(id, reason, cancellationToken);
+
+                return Ok(ResponseModel<TicketResponse>.Ok(
+                    data: result,
+                    message: "Reject close ticket successfully"));
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ResponseModel<TicketResponse>.Error(
+                    StatusCodes.Status404NotFound,
+                    ex.Message));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ResponseModel<TicketResponse>.Error(
+                    StatusCodes.Status400BadRequest,
+                    ex.Message));
+            }
+        }
+
 
     }
 }

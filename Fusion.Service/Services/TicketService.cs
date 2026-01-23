@@ -373,6 +373,22 @@ namespace Fusion.Service.Services
             //build thêm Process từ các task non-backlog
             dto.Process = await BuildTicketProcessAsync(ticket.Id, cancellationToken);
 
+            var tasks = ticket.Tasks
+                .Where(t => !t.IsDeleted)
+                .ToList();
+
+            dto.TotalTask = tasks.Count;
+            dto.TotalTaskClosed = tasks.Count(t => t.IsClose);
+            dto.TotalTaskNotClose = tasks.Count(t => !t.IsClose);
+
+            var totalTask = tasks.Count;
+
+            dto.ProcessTicketIsClose = totalTask == 0
+                ? 0
+                : (int)Math.Round(
+                    (double)dto.TotalTaskClosed / totalTask * 100
+                  );
+
             return dto;
         }
 
@@ -596,6 +612,108 @@ namespace Fusion.Service.Services
 
             return _mapper.Map<TicketResponse>(updatedTicket);
         }
+        public async Task<TicketResponse?> RequestCloseTicketAsync(
+      Guid ticketId,
+      CancellationToken cancellationToken = default)
+        {
+            var ticket = await _ticketRepository.GetTicketByIdAsync(ticketId);
+            if (ticket == null)
+                throw new KeyNotFoundException("Ticket not found");
+
+            if (ticket.status != TicketStatusEnum.Accepted.ToString())
+                throw new InvalidOperationException(
+                    "Only accepted tickets can request close.");
+
+            if (ticket.IsClose == true)
+                throw new InvalidOperationException("Ticket is already closed.");
+
+            var hasOpenTask = ticket.Tasks
+                .Any(t => !t.IsDeleted && !t.IsClose);
+
+            if (hasOpenTask)
+                throw new InvalidOperationException(
+                    "All tasks must be closed before requesting ticket close.");
+
+            if (ticket.status == TicketStatusEnum.WaitingForCloseApproval.ToString())
+                throw new InvalidOperationException(
+                    "Ticket is already waiting for close approval.");
+
+            var currentUserId = _currentService.GetUserId();
+
+            var updatedTicket = await _ticketRepository
+                .RequestCloseTicketAsync(ticketId, cancellationToken);
+
+            await _ticketHistoryRepository.AddAsync(new TicketHistory
+            {
+                TicketId = ticketId,
+                Action = TicketHistoryAction.RequestClose.ToString(),
+                Description = "Executor requested to close ticket",
+                PerformedBy = currentUserId
+            }, cancellationToken);
+
+            return _mapper.Map<TicketResponse>(updatedTicket);
+        }
+
+        public async Task<TicketResponse?> AcceptCloseTicketAsync(
+          Guid ticketId,
+          CancellationToken cancellationToken = default)
+        {
+            var ticket = await _ticketRepository.GetTicketByIdAsync(ticketId);
+            if (ticket == null)
+                throw new KeyNotFoundException("Ticket not found");
+
+            if (ticket.status != TicketStatusEnum.WaitingForCloseApproval.ToString())
+                throw new InvalidOperationException(
+                    "Ticket is not waiting for close approval.");
+
+            var currentUserId = _currentService.GetUserId();
+
+            var updatedTicket = await _ticketRepository
+                .AcceptCloseTicketAsync(ticketId, cancellationToken);
+
+            await _ticketHistoryRepository.AddAsync(new TicketHistory
+            {
+                TicketId = ticketId,
+                Action = TicketHistoryAction.Closed.ToString(),
+                Description = "Requester accepted close ticket",
+                PerformedBy = currentUserId
+            }, cancellationToken);
+
+            return _mapper.Map<TicketResponse>(updatedTicket);
+        }
+        public async Task<TicketResponse?> RejectCloseTicketAsync(
+            Guid ticketId,
+            string reason,
+            CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(reason))
+                throw new InvalidOperationException("Reject reason is required.");
+
+            var ticket = await _ticketRepository.GetTicketByIdAsync(ticketId);
+            if (ticket == null)
+                throw new KeyNotFoundException("Ticket not found");
+
+            if (ticket.status != TicketStatusEnum.WaitingForCloseApproval.ToString())
+                throw new InvalidOperationException(
+                    "Ticket is not waiting for close approval.");
+
+            var currentUserId = _currentService.GetUserId();
+
+            var updatedTicket = await _ticketRepository
+                .RejectCloseTicketAsync(ticketId, reason, cancellationToken);
+
+            await _ticketHistoryRepository.AddAsync(new TicketHistory
+            {
+                TicketId = ticketId,
+                Action = TicketHistoryAction.Rejected.ToString(),
+                Description = $"Requester rejected close request. Reason: {reason}",
+                PerformedBy = currentUserId
+            }, cancellationToken);
+
+            return _mapper.Map<TicketResponse>(updatedTicket);
+        }
+
+
 
     }
     public static class TicketCodeGenerator
