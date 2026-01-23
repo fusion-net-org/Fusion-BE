@@ -10,8 +10,10 @@ using Fusion.Repository.Entities;
 using Fusion.Repository.Enums;
 using Fusion.Repository.IRepositories;
 using Fusion.Repository.Repositories;
+using Fusion.Repository.ViewModels.ProjectRequest;
 using Fusion.Service.Commons.Helpers;
 using Fusion.Service.IServices;
+using Fusion.Service.ViewModels.Companies.Email;
 using Fusion.Service.ViewModels.Companies.Responses;
 using Fusion.Service.ViewModels.Notifications.Requests;
 using Fusion.Service.ViewModels.Projects.Requests;
@@ -722,6 +724,79 @@ namespace Fusion.Service.Services
 
         public Task<bool> ReopenProjectRequestAsync(Guid requestId, Guid actorUserId, CancellationToken ct = default)
             => _projectRequestRepository.ReopenFromProjectRequestAsync(requestId, actorUserId, ct);
+
+        public async Task<ReviewCloseProjectResponse> ReviewCloseProjectRequestAsync(Guid projectRequestId, Guid actorUserId, ReviewCloseProjectRequest dto, CancellationToken ct = default)
+        {
+            var request = await _projectRequestRepository
+                .ReviewCloseProjectRequestAsync(projectRequestId, actorUserId, dto, ct);
+
+            var project = request.Project!;
+            var executorCompanyId = request.ExecutorCompanyId!.Value;
+
+            if (request.Status == ProjectRequestStatusEnum.Accepted.ToString())
+            {
+                // Notification
+                await _notificationService.CreateNotificationAsync(new SendNotificationRequest
+                {
+                    UserId = project.CreatedBy!.Value,
+                    Title = "Project closed",
+                    Body = $"Project '{project.Name}' has been approved to close.",
+                    NotificationType = NotificationTypeEnum.CLOSE_PROJECT_REQUEST.ToString(),
+                    LinkKey = "PROJECT_CLOSED_SUCCESS",
+                    IdLink = project.Id
+                }, ct);
+
+                await _mailService.SendEmailAsync(new MailRequest
+                {
+                    ToEmail = project.CreatedByNavigation.Email,
+                    Subject = "Project close request approved",
+                    Body = MailUtils.CreateCloseProjectApprovedEmail(
+                        projectName: project.Name!,
+                        requesterName: request.CreatedByNavigation.UserName,
+                        executorName: project.CreatedByNavigation.UserName,
+                        projectUrl: "Not found"
+                    )
+                });
+
+            }
+
+            if (request.Status == ProjectRequestStatusEnum.Rejected.ToString())
+            {
+                await _notificationService.CreateNotificationAsync(new SendNotificationRequest
+                {
+                    UserId = project.CreatedBy!.Value,
+                    Title = "Close project rejected",
+                    Body = $"Project '{project.Name}' was rejected. Reason: {request.ReasonReject}",
+                    NotificationType = NotificationTypeEnum.CLOSE_PROJECT_REQUEST.ToString(),
+                    LinkKey = "PROJECT_CLOSE_REJECT",
+                    IdLink = project.Id
+                }, ct);
+
+                await _mailService.SendEmailAsync(new MailRequest
+                {
+                    ToEmail = project.CreatedByNavigation.Email,
+                    Subject = "Project close request rejected",
+                    Body = MailUtils.CreateCloseProjectRejectedEmail(
+                        projectName: project.Name!,
+                        requesterName: request.CreatedByNavigation.UserName,
+                        executorName: project.CreatedByNavigation.UserName,
+                        reasonReject: request.ReasonRejectClosed,
+                        projectUrl: "Not found"
+                    )
+                });
+            }
+
+            return new ReviewCloseProjectResponse
+            {
+                ProjectRequestId = request.Id,
+                ProjectId = project.Id,
+                RequestStatus = request.Status!,
+                ProjectStatus = project.IsClosed
+            ? ProjectStatusEnum.CLOSED.ToString()
+            : ProjectStatusEnum.ONGOING.ToString(),
+                ReasonReject = request.ReasonReject
+            };
+        }
 
     }
 }

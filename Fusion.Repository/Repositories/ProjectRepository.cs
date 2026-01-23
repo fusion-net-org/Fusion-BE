@@ -1,4 +1,5 @@
 ﻿
+using Azure.Core;
 using Fusion.Repository.Bases.Exceptions;
 using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.Project;
@@ -6,6 +7,7 @@ using Fusion.Repository.Data;
 using Fusion.Repository.Entities;
 using Fusion.Repository.Enums;
 using Fusion.Repository.IRepositories;
+using Fusion.Repository.Migrations;
 using Fusion.Repository.ViewModels;
 using Fusion.Repository.ViewModels.Project;
 using Microsoft.EntityFrameworkCore;
@@ -352,6 +354,7 @@ namespace Fusion.Repository.Repositories
                         .Include(p => p.Company)
                         .Include(p => p.CompanyRequest)
                         .Include(p => p.CreatedByNavigation)
+                            
                          .Include(p => p.ProjectRequest)
                           .ThenInclude(pr => pr.Contract)
                         .Include(p => p.Tickets)
@@ -801,5 +804,161 @@ namespace Fusion.Repository.Repositories
                 DoneTasks = row.Done
             };
         }
+
+        public async Task<CloseProjectResponse> EnsureCloseProjectAsync(Guid projectId, Guid actorUserId, bool isForceClose , CancellationToken ct = default)
+        {
+            using var tx = await _context.Database.BeginTransactionAsync(ct);
+
+            var project = await _context.Projects
+                .Include(p => p.ProjectTasks)
+                .Include(p => p.ProjectRequest)
+                .Include(p => p.Tickets)
+                .Include(p => p.Components)
+                    .ThenInclude(p => p.Tasks)
+                .FirstOrDefaultAsync(p => p.Id == projectId, ct);
+
+            if (project == null)
+                throw CustomExceptionFactory.CreateNotFoundError("Project not found");
+
+            var projectCreatorId = project.CreatedBy;
+            var projectRequestCreatorId = project.ProjectRequest?.CreatedBy;
+
+            var isAllowed =
+                (projectCreatorId.HasValue && projectCreatorId.Value == actorUserId) ||
+                (projectRequestCreatorId.HasValue && projectRequestCreatorId.Value == actorUserId);
+
+            if (!isAllowed)
+                throw CustomExceptionFactory.CreateForbiddenError();
+
+            //Check task isClosed
+            bool hasOpenTask = project.ProjectTasks.Any(t => !t.IsClose);
+
+            if (hasOpenTask && !isForceClose)
+            {
+                return new CloseProjectResponse
+                {
+                    NeedConfirm = true
+                };
+            }
+
+            //Có ProjectRequest → gửi requester
+            if (project.ProjectRequest != null)
+            {
+                if (project.ProjectRequest.IsDeleted == true)
+                    throw CustomExceptionFactory.CreateBadRequestError("Linked project request is deleted");
+
+                var summary = BuildSummary(project);
+
+                project.Status = ProjectStatusEnum.CLOSEDPENDING.ToString();
+                project.UpdateAt = DateTime.UtcNow.AddHours(7);
+
+                var request = await _context.ProjectRequests.SingleOrDefaultAsync(x => x.Id == project.ProjectRequestId);
+                if(request == null)
+                    throw CustomExceptionFactory.CreateNotFoundError("Project Request not found");
+
+                request.Status = ProjectRequestStatusEnum.PendingClosed.ToString();
+                request.RequestType = "Closed";
+                request.UpdateAt = DateTime.UtcNow.AddHours(7);
+
+                _context.ProjectRequests.Update(request);
+
+                await _context.SaveChangesAsync(ct);
+                await tx.CommitAsync(ct);
+
+                return new CloseProjectResponse
+                {
+                    SentToRequester = true,
+                    Summary = summary
+                };
+            }
+            
+            //Close when Internal project
+            ForceCloseProject(project, actorUserId);
+            await _context.SaveChangesAsync(ct);
+            await tx.CommitAsync(ct);
+            return new CloseProjectResponse();
+        }
+
+        public async Task<CloseProjectSummaryDto> GetCloseProjectSummaryAsync(Guid projectId, CancellationToken ct = default)
+        {
+            var project = await _context.Projects
+                .Include(p => p.ProjectTasks)
+                .Include(p => p.ProjectRequest)
+                .Include(p => p.Tickets)
+                .Include(p => p.Components)
+                    .ThenInclude(c => c.Tasks)
+                .FirstOrDefaultAsync(p => p.Id == projectId, ct);
+
+            if (project == null)
+                throw CustomExceptionFactory.CreateNotFoundError("Project not found");
+
+            var summary = BuildSummary(project);
+
+            return summary;
+        }
+
+        private CloseProjectSummaryDto BuildSummary(Project project)
+        {
+            // Project
+            int totalTasks = project.ProjectTasks.Count;
+            int closedTasks = project.ProjectTasks.Count(t => t.IsClose);
+            int projectPercent = totalTasks == 0 ? 100 : closedTasks * 100 / totalTasks;
+
+            // Ticket
+            int totalTickets = project.Tickets.Count;
+            int closedTickets = project.Tickets.Count(t => t.IsClose == true);
+            int ticketPercent = totalTickets == 0 ? 100 : closedTickets * 100 / totalTickets;
+
+            var summary = new CloseProjectSummaryDto
+            {
+                ProjectPercent = projectPercent,
+                TicketPercent = ticketPercent,
+                TotalTickets = totalTickets,
+                IsMaintenance = project.IsMaintenance == true
+            };
+
+            // Maintenance → có component
+            if (project.IsMaintenance == true)
+            {
+                summary.Components = project.Components.Select(c =>
+                {
+                    int total = c.Tasks.Count;
+                    int closed = c.Tasks.Count(t => t.IsClose);
+
+                    return new ComponentSummaryDto
+                    {
+                        ComponentId = c.Id,
+                        ComponentName = c.Name,
+                        TotalTasks = total,
+                        ClosedTasks = closed,
+                        Percent = total == 0 ? 100 : closed * 100 / total
+                    };
+                }).ToList();
+            }
+
+            return summary;
+        }
+
+        private void ForceCloseProject(Project project, Guid actorUserId)
+        {
+            foreach (var task in project.ProjectTasks.Where(t => !t.IsClose))
+            {
+                task.IsClose = true;
+                task.UpdateAt = DateTime.UtcNow.AddHours(7);
+            }
+
+            foreach (var ticket in project.Tickets.Where(t => t.IsClose != true))
+            {
+                ticket.IsClose = true;
+                ticket.ClosedAt = DateTime.UtcNow.AddHours(7);
+            }
+
+            project.IsClosed = true;
+            project.ClosedBy = actorUserId;
+            project.UpdateAt = DateTime.UtcNow.AddHours(7);
+
+            
+        }
+
     }
 }

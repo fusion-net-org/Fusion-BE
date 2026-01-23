@@ -14,7 +14,9 @@ using Fusion.Repository.ViewModels;
 using Fusion.Repository.ViewModels.Project;
 using Fusion.Service.Commons.Helpers;
 using Fusion.Service.IServices;
+using Fusion.Service.ViewModels.Companies.Email;
 using Fusion.Service.ViewModels.CompanySubscription.Requests;
+using Fusion.Service.ViewModels.Notifications.Requests;
 using Fusion.Service.ViewModels.Project.Requests;
 using Fusion.Service.ViewModels.Project.Requests.Overview;
 using Fusion.Service.ViewModels.Project.Responses;
@@ -37,6 +39,8 @@ namespace Fusion.Service.Services
         private readonly ISprintRepository _sprintRepo;
         private readonly IProjectMemberRepository _projMemberRepo;
         private readonly IWorkflowDesignerRepository _workflowReadRepo;
+        private readonly INotificationService _notificationService;
+        private readonly IMailService _mailService;
         private readonly FusionDbContext _ctx;
         private readonly ICompanySubscriptionService _companySubscriptionService;
         private readonly IChatConversationRepository _chatConversationRepository;
@@ -49,6 +53,8 @@ namespace Fusion.Service.Services
             IProjectMemberRepository projMemberRepo,
             IWorkflowDesignerRepository workflowReadRepo,
             IChatConversationRepository chatConversationRepository,
+            INotificationService notificationService,
+            IMailService mailService,
             FusionDbContext ctx, ICompanySubscriptionService companySubscriptionService)
         {
             _mapper = mapper;
@@ -57,6 +63,8 @@ namespace Fusion.Service.Services
             _sprintRepo = sprintRepo;
             _projMemberRepo = projMemberRepo;
             _workflowReadRepo = workflowReadRepo;
+            _notificationService = notificationService;
+            _mailService = mailService;
             _ctx = ctx;
             _companySubscriptionService = companySubscriptionService;
             _chatConversationRepository = chatConversationRepository;
@@ -1028,5 +1036,96 @@ namespace Fusion.Service.Services
                 ProgressPercent = percent
             };
         }
+
+        public async Task<CloseProjectResponse> CloseProjectAsync(Guid projectId, Guid actorUserId, bool isForceClose, CancellationToken ct)
+        {
+            var project = await _projectRepo.GetProjectById(projectId, ct);
+
+            if (project == null)
+                throw CustomExceptionFactory.CreateNotFoundError("Project not found");
+
+            var repoResult = await _projectRepo.EnsureCloseProjectAsync(
+                projectId, actorUserId, isForceClose, ct);
+
+            CloseProjectSummaryDto summaryDto = null;
+
+            if (repoResult.Summary != null)
+            {
+                dynamic s = repoResult.Summary;
+
+                summaryDto = new CloseProjectSummaryDto
+                {
+                    ProjectPercent = s.ProjectPercent,
+                    TicketPercent = s.TicketPercent,
+                    TotalTickets = s.TotalTickets,
+                    IsMaintenance = s.IsMaintenance
+                };
+
+                if (summaryDto.IsMaintenance && s.Components != null)
+                {
+                    summaryDto.Components = ((IEnumerable<dynamic>)s.Components)
+                        .Select(c => new ComponentSummaryDto
+                        {
+                            ComponentId = c.ComponentId,
+                            ComponentName = c.ComponentName,
+                            TotalTasks = c.TotalTasks,
+                            ClosedTasks = c.ClosedTasks,
+                            Percent = c.Percent
+                        })
+                        .ToList();
+                }
+            }
+
+            if (repoResult.NeedConfirm)
+                return new CloseProjectResponse { NeedConfirm = true };
+
+            if (repoResult.SentToRequester)
+            {
+                await _notificationService.CreateNotificationAsync(
+                    new SendNotificationRequest
+                    {
+                        UserId = project.ProjectRequest.CreatedBy.Value,
+                        Title = "Close project request",
+                        Body = $"Project {project.Name} is waiting for your approval",
+                        NotificationType = NotificationTypeEnum.CLOSE_PROJECT_REQUEST.ToString(),
+                        LinkKey = "PROJECT_CLOSE_REQUEST",
+                        IdLink = project.Id
+                    },
+                    ct
+                );
+
+                var emailBody = MailUtils.CreateCloseProjectRequestEmail(
+                    requesterName: project.ProjectRequest.CreatedByNavigation.UserName,
+                    summary: summaryDto,
+                    projectName: project.Name,
+                    projectDetailUrl: $"http://localhost:5173/projects/{project.Id}",
+                    actionUrl: $"http://localhost:5173/project-requests/{project.ProjectRequest.Id}"
+                );
+
+                await _mailService.SendEmailAsync(new MailRequest
+                {
+                    ToEmail = project.ProjectRequest.CreatedByNavigation.Email,
+                    Subject = $"Close Project Request - {project.Name}",
+                    Body = emailBody
+                });
+
+                return new CloseProjectResponse
+                {
+                    SentToRequester = true,
+                    Summary = repoResult.Summary
+                };
+            }
+
+            return new CloseProjectResponse
+            {
+                NeedConfirm = false,
+                SentToRequester = false,
+                Summary = "Project is Closed"
+            };
+        }
+
+        public async Task<CloseProjectSummaryDto> GetCloseProjectSummaryAsync(Guid projectId, CancellationToken ct) 
+            => await _projectRepo.GetCloseProjectSummaryAsync(projectId, ct);
+
     }
 }

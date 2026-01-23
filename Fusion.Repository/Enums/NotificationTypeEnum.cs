@@ -18,6 +18,7 @@ namespace Fusion.Repository.Enums
         PROJECT_REQUEST,
         INFO,
         ADMIN_NOTIFICATE,
+        CLOSE_PROJECT_REQUEST,
         MENTION,
     }
 

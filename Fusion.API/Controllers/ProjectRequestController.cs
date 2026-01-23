@@ -3,6 +3,7 @@ using Fusion.Repository.Bases.Page;
 using Fusion.Repository.Bases.Page.Company;
 using Fusion.Repository.Bases.Page.ProjectRequest;
 using Fusion.Repository.Bases.Responses;
+using Fusion.Repository.ViewModels.ProjectRequest;
 using Fusion.Service.Commons.BaseResponses;
 using Fusion.Service.IServices;
 using Fusion.Service.Services;
@@ -260,6 +261,27 @@ namespace Fusion.API.Controllers
                 data: ok,
                 message: ResponseMessageHelper.FormatMessage(ResponseMessages.UPDATE_SUCCESS, "Reopen project request")));
         }
+
+
+        [HttpPost("{id:guid}/review-close")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ResponseModel<ReviewCloseProjectResponse>))]
+        public async Task<IActionResult> ReviewCloseProject(Guid id, [FromBody] ReviewCloseProjectRequest dto, CancellationToken ct)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+                return Unauthorized(ResponseModel<string>.Error(StatusCodes.Status401Unauthorized, "Invalid or missing token"));
+
+
+            var result = await _projectRequestService.ReviewCloseProjectRequestAsync(id, userId, dto, ct);
+
+            return Ok(ResponseModel<ReviewCloseProjectResponse>.Ok(
+                data: result,
+                message: dto.IsApproved
+                    ? "Close project request approved"
+                    : "Close project request rejected"
+            ));
+        }
+
 
     }
 }

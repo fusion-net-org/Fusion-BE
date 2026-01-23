@@ -11,7 +11,10 @@ namespace Fusion.Repository.Enums
         Pending = 0,
         Accepted = 1,
         Rejected = 2,
-        Finished = 3
+        Finished = 3,
+        PendingClosed = 4,
+        AcceptedClosed = 5,
+        RejectedClosed = 6,
     }
 
     public enum ProjectRequestViewMode

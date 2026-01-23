@@ -10,6 +10,7 @@ namespace Fusion.Repository.Enums
     {
         ONGOING,
         DONE,
-        CLOSED
+        CLOSED,
+        CLOSEDPENDING
     }
 }

@@ -352,7 +352,7 @@ public class ChatService : IChatService
             };
         }
 
-        var now = DateTime.UtcNow;
+        var now = DateTime.UtcNow.AddHours(7);
 
         var msg = new ChatMessage
         {

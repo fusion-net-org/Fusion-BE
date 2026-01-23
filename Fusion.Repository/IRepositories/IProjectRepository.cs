@@ -56,5 +56,9 @@ namespace Fusion.Repository.IRepositories
          CancellationToken cancellationToken = default);
 
         Task<ProjectTaskProgressVm> GetTaskProgressAsync(Guid projectId, CancellationToken ct = default);
+
+        Task<CloseProjectResponse> EnsureCloseProjectAsync(Guid projectId, Guid actorUserId, bool isForceClose, CancellationToken ct = default);
+
+        Task<CloseProjectSummaryDto> GetCloseProjectSummaryAsync(Guid projectId, CancellationToken ct = default);
     }
 }
