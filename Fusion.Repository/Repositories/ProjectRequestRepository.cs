@@ -849,6 +849,7 @@ namespace Fusion.Repository.Repositories
 
             project.IsClosed = true;
             project.ClosedBy = actorUserId;
+            project.Status = ProjectStatusEnum.CLOSED.ToString();
             project.UpdateAt = DateTime.UtcNow.AddHours(7);
 
 
