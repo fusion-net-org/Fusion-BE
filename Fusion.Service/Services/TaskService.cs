@@ -112,8 +112,7 @@ public class TaskService : ITaskService
             throw CustomExceptionFactory.CreateForbiddenError();
 
         //  DragAll bypass
-        if (_current.HasPermission(PERM_TASK_DRAG_ALL))
-            return;
+      
 
         //  Load per-status assignments of this task
         var wfResp = await _taskWorkflowService.GetAssignmentsForTaskAsync(task.Id, ct);
@@ -2605,7 +2604,6 @@ public class TaskService : ITaskService
             throw CustomExceptionFactory.CreateBadRequestError("Task has no current status.");
         if (task.IsClose) throw CustomExceptionFactory.CreateBadRequestError("Task is closed. Reopen it first.");
 
-        await EnsureCanMoveTaskAsync(task, task.CurrentStatusId.Value, userId, ct);
 
         var old = task.IsClose;
         if (old == isClose) return _mapper.Map<ProjectTaskResponse>(task);
